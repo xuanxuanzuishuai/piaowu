@@ -183,25 +183,25 @@ class AutoCheckPicture
             foreach ($errCode as $value){
                 switch ($value) {
                     case SharePosterModel::SYSTEM_REFUSE_CODE_NEW: //未使用最新海报
-                        $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_NEW];
+                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_NEW;
                         break;
                     case SharePosterModel::SYSTEM_REFUSE_CODE_TIME: //朋友圈保留时长不足12小时，请重新上传
-                        $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_TIME];
+                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_TIME;
                         break;
                     case SharePosterModel::SYSTEM_REFUSE_CODE_GROUP: //分享分组可见
-                        $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_GROUP];
+                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_GROUP;
                         break;
                     case SharePosterModel::SYSTEM_REFUSE_CODE_FRIEND: //请发布到朋友圈并截取朋友圈照片
-                        $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_FRIEND];
+                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_FRIEND ;
                         break;
                     case SharePosterModel::SYSTEM_REFUSE_CODE_UPLOAD: //上传截图出错
-                        $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_UPLOAD];
+                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_UPLOAD;
                         break;
                     case SharePosterModel::SYSTEM_REFUSE_CODE_USER: //海报生成和上传非同一用户
-                        $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_USER];
+                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_USER;
                         break;
                     case SharePosterModel::SYSTEM_REFUSE_CODE_ACTIVITY_ID: //海报生成和上传非同一活动
-                        $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_ACTIVITY_ID];
+                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_ACTIVITY_ID;
                         break;
                     default:
                         break;
@@ -233,25 +233,25 @@ class AutoCheckPicture
             foreach ($errCode as $value){
                 switch ($value) {
                     case RealSharePosterModel::SYSTEM_REFUSE_CODE_NEW: //未使用最新海报
-                        $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_NEW];
+                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_NEW;
                         break;
                     case RealSharePosterModel::SYSTEM_REFUSE_CODE_TIME: //朋友圈保留时长不足12小时，请重新上传
-                        $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_TIME];
+                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_TIME;
                         break;
                     case RealSharePosterModel::SYSTEM_REFUSE_CODE_GROUP: //分享分组可见
-                        $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_GROUP];
+                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_GROUP;
                         break;
                     case RealSharePosterModel::SYSTEM_REFUSE_CODE_FRIEND: //请发布到朋友圈并截取朋友圈照片
-                        $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_FRIEND];
+                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_FRIEND;
                         break;
                     case RealSharePosterModel::SYSTEM_REFUSE_CODE_UPLOAD: //上传截图出错
-                        $params['reason'] = [RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_UPLOAD];
+                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_UPLOAD;
                         break;
                     case SharePosterModel::SYSTEM_REFUSE_CODE_USER: //海报生成和上传非同一用户
-                        $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_USER];
+                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_USER;
                         break;
                     case SharePosterModel::SYSTEM_REFUSE_CODE_ACTIVITY_ID: //海报生成和上传非同一活动
-                        $params['reason'] = [SharePosterModel::SYSTEM_REFUSE_REASON_CODE_ACTIVITY_ID];
+                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_ACTIVITY_ID;
                         break;
                     default:
                         break;
@@ -298,7 +298,6 @@ class AutoCheckPicture
         }
         //针对纯图片 返回值特殊处理
         if (empty($response['ret'])) {
-//            return -5;
             $errCode[] = -5;
         }
         $result = array();
@@ -326,13 +325,11 @@ class AutoCheckPicture
         $gobalIssetDel = false; //分享-全局存在删除
         $issetDate     = false; //分享-全局存在时间
 //        $issetCorner = false;   //分享-角标是否存在
-        $issetUnique = false;   //是否设置唯一码
         $isSameUser = true;     //海报生成与上传是否为同一用户
         $isSameActivity = true; //海报生成与上传是否为同一活动
         $errCode = [];
 
-        $status = 0; //-1|-2.审核不通过 0.过滤 2.审核通过
-        $patten = "/^(([1-9]|(10|11|12))\.([1-2][0-9]|3[0-1]|[0-9]))$/"; //角标规则匹配
+        $status = -1; //-1|-2.审核不通过 0.过滤 2.审核通过
         foreach ($result as $key => $val) {
             $issetDel = false; //是否包含有删除
             $word      = $val['word'];
@@ -360,12 +357,12 @@ class AutoCheckPicture
                 $leafKeyWord = true;
             }
             //右下角标识
-            if (mb_strpos($word, ' ') !== false) {
-                $word = str_replace(' ', '', $word);
-            }
-            if ($word == $letterIden) {
-                $shareIden = true;
-            }
+//            if (mb_strpos($word, ' ') !== false) {
+//                $word = str_replace(' ', '', $word);
+//            }
+//            if ($word == $letterIden) {
+//                $shareIden = true;
+//            }
             //判断3.关键字
             if ($shareType && (mb_strlen($word) > 5 || Util::sensitiveWordFilter($contentKeyword, $word) == true)) {
                 $shareKeyword = true;
@@ -379,16 +376,14 @@ class AutoCheckPicture
                 $shareOwner = true;
             }
             //屏蔽类型-设置私密照片
-            if ($shareOwner && mb_strpos($word, '私密照片') !== false) {
-                $status = -3;
-                $errCode[] = -3;
-//                break;
+            if (mb_strpos($word, '私密照片') !== false) {
+                $shareDisplay = false;
             }
 
             //判断海报合成和上传是否为同一用户以及是否为同一活动
             $wordLength =  strlen($word);
-            if (ctype_alnum($word) && $wordLength == 8) {
-                $issetUnique = true;
+            if (is_string($word) && $wordLength >= 8 && $wordLength <= 10) {
+                $shareIden = true;
                 $replaceMap = [
                     0=>'O',
                     1=>'I',
@@ -396,6 +391,7 @@ class AutoCheckPicture
                     5=>'S',
                     7=>'T',
                     8=>'B',
+                    ' '=>'',
                 ];
                 $word = str_replace(array_keys($replaceMap),array_values($replaceMap),strtoupper($word));
                 $composeInfo = MiniAppQrService::getQrInfoById($word);
@@ -409,10 +405,7 @@ class AutoCheckPicture
                 }
 
                 if (empty($uploadInfo['student_id']) || $composeUser != $uploadInfo['student_id']) {
-                    $status = -6;
-                    $errCode[] = -6;
                     $isSameUser = false;
-//                    break;
                 }
 
 //                $checkActivityIdStr = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'week_activity_id_effect');
@@ -422,10 +415,7 @@ class AutoCheckPicture
 //                }
 //                if (empty($uploadInfo['activity_id']) || ($composeCheckActivity != $uploadInfo['activity_id'] && !in_array($composeCheckActivity, $checkActivityIdArr))) {
                 if (empty($uploadInfo['activity_id']) || $composeCheckActivity != $uploadInfo['activity_id']) {
-                    $status         = -7;
-                    $errCode[]      = -7;
                     $isSameActivity = false;
-//                    break;
                 }
             }
 
@@ -510,18 +500,8 @@ class AutoCheckPicture
                 //上传时间是否已超过12小时
                 if (empty($screenDate) || (!empty($screenDate) && strtotime($screenDate) + $hours < $uploadTime)) {
                     $shareDate = true;
-                } else {
-                    if ($status == -1 && !$shareIden) {
-                        $status = -1;
-                        $errCode[] = -1;
-//                        break;
-                    }else{
-                        $status = -2;
-                        $errCode[] = -2;
-//                        break;
-                    }
-
                 }
+
                 /**
                  * 判定是否被屏蔽
                  * 特殊情况:发布时间和删除下标相同
@@ -533,26 +513,41 @@ class AutoCheckPicture
                 }
             }
         }
-        //角标识别错误 && 字符串识别正确则往下判断
-        if ($status == -1 && $shareIden) {
-            $status = 0;
+
+
+        if (!$shareIden){
+            $errCode[] = -1;
         }
-        if ($status < 0) {
-            return [$status,array_unique($errCode)];
+
+        if (!$shareDate){
+            $errCode[] = -2;
         }
+
+        if (!$shareType || !$shareKeyword || !$shareOwner || $shareDisplay){
+            $errCode[] = -3;
+        }
+
         //包含朋友圈或详情 且没有删除
-        if ($shareType && !$gobalIssetDel) {
+        if (!$gobalIssetDel) {
             $errCode[] = -4;
-            return [-4,array_unique($errCode)];
         }
         //未识别到角标&&未识别到右下角标识&&未识别到小叶子
-        if (!$shareIden && !$leafKeyWord && !$issetUnique) {
+        if (!$leafKeyWord) {
             $errCode[] = -5;
-            return [-5,array_unique($errCode)];
         }
-        if ($shareType && $shareKeyword && $shareOwner && $shareDate && $shareDisplay && $shareIden && $isSameUser && $isSameActivity && $issetUnique) {
+
+        if (!$isSameUser) {
+            $errCode[] = -6;
+        }
+
+        if (!$isSameActivity) {
+            $errCode[] = -7;
+        }
+
+
+        if ($shareType && $shareKeyword && $shareOwner && $shareDate && $shareDisplay && $shareIden && $isSameUser && $isSameActivity) {
             $status = 2;
         }
-        return [$status,[]];
+        return [$status,array_unique($errCode)];
     }
 }
