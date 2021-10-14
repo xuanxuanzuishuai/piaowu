@@ -1183,6 +1183,7 @@ class Util
 //                break;
 
             case 90:    // Z->A
+                $isAdd = true;
                 $ordNum = 65;
                 break;
 

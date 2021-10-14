@@ -56,19 +56,20 @@ class AutoCheckPicture
                 return null;
         }
         $imagePath = AliOSS::replaceCdnDomainForDss($result['image_path']);
-        // 获取日期 - 月.日
-        $date = date("n.j", $activityInfo['start_time']);
-        // 获取日期 - 年-月-日
-        $activityDate = date("Y-m-d", $activityInfo['start_time']);
-        $redis = RedisDB::getConn();
-        $cacheKey = 'letterIden';
-        if (!$redis->hexists($cacheKey, $date)) {
-            $letterIden = self::transformDate($activityDate);
-            $redis->hset($cacheKey, $date, $letterIden);
-            $redis->expire($cacheKey, self::$redisExpire);
-        }
-        $letterIden = $redis->hget($cacheKey, $date);
-        return [$date, $letterIden, $imagePath];
+//        // 获取日期 - 月.日
+//        $date = date("n.j", $activityInfo['start_time']);
+//        // 获取日期 - 年-月-日
+//        $activityDate = date("Y-m-d", $activityInfo['start_time']);
+//        $redis = RedisDB::getConn();
+//        $cacheKey = 'letterIden';
+//        if (!$redis->hexists($cacheKey, $date)) {
+//            $letterIden = self::transformDate($activityDate);
+//            $redis->hset($cacheKey, $date, $letterIden);
+//            $redis->expire($cacheKey, self::$redisExpire);
+//        }
+//        $letterIden = $redis->hget($cacheKey, $date);
+//        return [$date, $letterIden, $imagePath];
+        return $imagePath ?? '';
     }
 
     /**
@@ -264,138 +265,97 @@ class AutoCheckPicture
 
     /**
      * ocr审核海报
-     * @param $data [图片|需要校验的角标日期]
+     * @param $imagePath
      * @param $msgBody
      * @return array|false
      */
-    public static function checkByOcr($data,$msgBody)
+    public static function checkByOcr($imagePath, $msgBody)
     {
-        list($checkDate,$letterIden,$image) = $data;
+        $status = 0;
+        //获取OCR识别内容
+        $response = self::getOcrContent($imagePath);
 
-        //调用ocr-识别图片
-        $host = "https://tysbgpu.market.alicloudapi.com";
-        $path = "/api/predict/ocr_general";
-        $appcode = "af272f9db1a14eecb3d5c0fb1153051e";
-        //根据API的要求，定义相对应的Content-Type
-        $headers = [
-            'Authorization' => 'APPCODE '. $appcode,
-            'Content-Type' => 'application/json; charset=UTF-8'
-        ];
-        $bodys = [
-            'image' => $image,
-            'configure' => [
-                'min_size' => 1, #图片中文字的最小高度，单位像素
-                'output_prob' => true,#是否输出文字框的概率
-                'output_keypoints' => false, #是否输出文字框角点
-                'skip_detection' => false,#是否跳过文字检测步骤直接进行文字识别
-                'without_predicting_direction' => true#是否关闭文字行方向预测
-            ]
-        ];
-        $url = $host . $path;
-        $response = HttpHelper::requestJson($url, $bodys, 'POST', $headers);
-        if (!$response) {
-            return false;
-        }
         //针对纯图片 返回值特殊处理
         if (empty($response['ret'])) {
             $errCode[] = -5;
+            return [$status, $errCode];
         }
-        $result = array();
-        //过滤掉识别率低的
-        foreach ($response['ret'] as $val) {
-//            if ($val['prob'] < 0.95) {
-//                continue;
-//            }
-            array_push($result, $val);
-        }
-        $hours           = 3600 * 12; //12小时
+
+        $hours          = 3600 * 12; //12小时
         $screenDate     = null; //截图时间初始化
         $uploadTime     = time(); //上传时间
         $contentKeyword = ['小叶子', '琴', '练琴', '很棒', '求赞']; //内容关键字
-        $dateKeyword    = ['年', '月', '日', '昨天', '天前', '小时前', '分钟前','上午', '：']; //日期关键字
+        $dateKeyword    = ['年', '月', '日', '昨天', '天前', '小时前', '分钟前', '上午', '：']; //日期关键字
 
-        $shareType    = false;  //分享-类型为朋友圈
-        $shareKeyword = false;  //分享-关键字存在
-        $shareOwner   = false;  //分享-自己朋友圈
-//        $shareCorner  = false;  //分享-角标
-        $shareDate    = false;  //分享-日期超过12小时
-        $shareDisplay = true;   //分享-是否显示
-        $shareIden    = false;  //分享-海报底部字母标识
-        $leafKeyWord  = false;  //分享-小叶子关键字
-        $gobalIssetDel = false; //分享-全局存在删除
-        $issetDate     = false; //分享-全局存在时间
-//        $issetCorner = false;   //分享-角标是否存在
-        $isSameUser = true;     //海报生成与上传是否为同一用户
-        $isSameActivity = true; //海报生成与上传是否为同一活动
-        $errCode = [];
+        $shareType      = false; //分享-类型为朋友圈
+        $shareKeyword   = false; //分享-关键字存在
+        $shareOwner     = false; //分享-自己朋友圈
+        $shareDate      = false; //分享-日期超过12小时
+        $shareDisplay   = true;  //分享-是否显示
+        $shareIden      = false; //分享-海报底部字母标识
+        $leafKeyWord    = false; //分享-小叶子关键字
+        $gobalIssetDel  = false; //分享-全局存在删除
+        $issetDate      = false; //分享-全局存在时间
+        $isSameUser     = false;  //海报合成和上传是否是一个人
+        $isSameActivity = false;  //海报合成和上传是否是同一活动
+        $errCode        = [];
 
-        $status = -1; //-1|-2.审核不通过 0.过滤 2.审核通过
-        foreach ($result as $key => $val) {
+        foreach ($response['ret'] as $key => $val) {
             $issetDel = false; //是否包含有删除
-            $word      = $val['word'];
-            //判断1.详情朋友圈
+            $word     = $val['word'];
+            //1.判断是否分享到朋友圈
             if (!$shareType && ($word == '朋友圈' || $word == '详情') && $val['rect']['top'] < 200) {
                 $shareType = true;
                 continue;
             }
-            //判断2.角标
-            //特殊处理 部分图片日期如5.10 会识别为(5.10
-//            if (strstr($word, '(')) {
-//                $word = str_replace('(', '', $word);
-//            }
-//            //识别到角标且在删除之前的
-//            if (preg_match($patten, $word) && !$shareOwner) {
-//                $issetCorner = true;
-//                if ($word === $checkDate) {
-//                    $shareCorner = true;
-//                } else {
-//                    $status = -1;
-//                }
-//            }
-            //小叶子关键字
+
+            //2.判断是否分享到自己朋友圈
+            if (Util::sensitiveWordFilter(['删除', '册除'], $word) == true) {
+                $issetDel      = true;
+                $gobalIssetDel = true;
+            }
+            if ($issetDel && $val['rect']['top'] > 300) {
+                //判定是否是自己朋友圈-是否有删除文案且距离顶部的高度大于海报高度(580)
+                $shareOwner = true;
+                continue;
+            }
+
+            //3.小叶子关键字
             if (mb_strpos($word, '小叶子') !== false) {
                 $leafKeyWord = true;
             }
-            //右下角标识
-//            if (mb_strpos($word, ' ') !== false) {
-//                $word = str_replace(' ', '', $word);
-//            }
-//            if ($word == $letterIden) {
-//                $shareIden = true;
-//            }
-            //判断3.关键字
-            if ($shareType && (mb_strlen($word) > 5 || Util::sensitiveWordFilter($contentKeyword, $word) == true)) {
+
+            //4.判断是否存在内容关键字['小叶子', '琴', '练琴', '很棒', '求赞']
+            if ((mb_strlen($word) > 5 && Util::sensitiveWordFilter($contentKeyword, $word) == true)) {
                 $shareKeyword = true;
-            }
-            if (Util::sensitiveWordFilter(['删除', '册除'], $word) == true) {
-                $issetDel = true;
-                $gobalIssetDel = true;
-            }
-            //判定是否是自己朋友圈-是否有删除文案且距离顶部的高度大于海报高度(580)
-            if ($issetDel && $val['rect']['top'] > 300) {
-                $shareOwner = true;
-            }
-            //屏蔽类型-设置私密照片
-            if (mb_strpos($word, '私密照片') !== false) {
-                $shareDisplay = false;
+                continue;
             }
 
-            //判断海报合成和上传是否为同一用户以及是否为同一活动
-            $wordLength =  strlen($word);
-            if (is_string($word) && $wordLength >= 8 && $wordLength <= 10) {
-                $shareIden = true;
+            //5.判断是否设置了私密照片
+            if (mb_strpos($word, '私密照片') !== false) {
+                $shareDisplay = false;
+                continue;
+            }
+
+            //6.判断海报合成和上传是否为同一用户以及是否为同一活动
+            if (preg_match("/^[a-zA-Z0-9\s]{8,10}$/", $word)) {
                 $replaceMap = [
-                    0=>'O',
-                    1=>'I',
-                    2=>'Z',
-                    5=>'S',
-                    7=>'T',
-                    8=>'B',
-                    ' '=>'',
+                    0   => 'O',
+                    1   => 'I',
+                    2   => 'Z',
+                    5   => 'S',
+                    7   => 'T',
+                    8   => 'B',
+                    ' ' => '',
                 ];
-                $word = str_replace(array_keys($replaceMap),array_values($replaceMap),strtoupper($word));
-                $composeInfo = MiniAppQrService::getQrInfoById($word);
-                $composeUser = $composeInfo['user_id'] ?? 0;
+                $word       = str_replace(array_keys($replaceMap), array_values($replaceMap), strtoupper($word));
+                $res        = preg_match("/^[A-Z]{8}$/", $word);
+                if (!$res) {
+                    continue;
+                }
+                $shareIden            = true;
+                $composeInfo          = MiniAppQrService::getQrInfoById($word);
+                $composeUser          = $composeInfo['user_id'] ?? 0;
                 $composeCheckActivity = $composeInfo['check_active_id'] ?? 0;
 
                 if ($msgBody['app_id'] == Constants::REAL_APP_ID) {
@@ -404,23 +364,23 @@ class AutoCheckPicture
                     $uploadInfo = SharePosterModel::getRecord(['id' => $msgBody['id']], ['student_id', 'activity_id']);
                 }
 
-                if (empty($uploadInfo['student_id']) || $composeUser != $uploadInfo['student_id']) {
-                    $isSameUser = false;
+                if (!empty($uploadInfo['student_id']) && $composeUser == $uploadInfo['student_id']) {
+                    $isSameUser = true;
                 }
 
-//                $checkActivityIdStr = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'week_activity_id_effect');
-//                $checkActivityIdArr = [];
-//                if (empty($checkActivityIdStr)) {
-//                    $checkActivityIdArr = explode(',', $checkActivityIdStr);
-//                }
-//                if (empty($uploadInfo['activity_id']) || ($composeCheckActivity != $uploadInfo['activity_id'] && !in_array($composeCheckActivity, $checkActivityIdArr))) {
-                if (empty($uploadInfo['activity_id']) || $composeCheckActivity != $uploadInfo['activity_id']) {
-                    $isSameActivity = false;
+                $checkActivityIdStr = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'week_activity_id_effect');
+                $checkActivityIdArr = [];
+                if (empty($checkActivityIdStr)) {
+                    $checkActivityIdArr = explode(',', $checkActivityIdStr);
                 }
+                if (!empty($uploadInfo['activity_id']) && ($composeCheckActivity == $uploadInfo['activity_id'] || in_array($composeCheckActivity, $checkActivityIdArr))) {
+                    $isSameActivity = true;
+                }
+                continue;
             }
 
-            //上传时间处理 角标||字符串||关键字之后
-            if (($shareIden || $leafKeyWord) && !$issetDate && Util::sensitiveWordFilter($dateKeyword, $word) == true) {
+            //上传时间处理 字符串||关键字之后 ['年', '月', '日', '昨天', '天前', '小时前', '分钟前','上午', '：']
+            if (!$issetDate && Util::sensitiveWordFilter($dateKeyword, $word) == true) {
                 //如果包含年月
                 if (Util::sensitiveWordFilter(['年', '月', '日'], $word) == true) {
                     if (mb_strpos($word, '年') === false) {
@@ -434,14 +394,8 @@ class AutoCheckPicture
                     }
                 }
 
-                //特殊情况-第一张图 发布时间和删除下标相同
-                if ($shareOwner && !$issetDel) {
-                    continue;
-                }
                 if (mb_strpos($word, '分钟前') !== false) {
-                    $status = -2;
-                    $errCode[] = -2;
-//                    break;
+                    continue;
                 }
                 if (mb_strpos($word, '：') !== false && mb_strlen($word) == 5) {
                     $word_str = str_replace('：', 0, $word);
@@ -451,33 +405,33 @@ class AutoCheckPicture
                     $screenDate = date('Y-m-d ' . str_replace('：', ':', $word));//截图时间
                 } elseif (mb_strpos($word, '小时前') !== false) {
                     $endWord    = '小时前';
-                    $start       = 0;
-                    $end         = mb_strpos($word, $endWord) - $start;
-                    $string      = mb_substr($word, $start, $end);
+                    $start      = 0;
+                    $end        = mb_strpos($word, $endWord) - $start;
+                    $string     = mb_substr($word, $start, $end);
                     $screenDate = date('Y-m-d H:i', strtotime('-' . $string . ' hours'));
                 } elseif (Util::sensitiveWordFilter(['昨天', '年'], $word) === false && mb_strpos($word, '上午') !== false) { //当做今天的 下午可忽略
                     $beginWord  = '上午';
                     $endWord    = '删除';
-                    $start       = mb_strpos($word, $beginWord) + mb_strlen($beginWord);
-                    $end         = $issetDel ? (mb_strpos($word, $endWord) - $start) : mb_strlen($word) - 1;
-                    $string      = mb_substr($word, $start, $end);
+                    $start      = mb_strpos($word, $beginWord) + mb_strlen($beginWord);
+                    $end        = $issetDel ? (mb_strpos($word, $endWord) - $start) : mb_strlen($word) - 1;
+                    $string     = mb_substr($word, $start, $end);
                     $screenDate = date('Y-m-d ' . str_replace('：', ':', $string));//截图时间
                 } elseif (mb_strpos($word, '昨天') !== false) {
                     if (mb_strlen($word) == 2) {
                         $screenDate = date('Y-m-d', strtotime('-1 day'));
                     } elseif (mb_strpos($word, '上午') !== false || mb_strpos($word, '凌晨') !== false) {
-                        $beginWord = '昨天上午';
-                        $endWord   = '删除';
-                        $start       = mb_strpos($word, $beginWord) + mb_strlen($beginWord);
-                        $end         = $issetDel ? (mb_strpos($word, $endWord) - $start) : mb_strlen($word) - 1;
-                        $string      = mb_substr($word, $start, $end);
+                        $beginWord  = '昨天上午';
+                        $endWord    = '删除';
+                        $start      = mb_strpos($word, $beginWord) + mb_strlen($beginWord);
+                        $end        = $issetDel ? (mb_strpos($word, $endWord) - $start) : mb_strlen($word) - 1;
+                        $string     = mb_substr($word, $start, $end);
                         $screenDate = date('Y-m-d ' . str_replace('：', ':', $string), strtotime('-1 day'));//截图时间
                     } elseif (mb_strpos($word, '下午') !== false) {
-                        $beginWord = '昨天下午';
-                        $endWord   = '删除';
-                        $start       = mb_strpos($word, $beginWord) + mb_strlen($beginWord);
-                        $end         = $issetDel ? (mb_strpos($word, $endWord) - $start) : mb_strlen($word) - 1;
-                        $string      = mb_substr($word, $start, $end);
+                        $beginWord  = '昨天下午';
+                        $endWord    = '删除';
+                        $start      = mb_strpos($word, $beginWord) + mb_strlen($beginWord);
+                        $end        = $issetDel ? (mb_strpos($word, $endWord) - $start) : mb_strlen($word) - 1;
+                        $string     = mb_substr($word, $start, $end);
                         $screenDate = date('Y-m-d ' . str_replace('：', ':', $string), strtotime('-1 day'));//截图时间
                         if (mb_substr($string, 0, mb_strpos($string, '：')) < 12) {
                             $screenDate = date('Y-m-d H:i', strtotime($screenDate) + $hours);
@@ -485,9 +439,9 @@ class AutoCheckPicture
                     } else {
                         $beginWord  = '昨天';
                         $endWord    = '删除';
-                        $start       = mb_strpos($word, $beginWord) + mb_strlen($beginWord);
-                        $end         = $issetDel ? (mb_strpos($word, $endWord) - $start) : mb_strlen($word) - 1;
-                        $string      = mb_substr($word, $start, $end);
+                        $start      = mb_strpos($word, $beginWord) + mb_strlen($beginWord);
+                        $end        = $issetDel ? (mb_strpos($word, $endWord) - $start) : mb_strlen($word) - 1;
+                        $string     = mb_substr($word, $start, $end);
                         $screenDate = date('Y-m-d ' . str_replace('：', ':', $string), strtotime('-1 day'));//截图时间
                     }
                 } elseif (mb_strpos($word, '：') !== false && mb_strpos($word, '年') === false) {
@@ -508,46 +462,77 @@ class AutoCheckPicture
                  * 特殊情况:日期最后一位当做屏蔽给处理了
                  */
                 $last_date_word = mb_substr($word, mb_strlen($word) - 1);
-                if (!$shareOwner && isset($result[$key + 1]) && Util::sensitiveWordFilter(['删除','智能陪练','：','册','删','1',$last_date_word,'除'], $result[$key + 1]['word']) == false) {
+                if (!$shareOwner && isset($result[$key + 1]) && Util::sensitiveWordFilter(['删除', '智能陪练', '：', '册', '删', '1', $last_date_word, '除'], $result[$key + 1]['word']) == false) {
                     $shareDisplay = false;
                 }
             }
         }
 
 
-        if (!$shareIden){
+        //未使用最新海报
+        if (!$shareIden) {
             $errCode[] = -1;
         }
 
-        if (!$shareDate){
+        //朋友圈保留时长不足12小时，请重新上传
+        if (!$shareDate || !$issetDate) {
             $errCode[] = -2;
         }
 
-        if (!$shareType || !$shareKeyword || !$shareOwner || $shareDisplay){
+        //分享分组可见
+        if (!$shareDisplay) {
             $errCode[] = -3;
         }
 
-        //包含朋友圈或详情 且没有删除
-        if (!$gobalIssetDel) {
+        //请发布到朋友圈并截取朋友圈照片
+        if (!$shareType || !$gobalIssetDel || !$shareOwner) {
             $errCode[] = -4;
         }
-        //未识别到角标&&未识别到右下角标识&&未识别到小叶子
-        if (!$leafKeyWord) {
+
+        //上传截图出错
+        if (!$leafKeyWord || !$shareKeyword) {
             $errCode[] = -5;
         }
 
+        //海报生成和上传非同一用户
         if (!$isSameUser) {
             $errCode[] = -6;
         }
 
+        //海报生成和上传非同一活动
         if (!$isSameActivity) {
             $errCode[] = -7;
         }
 
-
-        if ($shareType && $shareKeyword && $shareOwner && $shareDate && $shareDisplay && $shareIden && $isSameUser && $isSameActivity) {
+        if (empty($errCode)) {
             $status = 2;
         }
-        return [$status,array_unique($errCode)];
+
+        return [$status, $errCode];
+    }
+
+    public static function getOcrContent($imagePath)
+    {
+        //调用ocr-识别图片
+        $host    = "https://tysbgpu.market.alicloudapi.com";
+        $path    = "/api/predict/ocr_general";
+        $appcode = "af272f9db1a14eecb3d5c0fb1153051e";
+        //根据API的要求，定义相对应的Content-Type
+        $headers = [
+            'Authorization' => 'APPCODE ' . $appcode,
+            'Content-Type'  => 'application/json; charset=UTF-8'
+        ];
+        $bodys   = [
+            'image'     => $imagePath,
+            'configure' => [
+                'min_size'                     => 1, #图片中文字的最小高度，单位像素
+                'output_prob'                  => true,#是否输出文字框的概率
+                'output_keypoints'             => false, #是否输出文字框角点
+                'skip_detection'               => false,#是否跳过文字检测步骤直接进行文字识别
+                'without_predicting_direction' => true#是否关闭文字行方向预测
+            ]
+        ];
+        $url     = $host . $path;
+        return HttpHelper::requestJson($url, $bodys, 'POST', $headers);
     }
 }
