@@ -190,8 +190,8 @@ class WeekActivityModel extends Model
                 $item['active'] = Constants::STATUS_FALSE;
             }
             // 这里组装  上一期启用的活动 + 补充的活动(4个) + 当期活动
-            $list = array_merge([$list[1]], $activityList, [$list[0]]);
-        } elseif ($active['id'] == $twoActivityId) {
+            $list = array_merge([$list[0]], array_reverse($activityList), [$list[1]]);
+        } elseif ($active['activity_id'] == $twoActivityId) {
             // 11月第一期
             $activityList = WeekActivityModel::getRecords([
                 'enable_status' => OperationActivityModel::ENABLE_STATUS_OFF,
@@ -201,7 +201,7 @@ class WeekActivityModel extends Model
                 $item['active'] = Constants::STATUS_FALSE;
             }
             // 补充4个活动 + 上一期活动 + 当期活动
-            $list = array_merge($activityList, [$list[1]], [$list[0]]);
+            $list = array_merge([$list[0]], $activityList, [$list[1]]);
         }
         return array_reverse($list);
     }

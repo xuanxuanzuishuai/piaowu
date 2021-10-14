@@ -82,12 +82,12 @@ WHERE
             return WeekActivityModel::getRecord(['activity_id' => $id]);
         }
 
-        $redis = RedisDB::getConn();
-        $cacheKey = OperationActivityModel::KEY_CURRENT_ACTIVE . $posterType;
-        $cache = $redis->get($cacheKey);
-        if (!empty($cache)) {
-            return json_decode($cache, true) ?: [];
-        }
+        // $redis = RedisDB::getConn();
+        // $cacheKey = OperationActivityModel::KEY_CURRENT_ACTIVE . $posterType;
+        // $cache = $redis->get($cacheKey);
+        // if (!empty($cache)) {
+        //     return json_decode($cache, true) ?: [];
+        // }
         $allActive = [];
         if ($posterType == TemplatePosterModel::INDIVIDUALITY_POSTER) {
             $allActive = MonthActivityModel::getRecords(['enable_status' => OperationActivityModel::ENABLE_STATUS_ON]);
@@ -110,12 +110,12 @@ WHERE
                 break;
             }
         }
-        if (!empty($activity)) {
-            // 获取过期时间
-            $expireSecond = Util::getDayFirstSecondUnix(date("Y-m-d", strtotime("+1 day")));
-            $expireSecond = $expireSecond - time();
-            $redis->setex($cacheKey, $expireSecond, json_encode($activity));
-        }
+        // if (!empty($activity)) {
+        //     // 获取过期时间
+        //     $expireSecond = Util::getDayFirstSecondUnix(date("Y-m-d", strtotime("+1 day")));
+        //     $expireSecond = $expireSecond - time();
+        //     $redis->setex($cacheKey, $expireSecond, json_encode($activity));
+        // }
         return $activity;
     }
 
