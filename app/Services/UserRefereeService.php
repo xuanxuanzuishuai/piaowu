@@ -362,7 +362,10 @@ class UserRefereeService
             }
         } elseif (strtotime($refereeInfo['sub_end_date'])+Util::TIMESTAMP_ONEDAY>=$time) {
             // 推荐人状态：付费正式课
-            $taskIds = self::getStudentRefereeAwardTaskId($packageType, $refereeInfo, $parentBillId);
+            $sendSwitch = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'invited_year_reward_distribution_switch');
+            if ($sendSwitch == Constants::STATUS_TRUE) {
+                $taskIds = self::getStudentRefereeAwardTaskId($packageType, $refereeInfo, $parentBillId);
+            }
         }
         return $taskIds;
     }

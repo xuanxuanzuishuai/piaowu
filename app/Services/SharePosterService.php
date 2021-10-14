@@ -162,6 +162,16 @@ class SharePosterService
                 $poster['award_type'] = $_one['award_type'] ?? '';
             }
         }
+        //获取奖励发放配置
+        list($wkIds, $oneActivityId) = DictConstants::get(DictConstants::XYZOP_1262_WEEK_ACTIVITY, [
+            'xyzop_1262_week_activity_ids',
+            'xyzop_1262_week_activity_one',
+        ]);
+        $wkIds = array_merge(explode(',', $wkIds), [$oneActivityId]);
+        if (in_array($poster['activity_id'], $wkIds)) {
+            $poster['award_amount'] = "人工发放";
+            $poster['award_type'] = ErpStudentAccountModel::SUB_TYPE_GOLD_LEAF;
+        }
         $poster['award'] = self::formatAwardInfo($poster['award_amount'], $poster['award_type']);
         return $poster;
     }
@@ -622,6 +632,14 @@ class SharePosterService
         ];
         $redis = RedisDB::getConn();
         $needAwardList = [];
+        //获取奖励发放配置
+        list($msgId, $msgUrl, $wkIds, $oneActivityId) = DictConstants::get(DictConstants::XYZOP_1262_WEEK_ACTIVITY, [
+            'xyzop_1262_msg_id',
+            'xyzop_1262_msg_url',
+            'xyzop_1262_week_activity_ids',
+            'xyzop_1262_week_activity_one',
+        ]);
+        $wkIds = array_merge(explode(',', $wkIds), [ $oneActivityId]);
         foreach ($posters as $key => $poster) {
             // 审核数据操作锁，解决并发导致的重复审核和发奖
             $lockKey = self::KEY_POSTER_VERIFY_LOCK . $poster['id'];
@@ -637,16 +655,22 @@ class SharePosterService
                 'verify_status' => $poster['poster_status']
             ];
             $update = SharePosterModel::batchUpdateRecord($updateData, $where);
-
-            if($update && $poster['type'] == SharePosterModel::TYPE_WEEK_UPLOAD){
+            if ($update && $poster['type'] == SharePosterModel::TYPE_WEEK_UPLOAD) {
                 CountingActivitySignService::countSign($poster['student_id'], null, $poster['activity_id']);
             }
 
+            if (in_array($poster['activity_id'], $wkIds)) {
+                QueueService::sendUserWxMsg(Constants::SMART_APP_ID, $poster['student_id'], $msgId, [
+                    'task_name' => $poster['activity_name'] ?? '',
+                    'url' => $msgUrl,
+                ]);
+                continue;
+            }
             //计算当前真正应该获得的奖励
             $where = [
-                'id[!]'         => $poster['id'],
-                'student_id'    => $poster['student_id'],
-                'type'          => SharePosterModel::TYPE_WEEK_UPLOAD,
+                'id[!]' => $poster['id'],
+                'student_id' => $poster['student_id'],
+                'type' => SharePosterModel::TYPE_WEEK_UPLOAD,
                 'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
                 'create_time[>=]' => $divisionTime,
             ];
@@ -660,9 +684,9 @@ class SharePosterService
                 $endDate = DictConstants::get(DictConstants::WEEK_WHITE_TERM_OF_VALIDITY, 'term_of_validity');
                 $endDate = strtotime($endDate);
                 //是周周领奖&在白名单内&在指定时间内
-                if($poster['type'] == SharePosterModel::TYPE_WEEK_UPLOAD && isset($whiteList[$poster['uuid']]) && $endDate >= $now){
+                if ($poster['type'] == SharePosterModel::TYPE_WEEK_UPLOAD && isset($whiteList[$poster['uuid']]) && $endDate >= $now) {
                     $status = ErpReferralService::EVENT_TASK_STATUS_UNCOMPLETE;
-                }else{
+                } else {
                     $status = ErpReferralService::EVENT_TASK_STATUS_COMPLETE;
                 }
 
@@ -671,14 +695,15 @@ class SharePosterService
                     'uuid' => $poster['uuid'],
                     'task_id' => $taskId,
                     'activity_id' => $poster['activity_id'],
-                    'status'    => $status,
+                    'status' => $status,
                 ];
             }
             //智能产品激活
-            QueueService::autoActivate(['student_uuid' => $poster['uuid'], 'passed_time' => time(),'app_id' => Constants::SMART_APP_ID]);
-        }
-        if (!empty($needAwardList)) {
-            QueueService::addUserPosterAward($needAwardList);
+            QueueService::autoActivate(['student_uuid' => $poster['uuid'], 'passed_time' => time(), 'app_id' => Constants::SMART_APP_ID]);
+
+            if (!empty($needAwardList)) {
+                QueueService::addUserPosterAward($needAwardList);
+            }
         }
         return true;
     }

@@ -51,7 +51,7 @@ class CountingActivitySignService
         $activityIds = array_column($signList, 'op_activity_id');
 
         //查询报名的活动是否有效
-        $activityList = CountingActivityModel::getRecords(['op_activity_id[in]'=>$activityIds], ['op_activity_id','start_time','join_end_time','nums','rule_type']);
+        $activityList = CountingActivityModel::getRecords(['op_activity_id[in]'=>$activityIds, 'status'=>CountingActivityModel::NORMAL_STATUS], ['op_activity_id','start_time','join_end_time','nums','rule_type']);
         $activityList = array_column($activityList, null, 'op_activity_id');
 
         if(empty($activityList)){
