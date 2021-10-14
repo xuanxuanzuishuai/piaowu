@@ -563,6 +563,14 @@ class SharePosterService
             'create_time' => $time,
             'update_time' => $time,
         ];
+
+        // 检查活动是否是可以上传 - 如果不在可上传的列表提示活动已结束
+        $activeActivityList = WeekActivityModel::getSelectList([]);
+        $activeActivityIds = array_column($activeActivityList, 'activity_Id');
+        if (!in_array($activityId, $activeActivityIds)) {
+            throw new RunTimeException(['event_pass_deadline']);
+        }
+
         if (empty($uploadRecord) || $uploadRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
             $res = SharePosterModel::insertRecord($data);
         } else {

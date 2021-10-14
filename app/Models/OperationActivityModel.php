@@ -74,6 +74,7 @@ WHERE
      */
     public static function getActiveActivity($posterType, $id = 0)
     {
+        $now = time();
         if (!empty($id)) {
             if ($posterType == TemplatePosterModel::INDIVIDUALITY_POSTER) {
                 return MonthActivityModel::getRecord(['activity_id' => $id]);
@@ -92,13 +93,16 @@ WHERE
             $allActive = MonthActivityModel::getRecords(['enable_status' => OperationActivityModel::ENABLE_STATUS_ON]);
         }
         if ($posterType == TemplatePosterModel::STANDARD_POSTER) {
-            $allActive = WeekActivityModel::getRecords(['enable_status' => OperationActivityModel::ENABLE_STATUS_ON]);
+            $allActive = WeekActivityModel::getRecords([
+                'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
+                'start_time[<]' => $now,
+                'end_time[>]' => $now
+            ]);
         }
         if (empty($allActive)) {
             return [];
         }
 
-        $now = time();
         $activity = [];
         foreach ($allActive as $item) {
             if ($item['start_time'] < $now && $item['end_time'] > $now) {

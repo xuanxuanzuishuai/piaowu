@@ -895,6 +895,30 @@ class QueueService
         }
         return true;
     }
+
+    /**
+     * 给用户发送消息
+     * @param $logId
+     * @param $uuidArr
+     * @param $employeeId
+     * @return bool
+     */
+    public static function sendUserWxMsg($appId, $userId, $wechatConfigId, $data): bool
+    {
+        try {
+            (new PushMessageTopic())->pushWX([
+                'app_id' => $appId,
+                'user_id' => $userId,
+                'wechat_config_id' => $wechatConfigId,
+                'replace_params' => $data['replace_params'] ?? [],
+            ], PushMessageTopic::EVENT_SEND_USER_MSG)->publish();
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), [$appId, $userId, $wechatConfigId, $data]);
+            return false;
+        }
+        return true;
+    }
+
     /***********************************************************************/
     /******************** 真人业务的消息队列 start ****************************/
     /***********************************************************************/

@@ -6,6 +6,7 @@
 namespace App\Models;
 
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
@@ -159,7 +160,7 @@ class WeekActivityModel extends Model
             [
                 'id[<=]' => $active['id'],
                 'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
-                'ORDER' => ['id' => 'DESC'],
+                'ORDER' => ['start_time' => 'DESC'],
                 'LIMIT' => [0, $limit]
             ]
         );
@@ -169,6 +170,38 @@ class WeekActivityModel extends Model
                 $item['active'] = Constants::STATUS_TRUE;
             }
             $item = self::formatOne($item);
+        }
+
+        // XYZOP-1262 限时活动
+        list($oneActivityId, $twoActivityId, $wkIds) = DictConstants::get(DictConstants::XYZOP_1262_WEEK_ACTIVITY, [
+            'xyzop_1262_week_activity_one',
+            'xyzop_1262_week_activity_two',
+            'xyzop_1262_week_activity_ids'
+        ]);
+        $wkIds = explode(',', $wkIds);
+        if ($active['activity_id'] == $oneActivityId) {
+            // 10.18-10.31  追加四期活动,最后一期活动标记为活跃
+            $activityList = WeekActivityModel::getRecords([
+                'enable_status' => OperationActivityModel::ENABLE_STATUS_OFF,
+                'activity_id' => $wkIds,
+                'ORDER' => ['id' => 'ASC'],
+            ]);
+            foreach ($activityList as &$item) {
+                $item['active'] = Constants::STATUS_FALSE;
+            }
+            // 这里组装  上一期启用的活动 + 补充的活动(4个) + 当期活动
+            $list = array_merge([$list[1]], $activityList, [$list[0]]);
+        } elseif ($active['id'] == $twoActivityId) {
+            // 11月第一期
+            $activityList = WeekActivityModel::getRecords([
+                'enable_status' => OperationActivityModel::ENABLE_STATUS_OFF,
+                'activity_id' => $wkIds
+            ]);
+            foreach ($activityList as &$item) {
+                $item['active'] = Constants::STATUS_FALSE;
+            }
+            // 补充4个活动 + 上一期活动 + 当期活动
+            $list = array_merge($activityList, [$list[1]], [$list[0]]);
         }
         return array_reverse($list);
     }

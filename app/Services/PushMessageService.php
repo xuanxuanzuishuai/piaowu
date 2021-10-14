@@ -365,4 +365,26 @@ class PushMessageService
         //当前奖励要发放的数据库的消息模板
         return RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_CONFIG, $awardInfo['verify_status']);
     }
+
+    /**
+     * 发送客服消息
+     * @param $appId
+     * @param $userId
+     * @param $wechatConfigId
+     * @param $replaceParams
+     */
+    public static function sendUserWxMsg($msgBody)
+    {
+        $appId = $msgBody['app_id'] ?? 0;
+        $userId = $msgBody['user_id'] ?? 0;
+        $wechatConfigId = $msgBody['wechat_config_id'] ?? 0;
+        $replaceParams = $msgBody['replace_params'] ?? [];
+        //得到奖励用户的微信信息
+        $userInfo = UserService::getUserWeiXinInfoByUserId($appId, $userId, DssUserWeiXinModel::USER_TYPE_STUDENT, DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
+        if (empty($userInfo)) {
+            SimpleLogger::info('not found user wechat info', [$msgBody]);
+            return;
+        }
+        self::notifyUserCustomizeMessage($wechatConfigId, $replaceParams, $userInfo['open_id'], $userInfo['app_id']);
+    }
 }

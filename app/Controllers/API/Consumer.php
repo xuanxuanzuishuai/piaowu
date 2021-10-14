@@ -38,6 +38,7 @@ use App\Services\CountingActivitySignService;
 use App\Services\MessageService;
 use App\Services\MiniAppQrService;
 use App\Services\PosterTemplateService;
+use App\Services\PushMessageService;
 use App\Services\QrInfoService;
 use App\Services\Queue\AgentTopic;
 use App\Services\Queue\CheckPosterSyncTopic;
@@ -316,6 +317,9 @@ class Consumer extends ControllerBase
                     break;
                 case PushMessageTopic::EVENT_PUSH_BATCH_MANUAL_RULE_WX:
                     MessageService::batchPushWeekActivityInfo($params['msg_body']);
+                    break;
+                case PushMessageTopic::EVENT_SEND_USER_MSG:
+                    PushMessageService::sendUserWxMsg($params['msg_body']);
                     break;
                 case PushMessageTopic::EVENT_TASK_GOLD_LEAF:
                     MessageService::sendTaskGoldLeafMessage($params['msg_body']);

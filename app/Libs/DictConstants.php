@@ -1028,6 +1028,17 @@ class DictConstants {
         ]
     ];
 
+    // 周周领奖限时活动-提高分享次数 - 2021.10.18-2021.10.31 时间内的活动id
+    const XYZOP_1262_WEEK_ACTIVITY = [
+        'type' => 'XYZOP_1262_WEEK_ACTIVITY',
+        'keys' => [
+            'xyzop_1262_week_activity_ids', // 10.18-10.31 允许上传的活动id
+            'xyzop_1262_week_activity_one', // 10.18-10.31 活动id
+            'xyzop_1262_week_activity_two', // 11第一期活动id
+            'xyzop_1262_msg_id', // 消息id
+            'xyzop_1262_msg_url', // 消息跳转链接
+        ]
+    ];
 
     /**
      * 单个获取op系统dict配置数据

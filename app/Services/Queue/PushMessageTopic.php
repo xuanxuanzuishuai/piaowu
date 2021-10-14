@@ -50,6 +50,7 @@ class PushMessageTopic extends BaseTopic
     const EVENT_SHARE_POSTER_MESSAGE = 'share_poster_award'; // 截图审核通过消息
 
     const EVENT_TASK_GOLD_LEAF = 'task_grant_gold_leaf'; // 任务发放金叶子
+    const EVENT_SEND_USER_MSG = 'event_send_user_msg'; // 给用户发送微信消息
 
 
     const EVENT_WECHAT_LIFE_INTERACTION = 'wechat_life_interaction';  // 真人微信交互
