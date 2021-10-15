@@ -18,6 +18,7 @@ class PandaCRM
 
     const API_CHECK_LEADS = '/api/dss/lead_check';
     const API_SYNC_STUDENT_PLAY_DAYS = '/api/dss/sync_student_play_days';
+    const MAIN_INTENT_ACTIVE = '/api/main_course/intend_active'; //主课意向激活
 
     private $host;
 
@@ -88,5 +89,21 @@ class PandaCRM
         ], 'POST');
 
         return $result;
+    }
+
+
+    /**
+     * 主课意向激活
+     * @param $params
+     * @return array|mixed
+     */
+    public function mainIntentActive($params)
+    {
+        $res = self::commonAPI(self::MAIN_INTENT_ACTIVE, $params, 'POST');
+        if (empty($res)) {
+            SimpleLogger::error('main intent active error', [$res, $params]);
+            return false;
+        }
+        return true;
     }
 }

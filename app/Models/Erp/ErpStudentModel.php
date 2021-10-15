@@ -3,7 +3,6 @@
 namespace App\Models\Erp;
 
 use App\Libs\Constants;
-use App\Libs\UserCenter;
 
 class ErpStudentModel extends ErpModel
 {
@@ -48,9 +47,9 @@ class ErpStudentModel extends ErpModel
      */
     public static function getUserInfo($studentId)
     {
-        $table              = self::$table;
+        $table = self::$table;
         $erpStudentAppModel = ErpStudentAppModel::$table;
-        $appId              = Constants::USER_TYPE_STUDENT;
+        $appId = Constants::USER_TYPE_STUDENT;
 
         $sql = "
             SELECT
@@ -69,7 +68,6 @@ class ErpStudentModel extends ErpModel
         ";
         return self::dbRO()->queryAll($sql);
     }
-
 
 
     /**
@@ -96,6 +94,55 @@ class ErpStudentModel extends ErpModel
             ],
             [
                 self::$table . '.id' => $studentId,
+                ErpStudentAppModel::$table . '.app_id' => Constants::REAL_APP_ID,
+            ]);
+        return empty($info) ? [] : $info[0];
+    }
+
+    /**
+     * 获取学生真人应用注册信息:通过uuid
+     * @param $studentUuid
+     * @return array
+     */
+    public static function getStudentInfoByUuid($studentUuid)
+    {
+        $db = self::dbRO();
+        $info = $db->select(self::$table,
+            [
+                "[>]" . ErpStudentAppModel::$table => ['id' => 'student_id']
+            ],
+            [
+                self::$table . '.id',
+                self::$table . '.uuid',
+                self::$table . '.mobile',
+                self::$table . '.channel_id',
+            ],
+            [
+                self::$table . '.uuid' => $studentUuid,
+                ErpStudentAppModel::$table . '.app_id' => Constants::REAL_APP_ID,
+            ]);
+        return empty($info) ? [] : $info[0];
+    }
+
+    /**
+     * 获取学生真人应用注册信息:通过mobile
+     * @param $studentMobile
+     * @return array
+     */
+    public static function getStudentInfoByMobile($studentMobile)
+    {
+        $db = self::dbRO();
+        $info = $db->select(self::$table,
+            [
+                "[>]" . ErpStudentAppModel::$table => ['id' => 'student_id']
+            ],
+            [
+                self::$table . '.id((student_id))',
+                self::$table . '.mobile',
+                self::$table . '.uuid',
+            ],
+            [
+                self::$table . '.mobile' => $studentMobile,
                 ErpStudentAppModel::$table . '.app_id' => Constants::REAL_APP_ID,
             ]);
         return empty($info) ? [] : $info[0];

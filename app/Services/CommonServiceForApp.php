@@ -171,4 +171,29 @@ class CommonServiceForApp
         $countryCodeData = CountryCodeModel::getAll();
         return $countryCodeData ?? [];
     }
+
+    /**
+     * 获取国家区号：按照热度排序
+     */
+    public static function getCountryCodeOrderByHot()
+    {
+        $countryCode = CountryCodeModel::getAll();
+        // 热门国际区号 + 全部区号国家名字母序
+        $hot = [];
+        $list = [];
+        array_walk($countryCode, function ($item) use (&$hot, &$list) {
+            if ($item['hot'] > 0) {
+                $hot['hot'][] = $item;
+            }
+            $u = strtoupper(substr($item['pinyin'], 0, 1));
+            if (!isset($list[$u])) {
+                $list[$u] = [];
+            }
+            $list[$u][] = $item;
+        });
+        usort($hot['hot'], function ($a, $b) {
+            return $a['hot'] > $b['hot'];
+        });
+        return array_merge($hot, $list);
+    }
 }
