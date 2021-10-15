@@ -61,7 +61,7 @@ class RealReferralService
         $isNew       = empty($studentInfo) ? true : false;
         //粒子激活
         if(!empty($studentInfo)){
-            StudentService::studentLoginActivePushQueue($appId, $studentInfo['student_id'], Constants::REAL_STUDENT_LOGIN_TYPE_REFERRAL_MINI);
+            StudentService::studentLoginActivePushQueue($appId, $studentInfo['id'], Constants::REAL_STUDENT_LOGIN_TYPE_REFERRAL_MINI);
         }
         //默认渠道
         $channel = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'register_default_channel');
