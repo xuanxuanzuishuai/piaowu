@@ -41,8 +41,8 @@ if (empty($poster)) {
 }
 $activityIds       = [];
 $time              = time();
-$activityStartTime = strtotime("2021-10-18 00:00:00");
-$activityEndTime   = strtotime("2021-10-31 23:59:59");
+$activityStartTime = "2021-10-18 00:00:00";
+$activityEndTime   = "2021-10-31 23:59:59";
 for ($i = 1; $i <= count(XYZOP1262Service::WEEK_ACTIVITY_NAME); $i++) {
     // 写入 operation_activity 表 , week_activity 表
     try {
