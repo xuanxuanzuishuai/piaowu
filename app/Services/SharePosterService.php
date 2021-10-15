@@ -143,6 +143,9 @@ class SharePosterService
         if (!isset($poster['award_amount'])) {
             $poster['award_amount'] = 0;
             $poster['award_type'] = 0;
+            //默认的奖励文案和奖励数量--2021.10.15
+            $poster['default_award_copywriting'] = "";
+            $poster['default_award_amount'] = "";
             if (!empty($poster['points_award_id'])) {
                 $ids = explode(',', $poster['points_award_id']);
                 $pointsAwardInfo = ErpUserEventTaskAwardGoldLeafModel::getList(['id' => $ids]);
@@ -169,8 +172,8 @@ class SharePosterService
         ]);
         $wkIds = array_merge(explode(',', $wkIds), [$oneActivityId]);
         if (in_array($poster['activity_id'], $wkIds)) {
-            $poster['award_amount'] = "人工发放";
-            $poster['award_type'] = ErpStudentAccountModel::SUB_TYPE_GOLD_LEAF;
+            $poster['default_award_copywriting'] = "活动结束后人工发放";
+            $poster['default_award_amount'] = "人工发放";
         }
         $poster['award'] = self::formatAwardInfo($poster['award_amount'], $poster['award_type']);
         return $poster;
@@ -576,7 +579,7 @@ class SharePosterService
 
         // 检查活动是否是可以上传 - 如果不在可上传的列表提示活动已结束
         $activeActivityList = WeekActivityModel::getSelectList([]);
-        $activeActivityIds = array_column($activeActivityList, 'activity_Id');
+        $activeActivityIds = array_column($activeActivityList, 'activity_id');
         if (!in_array($activityId, $activeActivityIds)) {
             throw new RunTimeException(['event_pass_deadline']);
         }
@@ -661,8 +664,10 @@ class SharePosterService
 
             if (in_array($poster['activity_id'], $wkIds)) {
                 QueueService::sendUserWxMsg(Constants::SMART_APP_ID, $poster['student_id'], $msgId, [
-                    'task_name' => $poster['activity_name'] ?? '',
-                    'url' => $msgUrl,
+                    'replace_params' => [
+                        'task_name' => $poster['activity_name'] ?? '',
+                        'url' => $msgUrl,
+                    ],
                 ]);
                 continue;
             }

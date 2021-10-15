@@ -152,10 +152,12 @@ class WeekActivityModel extends Model
         //已开始的活动，按照开始时间倒叙排序，第一活动如果处在有效期内则返回最近的两个活动，否则返回第一个活动
         $now = time();
         $limit = $params['limit'] ?? 2;
+        // 获取当前有效活动
         $active = OperationActivityModel::getActiveActivity(TemplatePosterModel::STANDARD_POSTER);
         if (empty($active)) {
             return self::getRecords(['enable_status' => OperationActivityModel::ENABLE_STATUS_ON, 'ORDER' => ['start_time' => 'DESC'], 'LIMIT' => [0, 1]]);
         }
+        // 获取上一期
         $list = self::getRecords(
             [
                 'id[<=]' => $active['id'],
@@ -164,6 +166,7 @@ class WeekActivityModel extends Model
                 'LIMIT' => [0, $limit]
             ]
         );
+        // 组装数据
         foreach ($list as $key => &$item) {
             $item['active'] = Constants::STATUS_FALSE;
             if ($now - $item['start_time'] >= Util::TIMESTAMP_12H) {
@@ -171,6 +174,7 @@ class WeekActivityModel extends Model
             }
             $item = self::formatOne($item);
         }
+        unset($item);
 
         // XYZOP-1262 限时活动
         list($oneActivityId, $twoActivityId, $wkIds) = DictConstants::get(DictConstants::XYZOP_1262_WEEK_ACTIVITY, [
@@ -184,24 +188,58 @@ class WeekActivityModel extends Model
             $activityList = WeekActivityModel::getRecords([
                 'enable_status' => OperationActivityModel::ENABLE_STATUS_OFF,
                 'activity_id' => $wkIds,
-                'ORDER' => ['id' => 'ASC'],
+                'ORDER' => ['id' => 'DESC'],
             ]);
             foreach ($activityList as &$item) {
-                $item['active'] = Constants::STATUS_FALSE;
+                $item = self::formatOne($item);
             }
-            // 这里组装  上一期启用的活动 + 补充的活动(4个) + 当期活动
-            $list = array_merge([$list[0]], array_reverse($activityList), [$list[1]]);
+            // 重新组装顺序  当前生效活动创建时间是12小时内 - 上期活动， 1，2，3，4，5
+            if ($now - $active['start_time'] < Util::TIMESTAMP_12H) {
+                // 5,4,3,2,1, 上期活动
+                $list = array_merge([$list[0]], $activityList, [$list[1]]);
+                $activeKey = count($list) - 1;
+            } else {
+                // 超过12小时 - 上期活动,5,4,3,2,1
+                $list = array_merge([$list[1]], [$list[0]], $activityList);
+                $activeKey = count($list) - 1;
+            }
+            // 重新设置选中的活动
+            foreach ($list as $key => &$_activity) {
+                if ($key == $activeKey) {
+                    $_activity['active'] = Constants::STATUS_TRUE;
+                } else {
+                    $_activity['active'] = Constants::STATUS_FALSE;
+                }
+            }
+            unset($_activity);
         } elseif ($active['activity_id'] == $twoActivityId) {
             // 11月第一期
             $activityList = WeekActivityModel::getRecords([
-                'enable_status' => OperationActivityModel::ENABLE_STATUS_OFF,
-                'activity_id' => $wkIds
+                'activity_id' => array_merge($wkIds, [$oneActivityId]),
+                'ORDER' => ['id' => 'DESC'],
             ]);
             foreach ($activityList as &$item) {
-                $item['active'] = Constants::STATUS_FALSE;
+                $item = self::formatOne($item);
             }
-            // 补充4个活动 + 上一期活动 + 当期活动
-            $list = array_merge([$list[0]], $activityList, [$list[1]]);
+            // 重新组装顺序 当前生效活动创建时间是12小时内
+            if ($now - $active['start_time'] < Util::TIMESTAMP_12H) {
+                // 11月1期活动，5,4,3,2,1
+                $list = array_merge([$list[0]], $activityList);
+                $activeKey = count($list) - 1;
+            } else {
+                // 5,4,3,2,1,11月1期活动
+                $list = array_merge($activityList, [$list[0]]);
+                $activeKey = count($list) - 1;
+            }
+            // 重新设置选中的活动
+            foreach ($list as $key => &$_activity) {
+                if ($key == $activeKey) {
+                    $_activity['active'] = Constants::STATUS_TRUE;
+                } else {
+                    $_activity['active'] = Constants::STATUS_FALSE;
+                }
+            }
+            unset($_activity);
         }
         return array_reverse($list);
     }
