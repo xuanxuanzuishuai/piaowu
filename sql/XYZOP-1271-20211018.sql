@@ -1,0 +1,1 @@
+update dict set key_value = 'https://oss-ai-peilian-app-ws.xiaoyezi.com' where key_code = 'dss_cdn_domain';
