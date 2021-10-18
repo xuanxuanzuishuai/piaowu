@@ -25,10 +25,11 @@ class RealStudentService
      * @param int $channel
      * @param array $referralData
      * @param array $weChatData
+     * @param array $sendActiveQueueData
      * @return array|bool|mixed
      * @throws RunTimeException
      */
-    public static function register($mobile, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE, $channel = 0, $referralData = [], $weChatData = [])
+    public static function register($mobile, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE, $channel = 0, $referralData = [], $weChatData = [], $sendActiveQueueData = [])
     {
         $registerData['app_id'] = Constants::REAL_APP_ID;
         //查询账号是否存在
@@ -63,7 +64,9 @@ class RealStudentService
             }
         }
         //粒子激活记录
-        StudentService::studentLoginActivePushQueue($registerData['app_id'], $studentInfo['id'], Constants::REAL_STUDENT_LOGIN_TYPE_REFERRAL_MINI);
+        if ($sendActiveQueueData['active_type'] && $sendActiveQueueData['is_send_active']) {
+            StudentService::studentLoginActivePushQueue($registerData['app_id'], $studentInfo['id'], $sendActiveQueueData['active_type']);
+        }
         $result = [
             'is_new' => $isNew,
             'uuid' => $studentInfo['uuid'],

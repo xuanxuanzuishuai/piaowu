@@ -28,6 +28,7 @@ class RealLandingPromotionService
         $result = [
             'is_new' => true,
             'take_res' => false,
+            'is_first_take' => true,//是否首次领取:true是 false不是
         ];
         if (empty($studentUuid)) {
             return $result;
@@ -46,6 +47,7 @@ class RealLandingPromotionService
         $joinRecord = RealLandingPromotionRecordModel::getRecord(['uuid' => $studentInfo['uuid'], 'type' => $landingType,], ['id']);
         if (!empty($joinRecord)) {
             $result['take_res'] = true;
+            $result['is_first_take'] = false;
             return $result;
         }
         $insertData = [
