@@ -229,9 +229,6 @@ class AliOSS
      */
     public static function signUrls($urlNeedSign, $columnName = "", $newColumn = "", $style="", $useSSL = false, $waterMark='', $imgSize='')
     {
-        //暂时替换成所有都cdn返回，
-        return self::replaceCdnDomainForDss($urlNeedSign);
-
         if (empty($urlNeedSign)){
             return $urlNeedSign;
         }

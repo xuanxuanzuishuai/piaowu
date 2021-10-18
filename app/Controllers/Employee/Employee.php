@@ -514,8 +514,8 @@ class Employee extends ControllerBase
     {
         $id = self::getEmployeeId();
         $employeeInfo = EmployeeService::getExternalInformation($id);
-        $employeeInfo['thumb'] = empty($employeeInfo['wx_thumb']) ? $employeeInfo['wx_thumb'] :AliOSS::signUrls($employeeInfo['wx_thumb']);
-        $employeeInfo['qr'] = empty($employeeInfo['wx_qr']) ? $employeeInfo['wx_qr'] :AliOSS::signUrls($employeeInfo['wx_qr']);
+        $employeeInfo['thumb'] = empty($employeeInfo['wx_thumb']) ? $employeeInfo['wx_thumb'] :AliOSS::replaceCdnDomainForDss($employeeInfo['wx_thumb']);
+        $employeeInfo['qr'] = empty($employeeInfo['wx_qr']) ? $employeeInfo['wx_qr'] :AliOSS::replaceCdnDomainForDss($employeeInfo['wx_qr']);
         //绑定钉钉信息
         $dingDingMobileInfo = (new DingDing())->getMobileByUuid(['uuid' => $employeeInfo['uuid']]);
         $employeeInfo['ding_ding'] = ['mobile' => $dingDingMobileInfo['mobile'] ?? ''];

@@ -411,7 +411,7 @@ class SharePosterService
         // 获取dict数据
         $dictMap = DssDictService::getTypesMap([Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON, Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS]);
         foreach ($formatData as $dk => &$dv) {
-            $dv['img_oss_url'] = AliOSS::signUrls($dv['img_url']);
+            $dv['img_oss_url'] = AliOSS::replaceCdnDomainForDss($dv['img_url']);
             $dv['status_name'] = $dictMap[Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS][$dv['status']]['value'];
             $reasonStr = [];
             if (!empty($dv['reason'])) {

@@ -2091,12 +2091,12 @@ class AgentService
         foreach ($ext as $item) {
             if ($item['type'] == GoodsResourceModel::CONTENT_TYPE_IMAGE) {
                 $data[$item['key']] = $item['value'];
-                $data[$item['key'] . '_url'] = AliOSS::signUrls($item['value']);
+                $data[$item['key'] . '_url'] = AliOSS::replaceCdnDomainForDss($item['value']);
             } elseif ($item['type'] == GoodsResourceModel::CONTENT_TYPE_TEXT) {
                 $data[$item['key']] = Util::textDecode($item['value']);
             } elseif ($item['type'] == GoodsResourceModel::CONTENT_TYPE_POSTER) {
                 $data[$item['key']] = $item['value'];
-                $data[$item['key'] . '_url'] = AliOSS::signUrls($item['value']);
+                $data[$item['key'] . '_url'] = AliOSS::replaceCdnDomainForDss($item['value']);
                 if (!empty($agentId)) {
                     $channel = self::getAgentChannel($agentInfo['type'] ?? 0);
                     $extParams = [

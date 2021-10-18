@@ -428,7 +428,7 @@ class Consumer extends ControllerBase
             }
 
             // 保存文件到本地
-            $localPath = AliOSS::saveTmpFile(AliOSS::signUrls($msgBody['chunk_file']));
+            $localPath = AliOSS::saveTmpFile(AliOSS::replaceCdnDomainForDss($msgBody['chunk_file']));
             if (!$localPath) {
                 SimpleLogger::info('consumer::studentAccountAwardPoints save to location file error', ['params' => $params]);
                 return HttpHelper::buildErrorResponse($response, ['save to location file error']);

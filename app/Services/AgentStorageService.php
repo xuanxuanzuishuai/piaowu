@@ -518,7 +518,7 @@ class AgentStorageService
             $value['total_amount'] = Util::yuan(($value['package_amount'] * $value['package_unit_price']));
             $value['package_unit_price'] = Util::yuan($value['package_unit_price'], 0);
             $value['payment_time_show'] = date('Y-m-d H:i:s', $value['payment_time']);
-            $value['payment_screen_shot_oss_url'] = AliOSS::signUrls($value['payment_screen_shot']);
+            $value['payment_screen_shot_oss_url'] = AliOSS::replaceCdnDomainForDss($value['payment_screen_shot']);
         }
         return $list;
     }

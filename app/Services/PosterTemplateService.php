@@ -209,10 +209,10 @@ class PosterTemplateService
     private static function formatOpPosterInfo($row)
     {
         if (isset($row['poster_path'])) {
-            $row['poster_url'] = AliOSS::signUrls($row['poster_path']);
+            $row['poster_url'] = AliOSS::replaceCdnDomainForDss($row['poster_path']);
         }
         if (isset($row['example_path'])) {
-            $row['example_url'] = AliOSS::signUrls($row['example_path']);
+            $row['example_url'] = AliOSS::replaceCdnDomainForDss($row['example_path']);
         }
         if (isset($row['status'])) {
             $row['status_zh'] = DictConstants::get(DictConstants::TEMPLATE_POSTER_CONFIG, $row['status']);

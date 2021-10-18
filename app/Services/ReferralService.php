@@ -471,7 +471,7 @@ class ReferralService
         }
         if (empty($day)) {
             return [
-                'poster_save_full_path' => AliOSS::signUrls($posterInfo['path']),
+                'poster_save_full_path' => AliOSS::replaceCdnDomainForDss($posterInfo['path']),
                 'unique' => md5($studentInfo['id'] . $day . $posterInfo['path']) . ".jpg"
             ];
         }
@@ -834,7 +834,7 @@ class ReferralService
             $returnList['invite_student_list'][] = [
                 'mobile' => isset($s_info['mobile']) ? Util::hideUserMobile($s_info['mobile']) : '',
                 'name' => isset($s_info['name']) ? $s_info['name'] : '',
-                'thumb' => isset($s_info['thumb']) ? AliOSS::signUrls($s_info['thumb']) : '',
+                'thumb' => isset($s_info['thumb']) ? AliOSS::replaceCdnDomainForDss($s_info['thumb']) : '',
                 'stage' => $stage,
             ];
         }

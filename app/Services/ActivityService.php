@@ -282,7 +282,7 @@ class ActivityService
             $node['image_path'] = $node['verify_reason'] = '';
             if (!empty($posterData[$node['node_id']])) {
                 $node['poster_id'] = $posterData[$node['node_id']]['id'];
-                $node['image_path'] = AliOSS::signUrls($posterData[$node['node_id']]['image_path']);
+                $node['image_path'] = AliOSS::replaceCdnDomainForDss($posterData[$node['node_id']]['image_path']);
                 $node['verify_time'] = $posterData[$node['node_id']]['verify_time'];
                 $node['verify_reason'] = $posterData[$node['node_id']]['verify_reason'];
             }

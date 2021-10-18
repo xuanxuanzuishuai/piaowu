@@ -264,7 +264,7 @@ class ReferralActivityService
         if ($activity['poster']) {
             foreach ($activity['poster'] as $posterURL) {
                 $activity['poster_url'][] = [
-                    'url' => AliOSS::signUrls($posterURL)
+                    'url' => AliOSS::replaceCdnDomainForDss($posterURL)
                 ];
             }
         }
@@ -275,9 +275,9 @@ class ReferralActivityService
         } else {
             $activity['act_time_status'] = EmployeeActivityModel::ACT_TIME_STATUS_IN_PROGRESS; // 进行中
         }
-        $activity['banner_url']           = AliOSS::signUrls($activity['banner']);
-        $activity['figure_url']           = AliOSS::signUrls($activity['figure']);
-        $activity['employee_poster_url']  = AliOSS::signUrls($activity['employee_poster']);
+        $activity['banner_url']           = AliOSS::replaceCdnDomainForDss($activity['banner']);
+        $activity['figure_url']           = AliOSS::replaceCdnDomainForDss($activity['figure']);
+        $activity['employee_poster_url']  = AliOSS::replaceCdnDomainForDss($activity['employee_poster']);
         $activity['show_start_time']      = date('Y-m-d H:i:s', $activity['start_time']);
         $activity['show_end_time']        = date('Y-m-d H:i:s', $activity['end_time']);
         $activity['create_time']          = date('Y-m-d H:i', $activity['create_time']);

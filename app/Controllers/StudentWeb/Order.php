@@ -406,7 +406,7 @@ class Order extends ControllerBase
                     $studentInfo = DssStudentModel::getById($student['user_id']);
                     $collectionInfo = DssCollectionModel::getById($studentInfo['collection_id']);
                     if (!empty($collectionInfo['wechat_qr'])) {
-                        $assistantInfo['wx_qr'] = AliOSS::signUrls($collectionInfo['wechat_qr']);
+                        $assistantInfo['wx_qr'] = AliOSS::replaceCdnDomainForDss($collectionInfo['wechat_qr']);
                     }
                 }
             }
