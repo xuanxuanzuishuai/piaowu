@@ -271,7 +271,7 @@ class AutoCheckPicture
      */
     public static function checkByOcr($imagePath, $msgBody)
     {
-        $status = 0;
+        $status = -1; //默认审核失败
         //获取OCR识别内容
         $response = self::getOcrContent($imagePath);
 
