@@ -203,15 +203,16 @@ class RealSharePosterService
         }
         return true;
     }
-    
+
     /**
      * 审核不通过
      * @param $posterId
      * @param array $params
+     * @param int $status
      * @return bool
      * @throws RunTimeException
      */
-    public static function refusedPoster($posterId, $params = [])
+    public static function refusedPoster($posterId, $params = [], $status = RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED)
     {
         $reason = $params['reason'] ?? '';
         $remark = $params['remark'] ?? '';
@@ -225,8 +226,7 @@ class RealSharePosterService
         if (empty($poster)) {
             throw new RunTimeException(['get_share_poster_error']);
         }
-        
-        $status = RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED;
+
         $time   = time();
         $update = RealSharePosterModel::updateRecord($poster['id'], [
             'verify_status' => $status,
@@ -345,14 +345,14 @@ class RealSharePosterService
     {
         $qrInfo          = QrInfoOpCHModel::getQrInfoById($uniqueCode);
         $studentInfo     = DssStudentModel::getRecord(['id' => $qrInfo['user_id']], ['uuid']);
-        $checkActivityId = json_decode($qrInfo['qr_data'])['check_active_id'] ?? 0;
+        $checkActivityId = json_decode($qrInfo['qr_data'],true);
 
-        if (empty($data['uuid']) || empty($data['check_activity_id'])){
+        if (empty($studentInfo['uuid']) || empty($checkActivityId['check_active_id'])){
             throw new RunTimeException(['record_not_found']);
         }
         return [
-            'uuid'        => $studentInfo['uuid'] ?? 0,
-            'check_activity_id' => $checkActivityId
+            'uuid'        => $studentInfo['uuid'],
+            'check_activity_id' => $checkActivityId['check_active_id']
         ];
     }
 }

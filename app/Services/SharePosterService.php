@@ -743,10 +743,11 @@ class SharePosterService
      * 截图审核-未通过
      * @param $id
      * @param array $params
+     * @param int $status
      * @return bool
      * @throws RunTimeException
      */
-    public static function refusedPoster($id, $params = [])
+    public static function refusedPoster($id, $params = [], $status = SharePosterModel::VERIFY_STATUS_UNQUALIFIED)
     {
         $type = $params['type'] ?? SharePosterModel::TYPE_WEEK_UPLOAD;
         $poster = SharePosterModel::getPostersByIds([$id], $type);
@@ -755,7 +756,6 @@ class SharePosterService
             throw new RunTimeException(['get_share_poster_error']);
         }
 
-        $status = SharePosterModel::VERIFY_STATUS_UNQUALIFIED;
         $time   = time();
         $update = SharePosterModel::updateRecord($poster['id'], [
             'verify_status' => $status,

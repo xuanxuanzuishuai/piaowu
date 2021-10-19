@@ -172,9 +172,6 @@ class AutoCheckPicture
      */
     public static function mindCheckSharePosters($data, $status, $errCode)
     {
-        if (!$status) {
-            return;
-        }
         $poster_id  = $data['id'];
         $params['employee_id']  = EmployeeModel::SYSTEM_EMPLOYEE_ID;
         if ($status > 0) {
@@ -209,7 +206,7 @@ class AutoCheckPicture
                 }
             }
             //审核拒绝
-            SharePosterService::refusedPoster($poster_id, $params);
+            SharePosterService::refusedPoster($poster_id, $params, SharePosterModel::VERIFY_STATUS_WAIT);
         }
     }
 
@@ -222,9 +219,6 @@ class AutoCheckPicture
      */
     public static function realCheckSharePosters($data, $status,$errCode)
     {
-        if (!$status) {
-            return;
-        }
         $poster_id  = $data['id'];
         $params['employee_id']  = EmployeeModel::SYSTEM_EMPLOYEE_ID;
         if ($status > 0) {
@@ -259,7 +253,7 @@ class AutoCheckPicture
                 }
             }
             //审核拒绝
-            RealSharePosterService::refusedPoster($poster_id, $params);
+            RealSharePosterService::refusedPoster($poster_id, $params, SharePosterModel::VERIFY_STATUS_WAIT);
         }
     }
 
@@ -271,7 +265,7 @@ class AutoCheckPicture
      */
     public static function checkByOcr($imagePath, $msgBody)
     {
-        $status = -1; //默认审核失败
+        $status = 0; //默认审核失败
         //获取OCR识别内容
         $response = self::getOcrContent($imagePath);
 
