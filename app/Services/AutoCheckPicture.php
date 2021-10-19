@@ -354,8 +354,22 @@ class AutoCheckPicture
 
                 if ($msgBody['app_id'] == Constants::REAL_APP_ID) {
                     $uploadInfo = RealSharePosterModel::getRecord(['id' => $msgBody['id']], ['student_id', 'activity_id']);
+                    $exist = RealSharePosterModel::getRecord(['unique_code' => $word, 'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED], ['id']);
+                    if (empty($exist)) {
+                        RealSharePosterModel::updateRecord($msgBody['id'], ['unique_code' => $word]);
+                    } else {
+                        $errCode[] = -1;
+                        continue;
+                    }
                 } elseif ($msgBody['app_id'] == Constants::SMART_APP_ID) {
                     $uploadInfo = SharePosterModel::getRecord(['id' => $msgBody['id']], ['student_id', 'activity_id']);
+                    $exist = SharePosterModel::getRecord(['unique_code' => $word, 'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED], ['id']);
+                    if (empty($exist)) {
+                        SharePosterModel::updateRecord($msgBody['id'], ['unique_code' => $word]);
+                    } else {
+                        $errCode[] = -1;
+                        continue;
+                    }
                 }
 
                 if (!empty($uploadInfo['student_id']) && $composeUser == $uploadInfo['student_id']) {

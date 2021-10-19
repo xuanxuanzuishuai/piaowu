@@ -599,6 +599,6 @@ class PosterService
         $options = 'x-oss-process=image/' . $imageOptions;
         //生成cdn访问地址
         $cdnDomain = DictConstants::get(DictConstants::ALI_OSS_CONFIG, 'dss_cdn_domain');
-        return $cdnDomain . ($imagePath) . '?' . $options;
+        return $cdnDomain . '/' . ($imagePath) . '?' . $options;
     }
 }
