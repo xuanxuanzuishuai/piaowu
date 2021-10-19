@@ -168,6 +168,7 @@ class RealActivityService
             //个性化海报只需获取二维码，不用合成海报
             if ($item['type'] == TemplatePosterModel::INDIVIDUALITY_POSTER) {
                 $item['qr_code_url'] = AliOSS::replaceCdnDomainForDss($userQrArr[$item['qr_sign']]['qr_path']);
+                $item['example_url'] = PosterService::addAliOssWordWaterMark($item['example_path'], $userQrArr[$item['qr_sign']]['qr_id'], $posterConfig);
                 continue;
             }
             // 海报图：

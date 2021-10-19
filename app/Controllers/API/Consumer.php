@@ -841,9 +841,9 @@ class Consumer extends ControllerBase
                         break;
                     }
                     $imagePath = AutoCheckPicture::getSharePosters($params['msg_body']);
-                    if (!empty($postInfo)) {
-                        list($status,$errCode) = AutoCheckPicture::checkByOcr($imagePath,$params['msg_body']);
-
+                    if (!empty($imagePath)) {
+                        list($status, $errCode) = AutoCheckPicture::checkByOcr($imagePath, $params['msg_body']);
+                        SimpleLogger::info("check_result:status=" . $status, $errCode);
                         //审核后续处理
                         switch ($params['msg_body']['app_id']) {
                             case Constants::SMART_APP_ID: //智能陪练

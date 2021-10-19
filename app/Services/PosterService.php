@@ -533,4 +533,42 @@ class PosterService
         return $activityData['activity_id'] ?? 0;
     }
 
+
+    /**
+     * 阿里oss图片添加文字水印
+     * @param $imagePath
+     * @param $word
+     * @param $posterConfig
+     * @return array|string
+     */
+    public static function addAliOssWordWaterMark($imagePath, $word, $posterConfig)
+    {
+
+        if (empty($imagePath) || empty($word) || empty($posterConfig)) {
+            return '';
+        }
+
+        $wordMark = [
+            "text_" . str_replace(
+                ["+", "/"],
+                ["-", "_"],
+                base64_encode($word)
+            ),
+            'type'=>'ZmFuZ3poZW5na2FpdGk',
+            'x' => $posterConfig['QR_ID_X'],
+            'y' => $posterConfig['QR_ID_Y'],
+            'size' => $posterConfig['QR_ID_SIZE'],
+            'color' => $posterConfig['QR_ID_COLOR'],
+            "g"=>"sw",
+        ];
+        $waterMarkStr[] = implode(",", $wordMark);
+
+        $imgSize = [
+            "w_" . $posterConfig['POSTER_WIDTH'],
+            "h_" . $posterConfig['POSTER_HEIGHT'],
+            "limit_0",//强制图片缩放
+        ];
+        $imgSizeStr = implode(",", $imgSize) . '/';
+        return AliOSS::signUrls($imagePath, "", "", "", true, $waterMarkStr, $imgSizeStr);
+    }
 }
