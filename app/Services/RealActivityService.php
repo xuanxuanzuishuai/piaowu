@@ -155,6 +155,7 @@ class RealActivityService
             $_tmp['user_type'] = DssUserQrTicketModel::STUDENT_TYPE;
             $_tmp['channel_id'] = $channel;
             $_tmp['landing_type'] = DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
+            $_tmp['date'] = date('Y-m-d',time());
             $_tmp['qr_sign'] = QrInfoService::createQrSign($_tmp, Constants::REAL_APP_ID, Constants::REAL_MINI_BUSI_TYPE);
             $userQrParams[] = $_tmp;
             $item['qr_sign'] = $_tmp['qr_sign'];

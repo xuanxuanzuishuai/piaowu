@@ -573,6 +573,7 @@ class PosterTemplateService
             $_tmp['user_type'] = DssUserQrTicketModel::STUDENT_TYPE;
             $_tmp['channel_id'] = $channel;
             $_tmp['landing_type'] = DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
+            $_tmp['date'] = date('Y-m-d',time());
             $_tmp['qr_sign'] = QrInfoService::createQrSign($_tmp, Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP);
             $userQrParams[] = $_tmp;
 

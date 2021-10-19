@@ -9,6 +9,7 @@
 namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
@@ -129,7 +130,8 @@ class RealSharePoster extends ControllerBase
         }
 
         try {
-            $data = RealSharePosterService::parseUnique($params['unique_code']);
+            $type = Constants::REAL_APP_ID;
+            $data = RealSharePosterService::parseUnique($params['unique_code'], $type);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

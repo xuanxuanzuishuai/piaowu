@@ -30,7 +30,7 @@ class QrInfoService
     public static function createQrSign($qrData, $appId, $busiesType): string
     {
         $createTicketData = [];
-        $signField        = [
+        $signField = [
             'user_id'             => 'user_id',                 // 用户id
             'user_type'           => 'user_type',               // 用户类型
             'landing_type'        => 'landing_type',            // landing页类型
@@ -43,6 +43,7 @@ class QrInfoService
             'create_type'         => 'create_type',             // 创建类型
             'qr_type'             => 'qr_type',                 // 二维码类型
             'invited_mobile'      => 'invited_mobile',          // 受邀人手机号
+            'date'                => 'date',                    // 日期
         ];
         foreach ($signField as $paramsFiled => $createField) {
             if (isset($qrData[$paramsFiled]) && !Util::emptyExceptZero($qrData[$paramsFiled])) {
@@ -229,17 +230,18 @@ class QrInfoService
                 // 获取一个空白待使用的qr_id
                 $qrId = self::getWaitUseQrId(1);
                 // 把信息关联并且写入到CH - 补全数据
-                $_tmpSaveData                = $_qrParam;
-                $_tmpSaveData['qr_id']       = $qrId;
-                $_tmpSaveData['qr_path']     = $_qrParam['qr_path'] ?? '';
-                $_tmpSaveData['qr_sign']     = $_qrSign;
-                $_tmpSaveData['app_id']      = $appId;
-                $_tmpSaveData['busies_type'] = $busiesType;
-                $_tmpSaveData['user_status'] = $_qrParam['user_status'] ?? ($_qrParam['user_current_status'] ?? 0);
-                $_tmpSaveData['create_type'] = $_qrParam['create_type'] ?? DictConstants::get(DictConstants::TRANSFER_RELATION_CONFIG, 'user_relation_status');
-                $_tmpSaveData['qr_type']     = $_qrParam['qr_type'] ?? DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_none');
+                $_tmpSaveData                    = $_qrParam;
+                $_tmpSaveData['qr_id']           = $qrId;
+                $_tmpSaveData['qr_path']         = $_qrParam['qr_path'] ?? '';
+                $_tmpSaveData['qr_sign']         = $_qrSign;
+                $_tmpSaveData['app_id']          = $appId;
+                $_tmpSaveData['busies_type']     = $busiesType;
+                $_tmpSaveData['user_status']     = $_qrParam['user_status'] ?? ($_qrParam['user_current_status'] ?? 0);
+                $_tmpSaveData['create_type']     = $_qrParam['create_type'] ?? DictConstants::get(DictConstants::TRANSFER_RELATION_CONFIG, 'user_relation_status');
+                $_tmpSaveData['qr_type']         = $_qrParam['qr_type'] ?? DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_none');
                 $_tmpSaveData['check_active_id'] = $checkActiveId;
-                $saveQrData[]                = $_tmpSaveData;
+                $_tmpSaveData['date']            = date('Y-m-d', time());
+                $saveQrData[]                    = $_tmpSaveData;
 
                 // 把必要的信息直接整理好返回给调用者 - 不需要再查询数据库
                 $_tmp = [];

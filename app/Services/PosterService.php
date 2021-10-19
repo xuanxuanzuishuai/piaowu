@@ -555,7 +555,7 @@ class PosterService
         if (empty($imagePath) || empty($word) || empty($posterConfig)) {
             return '';
         }
-
+        //文字水印
         $wordMark = [
             "text_" . str_replace(
                 ["+", "/"],
@@ -568,27 +568,37 @@ class PosterService
             "color_" . $posterConfig['QR_ID_COLOR'],
             "g_sw",
         ];
+        $waterMarkStr[] = implode(",", $wordMark);
+        //日期水印
         $wordMarkDate = [
             "text_" . str_replace(
                 ["+", "/"],
                 ["-", "_"],
                 base64_encode($word['date'])
             ),
-            'x' . $posterConfig['DATE_X'],
-            'y' . $posterConfig['DATE_Y'],
-            'size' . $posterConfig['DATE_SIZE'],
-            'color' . $posterConfig['DATE_COLOR'],
+            'x_' . $posterConfig['DATE_X'],
+            'y_' . $posterConfig['DATE_Y'],
+            'size_' . $posterConfig['DATE_SIZE'],
+            'color_' . $posterConfig['DATE_COLOR'],
             "g_sw",
         ];
-        $waterMarkStr[] = implode(",", $wordMark);
         $waterMarkStr[] = implode(",", $wordMarkDate);
-
+        //底图大小数据
         $imgSize = [
             "w_" . $posterConfig['POSTER_WIDTH'],
             "h_" . $posterConfig['POSTER_HEIGHT'],
             "limit_0",//强制图片缩放
         ];
-        $imgSizeStr = implode(",", $imgSize) . '/';
-        return AliOSS::signUrls($imagePath, "", "", "", true, $waterMarkStr, $imgSizeStr);
+        //拼接oss接口参数
+        $imageOptions = "resize," . implode(",", $imgSize) . '/';
+        $waterMarkOssStr = [];
+        array_map(function ($val) use (&$waterMarkOssStr) {
+            $waterMarkOssStr[] = "watermark," . $val;
+        }, $waterMarkStr);
+        $imageOptions .= implode("/", $waterMarkOssStr);
+        $options = 'x-oss-process=image/' . $imageOptions;
+        //生成cdn访问地址
+        $cdnDomain = DictConstants::get(DictConstants::ALI_OSS_CONFIG, 'dss_cdn_domain');
+        return $cdnDomain . ($imagePath) . '?' . $options;
     }
 }

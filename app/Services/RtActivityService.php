@@ -1508,7 +1508,8 @@ class RtActivityService
             'app_id'         => Constants::SMART_APP_ID,
             'invited_mobile' => $request['mobile'],
             'qr_type'        => $qrType,
-            'create_type'    => $createType
+            'create_type'    => $createType,
+            'date'    => date('Y-m-d',time()),
         ];
         $qrInfo = QrInfoService::getQrIdList(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE, [$qrData]);
         $qrId = !empty($qrInfo) ? end($qrInfo)['qr_id'] : null;

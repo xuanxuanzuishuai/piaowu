@@ -334,20 +334,21 @@ class MiniAppQrService
             'qr_id' => '',
         ];
         $qrData = [
-            'qr_id'        => "",
-            'qr_path'      => "",
-            'qr_sign'      => "",
-            'user_id'      => $userId,
-            'user_type'    => $userType,
-            'channel_id'   => $channel,
-            'landing_type' => $landingType,
-            'activity_id'  => $extParams['activity_id'] ?? 0,
-            'employee_id'  => $extParams['employee_id'] ?? 0,
-            'poster_id'    => $extParams['poster_id'] ?? 0,
-            'app_id'       => $appId,
-            'busies_type'  => $busiesType,
-            'user_status'  => $extParams['user_status'] ?? ($extParams['user_current_status'] ??  0),
-            'check_active_id'  =>  PosterService::getCheckActivityId($appId),
+            'qr_id'           => "",
+            'qr_path'         => "",
+            'qr_sign'         => "",
+            'user_id'         => $userId,
+            'user_type'       => $userType,
+            'channel_id'      => $channel,
+            'landing_type'    => $landingType,
+            'activity_id'     => $extParams['activity_id'] ?? 0,
+            'employee_id'     => $extParams['employee_id'] ?? 0,
+            'poster_id'       => $extParams['poster_id'] ?? 0,
+            'app_id'          => $appId,
+            'busies_type'     => $busiesType,
+            'user_status'     => $extParams['user_status'] ?? ($extParams['user_current_status'] ?? 0),
+            'check_active_id' => PosterService::getCheckActivityId($appId),
+            'date'            => date('Y-m-d', time()),
         ];
         // 根据小程序码主要信息，查询CH
         $qrSign = QrInfoService::createQrSign($qrData, $appId, $busiesType);
@@ -420,6 +421,7 @@ class MiniAppQrService
                     'user_status'     => $_qrParam['user_status'] ?? ($_qrParam['user_current_status'] ?? 0),
                     'qr_type'         => DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_mini'),
                     'check_active_id' => $checkActiveId,
+                    'date'            => date('Y-m-d', time()),
                 ];
                 $returnQrSignArr[$_qrSign] = [
                     'qr_id' => $redisQrInfo['qr_id'],
@@ -495,6 +497,7 @@ class MiniAppQrService
                     'user_status'     => $_qrParam['user_status'] ?? ($_qrParam['user_current_status'] ?? 0),
                     'qr_type'         => DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_mini'),
                     'check_active_id' => $checkActiveId,
+                    'date'            => date('Y-m-d', time()),
                 ];
                 $returnQrSignArr[$_key] = [
                     'qr_id' => $redisQrInfo['qr_id'],

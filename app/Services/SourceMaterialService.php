@@ -669,12 +669,13 @@ class SourceMaterialService
         $qrType          = DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_none');
         $studentStatus   = StudentService::dssStudentStatusCheck($request['student_id']);
         $qrData = [
-            'user_id'        => $request['student_id'],
-            'user_type'      => DssUserQrTicketModel::STUDENT_TYPE,
-            'channel_id'     => $request['channel_id'],
-            'user_status'    => $studentStatus['student_status'],
-            'app_id'         => Constants::SMART_APP_ID,
-            'qr_type'        => $qrType,
+            'user_id'     => $request['student_id'],
+            'user_type'   => DssUserQrTicketModel::STUDENT_TYPE,
+            'channel_id'  => $request['channel_id'],
+            'user_status' => $studentStatus['student_status'],
+            'app_id'      => Constants::SMART_APP_ID,
+            'qr_type'     => $qrType,
+            'date'        => date('Y-m-d', time()),
         ];
         $qrInfo = QrInfoService::getQrIdList(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE, [$qrData]);
         $qrId = !empty($qrInfo) ? end($qrInfo)['qr_id'] : null;
@@ -767,7 +768,8 @@ class SourceMaterialService
             $_tmp['user_type']    = DssUserQrTicketModel::STUDENT_TYPE;
             $_tmp['channel_id']   = $extParams['channel_id'];
             $_tmp['landing_type'] = DssUserQrTicketModel::LANDING_TYPE_NORMAL;
-            $_tmp['qr_sign'] = QrInfoService::createQrSign($_tmp, Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP);
+            $_tmp['date']         = date('Y-m-d', time());
+            $_tmp['qr_sign']      = QrInfoService::createQrSign($_tmp, Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP);
             $userQrParams[]       = $_tmp;
             $item['qr_sign']      = $_tmp['qr_sign'];
         }

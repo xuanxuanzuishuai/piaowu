@@ -17,6 +17,7 @@ use App\Libs\Util;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\EmployeeModel;
+use App\Models\Erp\ErpStudentModel;
 use App\Models\QrInfoOpCHModel;
 use App\Models\RealSharePosterAwardModel;
 use App\Models\RealSharePosterModel;
@@ -341,10 +342,14 @@ class RealSharePosterService
         return ['qr_path' => $qrPath, 'origin_qr_path' => $userQrArr['qr_path']];
     }
 
-    public static function parseUnique($uniqueCode)
+    public static function parseUnique($uniqueCode,$type = Constants::SMART_APP_ID)
     {
         $qrInfo          = QrInfoOpCHModel::getQrInfoById($uniqueCode);
-        $studentInfo     = DssStudentModel::getRecord(['id' => $qrInfo['user_id']], ['uuid']);
+        if ($type == Constants::REAL_APP_ID){
+            $studentInfo = ErpStudentModel::getRecord(['id' => $qrInfo['user_id']], ['uuid']);
+        }else{
+            $studentInfo = DssStudentModel::getRecord(['id' => $qrInfo['user_id']], ['uuid']);
+        }
         $checkActivityId = json_decode($qrInfo['qr_data'],true);
 
         if (empty($studentInfo['uuid']) || empty($checkActivityId['check_active_id'])){
