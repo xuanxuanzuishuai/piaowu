@@ -9,9 +9,10 @@
 namespace App\Services;
 
 
-use App\Libs\PandaCRM;
+use App\Libs\SimpleLogger;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\RealLandingPromotionRecordModel;
+use App\Services\Queue\RealStudentActiveTopic;
 
 class RealLandingPromotionService
 {
@@ -68,6 +69,7 @@ class RealLandingPromotionService
     }
 
     /**
+     * 发送意向激活消息队列
      * @param $studentUuid
      * @param $landingType
      * @param $channelId
@@ -75,12 +77,19 @@ class RealLandingPromotionService
      */
     private static function sendIntentActiveMessage($studentUuid, $landingType, $channelId)
     {
-        return (new PandaCRM())->mainIntentActive(
-            [
+        try {
+            $topicObj = new RealStudentActiveTopic();
+            $pushData = [
                 'uuid' => $studentUuid,
                 'active_type' => RealLandingPromotionRecordModel::LANDING_TYPE_MAP_LOGIN_TYPE[$landingType],
-                'channel_id' => $channelId
-            ]);
-
+                'channel_id' => $channelId,
+                'active_time' => time(),
+            ];
+            $topicObj->mainCourseIntendActive($pushData)->publish(5);
+        } catch (\Exception $e) {
+            SimpleLogger::error($e->getMessage(), []);
+            return false;
+        }
+        return true;
     }
 }
