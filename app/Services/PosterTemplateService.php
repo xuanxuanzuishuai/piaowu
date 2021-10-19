@@ -586,7 +586,11 @@ class PosterTemplateService
             $item = self::formatPosterInfo($item);
             if ($item['type'] == TemplatePosterModel::INDIVIDUALITY_POSTER) {
                 $item['qr_code_url'] = AliOSS::replaceCdnDomainForDss($userQrArr[$item['qr_sign']]['qr_path']);
-                $item['example_url'] = PosterService::addAliOssWordWaterMark($item['example_path'], $userQrArr[$item['qr_sign']]['qr_id'], $posterConfig);
+                $word = [
+                    'qr_id' => $userQrArr[$item['qr_sign']]['qr_id'],
+                    'date'  => date('m.d', time()),
+                ];
+                $item['poster_url'] = PosterService::addAliOssWordWaterMark($item['poster_path'], $word, $posterConfig);
                 continue;
             }
             // 海报图：

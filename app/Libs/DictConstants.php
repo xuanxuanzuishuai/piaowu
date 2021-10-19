@@ -221,6 +221,10 @@ class DictConstants {
             'QR_ID_Y',
             'QR_ID_SIZE',
             'QR_ID_COLOR',
+            'DATE_X',
+            'DATE_Y',
+            'DATE_SIZE',
+            'DATE_COLOR',
         ]
     ];
 

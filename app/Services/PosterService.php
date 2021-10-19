@@ -354,11 +354,20 @@ class PosterService
 
         //添加文字水印【qr_id】
         $extParams['text'] = [
-            'word'  => $userQrInfo['qr_id'],
-            'x'     => $config['QR_ID_X'],
-            'y'     => $config['QR_ID_Y'],
-            'size'  => $config['QR_ID_SIZE'],
-            'color' => $config['QR_ID_COLOR'],
+            [
+                'word'  => date('m.d', time()),
+                'x'     => $config['DATE_X'],
+                'y'     => $config['DATE_Y'],
+                'size'  => $config['DATE_SIZE'],
+                'color' => $config['DATE_COLOR'],
+            ],
+            [
+                'word'  => $userQrInfo['qr_id'],
+                'x'     => $config['QR_ID_X'],
+                'y'     => $config['QR_ID_Y'],
+                'size'  => $config['QR_ID_SIZE'],
+                'color' => $config['QR_ID_COLOR'],
+            ]
         ];
 
         if (!empty($extParams['text'])) {
@@ -543,7 +552,6 @@ class PosterService
      */
     public static function addAliOssWordWaterMark($imagePath, $word, $posterConfig)
     {
-
         if (empty($imagePath) || empty($word) || empty($posterConfig)) {
             return '';
         }
@@ -552,16 +560,28 @@ class PosterService
             "text_" . str_replace(
                 ["+", "/"],
                 ["-", "_"],
-                base64_encode($word)
+                base64_encode($word['qr_id'])
             ),
-            'type'=>'ZmFuZ3poZW5na2FpdGk',
-            'x' => $posterConfig['QR_ID_X'],
-            'y' => $posterConfig['QR_ID_Y'],
-            'size' => $posterConfig['QR_ID_SIZE'],
-            'color' => $posterConfig['QR_ID_COLOR'],
-            "g"=>"sw",
+            "x_" . $posterConfig['QR_ID_X'],
+            "y_" . $posterConfig['QR_ID_Y'],
+            "size_" . $posterConfig['QR_ID_SIZE'],
+            "color_" . $posterConfig['QR_ID_COLOR'],
+            "g_sw",
+        ];
+        $wordMarkDate = [
+            "text_" . str_replace(
+                ["+", "/"],
+                ["-", "_"],
+                base64_encode($word['date'])
+            ),
+            'x' . $posterConfig['DATE_X'],
+            'y' . $posterConfig['DATE_Y'],
+            'size' . $posterConfig['DATE_SIZE'],
+            'color' . $posterConfig['DATE_COLOR'],
+            "g_sw",
         ];
         $waterMarkStr[] = implode(",", $wordMark);
+        $waterMarkStr[] = implode(",", $wordMarkDate);
 
         $imgSize = [
             "w_" . $posterConfig['POSTER_WIDTH'],
