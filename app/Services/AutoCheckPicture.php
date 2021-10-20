@@ -321,7 +321,6 @@ class AutoCheckPicture
             if ($issetDel && $val['rect']['top'] > 300) {
                 //判定是否是自己朋友圈-是否有删除文案且距离顶部的高度大于海报高度(580)
                 $shareOwner = true;
-                continue;
             }
 
             //3.小叶子关键字
@@ -386,7 +385,7 @@ class AutoCheckPicture
 
                 $checkActivityIdStr = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'week_activity_id_effect');
                 $checkActivityIdArr = [];
-                if (empty($checkActivityIdStr)) {
+                if (!empty($checkActivityIdStr)) {
                     $checkActivityIdArr = explode(',', $checkActivityIdStr);
                 }
                 if (!empty($uploadInfo['activity_id']) && ($composeCheckActivity == $uploadInfo['activity_id'] || in_array($composeCheckActivity, $checkActivityIdArr))) {
@@ -396,7 +395,7 @@ class AutoCheckPicture
             }
 
             //上传时间处理 字符串||关键字之后 ['年', '月', '日', '昨天', '天前', '小时前', '分钟前','上午', '：']
-            if (Util::sensitiveWordFilter($dateKeyword, $word) == true) {
+            if (Util::sensitiveWordFilter($dateKeyword, $word) == true && $val['rect']['top'] > 300) {
                 $issetDate = true;
                 //如果包含年月
                 if (Util::sensitiveWordFilter(['年', '月', '日'], $word) == true) {
