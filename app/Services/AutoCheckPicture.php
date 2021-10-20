@@ -36,10 +36,14 @@ class AutoCheckPicture
         $result = $record['result'];
         switch ($data['app_id']) {
             case Constants::SMART_APP_ID: //智能陪练
-                $activityInfo = WeekActivityModel::getRecord(['activity_id' => [$result['activity_id']]], ['id', 'enable_status', 'start_time']);
-                if (empty($activityInfo) || $activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
-                    SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
-                    return null;
+                $checkActivityIdStr = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'week_activity_id_effect');
+                //在指定ID的活动内，不校验活动状态
+                if (empty($checkActivityIdStr) || !in_array($result['activity_id'],explode(',',$checkActivityIdStr))){
+                    $activityInfo = WeekActivityModel::getRecord(['activity_id' => [$result['activity_id']]], ['id', 'enable_status', 'start_time']);
+                    if (empty($activityInfo) || $activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
+                        SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
+                        return null;
+                    }
                 }
                 break;
             case Constants::REAL_APP_ID: //真人陪练
@@ -201,6 +205,9 @@ class AutoCheckPicture
                     case SharePosterModel::SYSTEM_REFUSE_CODE_ACTIVITY_ID: //海报生成和上传非同一活动
                         $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_ACTIVITY_ID;
                         break;
+                    case SharePosterModel::SYSTEM_REFUSE_CODE_UNIQUE_USED: //作弊码已经被使用
+                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_UNIQUE_USED;
+                        break;
                     default:
                         break;
                 }
@@ -247,6 +254,9 @@ class AutoCheckPicture
                         break;
                     case SharePosterModel::SYSTEM_REFUSE_CODE_ACTIVITY_ID: //海报生成和上传非同一活动
                         $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_ACTIVITY_ID;
+                        break;
+                    case SharePosterModel::SYSTEM_REFUSE_CODE_UNIQUE_USED: //作弊码已经被使用
+                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_UNIQUE_USED;
                         break;
                     default:
                         break;
@@ -358,8 +368,7 @@ class AutoCheckPicture
                     if (empty($exist)) {
                         RealSharePosterModel::updateRecord($msgBody['id'], ['unique_code' => $word]);
                     } else {
-                        $errCode[] = -1;
-                        continue;
+                        $errCode[] = -8;
                     }
                 } elseif ($msgBody['app_id'] == Constants::SMART_APP_ID) {
                     $uploadInfo = SharePosterModel::getRecord(['id' => $msgBody['id']], ['student_id', 'activity_id']);
@@ -367,8 +376,7 @@ class AutoCheckPicture
                     if (empty($exist)) {
                         SharePosterModel::updateRecord($msgBody['id'], ['unique_code' => $word]);
                     } else {
-                        $errCode[] = -1;
-                        continue;
+                        $errCode[] = -8;
                     }
                 }
 
