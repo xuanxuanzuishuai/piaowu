@@ -184,8 +184,8 @@ class AutoCheckPicture
         } elseif (!empty($errCode)) {
             foreach ($errCode as $value){
                 switch ($value) {
-                    case SharePosterModel::SYSTEM_REFUSE_CODE_UNIQUE: //作弊码识别失败
-                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_UNIQUE;
+                    case SharePosterModel::SYSTEM_REFUSE_CODE_NEW: //未使用最新海报
+                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_NEW;
                         break;
                     case SharePosterModel::SYSTEM_REFUSE_CODE_TIME: //朋友圈保留时长不足12小时，请重新上传
                         $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_TIME;
@@ -210,6 +210,9 @@ class AutoCheckPicture
                         break;
                     case SharePosterModel::SYSTEM_REFUSE_CODE_COMMENT: //分享无分享语
                         $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_COMMENT;
+                        break;
+                    case SharePosterModel::SYSTEM_REFUSE_CODE_UNIQUE: //作弊码识别失败
+                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_UNIQUE;
                         break;
                     default:
                         break;
@@ -237,8 +240,8 @@ class AutoCheckPicture
         } elseif (!empty($errCode)) {
             foreach ($errCode as $value){
                 switch ($value) {
-                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_UNIQUE: //作弊码识别失败
-                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_UNIQUE;
+                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_NEW: //未使用最新海报
+                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_NEW;
                         break;
                     case RealSharePosterModel::SYSTEM_REFUSE_CODE_TIME: //朋友圈保留时长不足12小时，请重新上传
                         $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_TIME;
@@ -263,6 +266,9 @@ class AutoCheckPicture
                         break;
                     case RealSharePosterModel::SYSTEM_REFUSE_CODE_COMMENT: //分享无分享语
                         $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_COMMENT;
+                        break;
+                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_UNIQUE: //作弊码识别失败
+                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_UNIQUE;
                         break;
                     default:
                         break;

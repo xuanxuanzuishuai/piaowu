@@ -43,7 +43,7 @@ class RealSharePosterModel extends Model
     const CHECKIN_POSTER_TMP_DATA = 'CHECKIN_POSTER_';
 
     //系统审核code
-    const SYSTEM_REFUSE_CODE_UNIQUE    = -1; //作弊码识别失败
+    const SYSTEM_REFUSE_CODE_NEW    = -1; //未使用最新海报
     const SYSTEM_REFUSE_CODE_TIME   = -2; //朋友圈保留时长不足12小时，请重新上传
     const SYSTEM_REFUSE_CODE_GROUP  = -3; //分享分组可见
     const SYSTEM_REFUSE_CODE_FRIEND = -4; //请发布到朋友圈并截取朋友圈照片
@@ -52,9 +52,10 @@ class RealSharePosterModel extends Model
     const SYSTEM_REFUSE_CODE_ACTIVITY_ID = -7; //海报生成和上传非同一活动
     const SYSTEM_REFUSE_CODE_UNIQUE_USED = -8; //作弊码已经被使用
     const SYSTEM_REFUSE_CODE_COMMENT = -9; //分享无分享语
+    const SYSTEM_REFUSE_CODE_UNIQUE    = -10; //作弊码识别失败
 
     //系统审核拒绝原因code
-    const SYSTEM_REFUSE_REASON_CODE_UNIQUE    = 2; //作弊码识别失败
+    const SYSTEM_REFUSE_REASON_CODE_NEW    = 2; //未使用最新海报
     const SYSTEM_REFUSE_REASON_CODE_COMMENT = 4; //分享无分享语
     const SYSTEM_REFUSE_REASON_CODE_TIME   = 12; //朋友圈保留时长不足12小时，请重新上传
     const SYSTEM_REFUSE_REASON_CODE_GROUP  = 1; //分享分组可见
@@ -63,6 +64,7 @@ class RealSharePosterModel extends Model
     const SYSTEM_REFUSE_REASON_CODE_USER = 13; //海报生成和上传非同一用户
     const SYSTEM_REFUSE_REASON_CODE_ACTIVITY_ID = 14; //海报生成和上传非同一活动
     const SYSTEM_REFUSE_REASON_UNIQUE_USED = 15; //作弊码已经被使用
+    const SYSTEM_REFUSE_REASON_CODE_UNIQUE = 16; //作弊码识别失败
     
     /**
      * 获取海报信息

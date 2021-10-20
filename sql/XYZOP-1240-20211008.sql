@@ -12,8 +12,9 @@ VALUES ('template_poster_config', '海报模板图配置', 'QR_ID_X', '530', '�
 INSERT INTO dict (type, key_name, key_code, key_value, `desc`)
 VALUES ('share_poster_check_reason', '分享截图审核原因', '13', '海报生成和上传非同一用户', '打卡截图审核原因'),
        ('share_poster_check_reason', '分享截图审核原因', '14', '海报生成和上传非同一活动', '打卡截图审核原因'),
-       ('share_poster_check_reason', '分享截图审核原因', '15', '作弊码已经被使用', '打卡截图审核原因');
-update dict set key_value = '作弊码识别失败' where id = 1488;
+       ('share_poster_check_reason', '分享截图审核原因', '15', '作弊码已经被使用', '打卡截图审核原因'),
+       ('share_poster_check_reason', '分享截图审核原因', '16', '作弊码识别失败', '打卡截图审核原因');
+
 update dict set key_value = 'AAAAAAAA' where id = 1756;
 
 
