@@ -30,7 +30,7 @@ use App\Models\WhiteGrantRecordModel;
 class WhiteGrantRecordService
 {
 
-    const LIMIT_MAX_SEND_MONEY = 10000;//红包最大发放金额(单位:分)
+    const LIMIT_MAX_SEND_MONEY = 50000;//红包最大发放金额(单位:分)
 
     public static $WeChatMiniPro;
     /**
@@ -289,12 +289,13 @@ class WhiteGrantRecordService
     }
 
     /**
-     * 创建
+     * 周周领奖白名单用户创建发放记录
      * @param $student
      * @param $data
      * @param $status
      */
-    public static function create($student, $data, $status){
+    public static function create($student, $data, $status)
+    {
         $now = time();
         $insert = [
             'bill_no'           => $data['nextData']['bill_no'] ?? 0,
@@ -315,25 +316,23 @@ class WhiteGrantRecordService
             'remark'            => $data['nextData']['remark'] ?? 0,
         ];
 
-        if(isset($data['nextData']['grantInfo']['id'])){
-            $createTime = WhiteGrantRecordModel::getRecord(['id'=>$data['nextData']['grantInfo']['id']],'create_time');
+        if (isset($data['nextData']['grantInfo']['id'])) {
+            $createTime = WhiteGrantRecordModel::getRecord(['id' => $data['nextData']['grantInfo']['id']], 'create_time');
             $insert['update_time'] = $now;
             $id = $data['nextData']['grantInfo']['id'];
             WhiteGrantRecordModel::updateRecord($id, $insert);
-        }else{
+        } else {
             $createTime = $now;
             $insert['grant_money'] = $data['nextData']['awardNum'] ?? 0;
             $insert['create_time'] = $now;
             WhiteGrantRecordModel::insertRecord($insert);
         }
 
-        self::sendSms($student['mobile'], $status, $data['nextData']['awardNum'], $createTime);
-
         //发送红包成功时发送微信消息
-        if($insert['status'] == WhiteGrantRecordModel::STATUS_GIVE){
+        if ($insert['status'] == WhiteGrantRecordModel::STATUS_GIVE) {
+            self::sendSms($student['mobile'], $status, $data['nextData']['awardNum'], $createTime);
             self::pushSuccMsg($insert['open_id'], $data['nextData']['awardNum'], $createTime);
         }
-
     }
 
     public static function sendSms($mobile, $status, $leaf, $now, $old = false){
@@ -390,9 +389,10 @@ class WhiteGrantRecordService
      * @param $next
      * @throws RunTimeException
      */
-    public static function checkQuota($next){
-        if(intval($next['awardNum']) > self::LIMIT_MAX_SEND_MONEY){
-            throw new RunTimeException(['fail'],['nextData'=>$next, 'step'=>WhiteGrantRecordModel::GRANT_STEP_4, 'awardNum' => 0, 'msg' => '异常数据,超过单月发放上限']);
+    public static function checkQuota($next)
+    {
+        if (intval($next['awardNum']) > self::LIMIT_MAX_SEND_MONEY) {
+            throw new RunTimeException(['fail'], ['nextData'=>$next, 'step'=>WhiteGrantRecordModel::GRANT_STEP_4, 'awardNum' => 0, 'msg' => '异常数据,超过单月发放上限']);
         }
 
         //5.微信转账
