@@ -184,8 +184,8 @@ class AutoCheckPicture
         } elseif (!empty($errCode)) {
             foreach ($errCode as $value){
                 switch ($value) {
-                    case SharePosterModel::SYSTEM_REFUSE_CODE_NEW: //未使用最新海报
-                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_NEW;
+                    case SharePosterModel::SYSTEM_REFUSE_CODE_UNIQUE: //作弊码识别失败
+                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_UNIQUE;
                         break;
                     case SharePosterModel::SYSTEM_REFUSE_CODE_TIME: //朋友圈保留时长不足12小时，请重新上传
                         $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_TIME;
@@ -207,6 +207,9 @@ class AutoCheckPicture
                         break;
                     case SharePosterModel::SYSTEM_REFUSE_CODE_UNIQUE_USED: //作弊码已经被使用
                         $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_UNIQUE_USED;
+                        break;
+                    case SharePosterModel::SYSTEM_REFUSE_CODE_COMMENT: //分享无分享语
+                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_COMMENT;
                         break;
                     default:
                         break;
@@ -234,8 +237,8 @@ class AutoCheckPicture
         } elseif (!empty($errCode)) {
             foreach ($errCode as $value){
                 switch ($value) {
-                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_NEW: //未使用最新海报
-                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_NEW;
+                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_UNIQUE: //作弊码识别失败
+                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_UNIQUE;
                         break;
                     case RealSharePosterModel::SYSTEM_REFUSE_CODE_TIME: //朋友圈保留时长不足12小时，请重新上传
                         $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_TIME;
@@ -249,14 +252,17 @@ class AutoCheckPicture
                     case RealSharePosterModel::SYSTEM_REFUSE_CODE_UPLOAD: //上传截图出错
                         $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_UPLOAD;
                         break;
-                    case SharePosterModel::SYSTEM_REFUSE_CODE_USER: //海报生成和上传非同一用户
-                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_USER;
+                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_USER: //海报生成和上传非同一用户
+                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_USER;
                         break;
-                    case SharePosterModel::SYSTEM_REFUSE_CODE_ACTIVITY_ID: //海报生成和上传非同一活动
-                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_ACTIVITY_ID;
+                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_ACTIVITY_ID: //海报生成和上传非同一活动
+                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_ACTIVITY_ID;
                         break;
-                    case SharePosterModel::SYSTEM_REFUSE_CODE_UNIQUE_USED: //作弊码已经被使用
-                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_UNIQUE_USED;
+                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_UNIQUE_USED: //作弊码已经被使用
+                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_UNIQUE_USED;
+                        break;
+                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_COMMENT: //分享无分享语
+                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_COMMENT;
                         break;
                     default:
                         break;
@@ -329,7 +335,7 @@ class AutoCheckPicture
             }
 
             //4.判断是否存在内容关键字['小叶子', '琴', '练琴', '很棒', '求赞']
-            if ((mb_strlen($word) > 5 && Util::sensitiveWordFilter($contentKeyword, $word) == true)) {
+            if ((mb_strlen($word) > 10 && Util::sensitiveWordFilter($contentKeyword, $word) == true)) {
                 $shareKeyword = true;
                 continue;
             }
@@ -388,8 +394,11 @@ class AutoCheckPicture
                 if (!empty($checkActivityIdStr)) {
                     $checkActivityIdArr = explode(',', $checkActivityIdStr);
                 }
-                if (!empty($uploadInfo['activity_id']) && ($composeCheckActivity == $uploadInfo['activity_id'] || in_array($composeCheckActivity, $checkActivityIdArr))) {
-                    $isSameActivity = true;
+                if (!empty($uploadInfo['activity_id'])) {
+                    //两个通过条件：一、海报生成和上传是一期活动/二、海报生成和上传在指定活动内
+                    if ((in_array($composeCheckActivity, $checkActivityIdArr) && in_array($uploadInfo['activity_id'], $checkActivityIdArr)) || $composeCheckActivity == $uploadInfo['activity_id']) {
+                        $isSameActivity = true;
+                    }
                 }
                 continue;
             }
@@ -490,9 +499,19 @@ class AutoCheckPicture
         }
 
 
-        //未使用最新海报
+        //作弊码识别失败
         if (!$shareIden) {
             $errCode[] = -1;
+        } else {
+            //海报生成和上传非同一用户
+            if (!$isSameUser) {
+                $errCode[] = -6;
+            }
+
+            //海报生成和上传非同一活动
+            if (!$isSameActivity) {
+                $errCode[] = -7;
+            }
         }
 
         //朋友圈保留时长不足12小时，请重新上传
@@ -510,19 +529,9 @@ class AutoCheckPicture
             $errCode[] = -4;
         }
 
-        //上传截图出错
+        //分享无分享语
         if (!$leafKeyWord || !$shareKeyword) {
-            $errCode[] = -5;
-        }
-
-        //海报生成和上传非同一用户
-        if (!$isSameUser) {
-            $errCode[] = -6;
-        }
-
-        //海报生成和上传非同一活动
-        if (!$isSameActivity) {
-            $errCode[] = -7;
+            $errcode[] = -9;
         }
 
         if (empty($errCode)) {
