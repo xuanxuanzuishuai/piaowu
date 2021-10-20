@@ -388,7 +388,8 @@ class AutoCheckPicture
             }
 
             //上传时间处理 字符串||关键字之后 ['年', '月', '日', '昨天', '天前', '小时前', '分钟前','上午', '：']
-            if (!$issetDate && Util::sensitiveWordFilter($dateKeyword, $word) == true) {
+            if (Util::sensitiveWordFilter($dateKeyword, $word) == true) {
+                $issetDate = true;
                 //如果包含年月
                 if (Util::sensitiveWordFilter(['年', '月', '日'], $word) == true) {
                     if (mb_strpos($word, '年') === false) {
@@ -405,6 +406,12 @@ class AutoCheckPicture
                 if (mb_strpos($word, '分钟前') !== false) {
                     continue;
                 }
+
+                if (mb_strpos($word, '天前') !== false) {
+                    $shareDate = true;
+                    continue;
+                }
+
                 if (mb_strpos($word, '：') !== false && mb_strlen($word) == 5) {
                     $word_str = str_replace('：', 0, $word);
                     if (!is_numeric($word_str)) {
@@ -458,7 +465,6 @@ class AutoCheckPicture
                         continue;
                     }
                 }
-                $issetDate = true;
                 //上传时间是否已超过12小时
                 if (empty($screenDate) || (!empty($screenDate) && strtotime($screenDate) + $hours < $uploadTime)) {
                     $shareDate = true;

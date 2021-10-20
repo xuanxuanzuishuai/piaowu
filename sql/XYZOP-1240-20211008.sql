@@ -15,6 +15,16 @@ VALUES ('share_poster_check_reason', '分享截图审核原因', '13', '海报�
 
 update dict set key_value = 'AAAAAAAA' where id = 1756;
 
+
+alter table share_poster
+    add column unique_code varchar(10) not null default '' comment '防作弊码' after points_award_id,
+    add index idx_unique_code (unique_code);
+
+
+alter table real_share_poster
+    add column unique_code varchar(10) not null default '' comment '防作弊码' after ext,
+    add index idx_unique_code (unique_code);
+
 -- 清除dict缓存
 del dict_list_template_poster_config;
 
