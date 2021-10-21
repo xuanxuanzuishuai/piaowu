@@ -341,7 +341,7 @@ class AutoCheckPicture
             }
 
             //4.判断是否存在内容关键字['小叶子', '琴', '练琴', '很棒', '求赞']
-            if ((mb_strlen($word) > 10 && Util::sensitiveWordFilter($contentKeyword, $word) == true)) {
+            if ((mb_strlen($word) > 10 && Util::sensitiveWordFilter($contentKeyword, $word) == true) && $val['rect']['top'] < 500) {
                 $shareKeyword = true;
                 continue;
             }
@@ -430,10 +430,10 @@ class AutoCheckPicture
                 $nextWord       = $response['ret'][$key + 1]['word'];
                 if (!$shareOwner && isset($response['ret'][$key + 1])) {
                     //发朋友圈时间下一个识别字段不含以下信息，判定被屏蔽
-                    $condition_v1 = Util::sensitiveWordFilter(['删除', '智能陪练', '：', '册', '删', '1', $last_date_word, '除'], $nextWord) == false;
+                    $condition_v1 = Util::sensitiveWordFilter(['删除', '智能陪练', '：', '册', '删', $last_date_word, '除'], $nextWord) == false;
 
                     //发朋友圈时间下一个识别字段包含以下信息，判定被屏蔽
-                    $condition_v2 = Util::sensitiveWordFilter(['.'], $nextWord) == true;
+                    $condition_v2 = Util::sensitiveWordFilter(['.', '2'], $nextWord) == true;
                     if ($condition_v1 || $condition_v2) {
                         $shareDisplay = false;
                     }
@@ -511,7 +511,7 @@ class AutoCheckPicture
 
         //作弊码识别失败
         if (!$shareIden) {
-            $errCode[] = -1;
+            $errCode[] = -10;
         } else {
             //海报生成和上传非同一用户
             if (!$isSameUser) {

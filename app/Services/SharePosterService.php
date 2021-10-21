@@ -573,6 +573,8 @@ class SharePosterService
             'type'        => $type,
             'activity_id' => $activityId,
             'image_path'  => $imagePath,
+            'verify_reason' => '',
+            'unique_code' => '',
             'create_time' => $time,
             'update_time' => $time,
         ];
