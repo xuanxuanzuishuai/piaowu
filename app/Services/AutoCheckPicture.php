@@ -411,7 +411,6 @@ class AutoCheckPicture
 
             //上传时间处理 字符串||关键字之后 ['年', '月', '日', '昨天', '天前', '小时前', '分钟前','上午', '：']
             if (Util::sensitiveWordFilter($dateKeyword, $word) == true && $val['rect']['top'] > 300) {
-                $issetDate = true;
                 //如果包含年月
                 if (Util::sensitiveWordFilter(['年', '月', '日'], $word) == true) {
                     if (mb_strpos($word, '年') === false) {
@@ -422,6 +421,21 @@ class AutoCheckPicture
                     }
                     if (mb_strpos($word, '日') === false) {
                         continue;
+                    }
+                }
+
+                $issetDate = true;
+                //判定是否被屏蔽
+                $last_date_word = mb_substr($word, mb_strlen($word) - 1);
+                $nextWord       = $response['ret'][$key + 1]['word'];
+                if (!$shareOwner && isset($response['ret'][$key + 1])) {
+                    //发朋友圈时间下一个识别字段不含以下信息，判定被屏蔽
+                    $condition_v1 = Util::sensitiveWordFilter(['删除', '智能陪练', '：', '册', '删', '1', $last_date_word, '除'], $nextWord) == false;
+
+                    //发朋友圈时间下一个识别字段包含以下信息，判定被屏蔽
+                    $condition_v2 = Util::sensitiveWordFilter(['.'], $nextWord) == true;
+                    if ($condition_v1 || $condition_v2) {
+                        $shareDisplay = false;
                     }
                 }
 
@@ -491,16 +505,6 @@ class AutoCheckPicture
                 if (empty($screenDate) || (!empty($screenDate) && strtotime($screenDate) + $hours < $uploadTime)) {
                     $shareDate = true;
                 }
-
-                /**
-                 * 判定是否被屏蔽
-                 * 特殊情况:发布时间和删除下标相同
-                 * 特殊情况:日期最后一位当做屏蔽给处理了
-                 */
-                $last_date_word = mb_substr($word, mb_strlen($word) - 1);
-                if (!$shareOwner && isset($result[$key + 1]) && Util::sensitiveWordFilter(['删除', '智能陪练', '：', '册', '删', '1', $last_date_word, '除'], $result[$key + 1]['word']) == false) {
-                    $shareDisplay = false;
-                }
             }
         }
 
@@ -535,9 +539,14 @@ class AutoCheckPicture
             $errCode[] = -4;
         }
 
+        //上传截图出错
+        if (!$leafKeyWord) {
+            $errCode[] = -5;
+        }
+
         //分享无分享语
-        if (!$leafKeyWord || !$shareKeyword) {
-            $errcode[] = -9;
+        if (!$shareKeyword) {
+            $errCode[] = -9;
         }
 
         if (empty($errCode)) {

@@ -552,7 +552,7 @@ class PosterService
     public static function getCheckActivityId($appId)
     {
         if ($appId == Constants::REAL_APP_ID) {
-            $activityData = RealWeekActivityModel::getStudentCanSignWeekActivity(1, time());
+            $activityData = RealWeekActivityModel::getStudentCanSignWeekActivity(1, time())[0];
         } elseif ($appId == Constants::SMART_APP_ID) {
             $activityData = OperationActivityModel::getActiveActivity(TemplatePosterModel::STANDARD_POSTER);
         }
