@@ -44,7 +44,9 @@ class QrInfoService
             'qr_type'             => 'qr_type',                 // 二维码类型
             'invited_mobile'      => 'invited_mobile',          // 受邀人手机号
             'date'                => 'date',                    // 日期
+            'check_active_id'     => 'check_active_id',         // 海报唯一码校验活动ID
         ];
+        $qrData['check_active_id'] = PosterService::getCheckActivityId($appId);
         foreach ($signField as $paramsFiled => $createField) {
             if (isset($qrData[$paramsFiled]) && !Util::emptyExceptZero($qrData[$paramsFiled])) {
                 $createTicketData[$createField] = $qrData[$paramsFiled];

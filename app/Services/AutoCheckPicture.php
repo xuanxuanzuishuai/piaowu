@@ -424,20 +424,13 @@ class AutoCheckPicture
                     }
                 }
 
-                $issetDate = true;
-                //判定是否被屏蔽
-                $last_date_word = mb_substr($word, mb_strlen($word) - 1);
-                $nextWord       = $response['ret'][$key + 1]['word'];
-                if (!$shareOwner && isset($response['ret'][$key + 1])) {
-                    //发朋友圈时间下一个识别字段不含以下信息，判定被屏蔽
-                    $condition_v1 = Util::sensitiveWordFilter(['删除', '智能陪练', '：', '册', '删', $last_date_word, '除'], $nextWord) == false;
-
-                    //发朋友圈时间下一个识别字段包含以下信息，判定被屏蔽
-                    $condition_v2 = Util::sensitiveWordFilter(['.', '2'], $nextWord) == true;
-                    if ($condition_v1 || $condition_v2) {
-                        $shareDisplay = false;
-                    }
+                //屏蔽一下情况，"扫码送：超精品练琴礼包"
+                $res = preg_match("/[0-9]：[0-9]/", $word);
+                if (mb_strpos($word, '：') !== false && !$res){
+                    continue;
                 }
+
+                $issetDate = true;
 
                 if (mb_strpos($word, '分钟前') !== false) {
                     continue;
@@ -495,15 +488,25 @@ class AutoCheckPicture
                         $string     = mb_substr($word, $start, $end);
                         $screenDate = date('Y-m-d ' . str_replace('：', ':', $string), strtotime('-1 day'));//截图时间
                     }
-                } elseif (mb_strpos($word, '：') !== false && mb_strpos($word, '年') === false) {
-                    $word_str = str_replace('：', 0, $word);
-                    if (strlen($word_str) < 5 || !is_numeric($word_str)) {
-                        continue;
-                    }
                 }
+
                 //上传时间是否已超过12小时
-                if (empty($screenDate) || (!empty($screenDate) && strtotime($screenDate) + $hours < $uploadTime)) {
+                if (empty($screenDate) || (strtotime($screenDate) + $hours < $uploadTime)) {
                     $shareDate = true;
+                }
+
+                //判定是否被屏蔽
+                $last_date_word = mb_substr($word, mb_strlen($word) - 1);
+                $nextWord       = $response['ret'][$key + 1]['word'];
+                if (!$shareOwner && isset($response['ret'][$key + 1])) {
+                    //发朋友圈时间下一个识别字段不含以下信息，判定被屏蔽
+                    $condition_v1 = Util::sensitiveWordFilter(['删除', '智能陪练', '：', '册', '删', $last_date_word, '除'], $nextWord) == false;
+
+                    //发朋友圈时间下一个识别字段包含以下信息，判定被屏蔽
+                    $condition_v2 = Util::sensitiveWordFilter(['.', '2'], $nextWord) == true;
+                    if ($condition_v1 || $condition_v2) {
+                        $shareDisplay = false;
+                    }
                 }
             }
         }
