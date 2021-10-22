@@ -422,6 +422,8 @@ class AutoCheckPicture
                     if (mb_strpos($word, '日') === false) {
                         continue;
                     }
+                    $issetDate = true;
+                    $shareDate = true;
                 }
 
                 //屏蔽一下情况，"扫码送：超精品练琴礼包"
@@ -491,7 +493,7 @@ class AutoCheckPicture
                 }
 
                 //上传时间是否已超过12小时
-                if (empty($screenDate) || (strtotime($screenDate) + $hours < $uploadTime)) {
+                if (!empty($screenDate) && (strtotime($screenDate) + $hours < $uploadTime)) {
                     $shareDate = true;
                 }
 
