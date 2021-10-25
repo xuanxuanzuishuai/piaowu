@@ -190,13 +190,19 @@ class DssUserWeiXinModel extends DssModel
             DssUserWeiXinModel::$table,
             [
                 '[><]' . DssStudentModel::$table  => ['user_id' => 'id'],
-                '[><]' . DssEmployeeModel::$table => [DssStudentModel::$table . '.assistant_id' => 'id']
+                '[><]' . DssEmployeeModel::$table => [DssStudentModel::$table . '.assistant_id' => 'id'],
+                '[>]' . DssCollectionModel::$table => [DssStudentModel::$table . '.collection_id' => 'id']
             ],
             [
                 DssEmployeeModel::$table . '.wx_qr',
                 DssEmployeeModel::$table . '.wx_num',
+                DssEmployeeModel::$table . '.wx_nick',
+                DssEmployeeModel::$table . '.wx_thumb',
                 DssStudentModel::$table . '.uuid',
-                DssStudentModel::$table . '.mobile'
+                DssStudentModel::$table . '.mobile',
+                DssStudentModel::$table . '.has_review_course',
+                DssStudentModel::$table . '.collection_id',
+                DssCollectionModel::$table . '.teaching_start_time'
             ],
             [
                 DssUserWeiXinModel::$table . '.open_id'   => $openid,

@@ -163,6 +163,7 @@ class DssStudentModel extends DssModel
         }
         $s = self::$table;
         $e = DssEmployeeModel::$table;
+        $c = DssCollectionModel::$table;
         if ($assistant) {
             $join = " s.assistant_id = e.id";
         } else {
@@ -173,9 +174,13 @@ class DssStudentModel extends DssModel
             e.wx_qr,
             e.wx_num,
             e.wx_thumb,
-            e.wx_nick
+            e.wx_nick,
+            c.teaching_start_time,
+            s.has_review_course,
+            s.collection_id   
         FROM {$s} s
         INNER JOIN {$e} e ON {$join}
+        LEFT JOIN {$c} c ON s.collection_id = c.id 
         WHERE s.id = :id
         ";
         $data = self::dbRO()->queryAll($sql, [':id' => $studentId]);

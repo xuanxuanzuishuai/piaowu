@@ -40,6 +40,7 @@ use App\Services\MiniAppQrService;
 use App\Services\PackageService;
 use App\Services\PayServices;
 use App\Services\ReferralActivityService;
+use App\Services\ReferralService;
 use App\Services\StudentService;
 use App\Services\UserService;
 use Slim\Http\Request;
@@ -417,6 +418,9 @@ class Order extends ControllerBase
                 $assistantInfo['wx_nick'] = $assistantInfo['wx_nick'] ?: $defaultNickName;
                 $assistantInfo['wx_thumb'] = $assistantInfo['wx_thumb'] ?: $defaultThumb;
             }
+
+            //加微页优化调整
+            $assistantInfo = ReferralService::chooseVersion($assistantInfo);
             $data = array_merge([
                 'model' => ($agent['leads_allot_type'] != AgentModel::LEADS_ALLOT_TYPE_STOP) ? 1 : 0,
                 'ai_qr_url' => $qrCodeUrl,

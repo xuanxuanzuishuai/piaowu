@@ -1296,7 +1296,27 @@ class ReferralService
             return array();
         }
         $assistant['wx_qr'] = AliOSS::replaceCdnDomainForDss($assistant['wx_qr']);
+        $assistant['wx_thumb'] = AliOSS::replaceCdnDomainForDss($assistant['wx_thumb']);
+        $assistant = ReferralService::chooseVersion($assistant);
         return $assistant;
+    }
+
+    public static function chooseVersion($studentInfo = [])
+    {
+        $config = DssDictService::getTypeMap("EXPERIENCE_CAMP_CONFIG");
+        //非全量开启测试
+        if ($config['is_complete'] == 2) {
+            $testCollection = explode(',', $config['internal_test_class']);
+            if (in_array($studentInfo['collection_id'], $testCollection)) {
+                $showType = 2;
+            }
+        } elseif ($config['is_complete'] == 1) {
+            $showType = 2;
+        }
+
+        $studentInfo['showType'] = $showType ?? 1;
+        $studentInfo['teaching_start_time'] = date('Y-m-d',$studentInfo['teaching_start_time']) ?? 0;
+        return $studentInfo;
     }
 
     /**
