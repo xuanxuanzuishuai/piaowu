@@ -184,8 +184,9 @@ class ScriptSendReferralUserAward
                         // 更新erp库对应的奖励记录为作废
                         UserRefereeService::sendAwardGoldLeaf(array_merge($_award, [
                             'task_award_id' => $erpTaskAwardId,
-                            'award_status'  => ErpUserEventTaskAwardGoldLeafModel::STATUS_REVIEWING, // 等于2代表的是本次会把奖励直接发放给用户
+                            'award_status'  => ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED, // 等于2代表的是本次会把奖励直接发放给用户
                             'event_task_id' => $pushMsgTaskId,
+                            'review_reason' => ReferralUserAwardModel::REASON_NO_PLAY,
                         ]));
                         $sendPushMsg = true;
                         break;
