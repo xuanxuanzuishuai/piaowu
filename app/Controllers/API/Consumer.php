@@ -1172,8 +1172,7 @@ class Consumer extends ControllerBase
         }
         $paramMapInfo = $params['msg_body'];
         $appId = $paramMapInfo['package']['app_id'] ?? 0;
-        $packageType = $paramMapInfo['contain_category_group'] ?? 0;
-
+        $packageType = $paramMapInfo['package_contain_category_group'] ?? [];
         // 获取用户是否存在
         $studentInfo = DssStudentModel::getRecord(['uuid' => $paramMapInfo['student']['uuid']], ['id']);
         if (empty($studentInfo)) {
@@ -1184,7 +1183,7 @@ class Consumer extends ControllerBase
             case $eventType['bind_bill_map']:
                 /** 保存订单到bill_map */
                 // 检查 只接受智能业务线并且是体验课订单
-                if ($appId != Constants::SMART_APP_ID || $packageType != DssPackageExtModel::PACKAGE_TYPE_TRIAL) {
+                if ($appId != Constants::SMART_APP_ID || !in_array(DssPackageExtModel::PACKAGE_TYPE_TRIAL, $packageType)) {
                     SimpleLogger::info('app_id_or_package_type_error', ['topic' => $topicName, 'params' => $params, 'student' => $studentInfo]);
                     break;
                 }
