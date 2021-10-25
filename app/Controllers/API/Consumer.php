@@ -1159,16 +1159,11 @@ class Consumer extends ControllerBase
 
         $topicName = 'bill_status';
         $eventType = [
-            'bind_bill_map' => 'event_order_paid',  // 保存订单到bill_map
+            'bind_bill_map' => 'event_order_paid',  // 保存订单映射关系到bill_map
         ];
         $result = Valid::validate($params, $rules);
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-        // 检查topic 是否正确
-        if ($params['topic_name'] != $topicName) {
-            SimpleLogger::info('topic_name_error', ['topic' => $topicName, 'params' => $params]);
-            return HttpHelper::buildResponse($response, []);
         }
         $paramMapInfo = $params['msg_body'];
         $appId = $paramMapInfo['package']['app_id'] ?? 0;
