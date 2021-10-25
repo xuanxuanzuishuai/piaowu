@@ -1125,13 +1125,13 @@ class Consumer extends ControllerBase
     }
 
     /**
-     * 转介绍订单
+     * 记录订单映射关系
      * topic: bill_status
      * @param Request $request
      * @param Response $response
      * @return Response
      */
-    public function referralOrder(Request $request, Response $response): Response
+    public function recordOrderMappingRelation(Request $request, Response $response): Response
     {
         $params = $request->getParams();
         $rules = [

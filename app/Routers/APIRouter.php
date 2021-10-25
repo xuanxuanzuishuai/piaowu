@@ -95,5 +95,10 @@ class APIRouter extends RouterBase
             'call' => Consumer::class . ':realReferral',
             'middles' => [],
         ],
+        '/api/consumer/record_order_relation' => [
+            'method' => ['post'],
+            'call' => Consumer::class . ':recordOrderMappingRelation',
+            'middles' => [],
+        ],
     ];
 }
