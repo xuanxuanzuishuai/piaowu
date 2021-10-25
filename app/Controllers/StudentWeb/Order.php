@@ -159,7 +159,7 @@ class Order extends ControllerBase
             if (!empty($params['param_id'])) {
                 $sceneData = ReferralActivityService::getParamsInfo($params['param_id']);
                 $sceneData['param_id'] = $sceneData['id'];
-            }elseif(!empty($params['channel_id'])){
+            } elseif (!empty($params['channel_id'])) {
                 $sceneData['c'] = $params['channel_id'];
             }
             // 检查购买人当前绑定的代理是否一致

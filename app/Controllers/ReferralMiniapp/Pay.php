@@ -104,9 +104,9 @@ class Pay extends ControllerBase
             //转介绍订单关系绑定
             $sceneData = ShowMiniAppService::getSceneData($params['scene'] ?? '');
             if (!empty($orderId)) {
-                if(empty($sceneData)){
-                    $channel_id = $params['channel_id'] ?? DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL,'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT');
-                    $sceneData = [
+                if (empty($sceneData)) {
+                    $channel_id = $params['channel_id'] ?? DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT');
+                    $sceneData  = [
                         'c' => $channel_id,
                     ];
                 }

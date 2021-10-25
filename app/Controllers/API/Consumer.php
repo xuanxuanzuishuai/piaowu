@@ -24,6 +24,10 @@ use App\Libs\TPNS;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
+use App\Models\BillMapModel;
+use App\Models\Dss\DssErpPackageV1Model;
+use App\Models\Dss\DssPackageExtModel;
+use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpStudentModel;
@@ -32,6 +36,7 @@ use App\Models\StudentAccountAwardPointsLogModel;
 use App\Models\WhiteGrantRecordModel;
 use App\Services\AgentService;
 use App\Services\AutoCheckPicture;
+use App\Services\BillMapService;
 use App\Services\CashGrantService;
 use App\Services\CountingActivityAwardService;
 use App\Services\CountingActivitySignService;
@@ -1116,6 +1121,90 @@ class Consumer extends ControllerBase
                 break;
         }
         
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 转介绍订单
+     * topic: bill_status
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function referralOrder(Request $request, Response $response): Response
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'topic_name',
+                'type' => 'required',
+                'error_code' => 'topic_name_is_required',
+            ],
+            [
+                'key' => 'source_app_id',
+                'type' => 'required',
+                'error_code' => 'source_app_id_is_required',
+            ],
+            [
+                'key' => 'event_type',
+                'type' => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+            [
+                'key' => 'msg_body',
+                'type' => 'required',
+                'error_code' => 'msg_body_is_required',
+            ],
+        ];
+
+        $topicName = 'bill_status';
+        $eventType = [
+            'bind_bill_map' => 'event_order_paid',  // 保存订单到bill_map
+        ];
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        // 检查topic 是否正确
+        if ($params['topic_name'] != $topicName) {
+            SimpleLogger::info('topic_name_error', ['topic' => $topicName, 'params' => $params]);
+            return HttpHelper::buildResponse($response, []);
+        }
+        $paramMapInfo = $params['msg_body'];
+        $appId = $paramMapInfo['package']['app_id'] ?? 0;
+        $packageType = $paramMapInfo['contain_category_group'] ?? 0;
+
+        // 获取用户是否存在
+        $studentInfo = DssStudentModel::getRecord(['uuid' => $paramMapInfo['student']['uuid']], ['id']);
+        if (empty($studentInfo)) {
+            SimpleLogger::info('student_not_found', ['topic' => $topicName, 'params' => $params, 'student' => $studentInfo]);
+            return HttpHelper::buildResponse($response, []);
+        }
+        switch ($params['event_type']) {
+            case $eventType['bind_bill_map']:
+                /** 保存订单到bill_map */
+                // 检查 只接受智能业务线并且是体验课订单
+                if ($appId != Constants::SMART_APP_ID || $packageType != DssPackageExtModel::PACKAGE_TYPE_TRIAL) {
+                    SimpleLogger::info('app_id_or_package_type_error', ['topic' => $topicName, 'params' => $params, 'student' => $studentInfo]);
+                    break;
+                }
+                // 查询订单是否存在不记录 - 订单号
+                $billMapInfo = BillMapModel::getRecord(['bill_id' => $paramMapInfo['order_id']], ['id']);
+                if (!empty($billMapInfo)) {
+                    SimpleLogger::info('bill_is_exist', ['topic' => $topicName, 'params' => $params, 'student' => $studentInfo]);
+                    break;
+                }
+                // 保存订单信息
+                $res = BillMapService::mapDataRecord(['c' => $paramMapInfo['order_channel_id']], $paramMapInfo['order_id'], $studentInfo['id']);
+                if (!$res) {
+                    SimpleLogger::info('save_bill_map_fail', ['topic' => $topicName, 'params' => $params, 'student' => $studentInfo]);
+                    break;
+                }
+                break;
+            default:
+                SimpleLogger::error('unknown event type', ['params' => $params]);
+                break;
+        }
         return HttpHelper::buildResponse($response, []);
     }
 }
