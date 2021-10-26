@@ -233,7 +233,7 @@ class StudentActivity extends ControllerBase
      * @param Response $response
      * @return Response
      */
-    public function realUserRewardTopList(Request $request, Response $response)
+    public function realUserRewardTopList(/** @noinspection PhpUnusedParameterInspection */ Request $request, Response $response)
     {
         try {
             $data = RealActivityService::realUserRewardTopList();
@@ -241,5 +241,18 @@ class StudentActivity extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 周周领奖tab是否可以展示
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function monthAndWeekActivityShowTab(/** @noinspection PhpUnusedParameterInspection */
+        Request $request, Response $response)
+    {
+        $data = RealActivityService::monthAndWeekActivityTabShowList($this->ci['user_info']);
+        return HttpHelper::buildResponse($response, array_values($data));
     }
 }

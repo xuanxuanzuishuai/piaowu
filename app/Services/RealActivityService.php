@@ -44,6 +44,11 @@ class RealActivityService
         ];
         //获取学生信息
         $studentDetail = ErpStudentModel::getStudentInfoById($studentId);
+        //检测是否可以看到周周领奖tab
+        $showTabList = self::monthAndWeekActivityTabShowList($studentDetail);
+        if (empty($showTabList['week_tab'])) {
+            return $data;
+        }
         if (empty($studentDetail)) {
             throw new RunTimeException(['student_not_exist']);
         }
@@ -401,5 +406,26 @@ class RealActivityService
         //
         // $redis->setex($cacheKey, Util::TIMESTAMP_12H, json_encode($accountDetail));
         return $accountDetail;
+    }
+
+    /**
+     * 周周/月月领奖tab展示列表
+     * @param $studentData
+     * @return array
+     */
+    public static function monthAndWeekActivityTabShowList($studentData)
+    {
+        $tabData['month_tab'] = [
+            'title' => '月月有奖',
+            'aw_type' => 'month'
+        ];
+        $splitTime = DictConstants::get(DictConstants::ACTIVITY_CONFIG, 'real_week_tab_first_pay_split_time');
+        if (!empty($studentData['first_pay_time']) && ((int)$splitTime >= (int)$studentData['first_pay_time'])) {
+            $tabData['week_tab'] = [
+                'title' => '周周领奖',
+                'aw_type' => 'week'
+            ];
+        }
+        return $tabData;
     }
 }

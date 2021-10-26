@@ -495,6 +495,10 @@ class DictConstants {
             'allowed_0_channel', // 指定0元的渠道
             'real_refused_poster_url', // 真人 - 海报审核未通过跳转地址
             'invited_year_reward_distribution_switch', //智能转介绍奖励规则,受邀人为年卡身份奖励发放开关:1发放 2不发放
+            'trial_award_gold_left_task_id',  // 体验卡奖励金叶子任务id
+            'trial_award_time_task_id',  // 体验卡奖励时长任务id
+            'normal_award_gold_left_task_id', // 年卡奖励金叶子任务id
+            'normal_award_time_task_id', // 年卡奖励时长任务id
         ]
     ];
 
@@ -1009,8 +1013,12 @@ class DictConstants {
              'channel_month_real_student_app',
              'channel_month_real_student_wx_second',
              'channel_month_real_student_app_second',
+             'channel_invite_wx',
+             'channel_invite_app',
+             'real_week_tab_first_pay_split_time',
          ]
     ];
+
 
     //活动中心显示规则配置
     const ACTIVITY_CENTER_SHOW_RULE = [
@@ -1049,6 +1057,52 @@ class DictConstants {
             'xyzop_1262_msg_url', // 消息跳转链接
         ]
     ];
+
+    // 奖励状态
+    const AWARD_STATUS = [
+        'type' => 'award_status',
+        'keys' => [
+            '0',    // 未达标
+            '1',    // 待领取
+            '2',    // 已领取
+        ],
+    ];
+
+    // 转介绍奖励规则配置邀请人状态
+    const REFERRAL_RULE_INVITED_STATUS = [
+        'type' => 'referral_rule_invited_status',
+        'keys' => [
+            '1', // 智能业务线邀请人状态：注册
+            '2', // 智能业务线邀请人状态：体验卡
+            '4', // 智能业务线邀请人状态：体验卡过期未付费正式时长
+            '8', // 智能业务线邀请人状态：付费正式时长未过期
+            '16', // 智能业务线邀请人状态：正式时长已过期未续费
+        ]
+    ];
+    // 转介绍奖励规则类型
+    const REFERRAL_RULE_TYPE = [
+        'type' => 'referral_rule_type',
+        'keys' => [
+            '1', // 真人学生转介绍学生
+            '2', // 真人合伙人转介绍学生
+            '3', // 智能学生转介绍学生
+            '4', // 智能合伙人转介绍学生
+        ]
+    ];
+    // 活动时间状态
+    const ACTIVITY_TIME_STATUS = [
+        'type' => 'activity_time_status',
+        'keys' => [
+            '1', // 待开始
+            '2', // 进行中
+            '3', // 已结束
+        ]
+    ];
+
+
+
+
+
 
     /**
      * 单个获取op系统dict配置数据

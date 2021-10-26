@@ -9,7 +9,6 @@
 namespace App\Controllers\Real;
 
 use App\Controllers\ControllerBase;
-use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Models\RealLandingPromotionRecordModel;
 use App\Services\RealLandingPromotionService;
