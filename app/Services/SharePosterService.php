@@ -623,10 +623,8 @@ class SharePosterService
         $uuids = array_column($posters, 'uuid');
         $whiteList = WeekWhiteListModel::getRecords(['uuid'=>$uuids, 'status'=>WeekWhiteListModel::NORMAL_STATUS],['uuid']);
         $whiteList = array_column($whiteList, null, 'uuid');
-
-        $divisionTime = DictConstants::get(DictConstants::NORMAL_UPLOAD_POSTER_DIVISION_TIME, 'division_time');
+        //奖励配置
         $taskConfig = DictConstants::getSet(DictConstants::NORMAL_UPLOAD_POSTER_TASK);
-
         $now = time();
         $updateData = [
             'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
@@ -673,20 +671,8 @@ class SharePosterService
                 ]);
                 continue;
             }
-            //计算当前真正应该获得的奖励
-            $where = [
-                'id[!]' => $poster['id'],
-                'student_id' => $poster['student_id'],
-                'type' => SharePosterModel::TYPE_WEEK_UPLOAD,
-                'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
-                'create_time[>=]' => $divisionTime,
-            ];
-            $count = SharePosterModel::getCount($where);
-            if ($poster['create_time'] < $divisionTime) {
-                $taskId = $taskConfig['-1'];
-            } else {
-                $taskId = $taskConfig[$count] ?? $taskConfig['-1'];
-            }
+            //计算当前真正应该获得的奖励---2021.10.26修改为固定奖励1000金叶子，不再考虑阶梯奖励
+            $taskId = $taskConfig['-2'];
             if (!empty($update) && empty($poster['points_award_ids'])) {
                 $endDate = DictConstants::get(DictConstants::WEEK_WHITE_TERM_OF_VALIDITY, 'term_of_validity');
                 $endDate = strtotime($endDate);

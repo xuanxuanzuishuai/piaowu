@@ -785,7 +785,7 @@ class DictConstants {
     const NORMAL_UPLOAD_POSTER_TASK = [
         'type' => 'normal_upload_poster_task',
         'keys' => [
-            '0','1','2','-1'
+            '0','1','2','-1','-2'
         ]
     ];
     //付款方式
