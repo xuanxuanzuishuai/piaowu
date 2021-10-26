@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
@@ -98,13 +99,17 @@ class RefereeAwardService
         if (empty($inviteRes)) {
             return false;
         }
-
-        // 不发奖励 - 推荐人状态为非"付费正式课"不发奖励
+        //2021.10.26增加发放奖励开关配置
+        if ((int)DictConstants::get(DictConstants::REFERRAL_CONFIG, 'send_award_switch') != Constants::STATUS_TRUE) {
+            return false;
+        };
+        //学生已存在转介绍关系不再发放奖励
         $referralInfo = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $student['id']]);
         if (empty($referralInfo)) {
             SimpleLogger::info("RefereeAwardService::dssShouldCompleteEventTask", ['err' => 'no_fond_referee', 'student' => $student, 'package' => $package]);
             return false;
         }
+        // 不发奖励 - 推荐人状态为非"付费正式课"不发奖励
         //$referralUser = DssStudentModel::getRecord(['id' => $referralInfo['referee_id']]);
         //if ($referralUser['has_review_course'] != DssStudentModel::REVIEW_COURSE_1980) {
         //    SimpleLogger::info("RefereeAwardService::dssShouldCompleteEventTask", ['err' => 'no_REVIEW_COURSE_1980', 'student' => $student, 'package' => $package]);
