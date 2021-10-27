@@ -602,7 +602,7 @@ class SourceMaterialService
             $val['jump_url']   = $val['jump_rule'] == BannerConfigModel::IS_ALLOW_JUMP ? urldecode($val['jump_url']) : '';
         }
         $data = [
-            'gold_leaf_num' => $goldLeaf / self::WAN_UNIT,
+            'gold_leaf_num' => Util::unitConvert($goldLeaf),
             'banner_list'   => $bannerLists
         ];
         return $data;
@@ -630,7 +630,7 @@ class SourceMaterialService
         }
         $data = [
             'amount'        => ceil($goldLeaf / ErpPackageV1Model::DEFAULT_SCALE_NUM),
-            'gold_leaf_num' => $goldLeaf / self::WAN_UNIT,
+            'gold_leaf_num' => Util::unitConvert($goldLeaf),
             'lists'         => $posterList
         ];
         return $data;
@@ -800,9 +800,6 @@ class SourceMaterialService
     public static function getGoldLeafMaxNum()
     {
         return DictService::getKeyValue('SALE_SHOP_CONFIG', 'GOLD_LEAF_MAX_NUM');
+
     }
-
-
-
-
 }

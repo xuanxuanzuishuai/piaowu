@@ -1118,7 +1118,7 @@ class Util
         }
         return false;
     }
-    
+
     /**
      * url后添加参数
      * @param $url
@@ -1336,7 +1336,7 @@ class Util
             return date('Y-m-d H:i', $time);
         }
     }
-    
+
     /**
      * 非常给力的authcode加密函数,Discuz!经典代码(带详解)
      * 函数authcode($string, $operation, $key, $expiry)中的$string：字符串，明文或密文；$operation：DECODE表示解密，其它表示加密；$key：密匙；$expiry：密文有效期。
@@ -1350,10 +1350,10 @@ class Util
     {
         // 动态密匙长度，相同的明文会生成不同密文就是依靠动态密匙
         $ckey_length = 4;
-        
+
         // 密匙
         $key = md5($key);
-        
+
         // 密匙a会参与加解密
         $keya = md5(substr($key, 0, 16));
         // 密匙b会用来做数据完整性验证
@@ -1418,5 +1418,35 @@ class Util
             return false;
         }
         return true;
+    }
+
+    /**
+     * 枚举数组->二进制按位或
+     * @param $enumArr
+     * @return int
+     */
+    public static function formatEnumToBit($enumArr)
+    {
+        $bits = 0;
+        foreach ($enumArr as $value) {
+            $bits |= $value;
+        }
+        return $bits;
+    }
+
+    /**
+     * 单位转换
+     * @param $num
+     * @return int|string
+     */
+    public static function unitConvert(int $num)
+    {
+        if ($num >= 10000) {
+            return floor($num / 10000) . '万';
+        } elseif ($num < 0) {
+            return 0;
+        } else {
+            return $num;
+        }
     }
 }
