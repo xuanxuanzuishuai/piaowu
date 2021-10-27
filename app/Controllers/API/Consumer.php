@@ -1182,6 +1182,11 @@ class Consumer extends ControllerBase
                     SimpleLogger::info('app_id_or_package_type_error', ['topic' => $topicName, 'params' => $params, 'student' => $studentInfo]);
                     break;
                 }
+                // 排除非抖店渠道订单
+                if ($paramMapInfo['order_channel_id'] != DictConstants::get(DictConstants::REFERRAL_CONFIG, 'doudian_order_channel_id')) {
+                    SimpleLogger::info('order_channel_id_error', ['topic' => $topicName, 'params' => $params, 'student' => $studentInfo]);
+                    break;
+                }
                 // 查询订单是否存在不记录 - 订单号
                 $billMapInfo = BillMapModel::getRecord(['bill_id' => $paramMapInfo['order_id']], ['id']);
                 if (!empty($billMapInfo)) {
