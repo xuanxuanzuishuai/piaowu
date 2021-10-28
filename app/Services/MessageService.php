@@ -491,6 +491,7 @@ class MessageService
             $posterImgFile = PosterService::generateLifeQRPosterAliOss(
                 $item,
                 $config,
+                $_ENV['USER_RECOMMEND_STANDARD_POSTER'],
                 $data['user_id']
             );
         } else {

@@ -26,6 +26,7 @@ class RealDictConstants extends DictConstants
             'real_share_poster_history_url', // 用户分享海报历史记录连接
             'real_month_award_url', // 月月有奖地址
             'register_default_channel', //注册默认渠道
+            'employee_replace_student_create_poster_activity_id', // 员工替学生生成转介绍分享海报活动id
         ]
     ];
 

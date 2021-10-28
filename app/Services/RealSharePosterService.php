@@ -9,8 +9,10 @@
 namespace App\Services;
 
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\AliOSS;
+use App\Libs\RealDictConstants;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
@@ -18,11 +20,13 @@ use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpStudentModel;
+use App\Models\MessagePushRulesModel;
 use App\Models\QrInfoOpCHModel;
 use App\Models\RealSharePosterAwardModel;
 use App\Models\RealSharePosterModel;
 use App\Models\RealUserAwardMagicStoneModel;
 use App\Models\RealWeekActivityModel;
+use App\Models\WeChatConfigModel;
 use App\Services\Queue\QueueService;
 
 class RealSharePosterService
@@ -331,6 +335,8 @@ class RealSharePosterService
             'poster_id'           => $request['poster_id'],
             'user_current_status' => $userStatus['pay_status'] ?? 0,
             'activity_id'         => $request['activity_id'] ?? 0,
+            'from_service'        => $request['from_service'] ?? '',
+            'employee_uuid'       => $request['employee_uuid'] ?? '',
         ];
         $userType = Constants::USER_TYPE_STUDENT;
         $landingType = DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
@@ -358,6 +364,92 @@ class RealSharePosterService
         return [
             'uuid'        => $studentInfo['uuid'],
             'check_activity_id' => $checkActivityId['check_active_id']
+        ];
+    }
+
+    /**
+     * 员工代替学生生成学生转介绍海报
+     * @param $params
+     * @return array|string[]
+     */
+    public static function replaceStudentCreatePoster($params): array
+    {
+        $returnData = [];
+        $studentUuid = $params['student_uuid'] ?? '';
+        $employeeUuid = $params['employee_uuid'] ?? '';
+        if (empty($studentUuid) || empty($employeeUuid)) {
+            SimpleLogger::info("student_uuid_or_employee_uuid_is_empty", [$params]);
+            return $returnData;
+        }
+
+        $studentStatus = 0;
+        switch ($params['app_id']) {
+            case Constants::REAL_APP_ID:
+                $studentInfo = ErpStudentModel::getStudentInfoByUuid($studentUuid);
+                // 获取用户当前状态
+                try {
+                    if (!empty($studentInfo)) {
+                        $studentStatus  = StudentService::dssStudentStatusCheck($studentInfo['id'])['student_status'] ?? 0;
+                    }
+                } catch (RunTimeException $e) {
+                    SimpleLogger::info("student_status_error", [$params, $studentStatus, $studentInfo]);
+                }
+                break;
+            default:
+                break;
+        }
+        // 检查学生是否存在
+        SimpleLogger::info("student_info", [$params, $studentInfo ?? []]);
+        if (empty($studentInfo)) {
+            return $returnData;
+        }
+        // 获取规则id详情
+        $ruleInfo = MessagePushRulesModel::getRecord(
+            [
+                'id'   => DictConstants::get(DictConstants::MESSAGE_RULE, 'invite_friend_rule_id'),
+                'type' => MessagePushRulesModel::PUSH_TYPE_CUSTOMER
+            ],
+            ['content']
+        );
+        $ruleInfoContentList = json_decode($ruleInfo['content'], true);
+        // 取出规则列表里面第一张图片作为海报底图
+        $imageInfo = [];
+        foreach ($ruleInfoContentList as $item) {
+            if ($item['type'] == WeChatConfigModel::CONTENT_TYPE_IMG && !empty($item['value'])) {
+                $imageInfo = $item;
+                break;
+            }
+        }
+        unset($item);
+        // 获取海报水印配置
+        $config = DictConstants::getSet(DictConstants::TEMPLATE_POSTER_CONFIG);
+        // 生成海报
+        $posterId = $imageInfo['poster_id'] ?? 0;
+        switch ($params['app_id']) {
+            case Constants::REAL_APP_ID:
+                $posterInfo = PosterService::generateLifeQRPosterAliOss(
+                    [
+                        'path' => $imageInfo['value'] ?? '',
+                        'poster_id' => $posterId
+                    ],
+                    $config,
+                    $studentInfo['id'],
+                    $params['channel_id'] ?? 0,
+                    [
+                        'activity_id'   => RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'employee_replace_student_create_poster_activity_id'),
+                        'employee_uuid' => $employeeUuid,
+                        'poster_id'     => $posterId,
+                        'user_status'   => $studentStatus,
+                        'from_service'  => $params['from_service'] ?? '',
+                    ]
+                );
+                break;
+            default:
+                break;
+        }
+        // 返回海报连接
+        return [
+            'format_poster_url' => $posterInfo['poster_save_full_path'] ?? '',
         ];
     }
 }

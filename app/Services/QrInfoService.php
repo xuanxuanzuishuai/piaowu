@@ -45,6 +45,8 @@ class QrInfoService
             'invited_mobile'      => 'invited_mobile',          // 受邀人手机号
             'date'                => 'date',                    // 日期
             'check_active_id'     => 'check_active_id',         // 海报唯一码校验活动ID
+            'from_service'        => 'from_service',            // 请求来源服务
+            'employee_uuid'       => 'employee_uuid',           // 员工uuid
         ];
         $qrData['check_active_id'] = PosterService::getCheckActivityId($appId);
         foreach ($signField as $paramsFiled => $createField) {

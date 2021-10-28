@@ -81,6 +81,7 @@ class RealReferralService
             'user_type'       => $userType,
             'referee_id'      => self::DEFAULT_REFEREE_ID,
             'referee_user_id' => $refereeId ?? '',
+            'qr_id'           => $params['qr_id'] ?? '',
             'referee_type'    => Constants::USER_TYPE_STUDENT
         ];
         //注册用户

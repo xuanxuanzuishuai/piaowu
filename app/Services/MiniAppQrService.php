@@ -349,6 +349,8 @@ class MiniAppQrService
             'user_status'     => $extParams['user_status'] ?? ($extParams['user_current_status'] ?? 0),
             'check_active_id' => PosterService::getCheckActivityId($appId),
             'date'            => date('Y-m-d', time()),
+            'from_service'    => $extParams['from_service'] ?? '',
+            'employee_uuid'   => $extParams['employee_uuid'] ?? '',
         ];
         // 根据小程序码主要信息，查询CH
         $qrSign = QrInfoService::createQrSign($qrData, $appId, $busiesType);

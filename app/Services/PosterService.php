@@ -435,9 +435,10 @@ class PosterService
 
     /**
      * 真人生成带用户QR码海报
-     * @param $posterPath
+     * @param $item
      * @param $config
      * @param $userId
+     * @param $channelId
      * @param array $extParams
      * @return array|string[]
      */
@@ -445,6 +446,7 @@ class PosterService
         $item,
         $config,
         $userId,
+        $channelId,
         $extParams = []
     ) {
         $posterPath = $item['path'];
@@ -460,9 +462,12 @@ class PosterService
 
         //获取真人小程序码
         $params = [
-            'student_id' => $userId,
-            'poster_id'  => $posterId,
-            'channel_id' => $_ENV['USER_RECOMMEND_STANDARD_POSTER']
+            'student_id'    => $userId,
+            'poster_id'     => $posterId,
+            'channel_id'    => $channelId,
+            'from_service'  => $extParams['from_service'] ?? '',
+            'activity_id'  => $extParams['activity_id'] ?? 0,
+            'employee_uuid' => $extParams['employee_uuid'] ?? '',
         ];
         $userQrData = RealSharePosterService::getQrPath($params);
         if (empty($userQrData)) {

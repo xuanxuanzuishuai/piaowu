@@ -14,6 +14,8 @@ class CrmRouter extends RouterBase
 
     protected $uriConfig = [
         '/crm/referral/referee_list' => ['method' => ['get', 'post'], 'call' => Crm::class . ':refereeList'],
+        // 员工代替学生生成学生转介绍海报
+        '/crm/employee/replace_student_create_poster' => ['method' => ['post'], 'call' => Crm::class . ':replaceStudentCreatePoster'],
     ];
 
 }
