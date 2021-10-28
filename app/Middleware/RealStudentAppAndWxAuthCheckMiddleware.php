@@ -31,7 +31,7 @@ class RealStudentAppAndWxAuthCheckMiddleware extends MiddlewareBase
             SimpleLogger::info('header user id miss: ', []);
             return $response->withJson(Valid::addAppErrors([], 'user_id_miss'), StatusCode::HTTP_OK);
         }
-        $studentAppData = ErpStudentAppModel::getRecord(['student_id' => $userId], ['student_id(user_id)', 'status', 'first_pay_time']);
+        $studentAppData = ErpStudentAppModel::getRecord(['student_id' => $userId, 'app_id' => Constants::REAL_APP_ID], ['student_id(user_id)', 'status', 'first_pay_time']);
         if (empty($studentAppData)) {
             SimpleLogger::info('user data error: ', []);
             return $response->withJson(Valid::addAppErrors([], 'unknown_user'), StatusCode::HTTP_OK);
