@@ -45,6 +45,7 @@ class CopyManageService
         $addRes = CopyManageModel::batchInsert([
             'content' => trim(Util::textEncode($content)),
             'title' => $contentData['title'],
+            'type' => $contentData['type'],
             'operator_id' => $operatorId,
             'create_time' => $time,
         ]);
