@@ -297,7 +297,7 @@ class AutoCheckPicture
             return [$status, $errCode];
         }
 
-        $hours          = 3600 * 24; //24小时
+        $hours          = 3600 * 12; //12小时
         $screenDate     = null; //截图时间初始化
         $uploadTime     = time(); //上传时间
         $contentKeyword = ['小叶子', '琴', '练琴', '很棒', '求赞']; //内容关键字
@@ -411,14 +411,7 @@ class AutoCheckPicture
 
             //上传时间处理 字符串||关键字之后 ['年', '月', '日', '昨天', '天前', '小时前', '分钟前','上午', '：']
             if (Util::sensitiveWordFilter($dateKeyword, $word) == true && $val['rect']['top'] > 300) {
-                //屏蔽以下情况，"扫码送：超精品练琴礼包"
-                $res = preg_match("/[0-9]：[0-9]/", $word);
-                if (mb_strpos($word, '：') !== false && !$res){
-                    continue;
-                }
-
                 //如果包含年月
-                $existYmd = false;
                 if (Util::sensitiveWordFilter(['年', '月', '日'], $word) == true) {
                     if (mb_strpos($word, '年') === false) {
                         continue;
@@ -429,24 +422,49 @@ class AutoCheckPicture
                     if (mb_strpos($word, '日') === false) {
                         continue;
                     }
-                    $existYmd = true;
+                    $issetDate = true;
+                    $shareDate = true;
+                }
+
+                //屏蔽一下情况，"扫码送：超精品练琴礼包"
+                $res = preg_match("/[0-9]：[0-9]/", $word);
+                if (mb_strpos($word, '：') !== false && !$res){
+                    continue;
                 }
 
                 $issetDate = true;
 
-                //当日期格式为'3天前'或同时存在年月日直接认为日期校验合格
-                if (mb_strpos($word, '天前') !== false || $existYmd) {
+                if (mb_strpos($word, '分钟前') !== false) {
+                    continue;
+                }
+
+                if (mb_strpos($word, '天前') !== false) {
                     $shareDate = true;
-                } elseif (Util::sensitiveWordFilter(['分钟前', '小时前'], $word) === true) {
-                    $screenDate = '';
-                } elseif (mb_strpos($word, '：') !== false && mb_strlen($word) == 5) {
-                    //这里判断的是只有时分格式的时间，例如：23：56，备注：OCR识别冒号为中文格式
-                    $screenDate = '';
-                } elseif (Util::sensitiveWordFilter(['昨天', '年'], $word) === false && Util::sensitiveWordFilter(['上午', '下午'], $word) === true) {
-                    $screenDate = '';
+                    continue;
+                }
+
+                if (mb_strpos($word, '：') !== false && mb_strlen($word) == 5) {
+                    $word_str = str_replace('：', 0, $word);
+                    if (!is_numeric($word_str)) {
+                        continue;
+                    }
+                    $screenDate = date('Y-m-d ' . str_replace('：', ':', $word));//截图时间
+                } elseif (mb_strpos($word, '小时前') !== false) {
+                    $endWord    = '小时前';
+                    $start      = 0;
+                    $end        = mb_strpos($word, $endWord) - $start;
+                    $string     = mb_substr($word, $start, $end);
+                    $screenDate = date('Y-m-d H:i', strtotime('-' . $string . ' hours'));
+                } elseif (Util::sensitiveWordFilter(['昨天', '年'], $word) === false && mb_strpos($word, '上午') !== false) { //当做今天的 下午可忽略
+                    $beginWord  = '上午';
+                    $endWord    = '删除';
+                    $start      = mb_strpos($word, $beginWord) + mb_strlen($beginWord);
+                    $end        = $issetDel ? (mb_strpos($word, $endWord) - $start) : mb_strlen($word) - 1;
+                    $string     = mb_substr($word, $start, $end);
+                    $screenDate = date('Y-m-d ' . str_replace('：', ':', $string));//截图时间
                 } elseif (mb_strpos($word, '昨天') !== false) {
                     if (mb_strlen($word) == 2) {
-                        $screenDate = '';
+                        $screenDate = date('Y-m-d', strtotime('-1 day'));
                     } elseif (mb_strpos($word, '上午') !== false || mb_strpos($word, '凌晨') !== false) {
                         $beginWord  = '昨天上午';
                         $endWord    = '删除';
