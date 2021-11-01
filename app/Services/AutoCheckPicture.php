@@ -396,13 +396,20 @@ class AutoCheckPicture
                 }
 
                 $checkActivityIdStr = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'week_activity_id_effect');
-                $checkActivityIdArr = [];
+                $checkActivityIdStrV1 = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'week_activity_id_effect_v1');
+                $checkActivityIdArr = $checkActivityIdArrV1 =  [];
                 if (!empty($checkActivityIdStr)) {
                     $checkActivityIdArr = explode(',', $checkActivityIdStr);
+                    $checkActivityIdArrV1 = explode(',', $checkActivityIdStrV1);
                 }
                 if (!empty($uploadInfo['activity_id'])) {
-                    //两个通过条件：一、海报生成和上传是一期活动/二、海报生成和上传在指定活动内
-                    if ((in_array($composeCheckActivity, $checkActivityIdArr) && in_array($uploadInfo['activity_id'], $checkActivityIdArr)) || $composeCheckActivity == $uploadInfo['activity_id']) {
+                    //海报生成和上传是一期活动，允许通过
+                    if ($composeCheckActivity == $uploadInfo['activity_id']) {
+                        $isSameActivity = true;
+                    } elseif (in_array($composeCheckActivity, $checkActivityIdArr) && in_array($uploadInfo['activity_id'], $checkActivityIdArr)) {
+                        //海报生成和上传在指定的5期活动，允许通过
+                        $isSameActivity = true;
+                    } elseif (in_array($composeCheckActivity, $checkActivityIdArrV1) && in_array($uploadInfo['activity_id'], $checkActivityIdArrV1)) {
                         $isSameActivity = true;
                     }
                 }

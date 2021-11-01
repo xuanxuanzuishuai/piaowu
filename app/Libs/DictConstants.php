@@ -492,6 +492,7 @@ class DictConstants {
             'refused_poster_url', // 海报审核未通过跳转地址
             'week_activity_url', // 周周有奖活动地址
             'week_activity_id_effect', // 周周有奖活动有效ID
+            'week_activity_id_effect_v1', // 周周有奖活动有效ID_v1
             'allowed_0_channel', // 指定0元的渠道
             'real_refused_poster_url', // 真人 - 海报审核未通过跳转地址
             'invited_year_reward_distribution_switch', //智能转介绍奖励规则,受邀人为年卡身份奖励发放开关:1发放 2不发放
