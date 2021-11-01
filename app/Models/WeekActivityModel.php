@@ -230,9 +230,9 @@ class WeekActivityModel extends Model
                 $_tmpInfo = self::formatOne($item);
                 // 重新设置选中的活动
                 if ($key == $activeKey) {
-                    $_activity['active'] = Constants::STATUS_TRUE;
+                    $_tmpInfo['active'] = Constants::STATUS_TRUE;
                 } else {
-                    $_activity['active'] = Constants::STATUS_FALSE;
+                    $_tmpInfo['active'] = Constants::STATUS_FALSE;
                 }
                 // 区分是当期活动还是上期活动
                 if (in_array($item['activity_id'], $twoActivityId)) {
@@ -265,9 +265,9 @@ class WeekActivityModel extends Model
                 $_tmpInfo = self::formatOne($item);
                 // 重新设置选中的活动
                 if ($key == $activeKey) {
-                    $_activity['active'] = Constants::STATUS_TRUE;
+                    $_tmpInfo['active'] = Constants::STATUS_TRUE;
                 } else {
-                    $_activity['active'] = Constants::STATUS_FALSE;
+                    $_tmpInfo['active'] = Constants::STATUS_FALSE;
                 }
                 // 区分是当期活动还是上期活动
                 if ($item['activity_id'] == $threeActivityId) {
