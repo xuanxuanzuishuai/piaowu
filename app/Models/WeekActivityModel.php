@@ -224,16 +224,9 @@ class WeekActivityModel extends Model
                 'curr' => [],
                 'up' => []
             ];
-            $activeKey = count($list) - 1;  // 数组最后一个选中， 这里需要注意的是方法最后做了array_reverse 所以相当于是第一个选中
             foreach ($activityList as $key => $item) {
                 // 格式化数据
                 $_tmpInfo = self::formatOne($item);
-                // 重新设置选中的活动
-                if ($key == $activeKey) {
-                    $_tmpInfo['active'] = Constants::STATUS_TRUE;
-                } else {
-                    $_tmpInfo['active'] = Constants::STATUS_FALSE;
-                }
                 // 区分是当期活动还是上期活动
                 if (in_array($item['activity_id'], $twoActivityId)) {
                     $activityGroup['curr'][] = $_tmpInfo;
@@ -249,6 +242,16 @@ class WeekActivityModel extends Model
                 // 5,4,3,2,1,11-3,11-2,11-1
                 $list = array_merge($activityGroup['up'], $activityGroup['curr']);
             }
+            // 重新设置选中的活动
+            $activeKey = count($list) - 1;  // 数组最后一个选中， 这里需要注意的是方法最后做了array_reverse 所以相当于是第一个选中
+            foreach ($list as $key => &$_activity) {
+                if ($key == $activeKey) {
+                    $_activity['active'] = Constants::STATUS_TRUE;
+                } else {
+                    $_activity['active'] = Constants::STATUS_FALSE;
+                }
+            }
+            unset($_activity);
         } elseif ($active['activity_id'] == $threeActivityId) {
             // 第二次活动开始，需要补前几期活动
             $activityList = WeekActivityModel::getRecords([
@@ -259,7 +262,6 @@ class WeekActivityModel extends Model
                 'curr' => [],
                 'up' => []
             ];
-            $activeKey = count($list) - 1;  // 数组最后一个选中， 这里需要注意的是方法最后做了array_reverse 所以相当于是第一个选中
             foreach ($activityList as $key => $item) {
                 // 格式化数据
                 $_tmpInfo = self::formatOne($item);
@@ -284,6 +286,16 @@ class WeekActivityModel extends Model
                 // 11-1-3,11-1-2,11-1-1,11-2-1
                 $list = array_merge($activityGroup['up'], $activityGroup['curr']);
             }
+            // 重新设置选中的活动
+            $activeKey = count($list) - 1;  // 数组最后一个选中， 这里需要注意的是方法最后做了array_reverse 所以相当于是第一个选中
+            foreach ($list as $key => &$_activity) {
+                if ($key == $activeKey) {
+                    $_activity['active'] = Constants::STATUS_TRUE;
+                } else {
+                    $_activity['active'] = Constants::STATUS_FALSE;
+                }
+            }
+            unset($_activity);
         }
         return array_reverse($list);
     }
