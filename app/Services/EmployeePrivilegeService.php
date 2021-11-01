@@ -137,7 +137,7 @@ class EmployeePrivilegeService
             if (in_array(PrivilegeModel::OPERATION_BUTTON_ENUM_ADD, $operationTmpButton)) {
                 $operationButton['is_add'] = true;
             }
-            $operationButton['btn'] = array_intersect(PrivilegeModel::OPERATION_BUTTON_ENUMS, $operationTmpButton);
+            $operationButton['btn'] = array_values(array_intersect(PrivilegeModel::OPERATION_BUTTON_ENUMS, $operationTmpButton));
         }
         return $operationButton;
     }
