@@ -37,8 +37,11 @@ class AutoCheckPicture
         switch ($data['app_id']) {
             case Constants::SMART_APP_ID: //智能陪练
                 $checkActivityIdStr = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'week_activity_id_effect');
+                $checkActivityIdV1Str = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'week_activity_id_effect_v1');
+                $conditionV1 = (boolean)(empty(!$checkActivityIdStr) && in_array($result['activity_id'],explode(',',$checkActivityIdStr)));
+                $conditionV2 = (boolean)(empty(!$checkActivityIdV1Str) && in_array($result['activity_id'],explode(',',$checkActivityIdV1Str)));
                 //在指定ID的活动内，不校验活动状态
-                if (empty($checkActivityIdStr) || !in_array($result['activity_id'],explode(',',$checkActivityIdStr))){
+                if (!$conditionV1 && !$conditionV2){
                     $activityInfo = WeekActivityModel::getRecord(['activity_id' => [$result['activity_id']]], ['id', 'enable_status', 'start_time']);
                     if (empty($activityInfo) || $activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
                         SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
