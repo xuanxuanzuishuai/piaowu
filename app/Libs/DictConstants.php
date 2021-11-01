@@ -1055,6 +1055,7 @@ class DictConstants {
             'xyzop_1262_week_activity_ids', // 10.18-10.31 允许上传的活动id
             'xyzop_1262_week_activity_one', // 10.18-10.31 活动id
             'xyzop_1262_week_activity_two', // 11第一期活动id
+            'xyzop_1262_week_activity_three', // 11第二期活动id
             'xyzop_1262_msg_id', // 消息id
             'xyzop_1262_msg_url', // 消息跳转链接
         ]

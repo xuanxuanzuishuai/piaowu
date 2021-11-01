@@ -177,12 +177,14 @@ class WeekActivityModel extends Model
         unset($item);
 
         // XYZOP-1262 限时活动
-        list($oneActivityId, $twoActivityId, $wkIds) = DictConstants::get(DictConstants::XYZOP_1262_WEEK_ACTIVITY, [
+        list($oneActivityId, $twoActivityId, $wkIds, $threeActivityId) = DictConstants::get(DictConstants::XYZOP_1262_WEEK_ACTIVITY, [
             'xyzop_1262_week_activity_one',
             'xyzop_1262_week_activity_two',
-            'xyzop_1262_week_activity_ids'
+            'xyzop_1262_week_activity_ids',
+            'xyzop_1262_week_activity_three',
         ]);
         $wkIds = explode(',', $wkIds);
+        $twoActivityId = explode(',', $twoActivityId);
         if ($active['activity_id'] == $oneActivityId) {
             // 10.18-10.31  追加四期活动,最后一期活动标记为活跃
             $activityList = WeekActivityModel::getRecords([
@@ -212,34 +214,76 @@ class WeekActivityModel extends Model
                 }
             }
             unset($_activity);
-        } elseif ($active['activity_id'] == $twoActivityId) {
+        } elseif (in_array($active['activity_id'], $twoActivityId)) {
             // 11月第一期
             $activityList = WeekActivityModel::getRecords([
-                'activity_id' => array_merge($wkIds, [$oneActivityId]),
+                'activity_id' => array_merge($wkIds, [$oneActivityId], $twoActivityId),
                 'ORDER' => ['id' => 'DESC'],
             ]);
-            foreach ($activityList as &$item) {
-                $item = self::formatOne($item);
-            }
-            // 重新组装顺序 当前生效活动创建时间是12小时内
-            if ($now - $active['start_time'] < Util::TIMESTAMP_12H) {
-                // 11月1期活动，5,4,3,2,1
-                $list = array_merge([$list[0]], $activityList);
-                $activeKey = count($list) - 1;
-            } else {
-                // 5,4,3,2,1,11月1期活动
-                $list = array_merge($activityList, [$list[0]]);
-                $activeKey = count($list) - 1;
-            }
-            // 重新设置选中的活动
-            foreach ($list as $key => &$_activity) {
+            $activityGroup = [
+                'curr' => [],
+                'up' => []
+            ];
+            $activeKey = count($list) - 1;  // 数组最后一个选中， 这里需要注意的是方法最后做了array_reverse 所以相当于是第一个选中
+            foreach ($activityList as $key => $item) {
+                // 格式化数据
+                $_tmpInfo = self::formatOne($item);
+                // 重新设置选中的活动
                 if ($key == $activeKey) {
                     $_activity['active'] = Constants::STATUS_TRUE;
                 } else {
                     $_activity['active'] = Constants::STATUS_FALSE;
                 }
+                // 区分是当期活动还是上期活动
+                if (in_array($item['activity_id'], $twoActivityId)) {
+                    $activityGroup['curr'][] = $_tmpInfo;
+                } else {
+                    $activityGroup['up'][] = $_tmpInfo;
+                }
             }
-            unset($_activity);
+            // 重新组装顺序 当前生效活动创建时间是12小时内
+            if ($now - $active['start_time'] < Util::TIMESTAMP_12H) {
+                // 11-3,11-2,11-1，5,4,3,2,1
+                $list = array_merge($activityGroup['curr'], $activityGroup['up']);
+            } else {
+                // 5,4,3,2,1,11-3,11-2,11-1
+                $list = array_merge($activityGroup['up'], $activityGroup['curr']);
+            }
+        } elseif ($active['activity_id'] == $threeActivityId) {
+            // 第二次活动开始，需要补前几期活动
+            $activityList = WeekActivityModel::getRecords([
+                'activity_id' => array_merge($twoActivityId, [$threeActivityId]),
+                'ORDER' => ['id' => 'DESC'],
+            ]);
+            $activityGroup = [
+                'curr' => [],
+                'up' => []
+            ];
+            $activeKey = count($list) - 1;  // 数组最后一个选中， 这里需要注意的是方法最后做了array_reverse 所以相当于是第一个选中
+            foreach ($activityList as $key => $item) {
+                // 格式化数据
+                $_tmpInfo = self::formatOne($item);
+                // 重新设置选中的活动
+                if ($key == $activeKey) {
+                    $_activity['active'] = Constants::STATUS_TRUE;
+                } else {
+                    $_activity['active'] = Constants::STATUS_FALSE;
+                }
+                // 区分是当期活动还是上期活动
+                if ($item['activity_id'] == $threeActivityId) {
+                    $activityGroup['curr'][] = $_tmpInfo;
+                } else {
+                    $activityGroup['up'][] = $_tmpInfo;
+                }
+            }
+            // 重新组装顺序 当前生效活动创建时间是12小时内
+            if ($now - $active['start_time'] < Util::TIMESTAMP_12H) {
+                // 11-2-1,11-1-3,11-1-2,11-1-1
+                $list = array_merge($activityGroup['curr'], $activityGroup['up']);
+            } else {
+                // 11-1-3,11-1-2,11-1-1,11-2-1
+                $list = array_merge($activityGroup['up'], $activityGroup['curr']);
+            }
         }
         return array_reverse($list);
     }

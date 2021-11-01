@@ -166,11 +166,12 @@ class SharePosterService
             }
         }
         //获取奖励发放配置
-        list($wkIds, $oneActivityId) = DictConstants::get(DictConstants::XYZOP_1262_WEEK_ACTIVITY, [
+        list($wkIds, $oneActivityId, $twoActivityId) = DictConstants::get(DictConstants::XYZOP_1262_WEEK_ACTIVITY, [
             'xyzop_1262_week_activity_ids',
             'xyzop_1262_week_activity_one',
+            'xyzop_1262_week_activity_two'
         ]);
-        $wkIds = array_merge(explode(',', $wkIds), [$oneActivityId]);
+        $wkIds = array_merge(explode(',', $wkIds), [$oneActivityId], explode(',', $twoActivityId));
         if (in_array($poster['activity_id'], $wkIds)) {
             $poster['default_award_copywriting'] = "活动结束后人工发放";
             $poster['default_award_amount'] = "人工发放";
@@ -636,13 +637,14 @@ class SharePosterService
         $redis = RedisDB::getConn();
         $needAwardList = [];
         //获取奖励发放配置
-        list($msgId, $msgUrl, $wkIds, $oneActivityId) = DictConstants::get(DictConstants::XYZOP_1262_WEEK_ACTIVITY, [
+        list($msgId, $msgUrl, $wkIds, $oneActivityId, $twoActivityId) = DictConstants::get(DictConstants::XYZOP_1262_WEEK_ACTIVITY, [
             'xyzop_1262_msg_id',
             'xyzop_1262_msg_url',
             'xyzop_1262_week_activity_ids',
             'xyzop_1262_week_activity_one',
+            'xyzop_1262_week_activity_two'
         ]);
-        $wkIds = array_merge(explode(',', $wkIds), [ $oneActivityId]);
+        $wkIds = array_merge(explode(',', $wkIds), [ $oneActivityId], explode(',', $twoActivityId));
         foreach ($posters as $key => $poster) {
             // 审核数据操作锁，解决并发导致的重复审核和发奖
             $lockKey = self::KEY_POSTER_VERIFY_LOCK . $poster['id'];
