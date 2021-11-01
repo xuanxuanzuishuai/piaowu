@@ -25,6 +25,21 @@ class DssPackageExtModel extends DssModel
     const APP_XYZ = 1; // 真人陪练
     const APP_AI = 8; // 智能陪练
 
+    /** erp - 产品包类型定义 start*/
+    /** @var int 正式课分类组合 */
+    const CATEGORY_GROUP_FORMAL_COURSE = 1;
+    /** @var int 正式时长分类组合 */
+    const CATEGORY_GROUP_FORMAL_DUR = 2;
+    /** @var int 体验课程分类组 */
+    const CATEGORY_GROUP_TRIAL_COURSE = 3;
+    /** @var int 体验时长分类组 */
+    const CATEGORY_GROUP_TRIAL_DUR = 4;
+    /** @var int 赠送课程分类组 */
+    const CATEGORY_GROUP_GIFT_COURSE = 5;
+    /** @var int 赠送时长分类组 */
+    const CATEGORY_GROUP_GIFT_DUR = 6;
+    /** erp - 产品包类型定义 end*/
+
     public static function getPackages($where)
     {
         $ptable = DssErpPackageModel::$table;
