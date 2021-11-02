@@ -500,6 +500,7 @@ class DictConstants {
             'trial_award_time_task_id',  // 体验卡奖励时长任务id
             'normal_award_gold_left_task_id', // 年卡奖励金叶子任务id
             'normal_award_time_task_id', // 年卡奖励时长任务id
+            'award_time_wx_msg_url',   // 奖励时长微信消息跳转链接
             'send_award_switch', //转介绍奖励发放开关：0不发放1发放
             'doudian_order_channel_id',   // 抖店的订单渠道
         ]

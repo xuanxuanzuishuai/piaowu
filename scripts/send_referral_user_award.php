@@ -17,6 +17,7 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\CHModel\AprViewStudentModel;
@@ -82,6 +83,7 @@ class ScriptSendReferralUserAward
             $sendAwardData = [
                 'is_refund' => false,   // 是否退费
                 'push_amount' => '',     // 奖励额度 奖励是时长时：是购买产品包的天数；奖励是金叶子时：金叶子数量
+                'url' => '',
             ];
             // 如果是待发放需要校验是否退费
             if ($_award['award_status'] == ReferralUserAwardModel::STATUS_WAITING) {
@@ -103,7 +105,8 @@ class ScriptSendReferralUserAward
                 ReferralUserAwardModel::successSendAward($_award['id']);
                 // 赠送自动激活码
                 QueueService::giftDuration($_award['uuid'], DssGiftCodeModel::APPLY_TYPE_AUTO, $_award['award_amount'], DssGiftCodeModel::BUYER_TYPE_AI_REFERRAL);
-                $sendAwardData['push_amount'] = $_award['award_amount'] . '天';
+                $sendAwardData['push_amount'] = $_award['award_amount'];
+                $sendAwardData['url'] = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'award_time_wx_msg_url');
             } elseif ($_award['award_type'] == Constants::AWARD_TYPE_GOLD_LEAF && $sendAwardData['is_refund']) {
                 /** 奖励金叶子 && 已退费 */
                 ReferralUserAwardModel::disabledAwardByRefund($_award['id']);
@@ -136,6 +139,7 @@ class ScriptSendReferralUserAward
             // 推送消息
             UserRefereeService::pushUserMsg($pushMsgTaskId, $_award['award_to'], $_award['uuid'], $_award['user_id'], [
                 'amount' => $sendAwardData['push_amount'],
+                'url' => $sendAwardData['url'],
             ]);
         }
         unset($_award);
@@ -173,8 +177,9 @@ class ScriptSendReferralUserAward
             // 获取受邀人信息
             $studentInfo = DssStudentModel::getRecord(['uuid' => $_award['finish_task_uuid']], ['id']);
             // 计算是否有练琴记录 - 获取指定时间段内最早练琴时间
-            $earliestTime = AprViewStudentModel::getStudentEarliestPlayTime((int)$studentInfo['id'], (int)$playStartTime, (int)$playEndTime);
-            SimpleLogger::info("script::auto_send_buy_trial_award_points", ['info' => 'aiPlay', 'data' => $earliestTime, 'award_info' => $_award, 'play_time' => [$playStartTime, $playEndTime]]);
+            $earliestList = AprViewStudentModel::getStudentEarliestPlayTime((int)$studentInfo['id'], (int)$playStartTime, (int)$playEndTime);
+            $earliestTime = array_sum(array_column($earliestList, 'sum_duration'));
+            SimpleLogger::info("script::auto_send_buy_trial_award_points", ['info' => 'aiPlay', 'data' => $earliestList, 'award_info' => $_award, 'play_time' => [$playStartTime, $playEndTime]]);
             if (empty($earliestTime) && $playEndTime <= $time) {
                 /** 作废 - 指定时间段内没有练琴，并且最后练琴时间已经超过当前时间 */
                 SimpleLogger::info("play_time_not_found", [$playEndTime, $earliestTime]);
@@ -191,7 +196,7 @@ class ScriptSendReferralUserAward
                         $sendPushMsg = true;
                         break;
                     default:
-                        SimpleLogger::info("sendAwardNodeByTrailAward_not_award_type", [$_award, $playEndTime, $earliestTime]);
+                        SimpleLogger::info("sendAwardNodeByTrailAward_not_award_type", [$_award, $playEndTime, $earliestList]);
                         break;
                 }
             } elseif (!empty($earliestTime) && $earliestTime >= $awardCondition[ReferralUserAwardModel::AWARD_CONDITION['play_times']]) {
@@ -210,20 +215,22 @@ class ScriptSendReferralUserAward
                     case Constants::AWARD_TYPE_TIME:    // 奖励时长
                         // 赠送自动激活码
                         QueueService::giftDuration($_award['uuid'], DssGiftCodeModel::APPLY_TYPE_AUTO, $_award['award_amount'], DssGiftCodeModel::BUYER_TYPE_AI_REFERRAL);
+                        $url = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'award_time_wx_msg_url');
                         $sendPushMsg = true;
                         break;
                     default:
-                        SimpleLogger::info("sendAwardNodeByTrailAward_not_award_type", [$_award, $playEndTime, $earliestTime]);
+                        SimpleLogger::info("sendAwardNodeByTrailAward_not_award_type", [$_award, $playEndTime, $earliestList]);
                         break;
                 }
                 // 推送消息
                 if (isset($sendPushMsg) && $sendPushMsg == true) {
                     UserRefereeService::pushUserMsg($pushMsgTaskId, $_award['award_to'], $_award['uuid'], $_award['user_id'], [
                         'amount' => $_award['award_amount'],
+                        'url' => $url ?? '',
                     ]);
                 }
             } else {
-                SimpleLogger::info("sendAwardNodeByTrailAward_no_send_award", [$_award, $playEndTime, $earliestTime]);
+                SimpleLogger::info("sendAwardNodeByTrailAward_no_send_award", [$_award, $playEndTime, $earliestList]);
             }
         }
         unset($_award);

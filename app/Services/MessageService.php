@@ -1364,7 +1364,7 @@ class MessageService
      */
     public static function sendTaskGoldLeafMessage($data)
     {
-        $data['url'] = $_ENV['STUDENT_AWARD_POINTS_URL'];
+        $data['url'] = !empty($data['url']) ? $data['url'] : $_ENV['STUDENT_AWARD_POINTS_URL'];
 
         PushMessageService::sendTaskGoldLeafMessage($data);
 
