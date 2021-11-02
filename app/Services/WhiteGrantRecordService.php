@@ -30,7 +30,7 @@ use App\Models\WhiteGrantRecordModel;
 class WhiteGrantRecordService
 {
 
-    const LIMIT_MAX_SEND_MONEY = 50000;//红包最大发放金额(单位:分)
+    const LIMIT_MAX_SEND_MONEY = 20000;//红包最大发放金额(单位:分)
 
     public static $WeChatMiniPro;
     /**
