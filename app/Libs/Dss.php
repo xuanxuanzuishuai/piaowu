@@ -26,6 +26,7 @@ class Dss
     const GET_SHORT_URL = '/op/sms/get_short_url'; //获取短链
     const GET_STUDENT_IDENTITY = '/op/user/get_student_identity'; //获取用户的状态
     const GET_WX_APP_ASSISTANT = '/op/user/get_wx_app_assistant'; //小程序客服
+    const GET_USER_EXCHANGE_NUM = '/op/user/get_user_can_exchange'; //智能有效用户
 
     private $host;
 
@@ -238,6 +239,21 @@ class Dss
     public function getWxAppAssistant($params)
     {
         $res = self::commonAPI(self::GET_WX_APP_ASSISTANT, $params, 'POST');
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            SimpleLogger::error('get wx app assistant error', [$res, $params]);
+            return [];
+        }
+        return !empty($res['data']) ? $res['data'] : [];
+    }
+
+    /**
+     * 用户可兑换天数
+     * @param $params
+     * @return array|mixed
+     */
+    public function getUserCanExchangeNum($params)
+    {
+        $res = self::commonAPI(self::GET_USER_EXCHANGE_NUM, $params, 'GET');
         if ($res['code'] != Valid::CODE_SUCCESS) {
             SimpleLogger::error('get wx app assistant error', [$res, $params]);
             return [];

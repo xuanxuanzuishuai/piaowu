@@ -50,6 +50,7 @@ class StudentWXRouter extends RouterBase
 
         // 月月有奖 && 周周领奖
         // 海报列表
+        '/student_wx/poster/can_join'      => ['method' => ['get'], 'call' => Poster::class . ':canJoin'],
         '/student_wx/poster/list'          => ['method' => ['get'], 'call' => Poster::class . ':list'],
         '/student_wx/poster/upload'        => ['method' => ['post'], 'call' => Poster::class . ':upload'],
         '/student_wx/poster/get_qr_path'   => ['method' => ['get'], 'call' => Poster::class . ':getQrPath'],

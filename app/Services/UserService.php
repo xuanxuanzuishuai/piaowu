@@ -192,4 +192,18 @@ class UserService
         //清除app登录信息
         AppTokenService::delUserTokenByUserId($student['id'], Constants::SMART_APP_ID);
     }
+
+    /**
+     * @param $studentId
+     * @return bool
+     * 判断用户是否是 智能付费有效用户
+     */
+    public static function judgeUserValidPay($studentId)
+    {
+        $canExchangeNum = (new Dss())->getUserCanExchangeNum(['student_id' => $studentId])['can_exchange_num'];
+        if ($canExchangeNum <= 0) {
+            return false;
+        }
+        return true;
+    }
 }

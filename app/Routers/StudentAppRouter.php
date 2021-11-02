@@ -70,6 +70,11 @@ class StudentAppRouter extends RouterBase
 
         // 月月有奖 && 周周领奖
         // 海报列表
+        '/student_app/poster/can_join' => [
+            'method' => ['get'],
+            'call' => Poster::class . ':list',
+            'middles' => [AppAuthMiddleWare::class]
+        ],
         '/student_app/poster/list' => [
             'method' => ['get'],
             'call' => Poster::class . ':list',

@@ -21,12 +21,24 @@ use App\Services\ActivityService;
 use App\Services\PosterService;
 use App\Services\PosterTemplateService;
 use App\Services\SharePosterService;
+use App\Services\UserService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
 
 class Poster extends ControllerBase
 {
+    /**
+     * 是否可以参与
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function canJoin(Request $request, Response $response)
+    {
+        $canNext = UserService::judgeUserValidPay($this->ci['user_info']['user_id']);
+        return HttpHelper::buildResponse($response, ['can_next' => $canNext]);
+    }
 
     /**
      * 海报列表
