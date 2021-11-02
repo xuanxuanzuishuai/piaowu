@@ -26,6 +26,7 @@ use App\Services\Queue\QueueService;
 
 class RealActivityService
 {
+    use TraitRealXyzop1321Service;
     /**
      * 获取周周领奖活动
      * @param int $studentId 学生ID
@@ -123,7 +124,12 @@ class RealActivityService
         $activityData = [];
         $time = time();
         if ($activityType == OperationActivityModel::TYPE_WEEK_ACTIVITY) {
-            $activityData = RealWeekActivityModel::getStudentCanSignWeekActivity(1, $time);
+            // XYZOP-1321 10.26-11.30首次付费时的付费用户获取指定活动
+            if (self::xyzopCheckCondition($studentDetail)) {
+                $activityData = self::xyzopGetWeekActivityList($studentDetail)['list'] ?? [];
+            } else {
+                $activityData = RealWeekActivityModel::getStudentCanSignWeekActivity(1, $time);
+            }
         } elseif ($activityType == OperationActivityModel::TYPE_MONTH_ACTIVITY) {
             $activityData = RealMonthActivityModel::getStudentCanSignMonthActivity(1);
         }
@@ -205,6 +211,11 @@ class RealActivityService
      */
     public static function getCanParticipateWeekActivityIds($studentData, $limitActivity)
     {
+        // xyzop-1321需求，获取可上传的活动列表
+        $activityData = self::xyzopGetWeekActivityList($studentData);
+        if ($activityData['code'] == 1) {
+            return $activityData['list'];
+        }
         //已开始的活动，按照开始时间倒叙排序，第一活动如果处在有效期内则返回最近的两个活动，否则返回第一个活动
         $time = time();
         $activityData = RealWeekActivityModel::getStudentCanSignWeekActivity($limitActivity, 0);
@@ -425,6 +436,10 @@ class RealActivityService
                 'title' => '周周领奖',
                 'aw_type' => 'week'
             ];
+        }
+        $weekTab = self::xyzopWeekActivityTabShowList($studentData);
+        if (!empty($weekTab)) {
+            $tabData['week_tab'] = $weekTab;
         }
         return $tabData;
     }

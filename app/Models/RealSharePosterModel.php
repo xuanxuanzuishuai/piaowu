@@ -88,11 +88,13 @@ class RealSharePosterModel extends Model
             sp.ext->>'$.node_order' day,
             sp.create_time,
             sp.type,
+            ac.name activity_name,
             s.uuid,
             s.mobile
         FROM
             $sp sp
-        INNER JOIN $s s ON s.id = sp.student_id
+        INNER JOIN $s s ON s.id = sp.student_id 
+        LEFT JOIN $ac ac ON ac.id = sp.activity_id 
         WHERE sp.id in ( " . implode(',', $posterIds) . " )
             AND sp.verify_status = " . self::VERIFY_STATUS_WAIT . "
             AND sp.type = " . $type;

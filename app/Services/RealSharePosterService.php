@@ -132,6 +132,7 @@ class RealSharePosterService
                 $_item['activity_end_time'] = date("m月d日", $_activityInfo['end_time']);
                 $_item['activity_name'] = $_activityInfo['name'];
             }
+            $_item = RealActivityService::xyzopFormatOne($_item);
         }
         unset($_item);
 
@@ -174,6 +175,10 @@ class RealSharePosterService
                 'verify_status' => $poster['poster_status']
             ];
             $update = RealSharePosterModel::batchUpdateRecord($updateData, $where);
+            // 在指定活动时做指定活动规定的操作，不发奖励也不激活产品
+            if (RealActivityService::xyzopPushRealMsg($poster['student_id'], ['activity_name' => $poster['activity_name']])) {
+                continue;
+            }
             if (!empty($update)) {
                 $needAwardList[] = $poster['id'];
             }
@@ -314,7 +319,7 @@ class RealSharePosterService
                 return $returnData;
         }
 
-        return $returnData;
+        return RealActivityService::xyzopFormatOne($returnData);
     }
 
     /**

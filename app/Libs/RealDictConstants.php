@@ -47,4 +47,17 @@ class RealDictConstants extends DictConstants
             'magic_stone',
         ],
     ];
+
+    // 真人新签用户支持多次分享活动配置
+    const REAL_XYZOP_1321_CONFIG =[
+        'type' => 'REAL_XYZOP_1321_CONFIG',
+        'keys' => [
+            'real_xyzop_1321_first_pay_time_start',   // 用户首次付费开始时间
+            'real_xyzop_1321_first_pay_time_end',     // 用户首次付费结束时间
+            'real_xyzop_1321_activity_ids',           // 特定活动ids
+            'real_xyzop_1321_normal_activity_ids',    // 正常的活动ids(当前正在启用的活动id再这个里面的不校验活动id)
+            'real_xyzop_1321_msg_id', // 消息id
+            'real_xyzop_1321_msg_url', // 消息跳转链接
+        ],
+    ];
 }

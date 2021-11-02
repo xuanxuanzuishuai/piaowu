@@ -8,6 +8,7 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Libs\RealDictConstants;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
@@ -52,10 +53,13 @@ class AutoCheckPicture
             case Constants::REAL_APP_ID: //真人陪练
                 // 获取活动信息
                 $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $result['activity_id']], ['id', 'activity_id', 'enable_status', 'start_time']);
-                // 检查活动是否启动，未启用不能自动审核
-                if (empty($activityInfo) || $activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
-                    SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
-                    return null;
+                // 在指定ID活动内，不校验活动状态
+                if (!RealActivityService::xyzopCheckIsSpecialActivityId($result)) {
+                    // 检查活动是否启动，未启用不能自动审核
+                    if (empty($activityInfo) || $activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
+                        SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
+                        return null;
+                    }
                 }
                 break;
             default:
@@ -413,6 +417,8 @@ class AutoCheckPicture
                         //海报生成和上传在指定的5期活动，允许通过
                         $isSameActivity = true;
                     } elseif (in_array($composeCheckActivity, $checkActivityIdArrV1) && in_array($uploadInfo['activity_id'], $checkActivityIdArrV1)) {
+                        $isSameActivity = true;
+                    } elseif (RealActivityService::xyzopCheckIsAllowActivityId($uploadInfo, ['activity_id' =>$composeCheckActivity])) {
                         $isSameActivity = true;
                     }
                 }
