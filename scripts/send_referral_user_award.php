@@ -177,12 +177,15 @@ class ScriptSendReferralUserAward
             // 获取受邀人信息
             $studentInfo = DssStudentModel::getRecord(['uuid' => $_award['finish_task_uuid']], ['id']);
             // 计算是否有练琴记录 - 获取指定时间段内最早练琴时间
-            $earliestList = AprViewStudentModel::getStudentEarliestPlayTime((int)$studentInfo['id'], (int)$playStartTime, (int)$playEndTime);
+            $earliestList = AprViewStudentModel::getStudentBetweenTimePlayRecord((int)$studentInfo['id'], (int)$playStartTime, (int)$playEndTime);
             $earliestTime = array_sum(array_column($earliestList, 'sum_duration'));
             SimpleLogger::info("script::auto_send_buy_trial_award_points", ['info' => 'aiPlay', 'data' => $earliestList, 'award_info' => $_award, 'play_time' => [$playStartTime, $playEndTime]]);
-            if (empty($earliestTime) && $playEndTime <= $time) {
+            if ((empty($earliestTime) && $playEndTime <= $time) // 指定时间内没有练琴
+                ||
+                ($earliestTime > 0 && $earliestTime < $awardCondition[ReferralUserAwardModel::AWARD_CONDITION['play_times']] && $playEndTime <= $time)   // 指定时间内练琴时长不足
+            ) {
                 /** 作废 - 指定时间段内没有练琴，并且最后练琴时间已经超过当前时间 */
-                SimpleLogger::info("play_time_not_found", [$playEndTime, $earliestTime]);
+                SimpleLogger::info("play_time_not_found", [$playEndTime, $earliestTime, $time]);
                 ReferralUserAwardModel::disabledAwardByNoPlay($_award['id']);
                 switch ($_award['award_type']) {
                     case Constants::AWARD_TYPE_GOLD_LEAF:   // 作废金叶子
