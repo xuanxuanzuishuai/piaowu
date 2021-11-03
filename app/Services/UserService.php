@@ -202,6 +202,7 @@ class UserService
     {
         $canExchangeNum = (new Dss())->getUserCanExchangeNum(['student_id' => $studentId])['can_exchange_num'];
         if ($canExchangeNum <= 0) {
+            SimpleLogger::info('not valid pay user', ['student_id' => $studentId, 'can_exchange_num' => $canExchangeNum]);
             return false;
         }
         return true;

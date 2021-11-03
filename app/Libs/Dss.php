@@ -255,7 +255,7 @@ class Dss
     {
         $res = self::commonAPI(self::GET_USER_EXCHANGE_NUM, $params, 'GET');
         if ($res['code'] != Valid::CODE_SUCCESS) {
-            SimpleLogger::error('get wx app assistant error', [$res, $params]);
+            SimpleLogger::error('get user can exchange num error', [$res, $params]);
             return [];
         }
         return !empty($res['data']) ? $res['data'] : [];
