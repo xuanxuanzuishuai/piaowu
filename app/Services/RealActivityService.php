@@ -211,14 +211,14 @@ class RealActivityService
      */
     public static function getCanParticipateWeekActivityIds($studentData, $limitActivity)
     {
-        // xyzop-1321需求，获取可上传的活动列表
-        $activityData = self::xyzopGetWeekActivityList($studentData);
-        if ($activityData['code'] == 1) {
-            return $activityData['list'];
-        }
         //已开始的活动，按照开始时间倒叙排序，第一活动如果处在有效期内则返回最近的两个活动，否则返回第一个活动
         $time = time();
-        $activityData = RealWeekActivityModel::getStudentCanSignWeekActivity($limitActivity, 0);
+        // xyzop-1321需求，获取可上传的活动列表
+        if (self::xyzopCheckCondition($studentData)) {
+            $activityData = self::xyzopGetWeekActivityList($studentData)['list'] ?? [];
+        } else {
+            $activityData = RealWeekActivityModel::getStudentCanSignWeekActivity($limitActivity, 0);
+        }
         if (empty($activityData)) {
             return [];
         }

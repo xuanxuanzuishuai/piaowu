@@ -154,7 +154,7 @@ trait TraitRealXyzop1321Service
             'real_xyzop_1321_msg_url',
         ]);
         // 检查是不是在特定活动id中
-        if (!self::xyzopCheckIsSpecialActivityId(['activity_id' => 1])) {
+        if (!self::xyzopCheckIsSpecialActivityId($data)) {
             return false;
         }
         // 推送消息

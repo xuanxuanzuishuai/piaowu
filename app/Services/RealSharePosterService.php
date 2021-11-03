@@ -176,7 +176,7 @@ class RealSharePosterService
             ];
             $update = RealSharePosterModel::batchUpdateRecord($updateData, $where);
             // 在指定活动时做指定活动规定的操作，不发奖励也不激活产品
-            if (RealActivityService::xyzopPushRealMsg($poster['student_id'], ['activity_name' => $poster['activity_name']])) {
+            if (RealActivityService::xyzopPushRealMsg($poster['student_id'], $poster)) {
                 continue;
             }
             if (!empty($update)) {
@@ -280,6 +280,7 @@ class RealSharePosterService
         $reasonDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);
 
         $returnData['can_upload'] = Constants::STATUS_FALSE;
+        $returnData['activity_id'] = $sharePosterInfo['activity_id'];
         $returnData['verify_status'] = $sharePosterInfo['verify_status'];
         $returnData['status_name'] = $statusDict[$sharePosterInfo['verify_status']] ?? $sharePosterInfo['verify_status'];
         $returnData['image_url'] = AliOSS::replaceCdnDomainForDss($sharePosterInfo['image_path']);
