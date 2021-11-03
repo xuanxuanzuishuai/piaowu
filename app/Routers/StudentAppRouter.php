@@ -72,7 +72,7 @@ class StudentAppRouter extends RouterBase
         // 海报列表
         '/student_app/poster/can_join' => [
             'method' => ['get'],
-            'call' => Poster::class . ':list',
+            'call' => Poster::class . ':canJoin',
             'middles' => [AppAuthMiddleWare::class]
         ],
         '/student_app/poster/list' => [
