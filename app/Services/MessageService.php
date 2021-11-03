@@ -491,8 +491,8 @@ class MessageService
             $posterImgFile = PosterService::generateLifeQRPosterAliOss(
                 $item,
                 $config,
-                $_ENV['USER_RECOMMEND_STANDARD_POSTER'],
-                $data['user_id']
+                $data['user_id'],
+                $_ENV['USER_RECOMMEND_STANDARD_POSTER']
             );
         } else {
             //非关注拼接转介绍二维码
