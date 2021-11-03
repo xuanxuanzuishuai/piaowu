@@ -117,6 +117,10 @@ class ErpOrderV1Service
      */
     public static function createOrder($packageId, $student, $payChannel, $payType, $employeeUuid, $channel, $giftGoods = [], $callback = null)
     {
+        $source = NULL;
+        if ($channel == ErpPackageV1Model::CHANNEL_OP_AGENT) {
+            $source = 6; //当且仅当代理下单会有此参数，erp要求
+        }
         $studentId = $student['id'];
         if (PayServices::isTrialPackage($packageId)) {
             self::checkHadPurchaseTrail($studentId);
@@ -138,8 +142,7 @@ class ErpOrderV1Service
             $channel = ErpPackageV1Model::CHANNEL_WX;
         }
 
-        $erp = new Erp();
-        $result = $erp->createBillV1([
+        $data = [
             'uuid'          => $student['uuid'],
             'app_id'        => Constants::SMART_APP_ID,
             'address_id'    => $student['address_id'], // 地址
@@ -154,7 +157,10 @@ class ErpOrderV1Service
             'result_url'    => $resultUrl ?? null, // 微信H5 支付结果跳转链接
             'employee_uuid' => $employeeUuid, // 成单人
             'gift_goods'    => $giftGoods, //选择的赠品
-        ]);
+        ];
+        !empty($source) && $data['source'] = 6; //当且仅当代理下单会有此参数，erp要求
+        $erp = new Erp();
+        $result = $erp->createBillV1($data);
         if (empty($result) || !empty($result['code'])) {
             SimpleLogger::error('CREATE BILL ERROR', [$result]);
             throw new RunTimeException(['create_bill_error', '', '', [':'.$result['errors'][0]['err_msg']]]);
