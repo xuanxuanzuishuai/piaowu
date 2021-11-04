@@ -11,6 +11,7 @@ use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Services\ErpReferralService;
+use App\Services\RealReferralService;
 use App\Services\RealSharePosterService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -85,5 +86,39 @@ class Crm extends ControllerBase
         $params['from_service'] = $request->getHeaderLine('service');
         $data = RealSharePosterService::replaceStudentCreatePoster($params);
         return HttpHelper::buildResponse($response, $data);
+    }
+
+
+    /**
+     * dss后台补充真人业务线用户的推荐人
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function realAddUserReferral(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key' => 'referral_uuid',
+                'type' => 'required',
+                'error_code' => 'referral_uuid_is_required'
+            ],
+            [
+                'key' => 'user_uuid',
+                'type' => 'required',
+                'error_code' => 'user_uuid_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            RealReferralService::realAddUserReferral($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
     }
 }

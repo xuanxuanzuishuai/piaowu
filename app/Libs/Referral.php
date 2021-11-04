@@ -13,7 +13,8 @@ class Referral
 
     //建立转介绍关系
     const SET_REFERRAL_USER_REFEREE = '/minipro/user/set_referral_user_referee';
-
+    // 后台人工补充真人业务线用户的推荐人
+    const REAL_ADD_USER_REFEREE = '/api/referral/add_user_referral';
     private $host;
 
     public function __construct()
@@ -43,4 +44,13 @@ class Referral
         return HttpHelper::requestJson($this->host . self::SET_REFERRAL_USER_REFEREE, $params, 'POST');
     }
 
+    /**
+     * 后台人工补充真人业务线用户的推荐人
+     * @param $params
+     * @return array
+     */
+    public function realAddUserReferral($params): array
+    {
+        return HttpHelper::requestJson($this->host . self::REAL_ADD_USER_REFEREE, $params, 'POST');
+    }
 }

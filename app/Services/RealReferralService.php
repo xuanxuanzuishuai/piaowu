@@ -15,9 +15,12 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Libs\WeChat\WXBizDataCrypt;
+use App\Models\Dss\DssStudentModel;
+use App\Models\Erp\ErpReferralUserRefereeModel;
 use App\Models\Erp\ErpStudentAppModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\Erp\ErpUserWeiXinModel;
+use App\Models\StudentReferralStudentStatisticsModel;
 
 class RealReferralService
 {
@@ -295,4 +298,62 @@ class RealReferralService
         return $avatar;
     }
 
+    /**
+     * 后台补充真人业务线用户的推荐人
+     * @param $data
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function realAddUserReferral($data): bool
+    {
+        // 检查用户是否是同一个人
+        if ($data['referral_uuid'] == $data['user_uuid']) {
+            SimpleLogger::info("user_and_referral_is_equal", [$data]);
+            throw new RunTimeException(["user_and_referral_is_equal"]);
+        }
+        // 检查用户是否存在
+        $referralUserInfo = ErpStudentModel::getStudentInfoByUuid($data['referral_uuid']);
+        $userInfo = ErpStudentModel::getStudentInfoByUuid($data['user_uuid']);
+        if (empty($referralUserInfo)) {
+            SimpleLogger::info("not_found_referral_user", [$data, $referralUserInfo, $userInfo]);
+            throw new RunTimeException(["not_found_referral_user"]);
+        }
+        if (empty($userInfo)) {
+            SimpleLogger::info("unknown_user", [$data, $referralUserInfo, $userInfo]);
+            throw new RunTimeException(["unknown_user"]);
+        }
+        // 检查受邀人是否是非付费状态
+        if ($userInfo['first_pay_time'] > 0) {
+            SimpleLogger::info("user_is_paid_not_bind_referral", [$data, $referralUserInfo, $userInfo]);
+            throw new RunTimeException(['user_is_paid']);
+        }
+        // 检查受邀人 - 真人业务线是否有推荐人
+        $realReferralInfo = ErpReferralUserRefereeModel::getRecord(['user_id' => $userInfo['id'], 'app_id' => Constants::REAL_APP_ID]);
+        if (!empty($realReferralInfo)) {
+            SimpleLogger::info("user_real_is_have_referral", [$data, $realReferralInfo]);
+            throw new RunTimeException(['user_real_is_have_referral']);
+        }
+        // 检查受邀人 - 智能业务线是否有推荐人
+        $dssUserInfo = DssStudentModel::getRecord(['uuid' => $userInfo['uuid']], ['id']);
+        if (!empty($dssUserInfo)) {
+            $aiReferralInfo = StudentReferralStudentStatisticsModel::getRecord(['student_id' => $dssUserInfo['id']]);
+            if (!empty($aiReferralInfo)) {
+                SimpleLogger::info("user_ai_is_have_referral", [$data, $aiReferralInfo]);
+                throw new RunTimeException(['user_ai_is_have_referral']);
+            }
+        }
+        // 添加推荐人
+        $requestData=[
+            'referee_id' => $referralUserInfo['id'],
+            'user_id'    => $userInfo['id'],
+            'user_type'  => Constants::USER_TYPE_STUDENT,
+            'app_id'     => Constants::REAL_APP_ID,
+        ];
+        $res = (new Referral())->realAddUserReferral($requestData);
+        if ($res['code'] != 0) {
+            SimpleLogger::info("add_user_referral_fail", [$data, $requestData, $res]);
+            throw new RunTimeException(['add_user_referral_fail']);
+        }
+        return true;
+    }
 }
