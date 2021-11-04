@@ -21,6 +21,9 @@ trait TraitRealXyzop1321Service
     public static function xyzopGetWeekActivityList($studentData): array
     {
         $returnData = ['code' => 1, 'list' => []];
+        if (!self::xyzopCheckActivityTime()) {
+            return $returnData;
+        }
         // 首次付费时间在指定时间内的， 读取指定的活动
         $activityIds = RealDictConstants::get(RealDictConstants::REAL_XYZOP_1321_CONFIG, 'real_xyzop_1321_activity_ids');
         // 当前用户首付付费时间是否在指定时间范围内 code = 2
@@ -66,6 +69,9 @@ trait TraitRealXyzop1321Service
      */
     public static function xyzopWeekActivityTabShowList($studentData): array
     {
+        if (!self::xyzopCheckActivityTime()) {
+            return [];
+        }
         list($firstPayStartTime, $firstPayEndTime) = RealDictConstants::get(RealDictConstants::REAL_XYZOP_1321_CONFIG, [
             'real_xyzop_1321_first_pay_time_start',
             'real_xyzop_1321_first_pay_time_end',
@@ -180,10 +186,27 @@ trait TraitRealXyzop1321Service
         ]);
         $wkIds = explode(',', $wkIds);
         if (in_array($sharePosterInfo['activity_id'], $wkIds)) {
-            $sharePosterInfo['default_award_amount'] = "人工发放";
+            $sharePosterInfo['default_award_amount']      = "人工发放";
             $sharePosterInfo['default_award_copywriting'] = "活动结束后人工发放";
-            $sharePosterInfo['award_type'] = 0;
+            $sharePosterInfo['award_type']                = 0;
         }
         return $sharePosterInfo;
+    }
+
+    /**
+     * 检查活动是否在指定时间内
+     * @return bool
+     */
+    public static function xyzopCheckActivityTime(): bool
+    {
+        $time = time();
+        list($startTime, $endTime) = RealDictConstants::get(RealDictConstants::REAL_XYZOP_1321_CONFIG, [
+            'real_xyzop_1321_start_time',
+            'real_xyzop_1321_end_time',
+        ]);
+        if ($time < $startTime || $time > $endTime) {
+            return false;
+        }
+        return true;
     }
 }

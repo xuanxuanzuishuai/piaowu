@@ -15,6 +15,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\Erp\ErpUserWeiXinModel;
 use App\Models\UserWeiXinModel;
 
 /**
@@ -96,6 +97,8 @@ class UserService
                 'busi_type' => $busiType,
                 'status' => DssUserWeiXinModel::STATUS_NORMAL
             ]);
+        } elseif ($appId == Constants::REAL_APP_ID) {
+            return ErpUserWeiXinModel::getStudentWxInfo($userId);
         }
         return NULL;
     }
