@@ -20,6 +20,10 @@ use Dotenv\Dotenv;
 $dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();
 $dotenv->overload();
+$w = date('w');
+if (in_array($w, [0,6])) {
+    return;
+}
 
 HttpHelper::requestJson('https://open.feishu.cn/open-apis/bot/v2/hook/6ff321f3-7076-45c8-b324-2a2d382efbae',
 [
