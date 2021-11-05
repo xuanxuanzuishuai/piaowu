@@ -78,7 +78,7 @@ trait TraitRealXyzop1321Service
         ]);
         if (!empty($studentData['first_pay_time']) && $studentData['first_pay_time'] >= $firstPayStartTime && $studentData['first_pay_time'] <= $firstPayEndTime) {
             $weekTab = [
-                'title'   => '周周领奖',
+                'title'   => '限时领奖',
                 'aw_type' => 'week'
             ];
         }
