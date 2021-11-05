@@ -90,7 +90,7 @@ class Crm extends ControllerBase
 
 
     /**
-     * dss后台补充真人业务线用户的推荐人
+     * crm后台补充真人业务线用户的推荐人
      * @param Request $request
      * @param Response $response
      * @return Response
