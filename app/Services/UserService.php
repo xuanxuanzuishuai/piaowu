@@ -10,11 +10,13 @@ namespace App\Services;
 
 use App\Libs\Constants;
 use App\Libs\Dss;
+use App\Libs\Erp;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\Erp\ErpStudentModel;
 use App\Models\Erp\ErpUserWeiXinModel;
 use App\Models\UserWeiXinModel;
 
@@ -203,6 +205,59 @@ class UserService
         $canExchangeNum = (new Dss())->getUserCanExchangeNum(['student_id' => $studentId])['can_exchange_num'];
         if ($canExchangeNum <= 0) {
             SimpleLogger::info('not valid pay user', ['student_id' => $studentId, 'can_exchange_num' => $canExchangeNum]);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 获取学生身份属性
+     * @param $appId
+     * @param $studentId
+     * @return array|mixed
+     */
+    public static function getStudentIdentityAttributeById($appId, $studentId)
+    {
+        $studentIdAttribute = [];
+        if (empty($studentId)) {
+            return [];
+        }
+        if ($appId == Constants::REAL_APP_ID) {
+            $studentInfo = ErpStudentModel::getRecord(['id' => $studentId], ['uuid']);
+            $studentIdAttribute = (new Erp())->getStudentIdentityAttribute($studentInfo['uuid'] ?? '');
+            SimpleLogger::info('getStudentIdentityAttributeById', [$studentId, $studentInfo, $studentIdAttribute]);
+
+        }
+        return $studentIdAttribute;
+    }
+
+    /**
+     * 检查真人用户是否是有效付费用户
+     * @param $studentId
+     * @param int $startFirstPayTime
+     * @param int $endFirstPayTime
+     * @return bool
+     */
+    public static function checkRealStudentIdentityIsNormal($studentId, int $startFirstPayTime = 0, int $endFirstPayTime = 0): bool
+    {
+        $studentIdAttribute = self::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentId);
+        if (empty($studentIdAttribute)) {
+            return false;
+        }
+        // 未付费
+        if (!isset($studentIdAttribute['is_real_person_paid']) || $studentIdAttribute['is_real_person_paid'] != Erp::USER_IS_PAY_YES) {
+            return false;
+        }
+        // 没有剩余付费课程数
+        if (!isset($studentIdAttribute['paid_course_remainder_num']) || $studentIdAttribute['paid_course_remainder_num'] <= 0) {
+            return false;
+        }
+        // 用户付费起始时间不为0 ，用户付费时间大于起始时间
+        if (!($startFirstPayTime > 0 && isset($studentIdAttribute['first_pay_time']) && $studentIdAttribute['first_pay_time'] >= $startFirstPayTime)) {
+            return false;
+        }
+        // 用户付费截止时间不为0 ，用户付费小于截止时间
+        if (!($endFirstPayTime > 0 && isset($studentIdAttribute['first_pay_time']) && $studentIdAttribute['first_pay_time'] < $endFirstPayTime)) {
             return false;
         }
         return true;

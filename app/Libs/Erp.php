@@ -25,6 +25,9 @@ class Erp
     const AWARD_RELATE_COMMUNITY = 2;
     const AWARD_RELATE_REFEREE = 3;
 
+    const REQUEST_ERP_OP_SOURCE = 19;       // 请求erp 时的source  19代表op
+    const USER_IS_PAY_YES = 1;              // 请求erp获取用户付费属性时， 1是已付费
+
     const SOURCE_TYPE_OP_TO_MONEY = 7001; //OP系统扣减兑换现金
 
     const API_CREATE_BILL = '/ai_dss/bill/create_bill';
@@ -102,6 +105,8 @@ class Erp
     const REFEREE_STUDENT_REGISTER = '/op/user/register_bound';
     //神策埋点学生基础数据
     const SENSORS_STUDENT_BASE_DATA = '/api/app/sensors/profile/student';
+    // 获取学生身份属性
+    const STUDENT_IDENTIFY_ATTRIBUTE = '/api/student/attribute';
 
     private $host;
 
@@ -962,7 +967,20 @@ class Erp
         return $response['data'] ?? [];
     }
 
-
-
-
+    /**
+     * 获取学生身份属性
+     * @param $studentUuid
+     * @return array|mixed
+     */
+    public function getStudentIdentityAttribute($studentUuid)
+    {
+        if (empty($studentUuid)) {
+            return [];
+        }
+        $response = HttpHelper::requestJson($this->host . self::STUDENT_IDENTIFY_ATTRIBUTE, [
+            'student_uuid' => $studentUuid,
+            'source' => self::REQUEST_ERP_OP_SOURCE
+        ], 'GET');
+        return $response['data'] ?? [];
+    }
 }

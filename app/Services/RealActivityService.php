@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\RealDictConstants;
 use App\Libs\RedisDB;
@@ -431,7 +432,8 @@ class RealActivityService
             'aw_type' => 'month'
         ];
         $splitTime = DictConstants::get(DictConstants::ACTIVITY_CONFIG, 'real_week_tab_first_pay_split_time');
-        if (!empty($studentData['first_pay_time']) && ((int)$splitTime >= (int)$studentData['first_pay_time'])) {
+        $studentId = $studentData['user_id'] ?? 0;
+        if (UserService::checkRealStudentIdentityIsNormal($studentId, 0, intval($splitTime))) {
             $tabData['week_tab'] = [
                 'title' => '周周领奖',
                 'aw_type' => 'week'
