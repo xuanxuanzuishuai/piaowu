@@ -70,6 +70,7 @@ trait TraitUserRefereeService
     public static function getReferralStudentIdentity($refereeInfo): int
     {
         $time = time();
+        $studentStatus = -1;
         switch ($refereeInfo['has_review_course']) {
             case DssStudentModel::REVIEW_COURSE_49:
                 // 体验卡未过期
@@ -80,10 +81,11 @@ trait TraitUserRefereeService
                 }
                 break;
             case DssStudentModel::REVIEW_COURSE_1980:
-                // 年卡未过期
-                $studentStatus = Constants::REFERRAL_INVITER_STATUS_NORMAL;
-                // 年卡过期未续费
-                if (strtotime($refereeInfo['sub_end_date']) + Util::TIMESTAMP_ONEDAY < $time) {
+                // 年卡未过期 - 需要有有效时长
+                if (UserService::judgeUserValidPay($refereeInfo['id'])) {
+                    $studentStatus = Constants::REFERRAL_INVITER_STATUS_NORMAL;
+                } elseif (strtotime($refereeInfo['sub_end_date']) + Util::TIMESTAMP_ONEDAY < $time) {
+                    // 不是有效付费用户 - 年卡过期
                     $studentStatus = Constants::REFERRAL_INVITER_STATUS_NORMAL_EXPIRE;
                 }
                 break;
@@ -92,6 +94,7 @@ trait TraitUserRefereeService
                 $studentStatus = Constants::REFERRAL_INVITER_STATUS_REGISTER;
                 break;
         }
+        SimpleLogger::info("getReferralStudentIdentity", [$refereeInfo, $studentStatus]);
         return $studentStatus;
     }
 

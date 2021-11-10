@@ -561,7 +561,7 @@ class ReferralRuleService
     public static function getStudentMaxReferralAwardData($studentId, $identityType, $awardType)
     {
         $awardMaxAmount = 0;
-        $studentData = DssStudentModel::getRecord(['id' => $studentId], ['has_review_course', 'sub_end_date']);
+        $studentData = DssStudentModel::getRecord(['id' => $studentId], ['has_review_course', 'sub_end_date', 'id']);
         $studentReferralIdentityStatus = TraitUserRefereeService::getReferralStudentIdentity($studentData);
 
         //正式时长&体验卡奖励数据

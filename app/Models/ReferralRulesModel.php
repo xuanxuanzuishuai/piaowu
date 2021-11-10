@@ -27,6 +27,10 @@ class ReferralRulesModel extends Model
     public static function getCurrentRunRuleInfoByInviteStudentIdentity($inviteStudentIdentity, $ruleType, array $packageType = []): array
     {
         $returnData = [];
+        // 小于1 说明身份不在区间内
+        if ($inviteStudentIdentity < 1) {
+            return $returnData;
+        }
         $time = time();
         $db = MysqlDB::getDB();
         // 获取奖励规则基本信息
