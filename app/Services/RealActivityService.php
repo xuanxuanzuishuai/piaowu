@@ -89,7 +89,11 @@ class RealActivityService
             'activity' => [],
             'student_info' => [],
             'channel_list' => [],
+            'can_upload' => false,
         ];
+        if (UserService::checkRealStudentIdentityIsNormal($studentId, 0, 0)) {
+            $data['can_upload'] = true;
+        }
         //获取学生信息
         $studentDetail = ErpStudentModel::getStudentInfoById($studentId);
         if (empty($studentDetail)) {

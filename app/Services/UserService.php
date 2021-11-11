@@ -252,13 +252,17 @@ class UserService
         if (!isset($studentIdAttribute['paid_course_remainder_num']) || $studentIdAttribute['paid_course_remainder_num'] <= 0) {
             return false;
         }
-        // 用户付费起始时间不为0 ，用户付费时间大于起始时间
-        if (!($startFirstPayTime > 0 && isset($studentIdAttribute['first_pay_time']) && $studentIdAttribute['first_pay_time'] >= $startFirstPayTime)) {
-            return false;
+        // 用户付费起始时间不为0 ，用户首次付费时间应大于等于起始时间
+        if ($startFirstPayTime > 0) {
+            if (!isset($studentIdAttribute['first_pay_time']) || $studentIdAttribute['first_pay_time'] < $startFirstPayTime) {
+                return false;
+            }
         }
-        // 用户付费截止时间不为0 ，用户付费小于截止时间
-        if (!($endFirstPayTime > 0 && isset($studentIdAttribute['first_pay_time']) && $studentIdAttribute['first_pay_time'] < $endFirstPayTime)) {
-            return false;
+        // 用户付费截止时间不为0 ，用户首次付费应小于截止时间
+        if ($endFirstPayTime > 0) {
+            if (!isset($studentIdAttribute['first_pay_time']) || $studentIdAttribute['first_pay_time'] >= $endFirstPayTime) {
+                return false;
+            }
         }
         return true;
     }
