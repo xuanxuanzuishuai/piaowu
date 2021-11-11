@@ -32,13 +32,9 @@ class RealAd
         switch ($msgBody['ad_channel']) {
             case RealAdCallback::CHANNEL_HUAWEI:
                 $trackIdArr          = json_decode($msgBody['track_id'], true);
-                $msgBody['ext']      = json_encode([
-                    'channel'  => $trackIdArr['channel'] ?? '',
-                    'taskid'   => $trackIdArr['taskid'] ?? '',
-                    'callback' => $trackIdArr['callback'] ?? '',
-                ]);
                 $msgBody['ad_id']    = $trackIdArr['channel'] ?? '';
                 $msgBody['callback'] = $trackIdArr['callback'] ?? '';
+                $msgBody['ext']      = $msgBody['track_id'];
                 unset($msgBody['track_id']);
         }
 
