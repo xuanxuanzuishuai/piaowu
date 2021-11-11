@@ -58,6 +58,7 @@ use App\Services\Queue\ThirdPartBillTopic;
 use App\Services\Queue\UserPointsExchangeRedPackTopic;
 use App\Services\Queue\WechatTopic;
 use App\Services\Queue\WeekActivityTopic;
+use App\Services\RealAd;
 use App\Services\RealSharePosterService;
 use App\Services\RefereeAwardService;
 use App\Services\StudentAccountAwardPointsLogService;
@@ -868,7 +869,7 @@ class Consumer extends ControllerBase
     }
 
     /**
-     * 周周领奖:计数任务相关
+     * 运营活动奖励发放相关消费者：积分，实物发放
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -1199,6 +1200,55 @@ class Consumer extends ControllerBase
                     SimpleLogger::info('save_bill_map_fail', ['topic' => $topicName, 'params' => $params, 'student' => $studentInfo]);
                     break;
                 }
+                break;
+            default:
+                SimpleLogger::error('unknown event type', ['params' => $params]);
+                break;
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    public static function realAd(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key' => 'topic_name',
+                'type' => 'required',
+                'error_code' => 'topic_name_is_required',
+            ],
+            [
+                'key' => 'event_type',
+                'type' => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+            [
+                'key' => 'msg_body',
+                'type' => 'required',
+                'error_code' => 'msg_body_is_required',
+            ],
+        ];
+
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $checkoutRes = RealAd::checkoutPlatform($params['msg_body']['platform']);
+        if (!$checkoutRes) {
+            return HttpHelper::buildErrorResponse($response, ['err_no' => 1, 'err_msg' => 'platform error']);
+        }
+
+        switch ($params['event_type']) {
+            case 'app_active':
+                $trackParams = RealAd::adActive($params['msg_body']);
+                RealAd::trackEvent(RealAd::TRACK_EVENT_ACTIVE, $trackParams);
+                break;
+            case 'register':
+//                RealAd::trackEvent(RealAd::TRACK_EVENT_REGISTER,$params['msg_body']);
+                break;
+            case 'pay':
+//                RealAd::trackEvent(RealAd::TRACK_EVENT_PAY,$params['msg_body']);
                 break;
             default:
                 SimpleLogger::error('unknown event type', ['params' => $params]);

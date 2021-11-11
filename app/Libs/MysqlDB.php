@@ -40,6 +40,7 @@ class MysqlDB
     const ERROR_CODE_NO_ERROR = '00000';
     const CONFIG_SLAVE = 'dss_slave';
     const CONFIG_ERP_SLAVE = 'erp_slave';
+    const CONFIG_AD = 'ad';
     /**
      * @param null $configType
      * @return MysqlDB
@@ -213,6 +214,22 @@ class MysqlDB
                     'debug_mode' => intval($_ENV['DB_DEBUG_MODE']) ? true : false,
                     'option' => [\PDO::ATTR_STRINGIFY_FETCHES => false,
                         \PDO::ATTR_EMULATE_PREPARES => true]
+                ];
+                break;
+            case self::CONFIG_AD:
+                return [
+                    'database_type' => $_ENV['DB_AD_TYPE'],
+                    'database_name' => $_ENV['DB_AD_NAME'],
+                    'server' => $_ENV['DB_AD_HOST'],
+                    'username' => $_ENV['DB_AD_USERNAME'],
+                    'password' => $_ENV['DB_AD_PASSWORD'],
+                    'charset' => $_ENV['DB_AD_CHARSET'],
+                    'prefix' => $_ENV['DB_AD_PREFIX'],
+                    'port' => $_ENV['DB_AD_PORT'],
+                    'logging' => intval($_ENV['DB_DEBUG_MODE']) ? true : false,
+                    'debug_mode' => intval($_ENV['DB_DEBUG_MODE']) ? true : false,
+                    'option' => [\PDO::ATTR_STRINGIFY_FETCHES => false,
+                                 \PDO::ATTR_EMULATE_PREPARES => true]
                 ];
                 break;
             default:
