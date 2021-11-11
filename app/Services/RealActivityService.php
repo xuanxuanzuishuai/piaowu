@@ -436,7 +436,15 @@ class RealActivityService
             'aw_type' => 'month'
         ];
         $splitTime = DictConstants::get(DictConstants::ACTIVITY_CONFIG, 'real_week_tab_first_pay_split_time');
-        $studentId = $studentData['user_id'] ?? 0;
+        if (!empty($studentData['user_id'])) {
+            $studentId = $studentData['user_id'];
+        } elseif (!empty($studentData['student_id'])) {
+            $studentId = $studentData['student_id'];
+        } elseif (!empty($studentData['id'])) {
+            $studentId = $studentData['id'];
+        } else {
+            $studentId = 0;
+        }
         if (UserService::checkRealStudentIdentityIsNormal($studentId, 0, intval($splitTime))) {
             $tabData['week_tab'] = [
                 'title' => '周周领奖',
