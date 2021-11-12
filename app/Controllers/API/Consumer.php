@@ -1245,7 +1245,7 @@ class Consumer extends ControllerBase
                 RealAd::trackEvent(RealAd::TRACK_EVENT_ACTIVE, $trackParams);
                 break;
             case 'register':
-//                RealAd::trackEvent(RealAd::TRACK_EVENT_REGISTER,$params['msg_body']);
+                RealAd::trackEvent(RealAd::TRACK_EVENT_REGISTER,$params['msg_body']);
                 break;
             case 'pay':
 //                RealAd::trackEvent(RealAd::TRACK_EVENT_PAY,$params['msg_body']);
