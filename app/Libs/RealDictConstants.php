@@ -62,4 +62,11 @@ class RealDictConstants extends DictConstants
             'real_xyzop_1321_msg_url',                  // 消息跳转链接
         ],
     ];
+    // 真人分享截图活动配置
+    const REAL_SHARE_POSTER_ACTIVITY_CONFIG = [
+        'type' => 'REAL_SHARE_POSTER_CONFIG',
+        'keys' => [
+            'send_award_base_delay_second',  // 发放奖励基本延时时间 - 单位秒
+        ],
+    ];
 }

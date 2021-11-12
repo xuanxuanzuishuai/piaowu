@@ -149,4 +149,30 @@ class ErpStudentModel extends ErpModel
             ]);
         return empty($info) ? [] : $info[0];
     }
+
+    /**
+     * 批量获取学生uuid
+     * @param $studentUuidArr
+     * @return array
+     */
+    public static function getStudentInfoByUuids($studentUuidArr): array
+    {
+        $db = self::dbRO();
+        $info = $db->select(
+            self::$table,
+            [
+                "[>]" . ErpStudentAppModel::$table => ['id' => 'student_id']
+            ],
+            [
+                self::$table . '.id',
+                self::$table . '.uuid',
+                self::$table . '.mobile',
+            ],
+            [
+                self::$table . '.uuid' => $studentUuidArr,
+                ErpStudentAppModel::$table . '.app_id' => Constants::REAL_APP_ID,
+            ]
+        );
+        return is_array($info) ? $info : [];
+    }
 }

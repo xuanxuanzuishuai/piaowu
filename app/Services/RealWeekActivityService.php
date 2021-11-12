@@ -9,15 +9,20 @@ use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\NewSMS;
+use App\Libs\RealDictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\ActivityExtModel;
 use App\Models\ActivityPosterModel;
 use App\Models\Dss\DssStudentModel;
+use App\Models\Erp\ErpStudentAppModel;
+use App\Models\Erp\ErpStudentModel;
 use App\Models\MessagePushRulesModel;
 use App\Models\MessageRecordModel;
 use App\Models\OperationActivityModel;
+use App\Models\RealSharePosterDesignateUuidModel;
 use App\Models\RealSharePosterModel;
+use App\Models\RealSharePosterTaskRuleModel;
 use App\Models\TemplatePosterModel;
 use App\Models\RealWeekActivityModel;
 use App\Services\Queue\QueueService;
@@ -25,17 +30,25 @@ use App\Services\Queue\QueueService;
 class RealWeekActivityService
 {
     /**
-     * 添加周周领奖活动
      * @param $data
      * @param $employeeId
-     * @return bool
+     * @return array|int|mixed|string
      * @throws RunTimeException
      */
     public static function add($data, $employeeId)
     {
+        $returnData = [
+            'activity_id' => 0,
+            'no_exists_uuid' => [],
+        ];
         $checkAllowAdd = self::checkAllowAdd($data, OperationActivityModel::TYPE_WEEK_ACTIVITY);
         if (!empty($checkAllowAdd)) {
             throw new RunTimeException([$checkAllowAdd]);
+        }
+        $noExistUuid = UserService::checkStudentUuidExists(Constants::REAL_APP_ID, $data['designate_uuid']);
+        if (!empty($noExistUuid)) {
+            $returnData['no_exists_uuid'] = $noExistUuid;
+            return $returnData;
         }
         $time = time();
         $activityData = [
@@ -43,6 +56,8 @@ class RealWeekActivityService
             'app_id' => Constants::REAL_APP_ID,
             'create_time' => $time,
         ];
+        $delaySecond = !empty($data['delay_day']) ? $data['delay_day'] * Util::TIMESTAMP_ONEDAY : 0;
+        $sendAwardBaseDelaySecond = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_ACTIVITY_CONFIG, 'send_award_base_delay_second');
         $weekActivityData = [
             'name' => $activityData['name'],
             'activity_id' => 0,
@@ -61,6 +76,12 @@ class RealWeekActivityService
             'share_poster_prompt' => !empty($data['share_poster_prompt']) ? Util::textEncode($data['share_poster_prompt']) : '',
             'retention_copy' => !empty($data['retention_copy']) ? Util::textEncode($data['retention_copy']) : '',
             'poster_order' => $data['poster_order'],
+            'target_user_type' => $data['target_user_type'] ?? 0,
+            'target_use_first_pay_time_start' => !empty($data['target_use_first_pay_time_start']) ? strtotime($data['target_use_first_pay_time_start']) : 0,
+            'target_use_first_pay_time_end' => !empty($data['target_use_first_pay_time_end']) ? strtotime($data['target_use_first_pay_time_end']) : 0,
+            'delay_second' => $delaySecond,
+            'send_award_time' => $delaySecond + $time + intval($sendAwardBaseDelaySecond),
+            'priority_level' => $data['priority_level'] ?? 0,
         ];
         
         $activityExtData = [
@@ -102,17 +123,33 @@ class RealWeekActivityService
             SimpleLogger::info("WeekActivityService:add batch insert activity_poster fail", ['data' => $data]);
             throw new RunTimeException(["add week activity fail"]);
         }
+        // 保存分享任务
+        $ruleRes = RealSharePosterTaskRuleModel::batchInsertRuleTaskAwardData($activityId, $data['task_list'], $time);
+        if (empty($ruleRes)) {
+            $db->rollBack();
+            SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_task_rule fail", ['data' => $data]);
+            throw new RunTimeException(["add week activity fail"]);
+        }
+        // 保存uuid
+        $saveUuidRes = RealSharePosterDesignateUuidModel::batchInsertUuid($activityId, $data['designate_uuid'], $employeeId, $time);
+        if (empty($saveUuidRes)) {
+            $db->rollBack();
+            SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_designate_uuid fail", ['data' => $data]);
+            throw new RunTimeException(["add week activity fail"]);
+        }
         $db->commit();
-        return $activityId;
+
+        $returnData['activity_id'] = $activityId;
+        return $returnData;
     }
 
     /**
      * 检查是否允许添加 - 检查添加必要的参数
      * @param $data
-     * @param $type
-     * @return bool
+     * @param int $type
+     * @return string
      */
-    public static function checkAllowAdd($data, $type = OperationActivityModel::TYPE_MONTH_ACTIVITY)
+    public static function checkAllowAdd($data, int $type = OperationActivityModel::TYPE_MONTH_ACTIVITY): string
     {
         // 海报不能为空
         if (empty($data['poster']) && $type == OperationActivityModel::TYPE_MONTH_ACTIVITY) {
@@ -130,7 +167,17 @@ class RealWeekActivityService
         if (empty($data['award_rule'])) {
             return 'award_rule_is_required';
         }
-
+        // 部分真人付费有效用户 需要检查首次付费时间
+        $targetUserType = $data['target_user_type'] ?? 0;
+        $startFirstPayTime = !empty($data['target_use_first_pay_time_start']) ?  strtotime($data['target_use_first_pay_time_start']) : 0;
+        $endFirstPayTime = !empty($data['target_use_first_pay_time_end']) ?  strtotime($data['target_use_first_pay_time_end']) : 0;
+        if (!($targetUserType == Constants::TARGET_USER_PART && $startFirstPayTime > 0 && $startFirstPayTime < $endFirstPayTime)) {
+            return 'first_start_time_eq_end_time';
+        }
+        // 分享任务不能为空
+        if (empty($data['task_list'])) {
+            return 'task_list_is_required';
+        }
         return '';
     }
 
@@ -197,6 +244,9 @@ class RealWeekActivityService
         $info['personality_poster_button_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['personality_poster_button_img']);
         $info['share_poster_prompt'] = Util::textDecode($activityInfo['share_poster_prompt']);
         $info['retention_copy'] = Util::textDecode($activityInfo['retention_copy']);
+        $info['delay_day'] = $activityInfo['delay_second']/Util::TIMESTAMP_ONEDAY;
+        $info['format_target_use_first_pay_time_start'] = date("Y-m-d H:i:s", $activityInfo['target_use_first_pay_time_start']);
+        $info['format_target_use_first_pay_time_end'] = date("Y-m-d H:i:s", $activityInfo['target_use_first_pay_time_end']);
 
         if (empty($info['remark'])) {
             $info['remark'] = $extInfo['remark'] ?? '';
@@ -258,6 +308,12 @@ class RealWeekActivityService
         }
         $activityInfo['poster'] = $poster;
         $activityInfo['personality_poster'] = $personality_poster;
+
+        // 获取活动对应的任务
+        $activityInfo['task_list'] = RealSharePosterTaskRuleModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['task_num' => 'ASC']]);
+        // 获取uuid
+        $activityInfo['designate_uuid'] = RealSharePosterDesignateUuidModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['id' => 'ASC']]);
+
         return $activityInfo;
     }
 
@@ -265,11 +321,15 @@ class RealWeekActivityService
      * 修改周周领奖活动
      * @param $data
      * @param $employeeId
-     * @return bool
+     * @return array
      * @throws RunTimeException
      */
-    public static function edit($data, $employeeId)
+    public static function edit($data, $employeeId): array
     {
+        $returnData = [
+            'activity_id' => 0,
+            'no_exists_uuid' => [],
+        ];
         $checkAllowAdd = self::checkAllowAdd($data, OperationActivityModel::TYPE_WEEK_ACTIVITY);
         if (!empty($checkAllowAdd)) {
             throw new RunTimeException([$checkAllowAdd]);
@@ -283,7 +343,12 @@ class RealWeekActivityService
         if (empty($weekActivityInfo)) {
             throw new RunTimeException(['record_not_found']);
         }
-
+        // 活动是待启用状态，检查导入的uuid是否正确
+        $noExistUuid = UserService::checkStudentUuidExists(Constants::REAL_APP_ID, $data['designate_uuid']);
+        if ($weekActivityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_OFF && !empty($noExistUuid)) {
+            $returnData['no_exists_uuid'] = $noExistUuid;
+            return $returnData;
+        }
         // 判断海报是否有变化，没有变化不操作
         $posterArray = array_merge($data['personality_poster'] ?? [], $data['poster'] ?? []);
         $isDelPoster = ActivityPosterModel::diffPosterChange($activityId, $posterArray);
@@ -294,6 +359,8 @@ class RealWeekActivityService
             'name' => $data['name'] ?? '',
             'update_time' => $time,
         ];
+        $delaySecond = !empty($data['delay_day']) ? $data['delay_day'] * Util::TIMESTAMP_ONEDAY : 0;
+        $sendAwardBaseDelaySecond = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_ACTIVITY_CONFIG, 'send_award_base_delay_second');
         $weekActivityData = [
             'activity_id' => $activityId,
             'name' => $activityData['name'],
@@ -311,6 +378,12 @@ class RealWeekActivityService
             'share_poster_prompt' => !empty($data['share_poster_prompt']) ? Util::textEncode($data['share_poster_prompt']) : '',
             'retention_copy' => !empty($data['retention_copy']) ? Util::textEncode($data['retention_copy']) : '',
             'poster_order' => $data['poster_order'],
+            'target_user_type' => $data['target_user_type'] ?? 0,
+            'target_use_first_pay_time_start' => !empty($data['target_use_first_pay_time_start']) ? strtotime($data['target_use_first_pay_time_start']) : 0,
+            'target_use_first_pay_time_end' => !empty($data['target_use_first_pay_time_end']) ? strtotime($data['target_use_first_pay_time_end']) : 0,
+            'delay_second' => $delaySecond,
+            'send_award_time' => $delaySecond + $time + intval($sendAwardBaseDelaySecond),
+            'priority_level' => $data['priority_level'] ?? 0,
         ];
 
         $activityExtData = [
@@ -360,21 +433,27 @@ class RealWeekActivityService
             }
         }
 
+        // 待启用的状态可以额外编辑 分享任务和uuid 等
+        if ($weekActivityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_OFF) {
+            //更新分享任务
+            $ruleRes = RealSharePosterTaskRuleModel::batchUpdateRuleTaskAwardData($activityId, $data['task_list'], $time);
+            if (empty($ruleRes)) {
+                $db->rollBack();
+                SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_task_rule fail", ['data' => $data]);
+                throw new RunTimeException(["add week activity fail"]);
+            }
+            // 更新uuid
+            $saveUuidRes = RealSharePosterDesignateUuidModel::batchUpdateUuid($activityId, $data['designate_uuid'], $employeeId, $time);
+            if (empty($saveUuidRes)) {
+                $db->rollBack();
+                SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_designate_uuid fail", ['data' => $data]);
+                throw new RunTimeException(["add week activity fail"]);
+            }
+        }
         $db->commit();
 
-        // 删除缓存
-        ActivityService::delActivityCache(
-            $activityId,
-            [
-                ActivityPosterModel::KEY_ACTIVITY_POSTER,
-                ActivityExtModel::KEY_ACTIVITY_EXT,
-                OperationActivityModel::KEY_CURRENT_ACTIVE,
-            ],
-            [
-                OperationActivityModel::KEY_CURRENT_ACTIVE . '_poster_type' => TemplatePosterModel::STANDARD_POSTER,   // 周周领奖 - 标准海报
-            ]
-        );
-        return true;
+        $returnData['activity_id'] = $activityId;
+        return $returnData;
     }
 
     /**
@@ -385,9 +464,9 @@ class RealWeekActivityService
      * @return bool
      * @throws RunTimeException
      */
-    public static function editEnableStatus($activityId, $enableStatus, $employeeId)
+    public static function editEnableStatus($activityId, $enableStatus, $employeeId): bool
     {
-        if (!in_array($enableStatus, [OperationActivityModel::ENABLE_STATUS_OFF, OperationActivityModel::ENABLE_STATUS_ON, OperationActivityModel::ENABLE_STATUS_DISABLE])) {
+        if (!in_array($enableStatus, [OperationActivityModel::ENABLE_STATUS_ON, OperationActivityModel::ENABLE_STATUS_DISABLE])) {
             throw new RunTimeException(['enable_status_invalid']);
         }
         $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $activityId]);
@@ -397,30 +476,12 @@ class RealWeekActivityService
         if ($activityInfo['enable_status'] == $enableStatus) {
             return true;
         }
-        // 如果是启用 检查时间是否冲突
-        if ($enableStatus == OperationActivityModel::ENABLE_STATUS_ON) {
-            $startActivity = RealWeekActivityModel::checkTimeConflict($activityInfo['start_time'], $activityInfo['end_time']);
-            if (!empty($startActivity)) {
-                throw new RunTimeException(['activity_time_conflict_id', '', '', array_column($startActivity, 'activity_id')]);
-            }
-        }
 
         // 修改启用状态
         $res = RealWeekActivityModel::updateRecord($activityInfo['id'], ['enable_status' => $enableStatus, 'operator_id' => $employeeId, 'update_time' => time()]);
         if (is_null($res)) {
             throw new RunTimeException(['update_failure']);
         }
-
-        // 删除缓存
-        ActivityService::delActivityCache(
-            $activityId,
-            [
-                OperationActivityModel::KEY_CURRENT_ACTIVE,
-            ],
-            [
-                OperationActivityModel::KEY_CURRENT_ACTIVE . '_poster_type' => TemplatePosterModel::STANDARD_POSTER,   // 周周领奖 - 标准海报
-            ]
-        );
 
         return true;
     }

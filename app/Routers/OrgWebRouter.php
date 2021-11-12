@@ -352,6 +352,9 @@ class OrgWebRouter extends RouterBase
         '/op_web/real_week_activity/enable_status' => ['method' => ['post'], 'call' => RealWeekActivity::class . ':editEnableStatus'],
         '/op_web/real_week_activity/send_msg' => ['method' => ['post'], 'call' => RealWeekActivity::class . ':sendMsg'],
         '/op_web/real_week_activity/push_weixin_msg' => ['method' => ['post'], 'call' => RealWeekActivity::class . ':pushWeixinMsg'],
+        '/op_web/real_week_activity/designate_uuid_add' => ['method' => ['post'], 'call' => RealWeekActivity::class . ':designateUUIDAdd'],
+        '/op_web/real_week_activity/designate_uuid_del' => ['method' => ['post'], 'call' => RealWeekActivity::class . ':designateUUIDDel'],
+        '/op_web/real_week_activity/designate_uuid_list' => ['method' => ['get'], 'call' => RealWeekActivity::class . ':designateUUIDList'],
         //真人转介绍管理 - 月月有奖
         '/op_web/real_month_activity/save' => ['method' => ['post'], 'call' => RealMonthActivity::class . ':save'],
         '/op_web/real_month_activity/list' => ['method' => ['get'], 'call' => RealMonthActivity::class . ':list'],

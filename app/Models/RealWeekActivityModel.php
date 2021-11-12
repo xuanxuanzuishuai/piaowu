@@ -102,6 +102,12 @@ class RealWeekActivityModel extends Model
                 'w.share_poster_prompt',
                 'w.retention_copy',
                 'w.poster_order',
+                'w.target_user_type',
+                'w.delay_second',
+                'w.send_award_time',
+                'w.priority_level',
+                'w.target_use_first_pay_time_start',
+                'w.target_use_first_pay_time_end',
                 'a.award_rule',
                 'a.remark',
             ],
@@ -110,27 +116,6 @@ class RealWeekActivityModel extends Model
             ]
         );
         return $records[0] ?? [];
-    }
-
-    /**
-     * 检查活动时间，与已启用活动有时间冲突，不可启用
-     * @param $startTime
-     * @param $endTime
-     * @param $exceptActId
-     * @return array
-     */
-    public static function checkTimeConflict($startTime, $endTime, $exceptActId = 0)
-    {
-        $where = [
-            'start_time[<=]' => $endTime,
-            'end_time[>=]' => $startTime,
-            'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
-        ];
-        if (!empty($exceptActId)) {
-            $where['id[!]'] = $exceptActId;
-        }
-
-        return self::getRecords($where);
     }
 
     /**

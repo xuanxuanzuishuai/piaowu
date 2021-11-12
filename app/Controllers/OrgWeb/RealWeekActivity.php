@@ -16,6 +16,7 @@ use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\Erp\ErpEventModel;
+use App\Services\RealSharePosterDesignateUuidService;
 use App\Services\RealWeekActivityService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -29,7 +30,7 @@ class RealWeekActivity extends ControllerBase
      * @param Response $response
      * @return Response
      */
-    public function save(Request $request, Response $response)
+    public function save(Request $request, Response $response): Response
     {
         $rules = [
             [
@@ -43,17 +44,11 @@ class RealWeekActivity extends ControllerBase
                 'value' => 50,
                 'error_code' => 'name_length_invalid'
             ],
-            //[
-            //    'key' => 'guide_word',
-            //    'type' => 'required',
-            //    'error_code' => 'guide_word_is_required'
-            //],
-            //[
-            //    'key' => 'guide_word',
-            //    'type' => 'lengthMax',
-            //    'value' => 1000,
-            //    'error_code' => 'guide_word_length_invalid'
-            //],
+            [
+               'key' => 'target_user_type',
+               'type' => 'required',
+               'error_code' => 'target_user_type_is_required'
+            ],
             [
                 'key' => 'share_word',
                 'type' => 'required',
@@ -121,16 +116,6 @@ class RealWeekActivity extends ControllerBase
                 'type' => 'required',
                 'error_code' => 'personality_poster_button_img_is_required'
             ],
-            //[
-            //    'key' => 'poster_prompt',
-            //    'type' => 'required',
-            //    'error_code' => 'poster_prompt_is_required'
-            //],
-            //[
-            //    'key' => 'poster_make_button_img',
-            //    'type' => 'required',
-            //    'error_code' => 'poster_make_button_img_is_required'
-            //],
             [
                 'key' => 'share_poster_prompt',
                 'type' => 'required',
@@ -163,14 +148,14 @@ class RealWeekActivity extends ControllerBase
                 throw new RunTimeException(['poster_or_personality_poster_is_required']);
             }
             if (!empty($params['activity_id'])) {
-                RealWeekActivityService::edit($params, $employeeId);
+                $res = RealWeekActivityService::edit($params, $employeeId);
             } else {
-                RealWeekActivityService::add($params, $employeeId);
+                $res = RealWeekActivityService::add($params, $employeeId);
             }
         } catch (RuntimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
         }
-        return HttpHelper::buildResponse($response, []);
+        return HttpHelper::buildResponse($response, $res);
     }
 
     /**
@@ -253,7 +238,7 @@ class RealWeekActivity extends ControllerBase
      * @param Response $response
      * @return Response
      */
-    public function detail(Request $request, Response $response)
+    public function detail(Request $request, Response $response): Response
     {
         $rules = [
             [
@@ -286,7 +271,7 @@ class RealWeekActivity extends ControllerBase
      * @param Response $response
      * @return Response
      */
-    public function editEnableStatus(Request $request, Response $response)
+    public function editEnableStatus(Request $request, Response $response): Response
     {
         $rules = [
             [
@@ -388,5 +373,109 @@ class RealWeekActivity extends ControllerBase
         }
 
         return HttpHelper::buildResponse($response, $result);
+    }
+
+    /**
+     * 真人 - 批量保存活动指定用户UUID
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function designateUUIDAdd(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key' => 'activity_id',
+                'type' => 'required',
+                'error_code' => 'activity_id_is_required'
+            ],
+            [
+                'key' => 'designate_uuid',
+                'type' => 'required',
+                'error_code' => 'designate_uuid_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $employeeId = self::getEmployeeId();
+        try {
+            $designateUUID = is_array($params['designate_uuid']) ? $params['designate_uuid'] : [];
+            $data = RealSharePosterDesignateUuidService::batchSaveDesignateUuid($params['activity_id'], $employeeId, $designateUUID, false);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 真人 - 批量保存活动指定用户UUID
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function designateUUIDDel(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key' => 'activity_id',
+                'type' => 'required',
+                'error_code' => 'activity_id_is_required'
+            ],
+            [
+                'key' => 'designate_uuid',
+                'type' => 'required',
+                'error_code' => 'designate_uuid_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $employeeId = self::getEmployeeId();
+        try {
+            RealSharePosterDesignateUuidService::delActivityDesignateUUID($params['activity_id'], $employeeId, $params['designate_uuid']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 真人 - 获取指定活动的UUID列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function designateUUIDList(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key' => 'activity_id',
+                'type' => 'required',
+                'error_code' => 'activity_id_is_required'
+            ],
+            [
+                'key' => 'count',
+                'type' => 'integer',
+                'error_code' => 'count_is_integer'
+            ],
+            [
+                'key' => 'page',
+                'type' => 'integer',
+                'error_code' => 'page_is_integer'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        list($page, $limit) = Util::formatPageCount($params);
+        $data = RealSharePosterDesignateUuidService::getActivityDesignateUUIDList($params['activity_id'], $page, $limit);
+        return HttpHelper::buildResponse($response, $data);
     }
 }

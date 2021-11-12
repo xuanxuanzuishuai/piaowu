@@ -266,4 +266,37 @@ class UserService
         }
         return true;
     }
+
+    /**
+     * 检查uuid是否存在
+     * @param $appId
+     * @param $studentUuid
+     * @return array
+     */
+    public static function checkStudentUuidExists($appId, $studentUuid): array
+    {
+        if (empty($studentUuid)) {
+            return [];
+        }
+        if (!in_array($appId, [Constants::REAL_APP_ID])) {
+            return [];
+        }
+        $uuidList = [];
+        $uuidChunkList = array_chunk($studentUuid, 900);
+        foreach ($uuidChunkList as $_uuids) {
+            if ($appId == Constants::REAL_APP_ID) {
+                $studentList = ErpStudentModel::getStudentInfoByUuids($_uuids);
+            }
+            if (!empty($studentList)) {
+                $uuidList = array_merge($uuidList, array_column($studentList, 'uuid'));
+            }
+        }
+        unset($_uuids);
+        // 取不同
+        $noExistUuid = array_diff($studentUuid, $uuidList);
+        if (!empty($noExistUuid)) {
+            return $noExistUuid;
+        }
+        return [];
+    }
 }
