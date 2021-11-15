@@ -180,7 +180,37 @@ class ScriptSendReferralUserAward
             $earliestList = AprViewStudentModel::getStudentBetweenTimePlayRecord((int)$studentInfo['id'], (int)$playStartTime, (int)$playEndTime);
             $earliestTime = array_sum(array_column($earliestList, 'sum_duration'));
             SimpleLogger::info("script::auto_send_buy_trial_award_points", ['info' => 'aiPlay', 'data' => $earliestList, 'award_info' => $_award, 'play_time' => [$playStartTime, $playEndTime]]);
-            if ((empty($earliestTime) && $playEndTime <= $time) // 指定时间内没有练琴
+            if ($awardCondition[ReferralUserAwardModel::AWARD_CONDITION['play_times']] <= 0) {
+                /** 满足发放 - 没有设置必须要参与练琴 */
+                ReferralUserAwardModel::successSendAward($_award['id']);
+                switch ($_award['award_type']) {
+                    case Constants::AWARD_TYPE_GOLD_LEAF:   // 发放金叶子
+                        // 更新erp库对应的奖励记录为发放成功 - 并且发放金叶子
+                        UserRefereeService::sendAwardGoldLeaf(array_merge($_award, [
+                            'task_award_id' => $erpTaskAwardId,
+                            'award_status'  => ErpUserEventTaskAwardGoldLeafModel::STATUS_REVIEWING, // 等于2代表的是本次会把奖励直接发放给用户
+                            'event_task_id' => $pushMsgTaskId,
+                        ]));
+                        $sendPushMsg = true;
+                        break;
+                    case Constants::AWARD_TYPE_TIME:    // 奖励时长
+                        // 赠送自动激活码
+                        QueueService::giftDuration($_award['uuid'], DssGiftCodeModel::APPLY_TYPE_AUTO, $_award['award_amount'], DssGiftCodeModel::BUYER_TYPE_AI_REFERRAL);
+                        $url = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'award_time_wx_msg_url');
+                        $sendPushMsg = true;
+                        break;
+                    default:
+                        SimpleLogger::info("sendAwardNodeByTrailAward_not_award_type", [$_award, $playEndTime, $earliestList]);
+                        break;
+                }
+                // 推送消息
+                if (isset($sendPushMsg) && $sendPushMsg == true) {
+                    UserRefereeService::pushUserMsg($pushMsgTaskId, $_award['award_to'], $_award['uuid'], $_award['user_id'], [
+                        'amount' => $_award['award_amount'],
+                        'url' => $url ?? '',
+                    ]);
+                }
+            } elseif ((empty($earliestTime) && $playEndTime <= $time) // 指定时间内没有练琴
                 ||
                 ($earliestTime > 0 && $earliestTime < $awardCondition[ReferralUserAwardModel::AWARD_CONDITION['play_times']] && $playEndTime <= $time)   // 指定时间内练琴时长不足
             ) {
