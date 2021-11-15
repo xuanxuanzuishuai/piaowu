@@ -91,6 +91,7 @@ class ErpStudentModel extends ErpModel
                 self::$table . '.channel_id',
                 ErpStudentAppModel::$table . '.status',
                 ErpStudentAppModel::$table . '.first_pay_time',
+                ErpStudentAppModel::$table . '.student_id',
             ],
             [
                 self::$table . '.id' => $studentId,

@@ -15,14 +15,13 @@ use App\Libs\Util;
 use App\Models\ActivityExtModel;
 use App\Models\ActivityPosterModel;
 use App\Models\Dss\DssStudentModel;
-use App\Models\Erp\ErpStudentAppModel;
-use App\Models\Erp\ErpStudentModel;
 use App\Models\MessagePushRulesModel;
 use App\Models\MessageRecordModel;
 use App\Models\OperationActivityModel;
 use App\Models\RealSharePosterDesignateUuidModel;
 use App\Models\RealSharePosterModel;
-use App\Models\RealSharePosterTaskRuleModel;
+use App\Models\RealSharePosterPassAwardRuleModel;
+use App\Models\RealSharePosterTaskListModel;
 use App\Models\TemplatePosterModel;
 use App\Models\RealWeekActivityModel;
 use App\Services\Queue\QueueService;
@@ -32,22 +31,25 @@ class RealWeekActivityService
     /**
      * @param $data
      * @param $employeeId
-     * @return array|int|mixed|string
+     * @return array
      * @throws RunTimeException
      */
-    public static function add($data, $employeeId)
+    public static function add($data, $employeeId): array
     {
         $returnData = [
             'activity_id' => 0,
             'no_exists_uuid' => [],
+            'activity_having_uuid' => [],
         ];
         $checkAllowAdd = self::checkAllowAdd($data, OperationActivityModel::TYPE_WEEK_ACTIVITY);
         if (!empty($checkAllowAdd)) {
             throw new RunTimeException([$checkAllowAdd]);
         }
-        $noExistUuid = UserService::checkStudentUuidExists(Constants::REAL_APP_ID, $data['designate_uuid']);
-        if (!empty($noExistUuid)) {
-            $returnData['no_exists_uuid'] = $noExistUuid;
+        // 检查uuid是否正确
+        $errUuid = UserService::checkStudentUuidExists(Constants::REAL_APP_ID, $data['designate_uuid'] ?? []);
+        if (!empty($errUuid['no_exists_uuid']) || !empty($errUuid['activity_having_uuid'])) {
+            $returnData['no_exists_uuid'] = $errUuid['no_exists_uuid'];
+            $returnData['activity_having_uuid'] = $errUuid['activity_having_uuid'];
             return $returnData;
         }
         $time = time();
@@ -58,12 +60,19 @@ class RealWeekActivityService
         ];
         $delaySecond = !empty($data['delay_day']) ? $data['delay_day'] * Util::TIMESTAMP_ONEDAY : 0;
         $sendAwardBaseDelaySecond = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_ACTIVITY_CONFIG, 'send_award_base_delay_second');
+        /**
+         * 计算发奖时间
+         * 发放奖励时间公式：   M(发放奖励时间) = 活动结束时间(天) + 5天 + N天
+         * example: 活动结束时间是1号23:59:59， 发放奖励时间是 5+1天 ， 则  M= 1+5+1 = 7, 得出是在7号12点发放奖励
+         */
+        $delayDay = (intval($sendAwardBaseDelaySecond) + $delaySecond) / Util::TIMESTAMP_ONEDAY;
+        $activityEndTime = Util::getDayLastSecondUnix($data['end_time']);
         $weekActivityData = [
             'name' => $activityData['name'],
             'activity_id' => 0,
             'share_word' => !empty($data['share_word']) ? Util::textEncode($data['share_word']) : '',
             'start_time' => Util::getDayFirstSecondUnix($data['start_time']),
-            'end_time' => Util::getDayLastSecondUnix($data['end_time']),
+            'end_time' => $activityEndTime,
             'enable_status' => OperationActivityModel::ENABLE_STATUS_OFF,
             'banner' => $data['banner'] ?? '',
             'share_button_img' => $data['share_button_img'] ?? '',
@@ -80,7 +89,7 @@ class RealWeekActivityService
             'target_use_first_pay_time_start' => !empty($data['target_use_first_pay_time_start']) ? strtotime($data['target_use_first_pay_time_start']) : 0,
             'target_use_first_pay_time_end' => !empty($data['target_use_first_pay_time_end']) ? strtotime($data['target_use_first_pay_time_end']) : 0,
             'delay_second' => $delaySecond,
-            'send_award_time' => $delaySecond + $time + intval($sendAwardBaseDelaySecond),
+            'send_award_time' => strtotime(date("Y-m-d", $activityEndTime) . " +$delayDay day"),
             'priority_level' => $data['priority_level'] ?? 0,
         ];
         
@@ -97,7 +106,7 @@ class RealWeekActivityService
         if (empty($activityId)) {
             $db->rollBack();
             SimpleLogger::info("WeekActivityService:add insert operation_activity fail", ['data' => $activityData]);
-            throw new RunTimeException(["add week activity fail"]);
+            throw new RunTimeException(["add_week_operation_activity_fail"]);
         }
         // 保存周周领奖配置信息
         $weekActivityData['activity_id'] = $activityId;
@@ -105,7 +114,7 @@ class RealWeekActivityService
         if (empty($weekActivityId)) {
             $db->rollBack();
             SimpleLogger::info("WeekActivityService:add insert week_activity fail", ['data' => $weekActivityData]);
-            throw new RunTimeException(["add week activity fail"]);
+            throw new RunTimeException(["add_week_activity_fail"]);
         }
         // 保存周周领奖扩展信息
         $activityExtData['activity_id'] = $activityId;
@@ -113,7 +122,7 @@ class RealWeekActivityService
         if (empty($activityExtId)) {
             $db->rollBack();
             SimpleLogger::info("WeekActivityService:add insert activity_ext fail", ['data' => $activityExtData]);
-            throw new RunTimeException(["add week activity fail"]);
+            throw new RunTimeException(["add_week_activity_ext_fail"]);
         }
         // 保存海报关联关系
         $posterArray = array_merge($data['personality_poster'] ?? [], $data['poster'] ?? []);
@@ -121,21 +130,30 @@ class RealWeekActivityService
         if (empty($activityPosterRes)) {
             $db->rollBack();
             SimpleLogger::info("WeekActivityService:add batch insert activity_poster fail", ['data' => $data]);
-            throw new RunTimeException(["add week activity fail"]);
+            throw new RunTimeException(["add_week_activity_poster_fail"]);
         }
         // 保存分享任务
-        $ruleRes = RealSharePosterTaskRuleModel::batchInsertRuleTaskAwardData($activityId, $data['task_list'], $time);
+        $ruleRes = RealSharePosterTaskListModel::batchInsertActivityTask($activityId, $data['task_list'], $time);
         if (empty($ruleRes)) {
             $db->rollBack();
-            SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_task_rule fail", ['data' => $data]);
-            throw new RunTimeException(["add week activity fail"]);
+            SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_task_list fail", ['data' => $data]);
+            throw new RunTimeException(["add_week_activity_task_fail"]);
+        }
+        // 保存分享任务奖励规则
+        $ruleRes = RealSharePosterPassAwardRuleModel::batchInsertPassAwardRule($activityId, $data['task_list'], $time);
+        if (empty($ruleRes)) {
+            $db->rollBack();
+            SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_pass_award fail", ['data' => $data]);
+            throw new RunTimeException(["add_week_activity_pass_award_fail"]);
         }
         // 保存uuid
-        $saveUuidRes = RealSharePosterDesignateUuidModel::batchInsertUuid($activityId, $data['designate_uuid'], $employeeId, $time);
-        if (empty($saveUuidRes)) {
-            $db->rollBack();
-            SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_designate_uuid fail", ['data' => $data]);
-            throw new RunTimeException(["add week activity fail"]);
+        if (!empty($data['designate_uuid'])) {
+            $saveUuidRes = RealSharePosterDesignateUuidModel::batchInsertUuid($activityId, $data['designate_uuid'], $employeeId, $time);
+            if (empty($saveUuidRes)) {
+                $db->rollBack();
+                SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_designate_uuid fail", ['data' => $data]);
+                throw new RunTimeException(["add_week_activity_designate_uuid_fail"]);
+            }
         }
         $db->commit();
 
@@ -171,7 +189,7 @@ class RealWeekActivityService
         $targetUserType = $data['target_user_type'] ?? 0;
         $startFirstPayTime = !empty($data['target_use_first_pay_time_start']) ?  strtotime($data['target_use_first_pay_time_start']) : 0;
         $endFirstPayTime = !empty($data['target_use_first_pay_time_end']) ?  strtotime($data['target_use_first_pay_time_end']) : 0;
-        if (!($targetUserType == Constants::TARGET_USER_PART && $startFirstPayTime > 0 && $startFirstPayTime < $endFirstPayTime)) {
+        if (!($targetUserType == RealWeekActivityModel::TARGET_USER_PART && $startFirstPayTime > 0 && $startFirstPayTime < $endFirstPayTime)) {
             return 'first_start_time_eq_end_time';
         }
         // 分享任务不能为空
@@ -283,7 +301,7 @@ class RealWeekActivityService
     }
 
     /**
-     * 获取海报详情
+     * 获取周周领奖详情
      * @param $activityId
      * @return mixed
      * @throws RunTimeException
@@ -310,7 +328,7 @@ class RealWeekActivityService
         $activityInfo['personality_poster'] = $personality_poster;
 
         // 获取活动对应的任务
-        $activityInfo['task_list'] = RealSharePosterTaskRuleModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['task_num' => 'ASC']]);
+        $activityInfo['task_list'] = RealSharePosterTaskListModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['task_num' => 'ASC']]);
         // 获取uuid
         $activityInfo['designate_uuid'] = RealSharePosterDesignateUuidModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['id' => 'ASC']]);
 
@@ -344,9 +362,10 @@ class RealWeekActivityService
             throw new RunTimeException(['record_not_found']);
         }
         // 活动是待启用状态，检查导入的uuid是否正确
-        $noExistUuid = UserService::checkStudentUuidExists(Constants::REAL_APP_ID, $data['designate_uuid']);
-        if ($weekActivityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_OFF && !empty($noExistUuid)) {
-            $returnData['no_exists_uuid'] = $noExistUuid;
+        $errUuid = UserService::checkStudentUuidExists(Constants::REAL_APP_ID, $data['designate_uuid'] ?? [], $activityId);
+        if (!empty($errUuid['no_exists_uuid']) || !empty($errUuid['activity_having_uuid'])) {
+            $returnData['no_exists_uuid'] = $errUuid['no_exists_uuid'];
+            $returnData['activity_having_uuid'] = $errUuid['activity_having_uuid'];
             return $returnData;
         }
         // 判断海报是否有变化，没有变化不操作
@@ -436,14 +455,21 @@ class RealWeekActivityService
         // 待启用的状态可以额外编辑 分享任务和uuid 等
         if ($weekActivityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_OFF) {
             //更新分享任务
-            $ruleRes = RealSharePosterTaskRuleModel::batchUpdateRuleTaskAwardData($activityId, $data['task_list'], $time);
+            $ruleRes = RealSharePosterTaskListModel::batchUpdateActivityTask($activityId, $data['task_list'], $time);
+            if (empty($ruleRes)) {
+                $db->rollBack();
+                SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_task_rule fail", ['data' => $data]);
+                throw new RunTimeException(["add week activity fail"]);
+            }
+            // 更新分享通过奖励数据
+            $ruleRes = RealSharePosterPassAwardRuleModel::batchUpdatePassAwardRule($activityId, $data['task_list'], $time);
             if (empty($ruleRes)) {
                 $db->rollBack();
                 SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_task_rule fail", ['data' => $data]);
                 throw new RunTimeException(["add week activity fail"]);
             }
             // 更新uuid
-            $saveUuidRes = RealSharePosterDesignateUuidModel::batchUpdateUuid($activityId, $data['designate_uuid'], $employeeId, $time);
+            $saveUuidRes = RealSharePosterDesignateUuidModel::batchInsertUuid($activityId, $data['designate_uuid'], $employeeId, $time);
             if (empty($saveUuidRes)) {
                 $db->rollBack();
                 SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_designate_uuid fail", ['data' => $data]);
@@ -673,5 +699,67 @@ class RealWeekActivityService
             $item = self::formatActivityTimeStatus($item);
         }
         return [$list, $total];
+    }
+
+    /**
+     * 获取学生可参与的周周领奖活动列表
+     * 排序规则： 按照活动优先级从小到大， 相同优先级的再按照活动ID从大到小排序
+     * @param $studentInfo
+     * @return array
+     */
+    public static function getStudentCanPartakeWeekActivityList($studentInfo): array
+    {
+        $time = time();
+        $studentId = $studentInfo['student_id'] ?? 0;
+        $studentUUID = $studentInfo['uuid'] ?? '';
+        if (empty($studentId) || empty($studentUUID)) {
+            return [];
+        }
+        // 获取用户身份属性
+        $studentIdAttribute = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentId, $studentUUID);
+        // 检查一下用户是否是有效用户，不是有效用户不可能有可参与的活动
+        if (!UserService::checkRealStudentIdentityIsNormal($studentId, $studentIdAttribute)) {
+            return [];
+        }
+        // 获取所有当前时间启用中的活动信息列表
+        $activityList = RealWeekActivityModel::getRecords([
+            'start_time[<]' => $time,
+            'end_time[>]' => $time,
+            'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
+        ]);
+        foreach ($activityList as $_activityKey => $_activityInfo) {
+            // 过滤掉 目标用户类型是部分有效付费用户首次付费时间
+            if ($_activityInfo['target_user_type'] == RealWeekActivityModel::TARGET_USER_PART) {
+                if ($studentIdAttribute['first_pay_time'] < $_activityInfo['target_use_first_pay_time_start']) {
+                    // 用户首次付费时间小于活动设定的首次付费起始时间，删除
+                    unset($activityList[$_activityKey]);
+                }
+                if ($studentIdAttribute['first_pay_time'] > $_activityInfo['target_use_first_pay_time_end']) {
+                    // 用户首次付费时间大于活动设定的首次付费截止时间， 删除
+                    unset($activityList[$_activityKey]);
+                }
+            }
+        }
+        unset($_activityKey, $_activityInfo);
+        // 获取所有添加了用户uuid的所有当期时间启用中的活动
+        $designateActivityIdList = RealSharePosterDesignateUuidModel::getUUIDDesignateWeekActivityList($studentUUID, $time);
+        $activityList = array_merge($activityList, $designateActivityIdList);
+        // 没有查到任何活动，直接返回
+        if (empty($activityList)) {
+            return [];
+        }
+        $sortPriorityLevel = $sortActivityId = [];
+        foreach ($activityList as $key => $item) {
+            // 活动去重
+            if (in_array($item['activity_id'], $sortActivityId)) {
+                unset($activityList[$key]);
+            }
+            $sortPriorityLevel[] = $item['priority_level'];
+            $sortActivityId[] = $item['activity_id'];
+        }
+        unset($key, $item);
+        // 所有活动组合在一起，并且排序 - 排序规则，  优先级【数字越小代表优先级越高】 ---> 根据创建时间倒序【主键id倒序即可】
+        array_multisort($sortPriorityLevel, SORT_ASC, $sortActivityId, SORT_DESC, $activityList);
+        return $activityList;
     }
 }

@@ -1112,7 +1112,7 @@ class Consumer extends ControllerBase
         
         switch ($params['event_type']) {
             case RealReferralTopic::REAL_SEND_POSTER_AWARD:
-                $res = RealSharePosterService::addUserAward($data);
+                RealSharePosterService::addUserAward($data);
                 break;
             case RealReferralTopic::REAL_SHARE_POSTER_MESSAGE:
                 MessageService::sendRealSharePosterMessage($params['msg_body']);

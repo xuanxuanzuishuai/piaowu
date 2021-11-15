@@ -53,13 +53,10 @@ class AutoCheckPicture
             case Constants::REAL_APP_ID: //真人陪练
                 // 获取活动信息
                 $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $result['activity_id']], ['id', 'activity_id', 'enable_status', 'start_time']);
-                // 在指定ID活动内，不校验活动状态
-                if (!RealActivityService::xyzopCheckIsSpecialActivityId($result)) {
-                    // 检查活动是否启动，未启用不能自动审核
-                    if (empty($activityInfo) || $activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
-                        SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
-                        return null;
-                    }
+                // 检查活动是否启动，未启用不能自动审核
+                if (empty($activityInfo) || $activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
+                    SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
+                    return null;
                 }
                 break;
             default:
@@ -67,19 +64,6 @@ class AutoCheckPicture
                 return null;
         }
         $imagePath = AliOSS::replaceCdnDomainForDss($result['image_path']);
-//        // 获取日期 - 月.日
-//        $date = date("n.j", $activityInfo['start_time']);
-//        // 获取日期 - 年-月-日
-//        $activityDate = date("Y-m-d", $activityInfo['start_time']);
-//        $redis = RedisDB::getConn();
-//        $cacheKey = 'letterIden';
-//        if (!$redis->hexists($cacheKey, $date)) {
-//            $letterIden = self::transformDate($activityDate);
-//            $redis->hset($cacheKey, $date, $letterIden);
-//            $redis->expire($cacheKey, self::$redisExpire);
-//        }
-//        $letterIden = $redis->hget($cacheKey, $date);
-//        return [$date, $letterIden, $imagePath];
         return $imagePath ?? '';
     }
 
@@ -115,29 +99,8 @@ class AutoCheckPicture
             SimpleLogger::error('empty poster image', ['id' => $data['id']]);
             return null;
         }
-        //查询本周活动是否有系统审核拒绝的
-        $conds = [
-            'student_id'    => $result['student_id'],
-            'activity_id'   => $result['activity_id'],
-            'type'          => SharePosterModel::TYPE_WEEK_UPLOAD,
-            'verify_status' => SharePosterModel::VERIFY_STATUS_UNQUALIFIED,
-            'verify_user'   => EmployeeModel::SYSTEM_EMPLOYEE_ID
-        ];
-        switch ($data['app_id']) {
-            case Constants::SMART_APP_ID: //智能陪练
-                $historyRecord = SharePosterModel::getRecord($conds, ['id']);
-                break;
-            case Constants::REAL_APP_ID: //真人陪练
-                $historyRecord = RealSharePosterModel::getRecord($conds, ['id']);
-                if (empty($historyRecord)) {
-                    $historyRecord = null;
-                }
-                break;
-            default:
-                break;
-        }
 
-        return compact('result', 'historyRecord');
+        return ['result' => $result ?? []];
     }
 
     /**
@@ -402,23 +365,9 @@ class AutoCheckPicture
                     $isSameUser = true;
                 }
 
-                $checkActivityIdStr = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'week_activity_id_effect');
-                $checkActivityIdStrV1 = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'week_activity_id_effect_v1');
-                $checkActivityIdArr = $checkActivityIdArrV1 =  [];
-                if (!empty($checkActivityIdStr)) {
-                    $checkActivityIdArr = explode(',', $checkActivityIdStr);
-                    $checkActivityIdArrV1 = explode(',', $checkActivityIdStrV1);
-                }
                 if (!empty($uploadInfo['activity_id'])) {
                     //海报生成和上传是一期活动，允许通过
                     if ($composeCheckActivity == $uploadInfo['activity_id']) {
-                        $isSameActivity = true;
-                    } elseif (in_array($composeCheckActivity, $checkActivityIdArr) && in_array($uploadInfo['activity_id'], $checkActivityIdArr)) {
-                        //海报生成和上传在指定的5期活动，允许通过
-                        $isSameActivity = true;
-                    } elseif (in_array($composeCheckActivity, $checkActivityIdArrV1) && in_array($uploadInfo['activity_id'], $checkActivityIdArrV1)) {
-                        $isSameActivity = true;
-                    } elseif (RealActivityService::xyzopCheckIsAllowActivityId($uploadInfo, ['activity_id' =>$composeCheckActivity])) {
                         $isSameActivity = true;
                     }
                 }

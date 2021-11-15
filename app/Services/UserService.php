@@ -18,6 +18,7 @@ use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\Erp\ErpUserWeiXinModel;
+use App\Models\RealSharePosterDesignateUuidModel;
 use App\Models\UserWeiXinModel;
 
 /**
@@ -216,16 +217,19 @@ class UserService
      * @param $studentId
      * @return array|mixed
      */
-    public static function getStudentIdentityAttributeById($appId, $studentId)
+    public static function getStudentIdentityAttributeById($appId, $studentId, $studentUUID = '')
     {
         $studentIdAttribute = [];
-        if (empty($studentId)) {
+        if (empty($studentId) && empty($studentUUID)) {
             return [];
         }
         if ($appId == Constants::REAL_APP_ID) {
-            $studentInfo = ErpStudentModel::getRecord(['id' => $studentId], ['uuid']);
-            $studentIdAttribute = (new Erp())->getStudentIdentityAttribute($studentInfo['uuid'] ?? '');
-            SimpleLogger::info('getStudentIdentityAttributeById', [$studentId, $studentInfo, $studentIdAttribute]);
+            if (empty($studentUUID)) {
+                $studentInfo = ErpStudentModel::getRecord(['id' => $studentId], ['uuid']);
+                $studentUUID = $studentInfo['uuid'] ?? '';
+            }
+            $studentIdAttribute = (new Erp())->getStudentIdentityAttribute($studentUUID);
+            SimpleLogger::info('getStudentIdentityAttributeById', [$studentId, $studentInfo ?? [], $studentIdAttribute]);
 
         }
         return $studentIdAttribute;
@@ -234,15 +238,16 @@ class UserService
     /**
      * 检查真人用户是否是有效付费用户
      * @param $studentId
-     * @param int $startFirstPayTime
-     * @param int $endFirstPayTime
+     * @param array $studentIdAttribute
      * @return bool
      */
-    public static function checkRealStudentIdentityIsNormal($studentId, int $startFirstPayTime = 0, int $endFirstPayTime = 0): bool
+    public static function checkRealStudentIdentityIsNormal($studentId, array $studentIdAttribute = []): bool
     {
-        $studentIdAttribute = self::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentId);
         if (empty($studentIdAttribute)) {
-            return false;
+            $studentIdAttribute = self::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentId);
+            if (empty($studentIdAttribute)) {
+                return false;
+            }
         }
         // 未付费
         if (!isset($studentIdAttribute['is_real_person_paid']) || $studentIdAttribute['is_real_person_paid'] != Erp::USER_IS_PAY_YES) {
@@ -252,17 +257,9 @@ class UserService
         if (!isset($studentIdAttribute['paid_course_remainder_num']) || $studentIdAttribute['paid_course_remainder_num'] <= 0) {
             return false;
         }
-        // 用户付费起始时间不为0 ，用户首次付费时间应大于等于起始时间
-        if ($startFirstPayTime > 0) {
-            if (!isset($studentIdAttribute['first_pay_time']) || $studentIdAttribute['first_pay_time'] < $startFirstPayTime) {
-                return false;
-            }
-        }
-        // 用户付费截止时间不为0 ，用户首次付费应小于截止时间
-        if ($endFirstPayTime > 0) {
-            if (!isset($studentIdAttribute['first_pay_time']) || $studentIdAttribute['first_pay_time'] >= $endFirstPayTime) {
-                return false;
-            }
+        // 没有付费时间
+        if (!isset($studentIdAttribute['first_pay_time'])) {
+            return false;
         }
         return true;
     }
@@ -271,15 +268,20 @@ class UserService
      * 检查uuid是否存在
      * @param $appId
      * @param $studentUuid
+     * @param int $activityId
      * @return array
      */
-    public static function checkStudentUuidExists($appId, $studentUuid): array
+    public static function checkStudentUuidExists($appId, $studentUuid, int $activityId = 0): array
     {
+        $returnData = [
+            'no_exists_uuid' => [],
+            'activity_having_uuid' => [],
+        ];
         if (empty($studentUuid)) {
-            return [];
+            return $returnData;
         }
         if (!in_array($appId, [Constants::REAL_APP_ID])) {
-            return [];
+            return $returnData;
         }
         $uuidList = [];
         $uuidChunkList = array_chunk($studentUuid, 900);
@@ -293,10 +295,16 @@ class UserService
         }
         unset($_uuids);
         // 取不同
-        $noExistUuid = array_diff($studentUuid, $uuidList);
-        if (!empty($noExistUuid)) {
-            return $noExistUuid;
+        $returnData['no_exists_uuid'] = array_diff($studentUuid, $uuidList);
+
+        // 检查活动中是否已经存在UUID
+        if (!empty($activityId)) {
+            if ($appId == Constants::REAL_APP_ID) {
+                $activityUUIDList = RealSharePosterDesignateUuidModel::getRecords(['activity_id' => $activityId, 'uuid' => $studentUuid], ['uuid']);
+                $activityUUIDList = array_column($activityUUIDList, 'uuid');
+                $returnData['activity_having_uuid'] = array_values(array_diff($studentUuid, $activityUUIDList));
+            }
         }
-        return [];
+        return $returnData;
     }
 }

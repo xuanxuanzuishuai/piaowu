@@ -1315,11 +1315,14 @@ class MessageService
                     return false;
                 }
 
+                // 获取基本的延时发放时间，单位秒
+                $sendAwardBaseDelaySecond = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_ACTIVITY_CONFIG, 'send_award_base_delay_second');
                 // 指定必要字段
                 $awardInfo['type'] = RealSharePosterModel::TYPE_CHECKIN_UPLOAD;
                 $awardInfo['app_id'] = Constants::REAL_APP_ID;
                 $awardInfo['verify_status'] = RealSharePosterModel::VERIFY_STATUS_QUALIFIED;
-                $jumpLink = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_month_award_url');
+                $awardInfo['delay_send_award_day'] = intval((intval($sendAwardBaseDelaySecond) + intval($activityInfo['delay_second'])) / Util::TIMESTAMP_ONEDAY);
+                $jumpLink = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_week_activity_url');
                 break;
             default:
                 // 待审核 不能发送消息
@@ -1331,9 +1334,11 @@ class MessageService
             return false;
         }
         $ext = [
-            'activity_name' => $activityInfo['name'],
+            'activity_name' => $activityInfo['name'] ?? '',
             'url' => !empty($jumpLink) ? $jumpLink : '',
-            'award_amount' => $awardInfo['award_amount']
+            'award_amount' => $awardInfo['award_amount'] ?? 0,
+            'delay_send_award_day' => $awardInfo['delay_send_award_day'] ?? 0,
+            'activity_id' => $activityInfo['activity_id'] ?? 0,
         ];
         PushMessageService::realSendMessage($awardInfo, $ext);
         return true;

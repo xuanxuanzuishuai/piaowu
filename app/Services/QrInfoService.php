@@ -48,7 +48,7 @@ class QrInfoService
             'from_service'        => 'from_service',            // 请求来源服务
             'employee_uuid'       => 'employee_uuid',           // 员工uuid
         ];
-        $qrData['check_active_id'] = PosterService::getCheckActivityId($appId);
+        $qrData['check_active_id'] = PosterService::getCheckActivityId($appId, $qrData['user_id'] ?? 0);
         foreach ($signField as $paramsFiled => $createField) {
             if (isset($qrData[$paramsFiled]) && !Util::emptyExceptZero($qrData[$paramsFiled])) {
                 $createTicketData[$createField] = $qrData[$paramsFiled];
@@ -220,7 +220,7 @@ class QrInfoService
 
         $selectField = array_merge($field, ['qr_path', 'qr_id', 'qr_sign', 'qr_ticket']);
         //获取海报自动审核校验活动ID
-        $checkActiveId = PosterService::getCheckActivityId($appId);
+        $checkActiveId = PosterService::getCheckActivityId($appId, $qrParams[0]['user_id'] ?? 0);
         // 查询ch
         $qrImageArr = QrInfoOpCHModel::getQrInfoBySign($qrSignArr, $selectField);
         $qrSignData = array_column($qrImageArr, null, 'qr_sign');

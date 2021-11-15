@@ -10,6 +10,7 @@
 namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
@@ -18,6 +19,7 @@ use App\Libs\Valid;
 use App\Models\Erp\ErpEventModel;
 use App\Services\RealSharePosterDesignateUuidService;
 use App\Services\RealWeekActivityService;
+use App\Services\UserService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -403,7 +405,7 @@ class RealWeekActivity extends ControllerBase
         $employeeId = self::getEmployeeId();
         try {
             $designateUUID = is_array($params['designate_uuid']) ? $params['designate_uuid'] : [];
-            $data = RealSharePosterDesignateUuidService::batchSaveDesignateUuid($params['activity_id'], $employeeId, $designateUUID, false);
+            $data = RealSharePosterDesignateUuidService::batchSaveDesignateUuid($params['activity_id'], $employeeId, $designateUUID);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
@@ -476,6 +478,40 @@ class RealWeekActivity extends ControllerBase
         }
         list($page, $limit) = Util::formatPageCount($params);
         $data = RealSharePosterDesignateUuidService::getActivityDesignateUUIDList($params['activity_id'], $page, $limit);
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 真人 - 检查活动指定用户UUID
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function designateUUIDCheck(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key' => 'designate_uuid',
+                'type' => 'required',
+                'error_code' => 'designate_uuid_is_required'
+            ],
+            [
+                'key' => 'activity_id',
+                'type' => 'integer',
+                'error_code' => 'activity_id_is_integer'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $designateUUID = is_array($params['designate_uuid']) ? $params['designate_uuid'] : [];
+            $data = UserService::checkStudentUuidExists(Constants::REAL_APP_ID, $designateUUID, $params['activity_id'] ?? 0);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
         return HttpHelper::buildResponse($response, $data);
     }
 }

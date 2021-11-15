@@ -347,7 +347,7 @@ class MiniAppQrService
             'app_id'          => $appId,
             'busies_type'     => $busiesType,
             'user_status'     => $extParams['user_status'] ?? ($extParams['user_current_status'] ?? 0),
-            'check_active_id' => PosterService::getCheckActivityId($appId),
+            'check_active_id' => PosterService::getCheckActivityId($appId, $userId),
             'date'            => date('Y-m-d', time()),
             'from_service'    => $extParams['from_service'] ?? '',
             'employee_uuid'   => $extParams['employee_uuid'] ?? '',
@@ -393,7 +393,7 @@ class MiniAppQrService
         $qrSignData = array_column($qrImageArr, null, 'qr_sign');
 
         //获取海报自动审核校验活动ID
-        $checkActiveId = PosterService::getCheckActivityId($appId);
+        $checkActiveId = PosterService::getCheckActivityId($appId, $qrParams[0]['user_id'] ?? 0);
         SimpleLogger::info("getUserMiniAppQrList qrSignData", [$qrImageArr, $qrSignData]);
         foreach ($qrParams as $_qrParam) {
             $_qrSign = $_qrParam['qr_sign'];
@@ -451,6 +451,9 @@ class MiniAppQrService
         $returnQrSignArr = [];
         $saveQrData = [];
 
+        if (empty($qrParams)) {
+            return [];
+        }
         // 生成qr_sign
         foreach ($qrParams as &$item) {
             try {
@@ -469,7 +472,7 @@ class MiniAppQrService
         SimpleLogger::info("getUserMiniAppQrList qrSignData", [$qrImageArr, $qrSignData]);
 
         //获取海报自动审核校验活动ID
-        $checkActiveId = PosterService::getCheckActivityId($appId);
+        $checkActiveId = PosterService::getCheckActivityId($appId, $qrParams[0]['user_id'] ?? 0);
         foreach ($qrParams as $_key => $_qrParam) {
             $_qrSign = $_qrParam['qr_sign'];
             if (isset($qrSignData[$_qrSign])) {

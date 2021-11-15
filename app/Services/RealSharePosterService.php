@@ -153,6 +153,51 @@ class RealSharePosterService
         if (count($posters) != count($id)) {
             throw new RunTimeException(['get_share_poster_error']);
         }
+        $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
+        if ($posters['activity_id'] <= $oldRuleLastActivityId) {
+            $type = RealSharePosterModel::TYPE_WEEK_UPLOAD;
+            $posters = RealSharePosterModel::getPostersByIds($id, $type);
+            if (count($posters) != count($id)) {
+                throw new RunTimeException(['get_share_poster_error']);
+            }
+            $now = time();
+            $updateData = [
+                'verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED,
+                'verify_time'   => $now,
+                'verify_user'   => $params['employee_id'] ?? 0,
+                'remark'        => $params['remark'] ?? '',
+                'update_time'   => $now,
+            ];
+            $redis = RedisDB::getConn();
+            $needAwardList = [];
+            foreach ($posters as $key => $poster) {
+                // 审核数据操作锁，解决并发导致的重复审核和发奖
+                $lockKey = self::KEY_POSTER_VERIFY_LOCK . $poster['id'];
+                $lock = $redis->set($lockKey, $poster['id'], 'EX', 120, 'NX');
+                if (empty($lock)) {
+                    continue;
+                }
+                $where = [
+                    'id' => $poster['id'],
+                    'verify_status' => $poster['poster_status']
+                ];
+                $update = RealSharePosterModel::batchUpdateRecord($updateData, $where);
+                // 在指定活动时做指定活动规定的操作，不发奖励也不激活产品
+                if (RealActivityService::xyzopPushRealMsg($poster['student_id'], $poster)) {
+                    continue;
+                }
+                if (!empty($update)) {
+                    $needAwardList[] = $poster['id'];
+                }
+                //真人产品激活
+                QueueService::autoActivate(['student_uuid' => $poster['uuid'], 'passed_time' => time(),'app_id' => Constants::REAL_APP_ID]);
+            }
+            //真人奖励激活
+            if (!empty($needAwardList)) {
+                QueueService::addRealUserPosterAward(['share_poster_ids' => $needAwardList]);
+            }
+            return true;
+        }
         $now = time();
         $updateData = [
             'verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED,
@@ -162,7 +207,6 @@ class RealSharePosterService
             'update_time'   => $now,
         ];
         $redis = RedisDB::getConn();
-        $needAwardList = [];
         foreach ($posters as $key => $poster) {
             // 审核数据操作锁，解决并发导致的重复审核和发奖
             $lockKey = self::KEY_POSTER_VERIFY_LOCK . $poster['id'];
@@ -175,19 +219,16 @@ class RealSharePosterService
                 'verify_status' => $poster['poster_status']
             ];
             $update = RealSharePosterModel::batchUpdateRecord($updateData, $where);
-            // 在指定活动时做指定活动规定的操作，不发奖励也不激活产品
-            if (RealActivityService::xyzopPushRealMsg($poster['student_id'], $poster)) {
+            // 更新失败，不处理
+            if (empty($update)) {
+                SimpleLogger::info("approvalPoster_update_status_faile", [$updateData, $where]);
                 continue;
-            }
-            if (!empty($update)) {
-                $needAwardList[] = $poster['id'];
             }
             //真人产品激活
             QueueService::autoActivate(['student_uuid' => $poster['uuid'], 'passed_time' => time(),'app_id' => Constants::REAL_APP_ID]);
-        }
-        //真人奖励激活
-        if (!empty($needAwardList)) {
-            QueueService::addRealUserPosterAward(['share_poster_ids' => $needAwardList]);
+
+            // 发送消息
+            QueueService::realSendPosterAwardMessage(["share_poster_id" => $poster['id']]);
         }
         return true;
     }
@@ -202,12 +243,11 @@ class RealSharePosterService
         if (empty($data)) {
             return false;
         }
-        SimpleLogger::info('RealSharePosterService_addUserAward', ['data' => $data]);
         //发放奖励接口
         try {
             RealUserAwardMagicStoneService::sendUserMagicStoneAward($data);
         } catch (RunTimeException $e) {
-            SimpleLogger::info('RealSharePosterService_addUserAward', ['data' => $data]);
+            SimpleLogger::info('RealSharePosterService_addUserAward', ['data' => $data, 'err_msg' => $e->getMessage()]);
             Util::errorCapture("RealSharePosterService_addUserAward_error", [$data, $e->getMessage()]);
 
         }
@@ -248,11 +288,6 @@ class RealSharePosterService
         ]);
         // 审核不通过, 发送模版消息
         if ($update > 0) {
-            //$vars = [
-            //    'activity_name' => $poster['activity_name'],
-            //    'status' => $status
-            //];
-            //MessageService::sendRealPosterVerifyMessage($poster['open_id'], $vars)
             QueueService::realSendPosterAwardMessage(["share_poster_id" => $posterId]);
         }
         
@@ -287,7 +322,8 @@ class RealSharePosterService
         $returnData['award_amount'] = 0;
         $returnData['award_type'] = 0;
         $returnData['reason_str'] = '';
-
+        $returnData['task_num'] = $sharePosterInfo['task_num'];
+        $time = time();
 
         // 根据状态判断展示逻辑
         switch ($sharePosterInfo['verify_status']) {
@@ -303,10 +339,10 @@ class RealSharePosterService
                 }
                 break;
             case RealSharePosterModel::VERIFY_STATUS_WAIT || RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED:
-                //获取最新两个最新可参与的周周领奖活动
-                $activityData = RealActivityService::getCanParticipateWeekActivityIds($studentData, 2);
-                // 获取是否能重新上传 - 在可参与范围内，并且是审核中的
-                if (in_array($sharePosterInfo['activity_id'], array_column($activityData, 'activity_id'))) {
+                $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $sharePosterInfo['activity_id']]);
+                $activityOverAllowUploadSecond = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_ACTIVITY_CONFIG, 'activity_over_allow_upload_second');
+                // 能否重新上传 - 活动未结束 或 活动已结束但结束时间没有超过5天
+                if ($activityInfo['end_time'] > $time || ($time - $activityInfo['end_time']) <= $activityOverAllowUploadSecond) {
                     $returnData['can_upload'] = Constants::STATUS_TRUE;
                 }
                 // no break; 审核通过和不通过的公用部分

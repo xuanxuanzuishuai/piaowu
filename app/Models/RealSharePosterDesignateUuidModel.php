@@ -40,24 +40,6 @@ class RealSharePosterDesignateUuidModel extends Model
     }
 
     /**
-     * 修改数据 - 先删除，再添加
-     * @param $activityId
-     * @param $uuidList
-     * @param $operatorId
-     * @param $createTime
-     * @return bool
-     */
-    public static function batchUpdateUuid($activityId, $uuidList, $operatorId, $createTime): bool
-    {
-        SimpleLogger::info("batchUpdateUuid", [$activityId, $uuidList, $operatorId, $createTime]);
-        $delRes = self::delDesignateUUID($activityId, $uuidList, $operatorId);
-        if (empty($delRes)) {
-            return false;
-        }
-        return self::batchInsertUuid($activityId, $uuidList, $operatorId, $createTime);
-    }
-
-    /**
      * 删除数据
      * @param $activityId
      * @param $uuid
@@ -123,5 +105,37 @@ class RealSharePosterDesignateUuidModel extends Model
             $where
         );
         return [$list, $total];
+    }
+
+    /**
+     * 获取uuid指定可参与的周周领奖活动
+     * @param $studentUUID
+     * @param $time
+     * @return array|mixed
+     */
+    public static function getUUIDDesignateWeekActivityList($studentUUID, $time)
+    {
+        $records = MysqlDB::getDB()->select(
+            self::$table . '(d)',
+            [
+                '[>]' . RealWeekActivityModel::$table . '(w)' => ['d.activity_id' => 'activity_id'],
+            ],
+            [
+                'w.activity_id',
+                'w.target_user_type',
+                'w.target_use_first_pay_time_start',
+                'w.target_use_first_pay_time_end',
+                'w.priority_level',
+                'w.start_time',
+                'w.end_time',
+            ],
+            [
+                'w.start_time[<]' => $time,
+                'w.end_time[>]' => $time,
+                'w.enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
+                'd.uuid' => $studentUUID
+            ]
+        );
+        return $records[0] ?? [];
     }
 }

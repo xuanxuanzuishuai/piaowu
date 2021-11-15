@@ -341,7 +341,7 @@ class PushMessageService
         }
 
         // 获取奖励id
-        $baseTemId = self::realGetWechatConfigId($awardDetailInfo);
+        $baseTemId = self::realGetWechatConfigId(array_merge($awardDetailInfo, ['activity_id' => $ext['activity_id'] ?? 0]));
         if (empty($baseTemId)) {
             SimpleLogger::info('not found tem id', ['award' => $awardDetailInfo]);
             return false;
@@ -366,8 +366,15 @@ class PushMessageService
      */
     public static function realGetWechatConfigId($awardInfo)
     {
+        $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
+        $activityId = $awardInfo['activity_id'] ?? 0;
         //当前奖励要发放的数据库的消息模板
-        return RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_CONFIG, $awardInfo['verify_status']);
+        if ($activityId <= $oldRuleLastActivityId) {
+            $wechatConfigId = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_CONFIG, $awardInfo['verify_status']);
+        } else {
+            $wechatConfigId = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_CONFIG, 'new-' . $awardInfo['verify_status']);
+        }
+        return $wechatConfigId;
     }
 
     /**

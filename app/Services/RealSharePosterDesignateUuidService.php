@@ -21,15 +21,15 @@ class RealSharePosterDesignateUuidService
      * @param $activityId
      * @param $employeeId
      * @param array $designateUuid
-     * @param bool $isCheckUuidExists
      * @return array
      * @throws RunTimeException
      */
-    public static function batchSaveDesignateUuid($activityId, $employeeId, array $designateUuid, bool $isCheckUuidExists = true): array
+    public static function batchSaveDesignateUuid($activityId, $employeeId, array $designateUuid): array
     {
         $returnData = [
             'error_code' => 0,
-            'no_exist_uuid' => [],
+            'no_exists_uuid' => [],
+            'activity_having_uuid' => [],
         ];
         if (empty($designateUuid)) {
             throw new RunTimeException(['designate_uuid_is_required']);
@@ -40,26 +40,17 @@ class RealSharePosterDesignateUuidService
             throw new RunTimeException(['activity_not_found']);
         }
         // 查询uuid是否存在（是否是正确的用户）
-        if ($isCheckUuidExists) {
-            $noExistUuid = UserService::checkStudentUuidExists(Constants::REAL_APP_ID, $designateUuid);
-            if (!empty($noExistUuid)) {
-                $returnData['no_exist_uuid'] = $noExistUuid;
-                $returnData['error_code'] = 1;
-                return $returnData;
-            }
-        }
-        // 读取当前活动下以及存在的uuid
-        $isExistUuid = RealSharePosterDesignateUuidModel::getRecords(['activity_id' => $activityId], ['uuid']);
-        // 取出还没入库的uuid
-        $diffUuid = array_diff($designateUuid, array_column($isExistUuid, 'uuid'), $returnData['no_exist_uuid']);
-        // 未入库的uuid入库
-        if (empty($diffUuid)) {
+        $errorExistUUID = UserService::checkStudentUuidExists(Constants::REAL_APP_ID, $designateUuid, $activityId);
+        if (!empty($errorExistUUID['no_exists_uuid']) || !empty($errorExistUUID['activity_having_uuid'])) {
+            $returnData['error_code'] = 1;
+            $returnData['no_exists_uuid'] = $errorExistUUID['no_exists_uuid'];
+            $returnData['activity_having_uuid'] = $errorExistUUID['activity_having_uuid'];
             return $returnData;
         }
         // 保存分享任务
-        $saveRes = RealSharePosterDesignateUuidModel::batchInsertUuid($activityId, $diffUuid, $employeeId, time());
+        $saveRes = RealSharePosterDesignateUuidModel::batchInsertUuid($activityId, array_unique($designateUuid), $employeeId, time());
         if (empty($saveRes)) {
-            SimpleLogger::info("batchSaveDesignateUuid", [$activityId,$employeeId,$designateUuid, $isCheckUuidExists, $diffUuid, $saveRes]);
+            SimpleLogger::info("batchSaveDesignateUuid", [$activityId,$employeeId,$designateUuid, $saveRes]);
             throw new RunTimeException(["add_designate_uuid_fail"]);
         }
         return $returnData;
@@ -113,5 +104,20 @@ class RealSharePosterDesignateUuidService
             }
         }
         return $returnData;
+    }
+
+    /**
+     * 查询uuid是不是已经在活动中
+     * @param $activityId
+     * @param $uuids
+     * @return array
+     */
+    public static function getActivityDesignateExistsUUIDList($activityId, $uuids): array
+    {
+        $uuidList = RealSharePosterDesignateUuidModel::getRecords(['activity_id' => $activityId, 'uuid' => $uuids], ['uuid']);
+        if (empty($uuidList)) {
+            return [];
+        }
+        return array_column($uuidList, 'uuid');
     }
 }

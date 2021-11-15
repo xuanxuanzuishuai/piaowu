@@ -5,22 +5,16 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
-use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\RealDictConstants;
-use App\Libs\RedisDB;
-use App\Libs\Util;
 use App\Models\ActivityExtModel;
-use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
-use App\Models\Erp\ErpPackageV1Model;
-use App\Models\Erp\ErpReferralUserRefereeModel;
-use App\Models\Erp\ErpStudentAccountDetail;
 use App\Models\Erp\ErpStudentAppModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\OperationActivityModel;
 use App\Models\RealMonthActivityModel;
 use App\Models\RealSharePosterModel;
+use App\Models\RealSharePosterTaskListModel;
 use App\Models\RealWeekActivityModel;
 use App\Models\TemplatePosterModel;
 use App\Services\Queue\QueueService;
@@ -31,44 +25,36 @@ class RealActivityService
     /**
      * 获取周周领奖活动
      * @param int $studentId 学生ID
-     * @param int $fromType 来源类型:微信 app
+     * @param string $fromType 来源类型:微信 app
      * @return array
      * @throws RunTimeException
      */
-    public static function weekActivityData($studentId, $fromType)
+    public static function weekActivityData(int $studentId, string $fromType): array
     {
         $data = [
             'list' => [],
             'activity' => [],
             'student_info' => [],
             'channel_list' => [],
-            'can_upload' => false
         ];
         //获取学生信息
         $studentDetail = ErpStudentModel::getStudentInfoById($studentId);
-        //检测是否可以看到周周领奖tab
-        $showTabList = self::monthAndWeekActivityTabShowList($studentDetail);
-        if (empty($showTabList['week_tab'])) {
-            return $data;
-        }
         if (empty($studentDetail)) {
             throw new RunTimeException(['student_not_exist']);
         }
-        //资格检测
-        $checkRes = ErpUserService::getStudentStatus($studentId);
         $data['student_info'] = [
             'uuid' => $studentDetail['uuid'],
-            'pay_status' => $checkRes['pay_status'],
             'nickname' => !empty($studentDetail['name']) ? $studentDetail['name'] : ErpUserService::getStudentDefaultName($studentDetail['mobile']),
-            'pay_status_zh' => $checkRes['status_zh'],
             'thumb' => ErpUserService::getStudentThumbUrl([$studentDetail['thumb']])[0],
+            'real_person_paid' => 0,
         ];
-        if ($checkRes['pay_status'] != ErpStudentAppModel::STATUS_PAID) {
+        // 获取活动详情
+        $activityList = RealWeekActivityService::getStudentCanPartakeWeekActivityList($studentDetail);
+        if (empty($activityList)) {
             return $data;
         }
-        //检测当前学生是否可以看到上传截图按钮
-        $data['can_upload'] = empty(self::getCanParticipateWeekActivityIds($studentDetail, 2)) ? false : true;
-        list($data['list'], $data['activity']) = self::initWeekOrMonthActivityData(OperationActivityModel::TYPE_WEEK_ACTIVITY, $fromType, $studentDetail);
+        // 获取活动海报
+        list($data['list'], $data['activity']) = self::getWeekActivityPosterList($activityList[0], $fromType, $studentDetail);
         //渠道获取
         list($data['channel_list']['first']) = DictConstants::getValues(DictConstants::ACTIVITY_CONFIG, ['channel_week_' . $fromType]);
         return $data;
@@ -89,11 +75,7 @@ class RealActivityService
             'activity' => [],
             'student_info' => [],
             'channel_list' => [],
-            'can_upload' => false,
         ];
-        if (UserService::checkRealStudentIdentityIsNormal($studentId, 0, 0)) {
-            $data['can_upload'] = true;
-        }
         //获取学生信息
         $studentDetail = ErpStudentModel::getStudentInfoById($studentId);
         if (empty($studentDetail)) {
@@ -273,30 +255,135 @@ class RealActivityService
     }
 
     /**
+     * 获取用户身份命中周周领奖活动
+     * @param $studentData
+     * @return array
+     */
+    public static function getCanPartakeWeekActivity($studentData): array
+    {
+        // 获取用户信息
+        $studentInfo = ErpStudentModel::getRecord(['id' => $studentData['id']]);
+        if (empty($studentInfo)) {
+            return [];
+        }
+        // 获取用户可参与的活动
+        $activityList         = RealWeekActivityService::getStudentCanPartakeWeekActivityList([
+            'student_id' => $studentInfo['id'],
+            'uuid'       => $studentInfo['uuid'],
+        ]);
+        $canPartakeActivityId = $activityList[0]['activity_id'] ?? 0;
+        if (empty($canPartakeActivityId)) {
+            return [];
+        }
+        // 获取活动任务列表
+        $activityTaskList = RealSharePosterTaskListModel::getRecords(['activity_id' => $canPartakeActivityId, 'ORDER' => ['task_num' => 'ASC']]);
+        if (empty($activityTaskList)) {
+            return [];
+        }
+        // 查看学生可参与的活动中已经审核通过的分享任务
+        $haveQualifiedActivityIds = RealSharePosterModel::getRecords([
+            'student_id'    => $studentInfo['id'],
+            'activity_id'   => $canPartakeActivityId,
+            'verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED,
+        ], 'task_num');
+        // 查看学生相对可参与活动的状态 - 计算差集
+        $diffActivityTaskNum = array_diff(array_column($activityTaskList, 'task_num'), $haveQualifiedActivityIds);
+        if (empty($diffActivityTaskNum)) {
+            return [];
+        }
+        // 拼接可参与活动的列表
+        foreach ($activityTaskList as $_taskInfo) {
+            if (!in_array($_taskInfo['task_num'], $diffActivityTaskNum)) {
+                continue;
+            }
+            $result[] = [
+                'activity_id'         => $_taskInfo['activity_id'],
+                'num'                 => $_taskInfo['task_num'],
+                'name'                => $_taskInfo['task_name'],
+            ];
+        }
+        unset($_taskInfo);
+        return $result ?? [];
+    }
+
+    /**
      * 周周有奖活动海报截图上传
      * @param $studentData
      * @param $activityId
      * @param $imagePath
+     * @param $taskNum
      * @return int|mixed|null|string
      * @throws RunTimeException
      */
-    public static function weekActivityPosterScreenShotUpload($studentData, $activityId, $imagePath)
+    public static function weekActivityPosterScreenShotUpload($studentData, $activityId, $imagePath, $taskNum)
     {
+        $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
+        /** 老活动奖励规则 */
+        if ($activityId <= $oldRuleLastActivityId) {
+            $time = time();
+            //资格检测
+            $checkRes = ErpUserService::getStudentStatus($studentData['id']);
+            if ($checkRes['pay_status'] != ErpStudentAppModel::STATUS_PAID) {
+                throw new RunTimeException(['student_status_disable']);
+            }
+            //活动检测:获取最新两个最新可参与的周周领奖活动
+            $canParticipateWeekActivityIds = self::getCanParticipateWeekActivityIds($studentData, 2);
+            if (!in_array($activityId, array_column($canParticipateWeekActivityIds, 'activity_id'))) {
+                throw new RunTimeException(['wait_for_next_event']);
+            }
+            //审核通过不允许上传截图
+            $uploadRecord = RealSharePosterModel::getRecord([
+                'student_id' => $studentData['id'],
+                'activity_id' => $activityId,
+                'ORDER' => ['id' => 'DESC']
+            ], ['verify_status', 'id']);
+            if (!empty($uploadRecord) && ($uploadRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED)) {
+                throw new RunTimeException(['wait_for_next_event']);
+            }
+            $data = [
+                'student_id' => $studentData['id'],
+                'type' => RealSharePosterModel::TYPE_WEEK_UPLOAD,
+                'activity_id' => $activityId,
+                'image_path' => $imagePath,
+                'verify_reason' => '',
+                'unique_code' => '',
+                'create_time' => $time,
+                'update_time' => $time,
+            ];
+            if (empty($uploadRecord) || $uploadRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
+                $res = RealSharePosterModel::insertRecord($data);
+            } else {
+                unset($data['create_time']);
+                $count = RealSharePosterModel::updateRecord($uploadRecord['id'], $data);
+                if (empty($count)) {
+                    throw new RunTimeException(['update_fail']);
+                }
+                $res = $uploadRecord['id'];
+            }
+            if (empty($res)) {
+                throw new RunTimeException(['share_poster_add_fail']);
+            }
+            //系统自动审核
+            QueueService::checkPoster(['id' => $res, 'app_id' => Constants::REAL_APP_ID]);
+            return $res;
+        }
+        /** 新奖励规则 */
         $time = time();
         //资格检测
         $checkRes = ErpUserService::getStudentStatus($studentData['id']);
         if ($checkRes['pay_status'] != ErpStudentAppModel::STATUS_PAID) {
             throw new RunTimeException(['student_status_disable']);
         }
-        //活动检测:获取最新两个最新可参与的周周领奖活动
-        $canParticipateWeekActivityIds = self::getCanParticipateWeekActivityIds($studentData, 2);
-        if (!in_array($activityId, array_column($canParticipateWeekActivityIds, 'activity_id'))) {
+        //活动检测:获取用户身份命中周周领奖活动
+        $canParticipateWeekActivityIds = self::getCanPartakeWeekActivity($studentData);
+        if (empty($canParticipateWeekActivityIds)  || empty($canParticipateWeekActivityIds[0]['activity_id'])|| $activityId != $canParticipateWeekActivityIds[0]['activity_id']) {
             throw new RunTimeException(['wait_for_next_event']);
         }
         //审核通过不允许上传截图
         $uploadRecord = RealSharePosterModel::getRecord([
             'student_id' => $studentData['id'],
             'activity_id' => $activityId,
+            'task_num' => $taskNum,
             'ORDER' => ['id' => 'DESC']
         ], ['verify_status', 'id']);
         if (!empty($uploadRecord) && ($uploadRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED)) {
@@ -311,6 +398,7 @@ class RealActivityService
             'unique_code' => '',
             'create_time' => $time,
             'update_time' => $time,
+            'task_num' => $taskNum,
         ];
         if (empty($uploadRecord) || $uploadRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
             $res = RealSharePosterModel::insertRecord($data);
@@ -425,36 +513,88 @@ class RealActivityService
     }
 
     /**
-     * 周周/月月领奖tab展示列表
-     * @param $studentData
+     * 获取活动海报列表
+     * @param $activityData
+     * @param $fromType
+     * @param $studentDetail
      * @return array
+     * @throws RunTimeException
      */
-    public static function monthAndWeekActivityTabShowList($studentData)
+    private static function getWeekActivityPosterList($activityData, $fromType, $studentDetail): array
     {
-        $tabData['month_tab'] = [
-            'title' => '月月有奖',
-            'aw_type' => 'month'
-        ];
-        $splitTime = DictConstants::get(DictConstants::ACTIVITY_CONFIG, 'real_week_tab_first_pay_split_time');
-        if (!empty($studentData['user_id'])) {
-            $studentId = $studentData['user_id'];
-        } elseif (!empty($studentData['student_id'])) {
-            $studentId = $studentData['student_id'];
-        } elseif (!empty($studentData['id'])) {
-            $studentId = $studentData['id'];
-        } else {
-            $studentId = 0;
+        if (empty($activityData) || empty($activityData['activity_id'])) {
+            return [];
         }
-        if (UserService::checkRealStudentIdentityIsNormal($studentId, 0, intval($splitTime))) {
-            $tabData['week_tab'] = [
-                'title' => '周周领奖',
-                'aw_type' => 'week'
+        //海报定位参数配置
+        $posterConfig = PosterService::getPosterConfig();
+        //查询活动对应海报
+        $posterList = PosterService::getActivityPosterList($activityData);
+        if (empty($posterList)) {
+            return [];
+        }
+        //获取渠道ID配置
+        $channel = PosterTemplateService::getChannel(OperationActivityModel::TYPE_WEEK_ACTIVITY, $fromType);
+        $typeColumn = [];
+        $activityPosterIdColumn = [];
+        foreach ($posterList as $item) {
+            $typeColumn[] = $item['type'];
+            $activityPosterIdColumn[] = $item['activity_poster_id'];
+        }
+        unset($item);
+        //海报排序处理
+        if (isset($activityData['poster_order']) && ($activityData['poster_order'] == TemplatePosterModel::POSTER_ORDER)) {
+            array_multisort($typeColumn, SORT_DESC, $activityPosterIdColumn, SORT_ASC, $posterList);
+        }
+        // 组合生成海报数据
+        $userQrArr= [];
+        foreach ($posterList as $item) {
+            $_tmp['user_status'] = $studentDetail['status'];
+            $_tmp['activity_id'] = $activityData['activity_id'];
+            $_tmp['poster_id'] = $item['poster_id'];
+            $_tmp['user_id'] = $studentDetail['id'];
+            $_tmp['user_type'] = DssUserQrTicketModel::STUDENT_TYPE;
+            $_tmp['channel_id'] = $channel;
+            $_tmp['landing_type'] = DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
+            $_tmp['date'] = date('Y-m-d', time());
+            $userQrArr[] = $_tmp;
+        }
+        // 获取小程序码
+        $userQrArr = MiniAppQrService::batchCreateUserMiniAppQr(Constants::REAL_APP_ID, Constants::REAL_MINI_BUSI_TYPE, $userQrArr, true);
+        unset($item);
+
+        // 获取海报， 标准海报：后台生成带有二维码的海报地址， 个性海报：后台只打防伪码
+        foreach ($posterList as $key => &$item) {
+            $extParams = [
+                'user_status' => $studentDetail['status'],
+                'activity_id' => $activityData['activity_id'],
+                'poster_id' => $item['poster_id'],
             ];
+            $item = PosterTemplateService::formatPosterInfo($item);
+            //个性化海报只需获取二维码，不用合成海报
+            if ($item['type'] == TemplatePosterModel::INDIVIDUALITY_POSTER) {
+                $item['qr_code_url'] = $userQrArr[$key]['format_qr_path'];
+                $word = [
+                    'qr_id' => $userQrArr[$key]['qr_id'],
+                    'date'  => date('m.d', time()),
+                ];
+                $item['poster_url'] = PosterService::addAliOssWordWaterMark($item['poster_path'], $word, $posterConfig);
+                continue;
+            }
+            // 海报图：
+            $poster = PosterService::generateQRPoster(
+                $item['poster_path'],
+                $posterConfig,
+                $studentDetail['id'],
+                DssUserQrTicketModel::STUDENT_TYPE,
+                $channel,
+                $extParams,
+                $userQrArr[$key] ?? []
+            );
+            $item['poster_url'] = $poster['poster_save_full_path'];
         }
-        $weekTab = self::xyzopWeekActivityTabShowList($studentData);
-        if (!empty($weekTab)) {
-            $tabData['week_tab'] = $weekTab;
-        }
-        return $tabData;
+        unset($key, $item);
+        // 获取活动规则
+        $activityData['award_rule'] = ActivityExtModel::getActivityExt($activityData['activity_id'])['award_rule'] ?? '';
+        return [$posterList, ActivityService::formatData($activityData)];
     }
 }

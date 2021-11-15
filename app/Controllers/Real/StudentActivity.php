@@ -12,13 +12,17 @@ use App\Controllers\ControllerBase;
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\RealSharePosterModel;
 use App\Models\RealWeekActivityModel;
 use App\Services\RealActivityService;
 use App\Services\RealSharePosterService;
+use App\Services\RealUserAwardMagicStoneService;
+use App\Services\RealWeekActivityService;
 use App\Services\SharePosterService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -37,11 +41,10 @@ class StudentActivity extends ControllerBase
      * @param Response $response
      * @return Response
      */
-    public function getWeekActivity(/** @noinspection PhpUnusedParameterInspection */
-        Request $request, Response $response)
+    public function getWeekActivity(/** @noinspection PhpUnusedParameterInspection */ Request $request, Response $response): Response
     {
         try {
-            $data = RealActivityService::weekActivityData($this->ci['user_info']['user_id'], $this->ci['from_type']);
+            $data = RealActivityService::weekActivityData((int)$this->ci['user_info']['user_id'], $this->ci['from_type']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
@@ -72,10 +75,9 @@ class StudentActivity extends ControllerBase
      * @param Response $response
      * @return Response
      */
-    public function getCanParticipateWeekActivityList(/** @noinspection PhpUnusedParameterInspection */
-        Request $request, Response $response)
+    public function getCanParticipateWeekActivityList(/** @noinspection PhpUnusedParameterInspection */ Request $request, Response $response)
     {
-        $data = RealActivityService::getCanParticipateWeekActivityIds(['id' => $this->ci['user_info']['user_id'], 'first_pay_time' => $this->ci['user_info']['first_pay_time'],], 2);
+        $data = RealActivityService::getCanPartakeWeekActivity(['id' => $this->ci['user_info']['user_id'], 'first_pay_time' => $this->ci['user_info']['first_pay_time']]);
         return HttpHelper::buildResponse($response, $data);
     }
 
@@ -111,7 +113,15 @@ class StudentActivity extends ControllerBase
             $lockKey = RealWeekActivityModel::REAL_WEEK_LOCK_KEY . $this->ci['user_info']['user_id'] . '_' . $params['activity_id'];
             $lock = Util::setLock($lockKey, 5);
             if ($lock) {
-                $uploadId = RealActivityService::weekActivityPosterScreenShotUpload(['id' => $this->ci['user_info']['user_id'], 'first_pay_time' => $this->ci['user_info']['first_pay_time'],], $params['activity_id'], $params['image_path']);
+                $uploadId = RealActivityService::weekActivityPosterScreenShotUpload(
+                    [
+                        'id' => $this->ci['user_info']['user_id'],
+                        'first_pay_time' => $this->ci['user_info']['first_pay_time'],
+                    ],
+                    $params['activity_id'],
+                    $params['image_path'],
+                    $params['task_num'] ?? 0
+                );
             } else {
                 throw new RunTimeException(['service_busy_try_later']);
             }
@@ -244,15 +254,37 @@ class StudentActivity extends ControllerBase
     }
 
     /**
-     * 周周领奖tab是否可以展示
+     * 真人 - 周周领奖发奖记录
      * @param Request $request
      * @param Response $response
      * @return Response
      */
-    public function monthAndWeekActivityShowTab(/** @noinspection PhpUnusedParameterInspection */
-        Request $request, Response $response)
+    public function realSharePosterAwardList(Request $request, Response $response)
     {
-        $data = RealActivityService::monthAndWeekActivityTabShowList($this->ci['user_info']);
-        return HttpHelper::buildResponse($response, array_values($data));
+        $rules = [
+            [
+                'key' => 'page',
+                'type' => 'integer',
+                'error_code' => 'page_is_integer'
+            ],
+            [
+                'key' => 'count',
+                'type' => 'integer',
+                'error_code' => 'count_is_integer'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            list($page, $limit) = Util::formatPageCount($params);
+            $data = RealUserAwardMagicStoneService::getUserWeekActivityAwardList($this->ci['user_info']['user_id'], Constants::USER_TYPE_STUDENT, $page, $limit);
+        } catch (RunTimeException $e) {
+            SimpleLogger::info("realSharePosterAwardList_error", ['params' => $params, 'err' => $e->getData()]);
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
     }
 }

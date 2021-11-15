@@ -15,6 +15,9 @@ class RealWeekActivityModel extends Model
     //真人周周有奖并发锁缓存key
     const REAL_WEEK_LOCK_KEY = 'real_week_lock_';
 
+    const TARGET_USER_ALL = 1;  // 有效付费用户范围 - 所有
+    const TARGET_USER_PART = 2; // 有效付费用户范围 - 部分
+
     /**
      * 获取周周领奖活动列表和总数
      * @param $params

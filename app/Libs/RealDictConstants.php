@@ -23,8 +23,10 @@ class RealDictConstants extends DictConstants
         'type' => 'REAL_REFERRAL_CONFIG',
         'keys' => [
             'real_refused_poster_url', //海报审核未通过跳转地址
+            'real_magic_stone_shop_url', // 真人魔法石商城链接
             'real_share_poster_history_url', // 用户分享海报历史记录连接
             'real_month_award_url', // 月月有奖地址
+            'real_week_activity_url', // 周周领奖活动访问地址
             'register_default_channel', //注册默认渠道
             'employee_replace_student_create_poster_activity_id', // 员工替学生生成转介绍分享海报活动id
         ]
@@ -36,6 +38,8 @@ class RealDictConstants extends DictConstants
         'keys' => [
             '2',  // 审核状态 - 审核通过消息id
             '3',  // 审核状态 - 审核未通过消息id
+            'new-2',  // 新规则 - 审核状态 - 审核通过消息id
+            'new-3',  // 新规则 - 审核状态 - 审核未通过消息id
         ]
     ];
 
@@ -64,9 +68,20 @@ class RealDictConstants extends DictConstants
     ];
     // 真人分享截图活动配置
     const REAL_SHARE_POSTER_ACTIVITY_CONFIG = [
-        'type' => 'REAL_SHARE_POSTER_CONFIG',
+        'type' => 'REAL_SHARE_POSTER_ACTIVITY_CONFIG',
         'keys' => [
             'send_award_base_delay_second',  // 发放奖励基本延时时间 - 单位秒
+            'old_rule_last_activity_id',  // 旧规则最后的活动id
+            'activity_over_allow_upload_second',  // 活动结束后允许上传时间，单位秒
+        ],
+    ];
+
+    // 真人分享截图活动配置 - 用户身份
+    const REAL_SHARE_POSTER_ACTIVITY_STUDENT_IDENTITY_CONFIG = [
+        'type' => 'REAL_SHARE_POSTER_ACTIVITY_STUDENT_IDENTITY_CONFIG',
+        'keys' => [
+            1,  // 有效付费用户范围 - 所有
+            2,  // 有效付费用户范围 - 部分
         ],
     ];
 }

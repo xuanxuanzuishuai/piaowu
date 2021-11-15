@@ -8,7 +8,6 @@
 
 namespace App\Routers;
 
-
 use App\Controllers\Real\StudentActivity;
 use App\Middleware\RealStudentAppAndWxAuthCheckMiddleware;
 
@@ -24,12 +23,12 @@ class RealStudentAppRouter extends RouterBase
     protected $uriConfig = [
         // 月月有奖 && 周周领奖
         '/real_student_app/activity/week' => ['method' => ['post'], 'call' => StudentActivity::class . ':getWeekActivity'],
-        '/real_student_app/activity/show_tab' => ['method' => ['post'], 'call' => StudentActivity::class . ':monthAndWeekActivityShowTab'],
         '/real_student_app/activity/month' => ['method' => ['post'], 'call' => StudentActivity::class . ':getMonthActivity'],
         '/real_student_app/activity/can_participate_week' => ['method' => ['post'], 'call' => StudentActivity::class . ':getCanParticipateWeekActivityList'],
         '/real_student_app/activity/week_poster_upload' => ['method' => ['post'], 'call' => StudentActivity::class . ':weekActivityPosterScreenShotUpload'],
         '/real_student_app/activity/share_poster_history' => ['method' => ['post'], 'call' => StudentActivity::class . ':sharePosterHistory'],
         '/real_student_app/activity/share_poster_detail' => ['method' => ['post'], 'call' => StudentActivity::class . ':sharePosterDetail'],
+        '/real_student_wx/activity/share_poster_award_list' => ['method' => ['get'], 'call' => StudentActivity::class . ':realSharePosterAwardList'],
 
         // 周周领奖分享海报文案列表
         '/real_student_app/poster/word_list' => ['method' => ['post'], 'call' => StudentActivity::class . ':realSharePosterWordList'],
