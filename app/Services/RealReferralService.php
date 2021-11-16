@@ -15,6 +15,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Libs\WeChat\WXBizDataCrypt;
+use App\Models\AgentUserModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpReferralUserRefereeModel;
 use App\Models\Erp\ErpStudentAppModel;
@@ -341,6 +342,12 @@ class RealReferralService
                 SimpleLogger::info("user_ai_is_have_referral", [$data, $aiReferralInfo]);
                 throw new RunTimeException(['user_ai_is_have_referral']);
             }
+        }
+        // 检查受邀人 - 是否存在未过期的代理绑定关系
+        $bindAgentInfo = AgentUserModel::getRecord(['user_id' => $dssUserInfo['id'], 'deadline[>]' => time()]);
+        if (!empty($bindAgentInfo)) {
+            SimpleLogger::info("user_agent_is_have_referral", [$data, $realReferralInfo, $bindAgentInfo, $dssUserInfo]);
+            throw new RunTimeException(['user_agent_is_have_referral']);
         }
         // 添加推荐人
         $requestData=[
