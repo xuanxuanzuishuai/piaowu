@@ -142,7 +142,7 @@ class ShowMiniAppService
             'replay_token'        => $reportInfo['replay_token'] ?? '',
         ];
         $data['scene_data'] = $sceneData;
-        $data['pkg'] = self::canUserReferral001Package($data['referrer_info']['has_review_course'] ?? 0, $sceneData['c']) ? PayServices::PACKAGE_1 : PayServices::PACKAGE_990;
+        $data['pkg'] = self::canUserReferral001Package($data['referrer_info']['has_review_course'] ?? 0, $sceneData['c']) ? PayServices::PACKAGE_1 : PayServices::PACKAGE_490;
         return $data;
     }
 
