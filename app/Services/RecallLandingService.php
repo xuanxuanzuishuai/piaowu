@@ -50,7 +50,7 @@ class RecallLandingService
         $data['package'] = [];
         $data['recent_purchase'] = [];
         $data['first_flag'] = false;
-        $data['pkg'] = PayServices::PACKAGE_990;
+        $data['pkg'] = PayServices::PACKAGE_490;
         $data['deadline'] = false;
         $isAgent = false;
         $package = PackageService::getPackageV1Detail($packageId);
