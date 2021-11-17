@@ -1327,7 +1327,7 @@ class ReferralService
      */
     public static function getMiniAppPackage($sceneData = [], $referee = [])
     {
-        $package = PayServices::PACKAGE_990;
+        $package = PayServices::PACKAGE_490;
         // 0元单：
         // 代理
         // 推荐人是年卡或者购买过年卡

@@ -706,7 +706,8 @@ class DictConstants {
             'zero_package_enable',
             'broadcast_config_users',
             'agent_mini_0_package_id',
-            'agent_zero_order_remark'
+            'agent_zero_order_remark',
+            'package_id_4_9'
         ]
     ];
 
