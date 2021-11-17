@@ -21,11 +21,12 @@ VALUES
 	(1701, '', 'pre/img//activity/b9a8dfdea9bbcc137e4ae7a169cb063e.png', 1, 1613980934 ),
 	(1702, '', 'pre/img//activity/be51bffc697e06c1adc4eae502b59e98.png', 1, 1613980934 ),
 	(1703, '', 'pre/img//activity/833dde75d00db6a53946f47f35402acb.png', 1, 1613980934 ),
-	(1704, '', 'pre/img//activity/9412928cec0ca08a253f1ff6a7f1248b.png', 1, 1613980934 );
+	(1704, '', 'pre/img//activity/9412928cec0ca08a253f1ff6a7f1248b.png', 1, 1613980934 ),
+	(1705, '', 'pre/img//activity/649063e1bb0e2e045c589d6cd2fe9c3a.png', 1, 1613980934 );
 
 
 	UPDATE `dict`
-SET `key_value` = '{\"1\":1700,\"2\":1701,\"3\":1702,\"4\":1703,\"5\":1704,\"0\":6}',
+SET `key_value` = '{\"1\":1700,\"2\":1701,\"3\":1702,\"4\":1703,\"5\":1704,\"0\":1705}',
 `desc` = '每一天对应海报ID'
 WHERE
 	`type` = 'CHECKIN_PUSH_CONFIG'
