@@ -220,6 +220,12 @@ class AgentDispatchService
         if (count($order) > 1) {
             self::$isFirstBuyOrder = false;
         }
+        //订单按照类型分组
+        $orderGroup = [];
+        foreach ($order as $ov) {
+            $orderGroup[$ov['sub_type']][] = $ov['parent_bill_id'];
+        }
+
         //订单分类数量
         $orderCount = array_count_values(array_column($order, 'sub_type'));
         //标记是否购买过体验卡
@@ -227,7 +233,7 @@ class AgentDispatchService
             if ($orderCount[DssCategoryV1Model::DURATION_TYPE_TRAIL] >= 1) {
                 self::$haveBuyTrailOrder = true;
             }
-            if ($orderCount[DssCategoryV1Model::DURATION_TYPE_TRAIL] == 1) {
+            if ($orderGroup[DssCategoryV1Model::DURATION_TYPE_TRAIL][0] === self::$parentBillId) {
                 self::$firstBuyTrailOrder = true;
             }
         }

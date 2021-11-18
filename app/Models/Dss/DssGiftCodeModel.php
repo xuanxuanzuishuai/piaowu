@@ -293,6 +293,7 @@ class DssGiftCodeModel extends DssModel
                 "p.app_id",
                 "c.sub_type",
                 "gc.create_time",
+                "gc.parent_bill_id",
             ],
             [
                 'gc.buyer' => $studentId,
@@ -300,6 +301,7 @@ class DssGiftCodeModel extends DssModel
                 'gc.bill_app_id' => $appIds,
                 'c.sub_type' => $subTypes,
                 'pg.status' => DssErpPackageGoodsV1Model::SUCCESS_NORMAL,
+                'ORDER' => ['gc.id' => 'ASC'],
                 'GROUP' => 'gc.parent_bill_id',
             ]);
         return $records;
