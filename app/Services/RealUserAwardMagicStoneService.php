@@ -160,7 +160,7 @@ class RealUserAwardMagicStoneService
      */
     public static function sendUserMagicStoneAward(array $params): bool
     {
-        $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
+        $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
         // 记录开始处理用户奖励信息，包括时间
         SimpleLogger::info('sendUserMagicStoneAward_params', [$params]);
         // 接收必要参数  app_id,activity_id,student_id,act_status

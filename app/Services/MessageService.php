@@ -1316,7 +1316,7 @@ class MessageService
                 }
 
                 // 获取基本的延时发放时间，单位秒
-                $sendAwardBaseDelaySecond = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_ACTIVITY_CONFIG, 'send_award_base_delay_second');
+                $sendAwardBaseDelaySecond = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'send_award_base_delay_second');
                 // 指定必要字段
                 $awardInfo['type'] = RealSharePosterModel::TYPE_CHECKIN_UPLOAD;
                 $awardInfo['app_id'] = Constants::REAL_APP_ID;

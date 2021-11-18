@@ -67,8 +67,8 @@ class RealDictConstants extends DictConstants
         ],
     ];
     // 真人分享截图活动配置
-    const REAL_SHARE_POSTER_ACTIVITY_CONFIG = [
-        'type' => 'REAL_SHARE_POSTER_ACTIVITY_CONFIG',
+    const REAL_ACTIVITY_CONFIG = [
+        'type' => 'REAL_ACTIVITY_CONFIG',
         'keys' => [
             'send_award_base_delay_second',  // 发放奖励基本延时时间 - 单位秒
             'old_rule_last_activity_id',  // 旧规则最后的活动id
@@ -77,8 +77,8 @@ class RealDictConstants extends DictConstants
     ];
 
     // 真人分享截图活动配置 - 用户身份
-    const REAL_SHARE_POSTER_ACTIVITY_STUDENT_IDENTITY_CONFIG = [
-        'type' => 'REAL_SHARE_POSTER_ACTIVITY_STUDENT_IDENTITY_CONFIG',
+    const REAL_STUDENT_IDENTITY_CONFIG = [
+        'type' => 'REAL_STUDENT_IDENTITY_CONFIG',
         'keys' => [
             1,  // 有效付费用户范围 - 所有
             2,  // 有效付费用户范围 - 部分

@@ -19,6 +19,7 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\Constants;
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Models\RealSharePosterModel;
 use App\Models\RealUserAwardMagicStoneModel;
@@ -63,11 +64,26 @@ class ScriptSendRealWeekActivityAward
                     'student_id'  => $studentList['student_id'],
                     'activity_id' => $item['activity_id'],
                     'act_status'  => RealUserAwardMagicStoneModel::STATUS_GIVE,
+                    'defer_second'=> self::getStudentWeekActivitySendAwardDeferSecond($_studentId)
                 ]);
             }
             unset($_studentId);
         }
         unset($item);
+        SimpleLogger::info("ScriptSendRealWeekActivityAward_success", []);
+        return true;
+    }
+
+    /**
+     * 获取学生周周领奖活动奖励发放延时多少秒
+     * @param $studentId
+     * @return int
+     */
+    public static function getStudentWeekActivitySendAwardDeferSecond($studentId): int
+    {
+        $redis        = RedisDB::getConn();
+        $redisHashKey = 'real_student_week_activity_send_award_defer_second';
+        return $redis->hincrby($redisHashKey, $studentId, 1);
     }
 
     /**
@@ -88,7 +104,8 @@ class ScriptSendRealWeekActivityAward
     {
         $studentList = RealSharePosterModel::getRecords([
             'activity_id'   => $activityId,
-            'verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED
+            'verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED,
+            'GROUP' => ['student_id'],
         ], ['student_id']);
         if (empty($studentList)) {
             return [];

@@ -499,7 +499,7 @@ class QueueService
     {
         try {
             $topic = new UserPointsExchangeRedPackTopic();
-            $topic->addUserPosterAward($data)->publish(5);
+            $topic->addUserPosterAward($data)->publish(rand(1, 30));
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), [$data]);
             return false;
@@ -509,16 +509,22 @@ class QueueService
 
     /**
      * 真人 - 截图审核通过发奖
+     * 队列延时：默认1-30秒随机数， 如果指定延时时间则使用指定的时间
      * @param $data
      * @return bool
      */
-    public static function addRealUserPosterAward($data)
+    public static function addRealUserPosterAward($data): bool
     {
         try {
             $topic = new RealReferralTopic();
-            $topic->realSendPosterAward($data)->publish(5);
+            // 获取延时时间， 默认1-30秒随机数， 如果指定延时时间则使用指定的时间
+            $deferSecond = rand(1, 30);
+            if (!empty($data['defer_second'])) {
+                $deferSecond = intval($data['defer_second']);
+            }
+            $topic->realSendPosterAward($data)->publish($deferSecond);
         } catch (Exception $e) {
-            SimpleLogger::error($e->getMessage(), [$data]);
+            SimpleLogger::error($e->getMessage(), ['addRealUserPosterAward', $data]);
             return false;
         }
         return true;

@@ -268,10 +268,10 @@ class UserService
      * 检查uuid是否存在
      * @param $appId
      * @param $studentUuid
-     * @param int $activityId
+     * @param $activityId
      * @return array
      */
-    public static function checkStudentUuidExists($appId, $studentUuid, int $activityId = 0): array
+    public static function checkStudentUuidExists($appId, $studentUuid, $activityId = 0): array
     {
         $returnData = [
             'no_exists_uuid' => [],
@@ -283,28 +283,31 @@ class UserService
         if (!in_array($appId, [Constants::REAL_APP_ID])) {
             return $returnData;
         }
-        $uuidList = [];
         $uuidChunkList = array_chunk($studentUuid, 900);
         foreach ($uuidChunkList as $_uuids) {
+            $studentList = [];
             if ($appId == Constants::REAL_APP_ID) {
                 $studentList = ErpStudentModel::getStudentInfoByUuids($_uuids);
             }
-            if (!empty($studentList)) {
-                $uuidList = array_merge($uuidList, array_column($studentList, 'uuid'));
+            // 不存在 - 取不同
+            $returnData['no_exists_uuid'] = array_merge($returnData['no_exists_uuid'], array_values(array_diff($_uuids, $studentList)));
+
+            // 如果指定了活动，取活动中已经存在的UUID
+            if (!empty($activityId)) {
+                $activityUUIDList = [];
+                if ($appId == Constants::REAL_APP_ID) {
+                    $activityUUIDList = RealSharePosterDesignateUuidModel::getRecords(['activity_id' => $activityId, 'uuid' => $_uuids], ['uuid']);
+                    $activityUUIDList = array_column($activityUUIDList, 'uuid');
+                }
+                // 存在 - 读到的都是存在的
+                $returnData['activity_having_uuid'] = array_merge($returnData['activity_having_uuid'], $activityUUIDList);
             }
         }
         unset($_uuids);
-        // 取不同
-        $returnData['no_exists_uuid'] = array_diff($studentUuid, $uuidList);
 
-        // 检查活动中是否已经存在UUID
-        if (!empty($activityId)) {
-            if ($appId == Constants::REAL_APP_ID) {
-                $activityUUIDList = RealSharePosterDesignateUuidModel::getRecords(['activity_id' => $activityId, 'uuid' => $studentUuid], ['uuid']);
-                $activityUUIDList = array_column($activityUUIDList, 'uuid');
-                $returnData['activity_having_uuid'] = array_values(array_diff($studentUuid, $activityUUIDList));
-            }
-        }
+        // 去重
+        $returnData['activity_having_uuid'] = array_unique($returnData['activity_having_uuid']);
+        $returnData['no_exists_uuid'] = array_unique($returnData['no_exists_uuid']);
         return $returnData;
     }
 }

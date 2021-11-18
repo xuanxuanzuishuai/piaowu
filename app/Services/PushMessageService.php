@@ -366,7 +366,7 @@ class PushMessageService
      */
     public static function realGetWechatConfigId($awardInfo)
     {
-        $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
+        $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
         $activityId = $awardInfo['activity_id'] ?? 0;
         //当前奖励要发放的数据库的消息模板
         if ($activityId <= $oldRuleLastActivityId) {

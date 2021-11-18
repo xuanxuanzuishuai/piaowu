@@ -153,7 +153,7 @@ class RealSharePosterService
         if (count($posters) != count($id)) {
             throw new RunTimeException(['get_share_poster_error']);
         }
-        $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
+        $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
         if ($posters['activity_id'] <= $oldRuleLastActivityId) {
             $type = RealSharePosterModel::TYPE_WEEK_UPLOAD;
             $posters = RealSharePosterModel::getPostersByIds($id, $type);
@@ -340,7 +340,7 @@ class RealSharePosterService
                 break;
             case RealSharePosterModel::VERIFY_STATUS_WAIT || RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED:
                 $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $sharePosterInfo['activity_id']]);
-                $activityOverAllowUploadSecond = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_ACTIVITY_CONFIG, 'activity_over_allow_upload_second');
+                $activityOverAllowUploadSecond = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'activity_over_allow_upload_second');
                 // 能否重新上传 - 活动未结束 或 活动已结束但结束时间没有超过5天
                 if ($activityInfo['end_time'] > $time || ($time - $activityInfo['end_time']) <= $activityOverAllowUploadSecond) {
                     $returnData['can_upload'] = Constants::STATUS_TRUE;

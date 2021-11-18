@@ -132,7 +132,7 @@ class ActivityPosterModel extends Model
         }
         //判断是否顺序改变
         $posterIds = array_column($activityPosterList, 'poster_id');
-        return implode(',', $posterIds) == implode(',', $posterIdArr) ? false : true;
+        return !(implode(',', $posterIds) == implode(',', $posterIdArr));
     }
     
     /**

@@ -317,7 +317,7 @@ class RealActivityService
      */
     public static function weekActivityPosterScreenShotUpload($studentData, $activityId, $imagePath, $taskNum)
     {
-        $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
+        $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
         /** 老活动奖励规则 */
         if ($activityId <= $oldRuleLastActivityId) {
             $time = time();

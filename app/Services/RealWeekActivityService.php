@@ -59,7 +59,7 @@ class RealWeekActivityService
             'create_time' => $time,
         ];
         $delaySecond = !empty($data['delay_day']) ? $data['delay_day'] * Util::TIMESTAMP_ONEDAY : 0;
-        $sendAwardBaseDelaySecond = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_ACTIVITY_CONFIG, 'send_award_base_delay_second');
+        $sendAwardBaseDelaySecond = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'send_award_base_delay_second');
         /**
          * 计算发奖时间
          * 发放奖励时间公式：   M(发放奖励时间) = 活动结束时间(天) + 5天 + N天
@@ -126,7 +126,7 @@ class RealWeekActivityService
         }
         // 保存海报关联关系
         $posterArray = array_merge($data['personality_poster'] ?? [], $data['poster'] ?? []);
-        $activityPosterRes = ActivityPosterModel::batchAddActivityPoster($activityId, $posterArray);
+        $activityPosterRes = ActivityPosterModel::batchInsertActivityPoster($activityId, $posterArray);
         if (empty($activityPosterRes)) {
             $db->rollBack();
             SimpleLogger::info("WeekActivityService:add batch insert activity_poster fail", ['data' => $data]);
@@ -148,7 +148,7 @@ class RealWeekActivityService
         }
         // 保存uuid
         if (!empty($data['designate_uuid'])) {
-            $saveUuidRes = RealSharePosterDesignateUuidModel::batchInsertUuid($activityId, $data['designate_uuid'], $employeeId, $time);
+            $saveUuidRes = RealSharePosterDesignateUuidModel::batchInsertUuid($activityId, array_unique($data['designate_uuid']), $employeeId, $time);
             if (empty($saveUuidRes)) {
                 $db->rollBack();
                 SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_designate_uuid fail", ['data' => $data]);
@@ -189,8 +189,10 @@ class RealWeekActivityService
         $targetUserType = $data['target_user_type'] ?? 0;
         $startFirstPayTime = !empty($data['target_use_first_pay_time_start']) ?  strtotime($data['target_use_first_pay_time_start']) : 0;
         $endFirstPayTime = !empty($data['target_use_first_pay_time_end']) ?  strtotime($data['target_use_first_pay_time_end']) : 0;
-        if (!($targetUserType == RealWeekActivityModel::TARGET_USER_PART && $startFirstPayTime > 0 && $startFirstPayTime < $endFirstPayTime)) {
-            return 'first_start_time_eq_end_time';
+        if ($targetUserType == RealWeekActivityModel::TARGET_USER_PART) {
+            if ($startFirstPayTime > 0 && $startFirstPayTime < $endFirstPayTime) {
+                return 'first_start_time_eq_end_time';
+            }
         }
         // 分享任务不能为空
         if (empty($data['task_list'])) {
@@ -329,8 +331,10 @@ class RealWeekActivityService
 
         // 获取活动对应的任务
         $activityInfo['task_list'] = RealSharePosterTaskListModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['task_num' => 'ASC']]);
+        // 获取奖励
+        $activityInfo['pass_award_rule_list'] = RealSharePosterPassAwardRuleModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['success_pass_num' => 'ASC']]);
         // 获取uuid
-        $activityInfo['designate_uuid'] = RealSharePosterDesignateUuidModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['id' => 'ASC']]);
+        $activityInfo['designate_uuid'] = RealSharePosterDesignateUuidModel::getUUIDByActivityId($activityId);
 
         return $activityInfo;
     }
@@ -362,11 +366,13 @@ class RealWeekActivityService
             throw new RunTimeException(['record_not_found']);
         }
         // 活动是待启用状态，检查导入的uuid是否正确
-        $errUuid = UserService::checkStudentUuidExists(Constants::REAL_APP_ID, $data['designate_uuid'] ?? [], $activityId);
-        if (!empty($errUuid['no_exists_uuid']) || !empty($errUuid['activity_having_uuid'])) {
-            $returnData['no_exists_uuid'] = $errUuid['no_exists_uuid'];
-            $returnData['activity_having_uuid'] = $errUuid['activity_having_uuid'];
-            return $returnData;
+        if ($weekActivityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_OFF) {
+            $errUuid = UserService::checkStudentUuidExists(Constants::REAL_APP_ID, $data['designate_uuid'] ?? [], $activityId);
+            if (!empty($errUuid['no_exists_uuid']) || !empty($errUuid['activity_having_uuid'])) {
+                $returnData['no_exists_uuid'] = $errUuid['no_exists_uuid'];
+                $returnData['activity_having_uuid'] = $errUuid['activity_having_uuid'];
+                return $returnData;
+            }
         }
         // 判断海报是否有变化，没有变化不操作
         $posterArray = array_merge($data['personality_poster'] ?? [], $data['poster'] ?? []);
@@ -379,7 +385,7 @@ class RealWeekActivityService
             'update_time' => $time,
         ];
         $delaySecond = !empty($data['delay_day']) ? $data['delay_day'] * Util::TIMESTAMP_ONEDAY : 0;
-        $sendAwardBaseDelaySecond = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_ACTIVITY_CONFIG, 'send_award_base_delay_second');
+        $sendAwardBaseDelaySecond = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'send_award_base_delay_second');
         $weekActivityData = [
             'activity_id' => $activityId,
             'name' => $activityData['name'],
@@ -444,7 +450,7 @@ class RealWeekActivityService
                 throw new RunTimeException(["update week activity fail"]);
             }
             // 写入新的活动与海报的关系
-            $activityPosterRes = ActivityPosterModel::batchAddActivityPoster($activityId, $posterArray);
+            $activityPosterRes = ActivityPosterModel::batchInsertActivityPoster($activityId, $posterArray);
             if (empty($activityPosterRes)) {
                 $db->rollBack();
                 SimpleLogger::info("WeekActivityService:add batch insert activity_poster fail", ['data' => $weekActivityData, 'activity_id' => $activityId]);
@@ -469,11 +475,13 @@ class RealWeekActivityService
                 throw new RunTimeException(["add week activity fail"]);
             }
             // 更新uuid
-            $saveUuidRes = RealSharePosterDesignateUuidModel::batchInsertUuid($activityId, $data['designate_uuid'], $employeeId, $time);
-            if (empty($saveUuidRes)) {
-                $db->rollBack();
-                SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_designate_uuid fail", ['data' => $data]);
-                throw new RunTimeException(["add week activity fail"]);
+            if (!empty($data['designate_uuid'])) {
+                $saveUuidRes = RealSharePosterDesignateUuidModel::batchInsertUuid($activityId, array_unique($data['designate_uuid']), $employeeId, $time);
+                if (empty($saveUuidRes)) {
+                    $db->rollBack();
+                    SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_designate_uuid fail", ['data' => $data]);
+                    throw new RunTimeException(["add week activity fail"]);
+                }
             }
         }
         $db->commit();

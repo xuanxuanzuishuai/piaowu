@@ -138,4 +138,30 @@ class RealSharePosterDesignateUuidModel extends Model
         );
         return $records[0] ?? [];
     }
+
+    /**
+     * 获取活动下的指定UUID列表
+     * @param $activityId
+     * @return array
+     */
+    public static function getUUIDByActivityId($activityId): array
+    {
+        return MysqlDB::getDB()->select(
+            self::$table . '(d)',
+            [
+                '[>]' . EmployeeModel::$table . '(e)' => ['d.operator_id' => 'id'],
+            ],
+            [
+                'd.activity_id',
+                'd.uuid',
+                'd.create_time',
+                'd.operator_id',
+                'e.name (operator_name)',
+            ],
+            [
+                'd.activity_id' => $activityId,
+                'ORDER' => ['d.id' => 'ASC']
+            ]
+        );
+    }
 }
