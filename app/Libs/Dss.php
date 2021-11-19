@@ -74,7 +74,7 @@ class Dss
         $data = self::commonAPI(self::ADD_STUDENT, $params, 'POST');
         if ($data['code'] != Valid::CODE_SUCCESS) {
             $msgInfo = reset($data['errors']);
-            throw new RunTimeException([$msgInfo['err_msg']]);
+            throw new RunTimeException([$msgInfo[0]['err_msg']]);
         }
         return !empty($data['data']) ? $data['data'] : NULL;
     }
