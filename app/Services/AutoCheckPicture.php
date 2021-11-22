@@ -53,10 +53,13 @@ class AutoCheckPicture
             case Constants::REAL_APP_ID: //真人陪练
                 // 获取活动信息
                 $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $result['activity_id']], ['id', 'activity_id', 'enable_status', 'start_time']);
-                // 检查活动是否启动，未启用不能自动审核
-                if (empty($activityInfo) || $activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
-                    SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
-                    return null;
+                // 在指定ID活动内，不校验活动状态
+                if (!RealActivityService::xyzopCheckIsSpecialActivityId($result)) {
+                    // 检查活动是否启动，未启用不能自动审核
+                    if (empty($activityInfo) || $activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
+                        SimpleLogger::error('not found activity', ['id' => $result['activity_id']]);
+                        return null;
+                    }
                 }
                 break;
             default:

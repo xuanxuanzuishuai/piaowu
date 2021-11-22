@@ -49,10 +49,13 @@ class RealSharePosterDesignateUuidModel extends Model
     public static function delDesignateUUID($activityId, $uuid, $employId): bool
     {
         SimpleLogger::info("delDesignateUUID", [$activityId, $uuid, $employId]);
-        $delRes = MysqlDB::getDB()->delete(self::$table, [
+        $delWhere = [
             'activity_id' => $activityId,
-            'uuid'        => $uuid,
-        ]);
+        ];
+        if (!empty($uuid)) {
+            $delWhere['uuid'] = $uuid;
+        }
+        $delRes = MysqlDB::getDB()->delete(self::$table, $delWhere);
         if ($delRes->errorCode() != PDO::ERR_NONE) {
             return false;
         }

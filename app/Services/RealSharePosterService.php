@@ -21,6 +21,7 @@ use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\MessagePushRulesModel;
+use App\Models\OperationActivityModel;
 use App\Models\QrInfoOpCHModel;
 use App\Models\RealSharePosterAwardModel;
 use App\Models\RealSharePosterModel;
@@ -340,9 +341,8 @@ class RealSharePosterService
                 break;
             case RealSharePosterModel::VERIFY_STATUS_WAIT || RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED:
                 $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $sharePosterInfo['activity_id']]);
-                $activityOverAllowUploadSecond = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'activity_over_allow_upload_second');
-                // 能否重新上传 - 活动未结束 或 活动已结束但结束时间没有超过5天
-                if ($activityInfo['end_time'] > $time || ($time - $activityInfo['end_time']) <= $activityOverAllowUploadSecond) {
+                // 检查活动能否重新上传
+                if (self::checkWeekActivityAllowUpload($activityInfo, $time)) {
                     $returnData['can_upload'] = Constants::STATUS_TRUE;
                 }
                 // no break; 审核通过和不通过的公用部分
@@ -357,6 +357,33 @@ class RealSharePosterService
         }
 
         return RealActivityService::xyzopFormatOne($returnData);
+    }
+
+    /**
+     * 真人 - 检查周周领奖活动是否可以上传
+     * @param $activityInfo
+     * @param $time
+     * @return bool
+     */
+    public static function checkWeekActivityAllowUpload($activityInfo, $time): bool
+    {
+        if (empty($activityInfo)) {
+            return false;
+        }
+        $time = $time ?? time();
+        $activityOverAllowUploadSecond = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'activity_over_allow_upload_second');
+        // 能否重新上传 - 不能：活动已结束 或 活动已结束但结束时间超过5天
+        if ($activityInfo['end_time'] < $time || ($time - $activityInfo['end_time']) > $activityOverAllowUploadSecond) {
+            return false;
+        }
+
+        // 检查活动状态
+        if (!RealActivityService::xyzopCheckIsSpecialActivityId(['activity_id' => $activityInfo['activity_id']])) {
+            if ($activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

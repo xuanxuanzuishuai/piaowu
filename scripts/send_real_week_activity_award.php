@@ -19,6 +19,7 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\Constants;
+use App\Libs\RealDictConstants;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Models\RealSharePosterModel;
@@ -88,11 +89,17 @@ class ScriptSendRealWeekActivityAward
 
     /**
      * 获取所有当天到当天脚本运行脚本时间内应该结算的活动
+     * 只查新规则的活动
      * @return array
      */
     public static function getSendAwardActivityList(): array
     {
-        return RealWeekActivityModel::getRecords(['send_award_time[>=]' => self::$todayFirstTime, 'send_award_time[<=]' => self::$time]);
+        $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
+        return RealWeekActivityModel::getRecords([
+            'send_award_time[>=]' => self::$todayFirstTime,
+            'send_award_time[<=]' => self::$time,
+            'activity_id[>]'      => $oldRuleLastActivityId
+        ]);
     }
 
     /**

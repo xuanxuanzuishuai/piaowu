@@ -190,7 +190,7 @@ class RealWeekActivityService
         $startFirstPayTime = !empty($data['target_use_first_pay_time_start']) ?  strtotime($data['target_use_first_pay_time_start']) : 0;
         $endFirstPayTime = !empty($data['target_use_first_pay_time_end']) ?  strtotime($data['target_use_first_pay_time_end']) : 0;
         if ($targetUserType == RealWeekActivityModel::TARGET_USER_PART) {
-            if ($startFirstPayTime > 0 && $startFirstPayTime >= $endFirstPayTime) {
+            if ($startFirstPayTime <= 0 || $startFirstPayTime >= $endFirstPayTime) {
                 return 'first_start_time_eq_end_time';
             }
         }
@@ -265,8 +265,8 @@ class RealWeekActivityService
         $info['share_poster_prompt'] = Util::textDecode($activityInfo['share_poster_prompt']);
         $info['retention_copy'] = Util::textDecode($activityInfo['retention_copy']);
         $info['delay_day'] = $activityInfo['delay_second']/Util::TIMESTAMP_ONEDAY;
-        $info['format_target_use_first_pay_time_start'] = date("Y-m-d H:i:s", $activityInfo['target_use_first_pay_time_start']);
-        $info['format_target_use_first_pay_time_end'] = date("Y-m-d H:i:s", $activityInfo['target_use_first_pay_time_end']);
+        $info['format_target_use_first_pay_time_start'] = !empty($activityInfo['target_use_first_pay_time_start']) ? date("Y-m-d H:i:s", $activityInfo['target_use_first_pay_time_start']) : '';
+        $info['format_target_use_first_pay_time_end'] = !empty($activityInfo['target_use_first_pay_time_end']) ? date("Y-m-d H:i:s", $activityInfo['target_use_first_pay_time_end']) : '';
 
         if (empty($info['remark'])) {
             $info['remark'] = $extInfo['remark'] ?? '';
@@ -379,7 +379,7 @@ class RealWeekActivityService
         // 活动是待启用状态，检查导入的uuid是否正确
         if ($weekActivityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_OFF) {
             $errUuid = UserService::checkStudentUuidExists(Constants::REAL_APP_ID, $data['designate_uuid'] ?? [], $activityId);
-            if (!empty($errUuid['no_exists_uuid']) || !empty($errUuid['activity_having_uuid'])) {
+            if (!empty($errUuid['no_exists_uuid'])) {
                 $returnData['no_exists_uuid'] = $errUuid['no_exists_uuid'];
                 $returnData['activity_having_uuid'] = $errUuid['activity_having_uuid'];
                 return $returnData;
@@ -485,8 +485,14 @@ class RealWeekActivityService
                 SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_task_rule fail", ['data' => $data]);
                 throw new RunTimeException(["add week activity fail"]);
             }
-            // 更新uuid
+            // 更新uuid - 先删除， 后新增
             if (!empty($data['designate_uuid'])) {
+                $delRes = RealSharePosterDesignateUuidModel::delDesignateUUID($activityId, [], $employeeId);
+                if (empty($delRes)) {
+                    $db->rollBack();
+                    SimpleLogger::info("RealSharePosterDesignateUuidModel:delDesignateUUID batch del real_share_poster_designate_uuid fail", ['data' => $data]);
+                    throw new RunTimeException(["add week activity fail"]);
+                }
                 $saveUuidRes = RealSharePosterDesignateUuidModel::batchInsertUuid($activityId, array_unique($data['designate_uuid']), $employeeId, $time);
                 if (empty($saveUuidRes)) {
                     $db->rollBack();
@@ -740,11 +746,13 @@ class RealWeekActivityService
         if (!UserService::checkRealStudentIdentityIsNormal($studentId, $studentIdAttribute)) {
             return [];
         }
+        $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
         // 获取所有当前时间启用中的活动信息列表
         $activityList = RealWeekActivityModel::getRecords([
             'start_time[<]' => $time,
             'end_time[>]' => $time,
             'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
+            'activity_id[>]' => $oldRuleLastActivityId,
         ]);
         foreach ($activityList as $_activityKey => $_activityInfo) {
             // 过滤掉 目标用户类型是部分有效付费用户首次付费时间

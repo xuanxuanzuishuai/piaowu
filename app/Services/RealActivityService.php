@@ -341,11 +341,6 @@ class RealActivityService
                     throw new RunTimeException(['student_status_disable']);
                 }
             }
-            // 活动检测：获取活动信息， 活动是启用中，并且当前时间小于活动结束时间+5天
-            $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $activityId]);
-            if (empty($activityInfo) || $activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON || ($activityInfo['end_time']+5*Util::TIMESTAMP_ONEDAY) < $time) {
-                throw new RunTimeException(['wait_for_next_event']);
-            }
             //审核通过不允许上传截图
             $uploadRecord = RealSharePosterModel::getRecord([
                 'student_id' => $studentData['id'],
@@ -355,6 +350,16 @@ class RealActivityService
             if (!empty($uploadRecord) && ($uploadRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED)) {
                 throw new RunTimeException(['wait_for_next_event']);
             }
+            // 活动检测：获取活动信息， 活动是启用中，并且当前时间小于活动结束时间+5天
+            $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $activityId]);
+            if (empty($activityInfo) || !in_array($activityInfo['enable_status'], [OperationActivityModel::ENABLE_STATUS_ON, OperationActivityModel::ENABLE_STATUS_OFF]) || ($activityInfo['end_time']+5*Util::TIMESTAMP_ONEDAY) < $time) {
+                throw new RunTimeException(['activity_over_not_upload_share_poster']);
+            }
+            // 老活动只能是未通过，未审核的可以重新上传， 不支持补卡
+            if ($activityInfo['end_time'] < $time && ($activityInfo['end_time']+5*Util::TIMESTAMP_ONEDAY) >= $time && empty($uploadRecord)) {
+                throw new RunTimeException(['wait_for_next_event']);
+            }
+
             $data = [
                 'student_id' => $studentData['id'],
                 'type' => RealSharePosterModel::TYPE_WEEK_UPLOAD,
@@ -390,11 +395,6 @@ class RealActivityService
         if (!UserService::checkRealStudentIdentityIsNormal($studentData['id'], $studentIdAttribute)) {
             throw new RunTimeException(['student_status_disable']);
         }
-        // 活动检测：获取活动信息， 活动是启用中，并且当前时间小于活动结束时间+5天
-        $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $activityId]);
-        if (empty($activityInfo) || $activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON || ($activityInfo['end_time']+5*Util::TIMESTAMP_ONEDAY) < $time) {
-            throw new RunTimeException(['wait_for_next_event']);
-        }
         //审核通过不允许上传截图
         $uploadRecord = RealSharePosterModel::getRecord([
             'student_id' => $studentData['id'],
@@ -403,6 +403,15 @@ class RealActivityService
             'ORDER' => ['id' => 'DESC']
         ], ['verify_status', 'id']);
         if (!empty($uploadRecord) && ($uploadRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED)) {
+            throw new RunTimeException(['wait_for_next_event']);
+        }
+        // 检查周周领奖活动是否可以上传 - 未结束 或 已结束但没超过5天
+        $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $activityId]);
+        if (!RealSharePosterService::checkWeekActivityAllowUpload($activityInfo, $time)) {
+            throw new RunTimeException(['wait_for_next_event']);
+        }
+        // 已结束的活动，未审核或审核未通过的活动结束后5天内可以重新上传， 不支持补卡
+        if ($activityInfo['end_time'] < $time && ($activityInfo['end_time']+5*Util::TIMESTAMP_ONEDAY) >= $time && empty($uploadRecord)) {
             throw new RunTimeException(['wait_for_next_event']);
         }
         $data = [

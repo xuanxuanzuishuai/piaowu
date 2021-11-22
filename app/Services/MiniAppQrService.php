@@ -463,7 +463,6 @@ class MiniAppQrService
             }
         }
         unset($item);
-
         // 根据小程序码主要信息，查询CH
         $qrImageArr = QrInfoOpCHModel::getQrInfoBySign(array_column($qrParams, 'qr_sign'), ['qr_path', 'qr_id', 'qr_sign']);
         $qrSignData = array_column($qrImageArr, null, 'qr_sign');
@@ -507,7 +506,7 @@ class MiniAppQrService
                 $returnQrSignArr[$_key] = [
                     'qr_id' => $redisQrInfo['qr_id'],
                     'qr_path' => $redisQrInfo['qr_path'],
-                    'format_qr_path' => $isFullUrl ? AliOSS::replaceCdnDomainForDss($qrSignData[$_qrSign]['qr_path']) : '',
+                    'format_qr_path' => $isFullUrl ? AliOSS::replaceCdnDomainForDss($redisQrInfo['qr_path']) : '',
                 ];
             }
         }
