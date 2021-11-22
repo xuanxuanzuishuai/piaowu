@@ -646,6 +646,7 @@ class SharePosterService
         ]);
         $wkIds = array_merge(explode(',', $wkIds), [ $oneActivityId], explode(',', $twoActivityId));
         foreach ($posters as $key => $poster) {
+            $needAwardList = [];
             // 审核数据操作锁，解决并发导致的重复审核和发奖
             $lockKey = self::KEY_POSTER_VERIFY_LOCK . $poster['id'];
             $lock = $redis->set($lockKey, $poster['id'], 'EX', 120, 'NX');
