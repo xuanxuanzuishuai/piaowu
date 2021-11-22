@@ -290,7 +290,7 @@ class UserService
                 $studentList = ErpStudentModel::getStudentInfoByUuids($_uuids);
             }
             // 不存在 - 取不同
-            $returnData['no_exists_uuid'] = array_merge($returnData['no_exists_uuid'], array_values(array_diff($_uuids, $studentList)));
+            $returnData['no_exists_uuid'] = array_merge($returnData['no_exists_uuid'], array_values(array_diff($_uuids, array_column($studentList, 'uuid'))));
 
             // 如果指定了活动，取活动中已经存在的UUID
             if (!empty($activityId)) {

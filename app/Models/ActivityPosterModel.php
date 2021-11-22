@@ -53,7 +53,7 @@ class ActivityPosterModel extends Model
     }
 
     /**
-     * @deprecated 请使用新方法 batchInsertActivityPoster
+     * @deprecated 请使用新方法 batchInsertStudentActivityPoster
      * 批量写入活动海报
      * @param $activityId
      * @param $posterIds
@@ -68,6 +68,31 @@ class ActivityPosterModel extends Model
                 'activity_id' => $activityId,
                 'poster_id' => $posterId,
                 'status' => self::NORMAL_STATUS,
+            ];
+        }
+        $activityPosterRes = self::batchInsert($activityPoster);
+        if (empty($activityPosterRes)) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 批量写入学生的活动海报
+     * @param $activityId
+     * @param $posterIdArr
+     * @return bool
+     */
+    public static function batchInsertStudentActivityPoster($activityId, $posterIds): bool
+    {
+        // 写入新的活动与海报的关系
+        $activityPoster = [];
+        foreach ($posterIds as $posterId) {
+            $activityPoster[] = [
+                'activity_id' => $activityId,
+                'poster_id' => $posterId,
+                'status' => self::NORMAL_STATUS,
+                'poster_ascription' => ActivityPosterModel::POSTER_ASCRIPTION_STUDENT,
             ];
         }
         $activityPosterRes = self::batchInsert($activityPoster);

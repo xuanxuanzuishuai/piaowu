@@ -24,6 +24,7 @@ class RealStudentWXRouter extends RouterBase
     protected $uriConfig = [
         // 月月有奖 && 周周领奖
         '/real_student_wx/activity/week' => ['method' => ['post'], 'call' => StudentActivity::class . ':getWeekActivity'],
+        '/real_student_wx/activity/show_tab' => ['method' => ['post'], 'call' => StudentActivity::class . ':monthAndWeekActivityShowTab'],
         '/real_student_wx/activity/month' => ['method' => ['post'], 'call' => StudentActivity::class . ':getMonthActivity'],
         '/real_student_wx/activity/can_participate_week' => ['method' => ['post'], 'call' => StudentActivity::class . ':getCanParticipateWeekActivityList'],
         '/real_student_wx/activity/week_poster_upload' => ['method' => ['post'], 'call' => StudentActivity::class . ':weekActivityPosterScreenShotUpload'],

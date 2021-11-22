@@ -126,7 +126,7 @@ class RealWeekActivityService
         }
         // 保存海报关联关系
         $posterArray = array_merge($data['personality_poster'] ?? [], $data['poster'] ?? []);
-        $activityPosterRes = ActivityPosterModel::batchInsertActivityPoster($activityId, $posterArray);
+        $activityPosterRes = ActivityPosterModel::batchInsertStudentActivityPoster($activityId, $posterArray);
         if (empty($activityPosterRes)) {
             $db->rollBack();
             SimpleLogger::info("WeekActivityService:add batch insert activity_poster fail", ['data' => $data]);
@@ -190,7 +190,7 @@ class RealWeekActivityService
         $startFirstPayTime = !empty($data['target_use_first_pay_time_start']) ?  strtotime($data['target_use_first_pay_time_start']) : 0;
         $endFirstPayTime = !empty($data['target_use_first_pay_time_end']) ?  strtotime($data['target_use_first_pay_time_end']) : 0;
         if ($targetUserType == RealWeekActivityModel::TARGET_USER_PART) {
-            if ($startFirstPayTime > 0 && $startFirstPayTime < $endFirstPayTime) {
+            if ($startFirstPayTime > 0 && $startFirstPayTime >= $endFirstPayTime) {
                 return 'first_start_time_eq_end_time';
             }
         }
@@ -333,6 +333,17 @@ class RealWeekActivityService
         $activityInfo['task_list'] = RealSharePosterTaskListModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['task_num' => 'ASC']]);
         // 获取奖励
         $activityInfo['pass_award_rule_list'] = RealSharePosterPassAwardRuleModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['success_pass_num' => 'ASC']]);
+        foreach ($activityInfo['task_list'] as $index => &$item) {
+            $passAwardRuleInfo = $activityInfo['pass_award_rule_list'][$index] ?? [];
+            if (empty($passAwardRuleInfo)) {
+                continue;
+            }
+            // 前端展示 - 兼容字段
+            $passAwardRuleInfo['task_award'] = $passAwardRuleInfo['award_amount'];
+            $item = array_merge($item, $passAwardRuleInfo);
+        }
+        unset($index, $item);
+
         // 获取uuid
         $activityInfo['designate_uuid'] = RealSharePosterDesignateUuidModel::getUUIDByActivityId($activityId);
 
@@ -450,7 +461,7 @@ class RealWeekActivityService
                 throw new RunTimeException(["update week activity fail"]);
             }
             // 写入新的活动与海报的关系
-            $activityPosterRes = ActivityPosterModel::batchInsertActivityPoster($activityId, $posterArray);
+            $activityPosterRes = ActivityPosterModel::batchInsertStudentActivityPoster($activityId, $posterArray);
             if (empty($activityPosterRes)) {
                 $db->rollBack();
                 SimpleLogger::info("WeekActivityService:add batch insert activity_poster fail", ['data' => $weekActivityData, 'activity_id' => $activityId]);

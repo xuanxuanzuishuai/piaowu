@@ -7,6 +7,7 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\RealDictConstants;
+use App\Libs\Util;
 use App\Models\ActivityExtModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Erp\ErpStudentAppModel;
@@ -298,7 +299,7 @@ class RealActivityService
             }
             $result[] = [
                 'activity_id'         => $_taskInfo['activity_id'],
-                'num'                 => $_taskInfo['task_num'],
+                'task_num'            => $_taskInfo['task_num'],
                 'name'                => $_taskInfo['task_name'],
             ];
         }
@@ -321,14 +322,28 @@ class RealActivityService
         /** 老活动奖励规则 */
         if ($activityId <= $oldRuleLastActivityId) {
             $time = time();
-            //资格检测
-            $checkRes = ErpUserService::getStudentStatus($studentData['id']);
-            if ($checkRes['pay_status'] != ErpStudentAppModel::STATUS_PAID) {
+            //资格检测 - 获取用户身份属性
+            $studentIdAttribute = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentData['id'], '');
+            // 检查一下用户是否是有效用户，不是有效用户不可能有可参与的活动
+            if (!UserService::checkRealStudentIdentityIsNormal($studentData['id'], $studentIdAttribute)) {
                 throw new RunTimeException(['student_status_disable']);
             }
-            //活动检测:获取最新两个最新可参与的周周领奖活动
-            $canParticipateWeekActivityIds = self::getCanParticipateWeekActivityIds($studentData, 2);
-            if (!in_array($activityId, array_column($canParticipateWeekActivityIds, 'activity_id'))) {
+            // 检查用户首次付费时间
+            if (self::xyzopCheckIsSpecialActivityId(['activity_id' => $activityId])) {
+                // 指定活动 - 判断首次付费时间是否是在指定时间内
+                if (!self::xyzopCheckCondition(['first_pay_time' => $studentIdAttribute['first_pay_time']])) {
+                    throw new RunTimeException(['student_status_disable']);
+                }
+            } else {
+                // 最普通的活动， 检查用户首次付费时间是不是在10.26号之前
+                $splitTime = DictConstants::get(DictConstants::ACTIVITY_CONFIG, 'real_week_tab_first_pay_split_time');
+                if ($studentIdAttribute['first_pay_time'] <= $splitTime) {
+                    throw new RunTimeException(['student_status_disable']);
+                }
+            }
+            // 活动检测：获取活动信息， 活动是启用中，并且当前时间小于活动结束时间+5天
+            $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $activityId]);
+            if (empty($activityInfo) || $activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON || ($activityInfo['end_time']+5*Util::TIMESTAMP_ONEDAY) < $time) {
                 throw new RunTimeException(['wait_for_next_event']);
             }
             //审核通过不允许上传截图
@@ -369,14 +384,15 @@ class RealActivityService
         }
         /** 新奖励规则 */
         $time = time();
-        //资格检测
-        $checkRes = ErpUserService::getStudentStatus($studentData['id']);
-        if ($checkRes['pay_status'] != ErpStudentAppModel::STATUS_PAID) {
+        //资格检测 - 获取用户身份属性
+        $studentIdAttribute = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentData['id'], '');
+        // 检查一下用户是否是有效用户，不是有效用户不可能有可参与的活动
+        if (!UserService::checkRealStudentIdentityIsNormal($studentData['id'], $studentIdAttribute)) {
             throw new RunTimeException(['student_status_disable']);
         }
-        //活动检测:获取用户身份命中周周领奖活动
-        $canParticipateWeekActivityIds = self::getCanPartakeWeekActivity($studentData);
-        if (empty($canParticipateWeekActivityIds)  || empty($canParticipateWeekActivityIds[0]['activity_id'])|| $activityId != $canParticipateWeekActivityIds[0]['activity_id']) {
+        // 活动检测：获取活动信息， 活动是启用中，并且当前时间小于活动结束时间+5天
+        $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $activityId]);
+        if (empty($activityInfo) || $activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON || ($activityInfo['end_time']+5*Util::TIMESTAMP_ONEDAY) < $time) {
             throw new RunTimeException(['wait_for_next_event']);
         }
         //审核通过不允许上传截图
@@ -510,6 +526,30 @@ class RealActivityService
         //
         // $redis->setex($cacheKey, Util::TIMESTAMP_12H, json_encode($accountDetail));
         return $accountDetail;
+    }
+
+    /**
+     * 周周/月月领奖tab展示列表
+     * @param $studentData
+     * @return array
+     */
+    public static function monthAndWeekActivityTabShowList($studentData)
+    {
+        $tabData = [
+            'month_tab' =>[
+                'title' => '月月有奖',
+                'aw_type' => 'month'
+            ],
+            'week_tab' => [
+                'title' => '周周领奖',
+                'aw_type' => 'week'
+            ]
+        ];
+        $weekTab = self::xyzopWeekActivityTabShowList($studentData);
+        if (!empty($weekTab)) {
+            $tabData['week_tab'] = $weekTab;
+        }
+        return $tabData;
     }
 
     /**

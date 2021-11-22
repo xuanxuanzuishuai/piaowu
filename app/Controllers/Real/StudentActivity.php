@@ -254,6 +254,19 @@ class StudentActivity extends ControllerBase
     }
 
     /**
+     * 周周领奖tab是否可以展示
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function monthAndWeekActivityShowTab(/** @noinspection PhpUnusedParameterInspection */
+        Request $request, Response $response)
+    {
+        $data = RealActivityService::monthAndWeekActivityTabShowList($this->ci['user_info']);
+        return HttpHelper::buildResponse($response, array_values($data));
+    }
+
+    /**
      * 真人 - 周周领奖发奖记录
      * @param Request $request
      * @param Response $response
