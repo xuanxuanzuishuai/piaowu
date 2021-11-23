@@ -36,6 +36,7 @@ class ScriptSendRealWeekActivityAward
 {
     private static $time           = 0;
     private static $todayFirstTime = 0;
+    const LOCK_KEY = 'script_send_real_week_activity_award_lock';
 
     /**
      * 发放真人周周领奖多次上传分享海报奖励 - 获取所有当天到当天脚本运行脚本时间内应该结算的活动
@@ -43,13 +44,19 @@ class ScriptSendRealWeekActivityAward
      */
     public function run(): bool
     {
+        // 加锁
+        $lock = self::lock();
+        if (!$lock) {
+            SimpleLogger::info("ScriptSendRealWeekActivityAward_is_lock", []);
+            return self::returnResponse(false, []);
+        }
         self::$time           = time();
         self::$todayFirstTime = date("Y-m-d", self::$time);
         // A队列： 获取所有当天应该结算的活动
         $activityList = self::getSendAwardActivityList();
         SimpleLogger::info("ScriptSendRealWeekActivityAward_activity_list", [$activityList]);
         if (empty($activityList)) {
-            return true;
+            return self::returnResponse(true, []);
         }
         // 获取活动参与用户
         foreach ($activityList as $item) {
@@ -75,13 +82,15 @@ class ScriptSendRealWeekActivityAward
                 ];
                 QueueService::addRealUserPosterAward($queueData);
                 SimpleLogger::info("qingfeng-test-addRealUserPosterAward", [$queueData]);
-
             }
             unset($_studentId);
         }
         unset($item);
+
+        // 清理队列延时发放时间
+        self::clearWeekActivitySendAwardDeferSecond();
         SimpleLogger::info("ScriptSendRealWeekActivityAward_success", []);
-        return true;
+        return self::returnResponse(true, []);
     }
 
     /**
@@ -94,6 +103,18 @@ class ScriptSendRealWeekActivityAward
         $redis        = RedisDB::getConn();
         $redisHashKey = 'real_student_week_activity_send_award_defer_second';
         return $redis->hincrby($redisHashKey, $studentId, 1);
+    }
+
+    /**
+     * 清理学生发放奖励延时时间
+     * @param $studentId
+     * @return int
+     */
+    public static function clearWeekActivitySendAwardDeferSecond(): int
+    {
+        $redis        = RedisDB::getConn();
+        $redisHashKey = 'real_student_week_activity_send_award_defer_second';
+        return $redis->del([$redisHashKey]);
     }
 
     /**
@@ -127,6 +148,25 @@ class ScriptSendRealWeekActivityAward
             return [];
         }
         return array_unique(array_column($studentList, 'student_id'));
+    }
+
+    public static function lock()
+    {
+        $redis        = RedisDB::getConn();
+        $expireTime = strtotime(date("Y-m-d 23:59:59", time())) - time();
+        return $redis->set(self::LOCK_KEY, 1, 'EX', $expireTime, 'NX');
+    }
+
+    public static function unlock()
+    {
+        return (RedisDB::getConn())->del([self::LOCK_KEY]);
+    }
+
+    public static function returnResponse($isUnlock, $data){
+        if ($isUnlock) {
+            self::unlock();
+        }
+        return true;
     }
 }
 

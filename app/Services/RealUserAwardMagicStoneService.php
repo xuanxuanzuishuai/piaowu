@@ -278,17 +278,9 @@ class RealUserAwardMagicStoneService
      */
     public static function formatAwardInfo($awardInfo)
     {
-        $awardInfo['passes_num'] = 0; // 审核通过次数
         $awardInfo['other_data'] == 'null' && $awardInfo['other_data'] = [];    // other_data值是null字段重置为对应的空值
         $awardInfo['format_create_time'] = !empty($awardInfo['create_time']) ? date("Y-m-d H:i", $awardInfo['create_time']) : '';
         $awardInfo['format_update_time'] = !empty($awardInfo['update_time']) ? date("Y-m-d H:i", $awardInfo['update_time']) : '';
-
-        if (!empty($awardInfo['other_data'])) {
-            $otherData = json_decode($awardInfo['other_data'], true);
-            // 审核通过次数
-            $awardInfo['passes_num'] = $otherData['passes_num'] ?? 0;
-        }
-
         return $awardInfo;
     }
 
@@ -351,7 +343,7 @@ class RealUserAwardMagicStoneService
         );
 
         // 发送消息
-        $wechatConfig = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_CONFIG, 'new-2');
+        $wechatConfig = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'send_award_magic_stone_msg_id');
         QueueService::sendUserWxMsg(Constants::REAL_APP_ID, $studentId, $wechatConfig, [
             'replace_params' => [
                 'url' => RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_magic_stone_shop_url'),

@@ -14,6 +14,7 @@ use App\Models\Erp\ErpStudentAppModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\OperationActivityModel;
 use App\Models\RealMonthActivityModel;
+use App\Models\RealSharePosterDesignateUuidModel;
 use App\Models\RealSharePosterModel;
 use App\Models\RealSharePosterTaskListModel;
 use App\Models\RealWeekActivityModel;
@@ -53,18 +54,12 @@ class RealActivityService
         ];
         // 获取活动详情
         $activityList = RealWeekActivityService::getStudentCanPartakeWeekActivityList($studentDetail);
-        if (empty($activityList)) {
-            return $data;
-        }
         $canPartakeActivityId = $activityList[0]['activity_id'] ?? 0;
-        if (empty($canPartakeActivityId)) {
-            $data['is_have_activity'] = false;
-            return $data;
-        }
         // 获取活动任务列表
-        $activityTaskList = RealSharePosterTaskListModel::getRecords(['activity_id' => $activityList[0]['activity_id'], 'ORDER' => ['task_num' => 'ASC']]);
+        $activityTaskList = RealSharePosterTaskListModel::getRecords(['activity_id' => $canPartakeActivityId, 'ORDER' => ['task_num' => 'ASC']]);
         if (empty($activityTaskList)) {
             $data['is_have_activity'] = false;
+            $data['student_info']['can_upload'] = false;
             return $data;
         }
         // 查看学生可参与的活动中已经审核通过的分享任务
@@ -77,7 +72,6 @@ class RealActivityService
         $diffActivityTaskNum = array_diff(array_column($activityTaskList, 'task_num'), $haveQualifiedActivityIds);
         if (empty($diffActivityTaskNum)) {
             $data['student_info']['can_upload'] = false;
-
         }
 
         // 获取活动海报
@@ -423,9 +417,15 @@ class RealActivityService
         $time = time();
         //资格检测 - 获取用户身份属性
         $studentIdAttribute = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentData['id'], '');
+
         // 检查一下用户是否是有效用户，不是有效用户不可能有可参与的活动
         if (!UserService::checkRealStudentIdentityIsNormal($studentData['id'], $studentIdAttribute)) {
-            throw new RunTimeException(['student_status_disable']);
+            $studentInfo = ErpStudentModel::getRecord(['id' => $studentData['id']]);
+            // 检查用户是不是活动指定的uuid
+            $designateUuid = RealSharePosterDesignateUuidModel::getRecord(['activity_id' => $activityId, 'uuid' => $studentInfo['uuid'] ?? '']);
+            if (empty($designateUuid)) {
+                throw new RunTimeException(['student_status_disable']);
+            }
         }
         //审核通过不允许上传截图
         $uploadRecord = RealSharePosterModel::getRecord([
@@ -582,7 +582,7 @@ class RealActivityService
                 'aw_type' => 'month'
             ],
             'week_tab' => [
-                'title' => '周周领奖',
+                'title' => '限时领奖',
                 'aw_type' => 'week'
             ]
         ];
