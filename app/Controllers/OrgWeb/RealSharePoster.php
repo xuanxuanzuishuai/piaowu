@@ -59,6 +59,11 @@ class RealSharePoster extends ControllerBase
                 'key' => 'poster_ids',
                 'type' => 'required',
                 'error_code' => 'poster_id_is_required'
+            ],
+            [
+                'key' => 'activity_id',
+                'type' => 'required',
+                'error_code' => 'activity_id_is_required'
             ]
         ];
         

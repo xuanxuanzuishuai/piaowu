@@ -209,6 +209,8 @@ class AutoCheckPicture
         $params['employee_id']  = EmployeeModel::SYSTEM_EMPLOYEE_ID;
         if ($status > 0) {
             //审核通过
+            $posterInfo = RealSharePosterModel::getRecord(['id' => $data['id'],], ['student_id', 'activity_id', 'image_path']);
+            $params['activity_id'] = $posterInfo['activity_id'] ?? 0;
             RealSharePosterService::approvalPoster([$poster_id], $params);
         } elseif (!empty($errCode)) {
             foreach ($errCode as $value){

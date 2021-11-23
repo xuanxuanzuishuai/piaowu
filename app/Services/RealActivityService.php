@@ -37,6 +37,7 @@ class RealActivityService
             'activity' => [],
             'student_info' => [],
             'channel_list' => [],
+            'is_have_activity' => true,
         ];
         //获取学生信息
         $studentDetail = ErpStudentModel::getStudentInfoById($studentId);
@@ -48,12 +49,37 @@ class RealActivityService
             'nickname' => !empty($studentDetail['name']) ? $studentDetail['name'] : ErpUserService::getStudentDefaultName($studentDetail['mobile']),
             'thumb' => ErpUserService::getStudentThumbUrl([$studentDetail['thumb']])[0],
             'real_person_paid' => 0,
+            'can_upload' => true,
         ];
         // 获取活动详情
         $activityList = RealWeekActivityService::getStudentCanPartakeWeekActivityList($studentDetail);
         if (empty($activityList)) {
             return $data;
         }
+        $canPartakeActivityId = $activityList[0]['activity_id'] ?? 0;
+        if (empty($canPartakeActivityId)) {
+            $data['is_have_activity'] = false;
+            return $data;
+        }
+        // 获取活动任务列表
+        $activityTaskList = RealSharePosterTaskListModel::getRecords(['activity_id' => $activityList[0]['activity_id'], 'ORDER' => ['task_num' => 'ASC']]);
+        if (empty($activityTaskList)) {
+            $data['is_have_activity'] = false;
+            return $data;
+        }
+        // 查看学生可参与的活动中已经审核通过的分享任务
+        $haveQualifiedActivityIds = RealSharePosterModel::getRecords([
+            'student_id'    => $studentId,
+            'activity_id'   => $canPartakeActivityId,
+            'verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED,
+        ], 'task_num');
+        // 查看学生相对可参与活动的状态 - 计算差集
+        $diffActivityTaskNum = array_diff(array_column($activityTaskList, 'task_num'), $haveQualifiedActivityIds);
+        if (empty($diffActivityTaskNum)) {
+            $data['student_info']['can_upload'] = false;
+
+        }
+
         // 获取活动海报
         list($data['list'], $data['activity']) = self::getWeekActivityPosterList($activityList[0], $fromType, $studentDetail);
         //渠道获取
@@ -76,7 +102,13 @@ class RealActivityService
             'activity' => [],
             'student_info' => [],
             'channel_list' => [],
+            'can_upload' => false,
+
         ];
+        $studentIdAttribute = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentId, '');
+        if (UserService::checkRealStudentIdentityIsNormal($studentId, $studentIdAttribute)) {
+            $data['can_upload'] = true;
+        }
         //获取学生信息
         $studentDetail = ErpStudentModel::getStudentInfoById($studentId);
         if (empty($studentDetail)) {

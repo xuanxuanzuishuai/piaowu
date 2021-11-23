@@ -25,6 +25,7 @@ use App\Models\OperationActivityModel;
 use App\Models\QrInfoOpCHModel;
 use App\Models\RealSharePosterAwardModel;
 use App\Models\RealSharePosterModel;
+use App\Models\RealSharePosterTaskListModel;
 use App\Models\RealUserAwardMagicStoneModel;
 use App\Models\RealWeekActivityModel;
 use App\Models\WeChatConfigModel;
@@ -133,6 +134,13 @@ class RealSharePosterService
                 $_item['activity_end_time'] = date("m月d日", $_activityInfo['end_time']);
                 $_item['activity_name'] = $_activityInfo['name'];
             }
+
+            // 如果task_num > 0 显示任务名称
+            if ($_item['task_num'] > 0) {
+                $activityTaskList = RealSharePosterTaskListModel::getRecords(['activity_id' => $_item['activity_id']]);
+                $activityTaskList = array_column($activityTaskList, 'task_name', 'task_num');
+                $_item['activity_name'] = $activityTaskList[$_item['task_num']] ?? '';
+            }
             $_item = RealActivityService::xyzopFormatOne($_item);
         }
         unset($_item);
@@ -155,7 +163,7 @@ class RealSharePosterService
             throw new RunTimeException(['get_share_poster_error']);
         }
         $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
-        if ($posters['activity_id'] <= $oldRuleLastActivityId) {
+        if ($params['activity_id'] <= $oldRuleLastActivityId) {
             $type = RealSharePosterModel::TYPE_WEEK_UPLOAD;
             $posters = RealSharePosterModel::getPostersByIds($id, $type);
             if (count($posters) != count($id)) {

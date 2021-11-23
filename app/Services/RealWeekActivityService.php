@@ -469,6 +469,22 @@ class RealWeekActivityService
             }
         }
 
+        // 更新uuid - 先删除， 后新增
+        if (!empty($data['designate_uuid'])) {
+            $delRes = RealSharePosterDesignateUuidModel::delDesignateUUID($activityId, [], $employeeId);
+            if (empty($delRes)) {
+                $db->rollBack();
+                SimpleLogger::info("RealSharePosterDesignateUuidModel:delDesignateUUID batch del real_share_poster_designate_uuid fail", ['data' => $data]);
+                throw new RunTimeException(["add week activity fail"]);
+            }
+            $saveUuidRes = RealSharePosterDesignateUuidModel::batchInsertUuid($activityId, array_unique($data['designate_uuid']), $employeeId, $time);
+            if (empty($saveUuidRes)) {
+                $db->rollBack();
+                SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_designate_uuid fail", ['data' => $data]);
+                throw new RunTimeException(["add week activity fail"]);
+            }
+        }
+
         // 待启用的状态可以额外编辑 分享任务和uuid 等
         if ($weekActivityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_OFF) {
             //更新分享任务
@@ -484,21 +500,6 @@ class RealWeekActivityService
                 $db->rollBack();
                 SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_task_rule fail", ['data' => $data]);
                 throw new RunTimeException(["add week activity fail"]);
-            }
-            // 更新uuid - 先删除， 后新增
-            if (!empty($data['designate_uuid'])) {
-                $delRes = RealSharePosterDesignateUuidModel::delDesignateUUID($activityId, [], $employeeId);
-                if (empty($delRes)) {
-                    $db->rollBack();
-                    SimpleLogger::info("RealSharePosterDesignateUuidModel:delDesignateUUID batch del real_share_poster_designate_uuid fail", ['data' => $data]);
-                    throw new RunTimeException(["add week activity fail"]);
-                }
-                $saveUuidRes = RealSharePosterDesignateUuidModel::batchInsertUuid($activityId, array_unique($data['designate_uuid']), $employeeId, $time);
-                if (empty($saveUuidRes)) {
-                    $db->rollBack();
-                    SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_designate_uuid fail", ['data' => $data]);
-                    throw new RunTimeException(["add week activity fail"]);
-                }
             }
         }
         $db->commit();
