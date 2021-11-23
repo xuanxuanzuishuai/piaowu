@@ -307,6 +307,7 @@ class RealUserAwardMagicStoneService
         $studentId = $studentInfo['id'] ?? 0;
         $activityId = $activityInfo['activity_id'] ?? 0;
         $awardAmount = $awardRuleInfo['award_amount'] ?? 0;
+        $passesNum = $awardRuleInfo['success_pass_num'] ?? 0;
         if (empty($uuid) || empty($studentId) || empty($activityId) || empty($awardAmount)) {
             SimpleLogger::info('real_save_student_award_magic_stone_params_error', [$studentId, $activityInfo, $awardRuleInfo]);
             throw new RunTimeException(['real_save_student_award_magic_stone_params_error']);
@@ -329,6 +330,8 @@ class RealUserAwardMagicStoneService
             'finish_task_uuid' => $uuid,
             'batch_id' => self::getBatchId(),
             'create_time'      => $time,
+            'passes_num'      => $passesNum,
+            'other_data'      => json_encode([]),
         ];
         // 新增发放记录
         $awardId = RealUserAwardMagicStoneModel::insertRecord($studentAwardMagicStoneData);

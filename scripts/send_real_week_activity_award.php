@@ -53,6 +53,12 @@ class ScriptSendRealWeekActivityAward
         }
         // 获取活动参与用户
         foreach ($activityList as $item) {
+            // 检查活动奖励是否已经发放
+            $awardRecord = RealUserAwardMagicStoneModel::getRecord(['activity_id' => $item['activity_id']]);
+            if (!empty($awardRecord)) {
+                SimpleLogger::info("ScriptSendRealWeekActivityAward_activity_award_is_send", [$item, $awardRecord]);
+                continue;
+            }
             $studentList = self::getPartakeActivityStudentIdList($item['activity_id']);
             if (empty($studentList)) {
                 SimpleLogger::info("ScriptSendRealWeekActivityAward_activity_not_found_success_share_poster_user", [$item, $studentList]);
@@ -60,13 +66,16 @@ class ScriptSendRealWeekActivityAward
             }
             // 放入用户发奖队列
             foreach ($studentList as $_studentId) {
-                QueueService::addRealUserPosterAward([
+                $queueData = [
                     'app_id'      => Constants::REAL_APP_ID,
-                    'student_id'  => $studentList['student_id'],
+                    'student_id'  => $_studentId,
                     'activity_id' => $item['activity_id'],
                     'act_status'  => RealUserAwardMagicStoneModel::STATUS_GIVE,
                     'defer_second'=> self::getStudentWeekActivitySendAwardDeferSecond($_studentId)
-                ]);
+                ];
+                QueueService::addRealUserPosterAward($queueData);
+                SimpleLogger::info("qingfeng-test-addRealUserPosterAward", [$queueData]);
+
             }
             unset($_studentId);
         }

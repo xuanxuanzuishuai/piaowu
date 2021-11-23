@@ -1302,19 +1302,21 @@ class MessageService
             case RealSharePosterModel::VERIFY_STATUS_WAIT:  // 待审核 不能发送消息
                 break;
             case RealSharePosterModel::VERIFY_STATUS_QUALIFIED: // 审核通过
-                // 获取海报对应的奖励id
-                $sharePosterAwardInfo = RealSharePosterAwardModel::getRecord(['share_poster_id' => $sharePosterId]);
-                if (empty($sharePosterAwardInfo)) {
-                    SimpleLogger::info("sendRealSharePosterMessage share_poster_info empty", [$params]);
-                    return false;
+                $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
+                if ($activityInfo['activity_id'] <= $oldRuleLastActivityId) {
+                    // 获取海报对应的奖励id
+                    $sharePosterAwardInfo = RealSharePosterAwardModel::getRecord(['share_poster_id' => $sharePosterId]);
+                    if (empty($sharePosterAwardInfo)) {
+                        SimpleLogger::info("sendRealSharePosterMessage share_poster_info empty", [$params]);
+                        return false;
+                    }
+                    // 获取奖励详细信息
+                    $awardInfo = RealUserAwardMagicStoneModel::getRecord(['id' => $sharePosterAwardInfo['award_id']]);
+                    if (empty($awardInfo)) {
+                        SimpleLogger::info("sendRealSharePosterMessage award_info empty", [$params, $sharePosterAwardInfo]);
+                        return false;
+                    }
                 }
-                // 获取奖励详细信息
-                $awardInfo = RealUserAwardMagicStoneModel::getRecord(['id' => $sharePosterAwardInfo['award_id']]);
-                if (empty($awardInfo)) {
-                    SimpleLogger::info("sendRealSharePosterMessage award_info empty", [$params, $sharePosterAwardInfo]);
-                    return false;
-                }
-
                 // 获取基本的延时发放时间，单位秒
                 $sendAwardBaseDelaySecond = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'send_award_base_delay_second');
                 // 指定必要字段
@@ -1322,6 +1324,7 @@ class MessageService
                 $awardInfo['app_id'] = Constants::REAL_APP_ID;
                 $awardInfo['verify_status'] = RealSharePosterModel::VERIFY_STATUS_QUALIFIED;
                 $awardInfo['delay_send_award_day'] = intval((intval($sendAwardBaseDelaySecond) + intval($activityInfo['delay_second'])) / Util::TIMESTAMP_ONEDAY);
+                $awardInfo['user_id'] = $sharePosterInfo['student_id'] ?? 0;
                 $jumpLink = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_week_activity_url');
                 break;
             default:

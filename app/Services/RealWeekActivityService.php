@@ -469,22 +469,6 @@ class RealWeekActivityService
             }
         }
 
-        // 更新uuid - 先删除， 后新增
-        if (!empty($data['designate_uuid'])) {
-            $delRes = RealSharePosterDesignateUuidModel::delDesignateUUID($activityId, [], $employeeId);
-            if (empty($delRes)) {
-                $db->rollBack();
-                SimpleLogger::info("RealSharePosterDesignateUuidModel:delDesignateUUID batch del real_share_poster_designate_uuid fail", ['data' => $data]);
-                throw new RunTimeException(["add week activity fail"]);
-            }
-            $saveUuidRes = RealSharePosterDesignateUuidModel::batchInsertUuid($activityId, array_unique($data['designate_uuid']), $employeeId, $time);
-            if (empty($saveUuidRes)) {
-                $db->rollBack();
-                SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_designate_uuid fail", ['data' => $data]);
-                throw new RunTimeException(["add week activity fail"]);
-            }
-        }
-
         // 待启用的状态可以额外编辑 分享任务和uuid 等
         if ($weekActivityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_OFF) {
             //更新分享任务
@@ -500,6 +484,21 @@ class RealWeekActivityService
                 $db->rollBack();
                 SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_task_rule fail", ['data' => $data]);
                 throw new RunTimeException(["add week activity fail"]);
+            }
+            // 更新uuid - 先删除， 后新增
+            if (!empty($data['designate_uuid'])) {
+                $delRes = RealSharePosterDesignateUuidModel::delDesignateUUID($activityId, [], $employeeId);
+                if (empty($delRes)) {
+                    $db->rollBack();
+                    SimpleLogger::info("RealSharePosterDesignateUuidModel:delDesignateUUID batch del real_share_poster_designate_uuid fail", ['data' => $data]);
+                    throw new RunTimeException(["add week activity fail"]);
+                }
+                $saveUuidRes = RealSharePosterDesignateUuidModel::batchInsertUuid($activityId, array_unique($data['designate_uuid']), $employeeId, $time);
+                if (empty($saveUuidRes)) {
+                    $db->rollBack();
+                    SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_designate_uuid fail", ['data' => $data]);
+                    throw new RunTimeException(["add week activity fail"]);
+                }
             }
         }
         $db->commit();
@@ -743,10 +742,7 @@ class RealWeekActivityService
         }
         // 获取用户身份属性
         $studentIdAttribute = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentId, $studentUUID);
-        // 检查一下用户是否是有效用户，不是有效用户不可能有可参与的活动
-        if (!UserService::checkRealStudentIdentityIsNormal($studentId, $studentIdAttribute)) {
-            return [];
-        }
+
         $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
         // 获取所有当前时间启用中的活动信息列表
         $activityList = RealWeekActivityModel::getRecords([
@@ -755,15 +751,21 @@ class RealWeekActivityService
             'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
             'activity_id[>]' => $oldRuleLastActivityId,
         ]);
+
         foreach ($activityList as $_activityKey => $_activityInfo) {
             // 过滤掉 目标用户类型是部分有效付费用户首次付费时间
             if ($_activityInfo['target_user_type'] == RealWeekActivityModel::TARGET_USER_PART) {
-                if ($studentIdAttribute['first_pay_time'] < $_activityInfo['target_use_first_pay_time_start']) {
+                if ($studentIdAttribute['first_pay_time'] <= $_activityInfo['target_use_first_pay_time_start']) {
                     // 用户首次付费时间小于活动设定的首次付费起始时间，删除
                     unset($activityList[$_activityKey]);
                 }
                 if ($studentIdAttribute['first_pay_time'] > $_activityInfo['target_use_first_pay_time_end']) {
                     // 用户首次付费时间大于活动设定的首次付费截止时间， 删除
+                    unset($activityList[$_activityKey]);
+                }
+            } elseif ($_activityInfo['target_user_type'] == RealWeekActivityModel::TARGET_USER_ALL) {
+                // 全部付费用户活动， 检查一下用户是否是有效用户，不是有效用户不可能有可参与的活动
+                if (!UserService::checkRealStudentIdentityIsNormal($studentId, $studentIdAttribute)) {
                     unset($activityList[$_activityKey]);
                 }
             }

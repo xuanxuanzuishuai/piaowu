@@ -124,13 +124,31 @@ class RealSharePosterDesignateUuidModel extends Model
                 '[>]' . RealWeekActivityModel::$table . '(w)' => ['d.activity_id' => 'activity_id'],
             ],
             [
+                'w.id',
+                'w.name (activity_name)',
+                'w.share_word',
+                'w.start_time',
+                'w.end_time',
+                'w.enable_status',
+                'w.banner',
                 'w.activity_id',
+                'w.share_button_img',
+                'w.award_detail_img',
+                'w.upload_button_img',
+                'w.strategy_img',
+                'w.personality_poster_button_img',
+                'w.share_poster_prompt',
+                'w.retention_copy',
+                'w.poster_order',
+                'w.create_time',
+                'w.update_time',
+                'w.operator_id',
                 'w.target_user_type',
                 'w.target_use_first_pay_time_start',
                 'w.target_use_first_pay_time_end',
                 'w.priority_level',
-                'w.start_time',
-                'w.end_time',
+                'w.delay_second',
+                'w.send_award_time',
             ],
             [
                 'w.start_time[<]' => $time,
@@ -139,7 +157,7 @@ class RealSharePosterDesignateUuidModel extends Model
                 'd.uuid' => $studentUUID
             ]
         );
-        return $records[0] ?? [];
+        return $records ?? [];
     }
 
     /**
