@@ -1291,6 +1291,15 @@ class MessageService
             return false;
         }
 
+        // 加锁，同一张海报同一个状态同一时间只能操作一次
+        $lockKey = 'send_real_share_poster_message_lock_' . $sharePosterId . '_' . $sharePosterInfo['verify_status'];
+        $redis = RedisDB::getConn();
+        $lock = $redis->set($lockKey, $sharePosterId, 'EX', 20, 'NX');
+        if (empty($lock)) {
+            SimpleLogger::info("send_real_share_poster_message_lock", [$lock, $sharePosterId, $sharePosterInfo]);
+            return false;
+        }
+
         switch ($sharePosterInfo['verify_status']) {
             case RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED: // 审核未通过，发消息
                 $jumpLink = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_refused_poster_url');
