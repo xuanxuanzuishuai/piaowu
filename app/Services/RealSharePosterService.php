@@ -381,7 +381,7 @@ class RealSharePosterService
         $time = $time ?? time();
         $activityOverAllowUploadSecond = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'activity_over_allow_upload_second');
         // 能否重新上传 - 不能：活动已结束 或 活动已结束但结束时间超过5天
-        if ($activityInfo['end_time'] < $time || ($time - $activityInfo['end_time']) > $activityOverAllowUploadSecond) {
+        if (($time - $activityInfo['end_time']) > $activityOverAllowUploadSecond) {
             return false;
         }
 

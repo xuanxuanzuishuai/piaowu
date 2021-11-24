@@ -262,8 +262,8 @@ class RealUserAwardMagicStoneService
             'user_id'    => $userId,
             'user_type'  => $userType,
             'award_node' => Constants::WEEK_SHARE_POSTER_AWARD_NODE,
-            'passes_num[>=]' => 1
-        ], $page, $limit, $order);
+            'passes_num[>=]' => 1,
+        ], $page, $limit, []);
         foreach ($awardList as &$item) {
             $item = self::formatAwardInfo($item);
         }

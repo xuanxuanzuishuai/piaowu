@@ -348,25 +348,6 @@ class RealActivityService
         /** 老活动奖励规则 */
         if ($activityId <= $oldRuleLastActivityId) {
             $time = time();
-            //资格检测 - 获取用户身份属性
-            $studentIdAttribute = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentData['id'], '');
-            // 检查一下用户是否是有效用户，不是有效用户不可能有可参与的活动
-            if (!UserService::checkRealStudentIdentityIsNormal($studentData['id'], $studentIdAttribute)) {
-                throw new RunTimeException(['student_status_disable']);
-            }
-            // 检查用户首次付费时间
-            if (self::xyzopCheckIsSpecialActivityId(['activity_id' => $activityId])) {
-                // 指定活动 - 判断首次付费时间是否是在指定时间内
-                if (!self::xyzopCheckCondition(['first_pay_time' => $studentIdAttribute['first_pay_time']])) {
-                    throw new RunTimeException(['student_status_disable']);
-                }
-            } else {
-                // 最普通的活动， 检查用户首次付费时间是不是在10.26号之前
-                $splitTime = DictConstants::get(DictConstants::ACTIVITY_CONFIG, 'real_week_tab_first_pay_split_time');
-                if ($studentIdAttribute['first_pay_time'] <= $splitTime) {
-                    throw new RunTimeException(['student_status_disable']);
-                }
-            }
             //审核通过不允许上传截图
             $uploadRecord = RealSharePosterModel::getRecord([
                 'student_id' => $studentData['id'],
@@ -376,6 +357,29 @@ class RealActivityService
             if (!empty($uploadRecord) && ($uploadRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED)) {
                 throw new RunTimeException(['wait_for_next_event']);
             }
+            /** 如果没上传过，则不校验身份 */
+            if (empty($uploadRecord)) {
+                //资格检测 - 获取用户身份属性
+                $studentIdAttribute = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentData['id'], '');
+                // 检查一下用户是否是有效用户，不是有效用户不可能有可参与的活动
+                if (!UserService::checkRealStudentIdentityIsNormal($studentData['id'], $studentIdAttribute)) {
+                    throw new RunTimeException(['student_status_disable']);
+                }
+                // 检查用户首次付费时间
+                if (self::xyzopCheckIsSpecialActivityId(['activity_id' => $activityId])) {
+                    // 指定活动 - 判断首次付费时间是否是在指定时间内
+                    if (!self::xyzopCheckCondition(['first_pay_time' => $studentIdAttribute['first_pay_time']])) {
+                        throw new RunTimeException(['student_status_disable']);
+                    }
+                } else {
+                    // 最普通的活动， 检查用户首次付费时间是不是在10.26号之前
+                    $splitTime = DictConstants::get(DictConstants::ACTIVITY_CONFIG, 'real_week_tab_first_pay_split_time');
+                    if ($studentIdAttribute['first_pay_time'] <= $splitTime) {
+                        throw new RunTimeException(['student_status_disable']);
+                    }
+                }
+            }
+
             // 活动检测：获取活动信息， 活动是启用中，并且当前时间小于活动结束时间+5天
             $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $activityId]);
             if (empty($activityInfo) || !in_array($activityInfo['enable_status'], [OperationActivityModel::ENABLE_STATUS_ON, OperationActivityModel::ENABLE_STATUS_OFF]) || ($activityInfo['end_time']+5*Util::TIMESTAMP_ONEDAY) < $time) {
@@ -415,18 +419,6 @@ class RealActivityService
         }
         /** 新奖励规则 */
         $time = time();
-        //资格检测 - 获取用户身份属性
-        $studentIdAttribute = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentData['id'], '');
-
-        // 检查一下用户是否是有效用户，不是有效用户不可能有可参与的活动
-        if (!UserService::checkRealStudentIdentityIsNormal($studentData['id'], $studentIdAttribute)) {
-            $studentInfo = ErpStudentModel::getRecord(['id' => $studentData['id']]);
-            // 检查用户是不是活动指定的uuid
-            $designateUuid = RealSharePosterDesignateUuidModel::getRecord(['activity_id' => $activityId, 'uuid' => $studentInfo['uuid'] ?? '']);
-            if (empty($designateUuid)) {
-                throw new RunTimeException(['student_status_disable']);
-            }
-        }
         //审核通过不允许上传截图
         $uploadRecord = RealSharePosterModel::getRecord([
             'student_id' => $studentData['id'],
@@ -436,6 +428,20 @@ class RealActivityService
         ], ['verify_status', 'id']);
         if (!empty($uploadRecord) && ($uploadRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED)) {
             throw new RunTimeException(['wait_for_next_event']);
+        }
+        /** 如果没上传过，则不校验身份 */
+        if (empty($uploadRecord)) {
+            //资格检测 - 获取用户身份属性
+            $studentIdAttribute = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentData['id'], '');
+            // 检查一下用户是否是有效用户，不是有效用户不可能有可参与的活动
+            if (!UserService::checkRealStudentIdentityIsNormal($studentData['id'], $studentIdAttribute)) {
+                $studentInfo = ErpStudentModel::getRecord(['id' => $studentData['id']]);
+                // 检查用户是不是活动指定的uuid
+                $designateUuid = RealSharePosterDesignateUuidModel::getRecord(['activity_id' => $activityId, 'uuid' => $studentInfo['uuid'] ?? '']);
+                if (empty($designateUuid)) {
+                    throw new RunTimeException(['student_status_disable']);
+                }
+            }
         }
         // 检查周周领奖活动是否可以上传 - 未结束 或 已结束但没超过5天
         $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $activityId]);

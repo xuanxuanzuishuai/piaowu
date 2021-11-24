@@ -70,7 +70,7 @@ class RealUserAwardMagicStoneModel extends Model
                 'a.update_time',
                 'w.name (activity_name)',
             ],
-            $where
+            $sqlWhere
         );
 
 
