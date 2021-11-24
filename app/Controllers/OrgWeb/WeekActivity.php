@@ -6,12 +6,15 @@
 namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\Erp\ErpEventModel;
+use App\Services\SharePosterDesignateUuidService;
+use App\Services\UserService;
 use App\Services\WeekActivityService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -152,7 +155,6 @@ class WeekActivity extends ControllerBase
                 'type' => 'integer',
                 'error_code' => 'poster_order_is_integer'
             ],
-
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
@@ -165,14 +167,14 @@ class WeekActivity extends ControllerBase
                 throw new RunTimeException(['poster_or_personality_poster_is_required']);
             }
             if (!empty($params['activity_id'])) {
-                WeekActivityService::edit($params, $employeeId);
+                $data = WeekActivityService::edit($params, $employeeId);
             } else {
-                WeekActivityService::add($params, $employeeId);
+                $data = WeekActivityService::add($params, $employeeId);
             }
         } catch (RuntimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
         }
-        return HttpHelper::buildResponse($response, []);
+        return HttpHelper::buildResponse($response, $data);
     }
 
     /**
@@ -373,5 +375,108 @@ class WeekActivity extends ControllerBase
         }
 
         return HttpHelper::buildResponse($response, $result);
+    }
+
+    /**
+     * 智能 - 删除活动指定用户UUID
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function designateUUIDDel(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key' => 'activity_id',
+                'type' => 'required',
+                'error_code' => 'activity_id_is_required'
+            ],
+            [
+                'key' => 'designate_uuid',
+                'type' => 'required',
+                'error_code' => 'designate_uuid_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $employeeId = self::getEmployeeId();
+        try {
+            SharePosterDesignateUuidService::delActivityDesignateUUID($params['activity_id'], $employeeId, $params['designate_uuid']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 智能 - 获取指定活动的UUID列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function designateUUIDList(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key' => 'activity_id',
+                'type' => 'required',
+                'error_code' => 'activity_id_is_required'
+            ],
+            [
+                'key' => 'count',
+                'type' => 'integer',
+                'error_code' => 'count_is_integer'
+            ],
+            [
+                'key' => 'page',
+                'type' => 'integer',
+                'error_code' => 'page_is_integer'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        list($page, $limit) = Util::formatPageCount($params);
+        $data = SharePosterDesignateUuidService::getActivityDesignateUUIDList($params['activity_id'], $page, $limit);
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 智能 - 检查活动指定用户UUID
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function designateUUIDCheck(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key' => 'designate_uuid',
+                'type' => 'required',
+                'error_code' => 'designate_uuid_is_required'
+            ],
+            [
+                'key' => 'activity_id',
+                'type' => 'integer',
+                'error_code' => 'activity_id_is_integer'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $designateUUID = is_array($params['designate_uuid']) ? $params['designate_uuid'] : [];
+            $data = UserService::checkDssStudentUuidExists($designateUUID, $params['activity_id'] ?? 0);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
     }
 }

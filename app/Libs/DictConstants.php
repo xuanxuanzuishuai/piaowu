@@ -1105,8 +1105,27 @@ class DictConstants {
         ]
     ];
 
+    // 周周领奖动配置
+    const DSS_WEEK_ACTIVITY_CONFIG = [
+        'type' => 'DSS_WEEK_ACTIVITY_CONFIG',
+        'keys' => [
+            'send_award_base_delay_second',  // 发放奖励基本延时时间 - 单位秒
+            'old_rule_last_activity_id',  // 旧规则最后的活动id
+            'activity_over_allow_upload_second',  // 活动结束后允许上传时间，单位秒
+            'send_award_gold_left_wx_msg_id',  // 发放奖励的消息id
+            'refused_poster_wx_msg_id',  // 分享截图未通过消息id
+            'approval_poster_wx_msg_id',  // 分享截图通过消息id
+        ],
+    ];
 
-
+    // 所有跳转链接
+    const DSS_JUMP_LINK_CONFIG = [
+        'type' => 'DSS_JUMP_LINK_CONFIG',
+        'keys' => [
+            'dss_share_poster_history_list',  // 周周领奖上传分享截图历史记录列表链接
+            'dss_week_activity_detail',  // 周周领奖详情页连接
+        ],
+    ];
 
 
 

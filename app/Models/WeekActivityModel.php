@@ -15,7 +15,8 @@ use App\Models\Erp\ErpEventModel;
 class WeekActivityModel extends Model
 {
     public static $table = 'week_activity';
-
+    const TARGET_USER_ALL = 1;  // 有效付费用户范围 - 所有
+    const TARGET_USER_PART = 2; // 有效付费用户范围 - 部分
     /**
      * 获取周周领奖活动列表和总数
      * @param $params
@@ -107,6 +108,12 @@ class WeekActivityModel extends Model
                 'w.share_poster_prompt',
                 'w.retention_copy',
                 'w.poster_order',
+                'w.target_user_type',
+                'w.target_use_first_pay_time_end',
+                'w.target_use_first_pay_time_start',
+                'w.delay_second',
+                'w.send_award_time',
+                'w.priority_level',
                 'a.award_rule',
                 'a.remark',
             ],

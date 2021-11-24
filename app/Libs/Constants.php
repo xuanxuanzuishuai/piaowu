@@ -80,6 +80,7 @@ class Constants
     // 积分账户类型  - 现金
     const ERP_ACCOUNT_NAME_CASH = '8_1001';
     const ERP_ACCOUNT_NAME_MAGIC = '3001';  // 魔法石；配合app_id:  1_3001=魔法石
+    const ERP_ACCOUNT_NAME_GOLD_LEFT = '3002';  // 金叶子；配合app_id:  8_3001=金叶子
 
     // 版权区域代码
     const DICT_COPYRIGHT_CODE_CN = 'CN'; // 大陆版权

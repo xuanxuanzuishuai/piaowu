@@ -768,6 +768,11 @@ class Dss extends ControllerBase
                     'key' => 'id',
                     'type' => 'required',
                     'error_code' => 'id_is_required'
+                ],
+                [
+                    'key' => 'activity_id',
+                    'type' => 'required',
+                    'error_code' => 'activity_id_is_required'
                 ]
             ];
             $params = $request->getParams();

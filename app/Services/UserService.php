@@ -20,6 +20,7 @@ use App\Models\Erp\ErpStudentModel;
 use App\Models\Erp\ErpUserWeiXinModel;
 use App\Models\RealSharePosterDesignateUuidModel;
 use App\Models\UserWeiXinModel;
+use App\Services\TraitService\TraitDssUserService;
 
 /**
  * 公共调用
@@ -28,6 +29,8 @@ use App\Models\UserWeiXinModel;
  */
 class UserService
 {
+    use TraitDssUserService;
+
     /**
      * 绑定微信的信息
      * @param $appId

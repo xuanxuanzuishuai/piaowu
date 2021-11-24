@@ -27,6 +27,7 @@ use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\Erp\ErpUserEventTaskModel;
 use App\Models\SharePosterModel;
 use App\Libs\Erp;
+use App\Models\SharePosterTaskListModel;
 use App\Models\TemplatePosterModel;
 use App\Models\TemplatePosterWordModel;
 use App\Models\WeChatAwardCashDealModel;
@@ -615,6 +616,64 @@ class SharePosterService
     public static function approvalPoster($id, $params = [])
     {
         $type = $params['type'] ?? SharePosterModel::TYPE_WEEK_UPLOAD;
+        $oldRuleLastActivityId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
+        /** 周周领奖分享截图审核新规则 */
+        if ($oldRuleLastActivityId < $params['activity_id'] && $type == SharePosterModel::TYPE_WEEK_UPLOAD) {
+            $posters = SharePosterModel::getPostersByIds($id, $type);
+            if (count($posters) != count($id)) {
+                throw new RunTimeException(['get_share_poster_error']);
+            }
+            $activityInfo = WeekActivityModel::getRecord(['activity_id' => $params['activity_id']]);
+            if (empty($activityInfo)) {
+                throw new RunTimeException(['week_activity_not_found']);
+            }
+            $now = time();
+            $updateData = [
+                'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
+                'verify_time'   => $now,
+                'verify_user'   => $params['employee_id'] ?? 0,
+                'remark'        => $params['remark'] ?? '',
+                'update_time'   => $now,
+            ];
+            $redis = RedisDB::getConn();
+            $msgId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'approval_poster_wx_msg_id');
+            $msgUrl = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'dss_week_activity_detail');
+            $sendAwardBaseDelaySecond = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'send_award_base_delay_second');
+
+            foreach ($posters as $key => $poster) {
+                // 审核数据操作锁，解决并发导致的重复审核和发奖
+                $lockKey = self::KEY_POSTER_VERIFY_LOCK . $poster['id'];
+                $lock = $redis->set($lockKey, $poster['id'], 'EX', 120, 'NX');
+                if (empty($lock)) {
+                    continue;
+                }
+                if (!empty($poster['award_id'])) {
+                    $needRejectAward[] = $poster['award_id'];
+                }
+                $where = [
+                    'id' => $poster['id'],
+                    'verify_status' => $poster['poster_status']
+                ];
+                $update = SharePosterModel::batchUpdateRecord($updateData, $where);
+                // 影响行数是0 ，说明没有执行成功，不做后续处理
+                if (empty($update)) {
+                    // CountingActivitySignService::countSign($poster['student_id'], null, $poster['activity_id']);
+                    SimpleLogger::info("DSS_approvalPoster", [$poster, $update]);
+                    continue;
+                }
+                //智能产品激活
+                QueueService::autoActivate(['student_uuid' => $poster['uuid'], 'passed_time' => time(), 'app_id' => Constants::SMART_APP_ID]);
+                // 发送消息
+                QueueService::sendUserWxMsg(Constants::SMART_APP_ID, $poster['student_id'], $msgId, [
+                    'replace_params' => [
+                        'delay_send_award_day' => intval((intval($sendAwardBaseDelaySecond) + intval($activityInfo['delay_second'])) / Util::TIMESTAMP_ONEDAY),
+                        'url' => $msgUrl,
+                    ],
+                ]);
+            }
+            return true;
+        }
+        $type = $params['type'] ?? SharePosterModel::TYPE_WEEK_UPLOAD;
         $posters = SharePosterModel::getPostersByIds($id, $type);
         if (count($posters) != count($id)) {
             throw new RunTimeException(['get_share_poster_error']);
@@ -765,11 +824,22 @@ class SharePosterService
         }
         // 审核不通过, 发送模版消息
         if ($update > 0) {
-            $vars = [
-                'activity_name' => $poster['activity_name'],
-                'status' => $status
-            ];
-            MessageService::sendPosterVerifyMessage($poster['open_id'], $vars);
+            $oldRuleLastActivityId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
+            if ($poster['activity_id'] <= $oldRuleLastActivityId) {
+                $vars = [
+                    'activity_name' => $poster['activity_name'],
+                    'status' => $status
+                ];
+                MessageService::sendPosterVerifyMessage($poster['open_id'], $vars);
+            } else {
+                // 新活动推送新规则
+                $wechatConfigId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'refused_poster_wx_msg_id');
+                QueueService::sendUserWxMsg(Constants::SMART_APP_ID, $poster['student_id'], $wechatConfigId, [
+                    'replace_params' => [
+                        'url' => DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'dss_share_poster_history_list')
+                    ],
+                ]);
+            }
         }
 
         return $update > 0;
@@ -850,5 +920,32 @@ class SharePosterService
         }
         unset($item);
         return $list;
+    }
+
+    /**
+     * 获取指定活动某个任务学生上传的海报信息
+     * @param $studentId
+     * @param $activityId
+     * @return bool
+     */
+    public static function getStudentWeekActivityCanUpload($studentId, $activityId): bool
+    {
+        // 获取活动任务列表
+        $activityTaskList = SharePosterTaskListModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['task_num' => 'ASC']]);
+        if (empty($activityTaskList)) {
+            return false;
+        }
+        // 查看学生可参与的活动中已经审核通过的分享任务
+        $haveQualifiedActivityIds = SharePosterModel::getRecords([
+            'student_id'    => $studentId,
+            'activity_id'   => $activityId,
+            'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
+        ], 'task_num');
+        // 查看学生相对可参与活动的状态 - 计算差集
+        $diffActivityTaskNum = array_diff(array_column($activityTaskList, 'task_num'), $haveQualifiedActivityIds);
+        if (empty($diffActivityTaskNum)) {
+            return false;
+        }
+        return true;
     }
 }

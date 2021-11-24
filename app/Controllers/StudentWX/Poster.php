@@ -22,6 +22,7 @@ use App\Services\PosterService;
 use App\Services\PosterTemplateService;
 use App\Services\SharePosterService;
 use App\Services\UserService;
+use App\Services\WeekActivityService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -66,8 +67,12 @@ class Poster extends ControllerBase
         try {
             $userInfo = $this->ci['user_info'];
             $params['from_type'] = ActivityService::FROM_TYPE_WX;
-            $data = PosterTemplateService::getPosterList($userInfo['user_id'], $params['type'], $params['activity_id'] ?? 0, $params);
-
+            if ($params['type'] == 2) {
+                // 周周领奖活动信息
+                $data = WeekActivityService::getWeekActivityData($userInfo['user_id'], $params['activity_id'] ?? 0, $params);
+            } else {
+                $data = PosterTemplateService::getPosterList($userInfo['user_id'], $params['type'], $params['activity_id'] ?? 0, $params);
+            }
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

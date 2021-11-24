@@ -243,6 +243,9 @@ class OrgWebRouter extends RouterBase
         '/op_web/week_activity/enable_status' => ['method' => ['post'], 'call' => WeekActivity::class . ':editEnableStatus'],
         '/op_web/week_activity/send_msg' => ['method' => ['post'], 'call' => WeekActivity::class . ':sendMsg'],
         '/op_web/week_activity/push_weixin_msg' => ['method' => ['post'], 'call' => WeekActivity::class . ':pushWeixinMsg'],
+        '/op_web/week_activity/designate_uuid_del' => ['method' => ['post'], 'call' => WeekActivity::class . ':designateUUIDDel'],
+        '/op_web/week_activity/designate_uuid_list' => ['method' => ['get'], 'call' => WeekActivity::class . ':designateUUIDList'],
+        '/op_web/week_activity/designate_uuid_check' => ['method' => ['post'], 'call' => WeekActivity::class . ':designateUUIDCheck'],
         // 月月有奖
         '/op_web/month_activity/save' => ['method' => ['post'], 'call' => MonthActivity::class . ':save'],
         '/op_web/month_activity/list' => ['method' => ['get'], 'call' => MonthActivity::class . ':list'],
