@@ -38,7 +38,7 @@ class CopyManage extends ControllerBase
                 'key' => 'content',
                 'type' => 'lengthMax',
                 'error_code' => 'length_invalid',
-                'value' => 5000
+                'value' => 7000
             ],
             [
                 'key' => 'content_id',
