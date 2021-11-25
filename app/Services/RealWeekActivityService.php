@@ -486,13 +486,13 @@ class RealWeekActivityService
                 throw new RunTimeException(["add week activity fail"]);
             }
             // 更新uuid - 先删除， 后新增
+            $delRes = RealSharePosterDesignateUuidModel::delDesignateUUID($activityId, [], $employeeId);
+            if (empty($delRes)) {
+                $db->rollBack();
+                SimpleLogger::info("RealSharePosterDesignateUuidModel:delDesignateUUID batch del real_share_poster_designate_uuid fail", ['data' => $data]);
+                throw new RunTimeException(["add week activity fail"]);
+            }
             if (!empty($data['designate_uuid'])) {
-                $delRes = RealSharePosterDesignateUuidModel::delDesignateUUID($activityId, [], $employeeId);
-                if (empty($delRes)) {
-                    $db->rollBack();
-                    SimpleLogger::info("RealSharePosterDesignateUuidModel:delDesignateUUID batch del real_share_poster_designate_uuid fail", ['data' => $data]);
-                    throw new RunTimeException(["add week activity fail"]);
-                }
                 $saveUuidRes = RealSharePosterDesignateUuidModel::batchInsertUuid($activityId, array_unique($data['designate_uuid']), $employeeId, $time);
                 if (empty($saveUuidRes)) {
                     $db->rollBack();
@@ -742,7 +742,6 @@ class RealWeekActivityService
         }
         // 获取用户身份属性
         $studentIdAttribute = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentId, $studentUUID);
-
         $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
         // 获取所有当前时间启用中的活动信息列表
         $activityList = RealWeekActivityModel::getRecords([
@@ -750,8 +749,8 @@ class RealWeekActivityService
             'end_time[>]' => $time,
             'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
             'activity_id[>]' => $oldRuleLastActivityId,
+            'target_user_type[!]' => 0,
         ]);
-
         foreach ($activityList as $_activityKey => $_activityInfo) {
             // 过滤掉 目标用户类型是部分有效付费用户首次付费时间
             if ($_activityInfo['target_user_type'] == RealWeekActivityModel::TARGET_USER_PART) {
