@@ -9,6 +9,7 @@
 namespace App\Routers;
 
 
+use App\Controllers\OrgWeb\WeekActivity;
 use App\Controllers\StudentWX\ActivityCenter;
 use App\Controllers\StudentWX\RtActivity;
 use App\Controllers\StudentWX\DuanWuActivity;
@@ -60,6 +61,7 @@ class StudentWXRouter extends RouterBase
         '/student_wx/share_poster/list'    => ['method' => ['get'], 'call' => Poster::class . ':shareList'],
         '/student_wx/share_poster/detail'  => ['method' => ['get'], 'call' => Poster::class . ':shareDetail'],
         '/student_wx/referral/invite_list' => ['method' => ['get'], 'call' => Student::class . ':inviteList'],
+        '/student_wx/activity/share_poster_award_list' => ['method' => ['get'], 'call' => Activity::class . ':sharePosterSendAwardHistoryList'],
 
 
         //端午节活动

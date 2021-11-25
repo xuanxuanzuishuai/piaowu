@@ -857,7 +857,6 @@ class WeekActivityService
         ];
         // 查询活动：
         $activityInfo = self::getDssStudentCanPartakeWeekActivityList(['student_id' => $studentId, 'uuid' => $userDetail['student_info']['uuid'] ?? ''])[0] ?? [];
-        var_dump($activityInfo);exit;
         if (empty($activityInfo)) {
             return $data;
         }
@@ -869,10 +868,10 @@ class WeekActivityService
             return $data;
         }
         $typeColumn             = array_column($posterList, 'type');
-        $activityPosteridColumn = array_column($posterList, 'activity_poster_id');
+        $activityPosterIdColumn = array_column($posterList, 'activity_poster_id');
         //周周领奖 海报排序处理
         if ($activityInfo['poster_order'] == TemplatePosterModel::POSTER_ORDER) {
-            array_multisort($typeColumn, SORT_DESC, $activityPosteridColumn, SORT_ASC, $posterList);
+            array_multisort($typeColumn, SORT_DESC, $activityPosterIdColumn, SORT_ASC, $posterList);
         }
         $channel = PosterTemplateService::getChannel($type, $ext['from_type']);
         $extParams = [
@@ -923,17 +922,81 @@ class WeekActivityService
         }
         $activityInfo['ext'] = ActivityExtModel::getActivityExt($activityInfo['activity_id']);
         // 学生能否可上传
-
+        list($isCanUpload) = WeekActivityService::getStudentWeekActivityCanUpload($studentId, $activityId);
 
         $data['list'] = $posterList;
         $data['activity'] = $activityInfo;
         $data['student_info'] = $userInfo;
         $data['student_status'] = $userDetail['student_status'];
         $data['student_status_zh'] = DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$userDetail['student_status']] ?? DssStudentModel::STATUS_REGISTER;
-        $data['can_upload'] = SharePosterService::getStudentWeekActivityCanUpload($studentId, $activityId);           // 学生是否可上传
+        $data['can_upload'] = $isCanUpload;           // 学生是否可上传
         $data['is_have_activity'] = !empty($activityInfo);    // 是否有周周领奖活动
         $data['practise'] = $practise;
         $data['uuid'] = $userDetail['student_info']['uuid'];
         return $data;
+    }
+
+    /**
+     * 获取用户身份命中周周领奖活动
+     * @param $studentData
+     * @return array
+     */
+    public static function getCanPartakeWeekActivity($studentData): array
+    {
+        // 获取用户信息
+        $studentInfo = DssStudentModel::getRecord(['id' => $studentData['id']]);
+        if (empty($studentInfo)) {
+            return [];
+        }
+        // 获取用户可参与的活动
+        $activityList         = WeekActivityService::getDssStudentCanPartakeWeekActivityList([
+            'student_id' => $studentInfo['id'],
+            'uuid'       => $studentInfo['uuid'],
+        ]);
+        $canPartakeActivityId = $activityList[0]['activity_id'] ?? 0;
+        if (empty($canPartakeActivityId)) {
+            return [];
+        }
+        list($studentIsNormal, $activityTaskList, $diffActivityTaskNum) = self::getStudentWeekActivityCanUpload($studentInfo['id'], $canPartakeActivityId);
+        // 拼接可参与活动的列表
+        foreach ($activityTaskList as $_taskInfo) {
+            if (!in_array($_taskInfo['task_num'], $diffActivityTaskNum)) {
+                continue;
+            }
+            $result[] = [
+                'activity_id'         => $_taskInfo['activity_id'],
+                'task_num'            => $_taskInfo['task_num'],
+                'name'                => $_taskInfo['task_name'],
+            ];
+        }
+        unset($_taskInfo);
+        return $result ?? [];
+    }
+
+    /**
+     * 获取指定活动某个任务学生上传的海报信息
+     * @param $studentId
+     * @param $activityId
+     * @return array
+     */
+    public static function getStudentWeekActivityCanUpload($studentId, $activityId): array
+    {
+        // 获取活动任务列表
+        $activityTaskList = SharePosterTaskListModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['task_num' => 'ASC']]);
+        if (empty($activityTaskList)) {
+            return [false, [], []];
+        }
+        // 查看学生可参与的活动中已经审核通过的分享任务
+        $haveQualifiedActivityIds = SharePosterModel::getRecords([
+            'student_id'    => $studentId,
+            'activity_id'   => $activityId,
+            'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
+        ], 'task_num');
+        // 查看学生相对可参与活动的状态 - 计算差集
+        $diffActivityTaskNum = array_diff(array_column($activityTaskList, 'task_num'), $haveQualifiedActivityIds);
+        if (empty($diffActivityTaskNum)) {
+            return [false, $activityTaskList, $diffActivityTaskNum];
+        }
+        return [true, $activityTaskList, $diffActivityTaskNum];
     }
 }

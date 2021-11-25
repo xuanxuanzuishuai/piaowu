@@ -89,4 +89,33 @@ class ErpUserEventTaskAwardGoldLeafService
         }
         return $goldLeafInfo;
     }
+
+    /**
+     * 智能 - 获取学生周周领奖分享截图审核通过发放的奖励记录列表
+     * @param $studentId
+     * @param $params
+     * @return array
+     */
+    public static function getDssStudentWeekActivitySendAwardList($studentId, $params)
+    {
+        list($page, $count) = Util::formatPageCount($params);
+        $studentInfo = DssStudentModel::getRecord(['id' => $studentId]);
+        if (empty($studentInfo)) {
+            return [];
+        }
+
+        // 获取智能业务线学生周周领奖上传分享截图奖励记录列表
+        $data = ErpUserEventTaskAwardGoldLeafModel::getDssStudentWeekActivitySendAwardList($studentInfo['uuid'], [], $page, $count);
+        if (empty($data['total_count'])) {
+            return [];
+        }
+        if (!empty($data['list'])) {
+            foreach ($data['list'] as &$_info) {
+                $_info['format_create_time'] = date("Y-m-d H:i:s", $_info['create_time']);
+                $_info['format_update_time'] = date("Y-m-d H:i:s", $_info['update_time']);
+            }
+            unset($_info);
+        }
+        return $data;
+    }
 }

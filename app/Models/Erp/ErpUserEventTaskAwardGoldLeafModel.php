@@ -4,7 +4,10 @@
  */
 namespace App\Models\Erp;
 
+use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Util;
+use App\Models\OperationActivityModel;
 
 class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
 {
@@ -140,5 +143,44 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
         $sql = "select count(*) as total,uuid,finish_task_uuid from " . self::getTableNameWithDb() . ' where ' . implode(' AND ', $whereSqlStr) . ' ' . $group;
 
         return self::dbRO()->queryAll($sql);
+    }
+
+    /**
+     * 智能 - 获取学生周周领奖上传分享海报截图审核通过发放的奖励记录
+     * 条件：周周领奖的奖励，新规则的奖励， 时间倒序
+     * @param $studentUUID
+     * @param $where
+     * @param $page
+     * @param $count
+     * @param array $order
+     * @return array
+     */
+    public static function getDssStudentWeekActivitySendAwardList($studentUUID, $where, $page, $count, $order = [])
+    {
+        $returnList            = ['list' => [], 'total_count' => 0];
+        $oldRuleLastActivityId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
+        $awardTableName        = self::getTableNameWithDb();
+        $activityTableName     = OperationActivityModel::getTableNameWithDb();
+        $sqlWhere              = [
+            'a.uuid'           => $studentUUID,
+            'a.activity_id[>]' => $oldRuleLastActivityId,
+            'award_node'       => Constants::WEEK_SHARE_POSTER_AWARD_NODE,
+        ];
+
+        $db    = self::dbRO();
+        $count = $db->queryAll('select count(*) as total from ' . $awardTableName . ' as a where ' . $sqlWhere);
+        if ($count[0]['total'] <= 0) {
+            return $returnList;
+        }
+        $returnList['total'] = $count[0]['total'];
+
+        $sqlWhere['LIMIT']  = [($page - 1) * $count, $count];
+        $sqlWhere['ORDER']  = !empty($order) ? $order : ['id' => 'DESC'];
+        $fields = 'o.id (activity_id),o.name (activity_id),a.award_num,a.status,a.passes_num,a.create_time,a.update_time';
+        $list               = $db->queryAll('select ' . $fields . ' from ' . $awardTableName . ' as a ' .
+            ' left join ' . $activityTableName . ' as o on a.activity_id=o.id ' .
+            ' where ' . $sqlWhere);
+        $returnList['list'] = is_array($list) ? $list : [];
+        return $returnList;
     }
 }

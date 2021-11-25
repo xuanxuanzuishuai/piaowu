@@ -25,6 +25,8 @@ use App\Models\Erp\ErpStudentAccountModel;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\Erp\ErpUserEventTaskModel;
+use App\Models\OperationActivityModel;
+use App\Models\SharePosterDesignateUuidModel;
 use App\Models\SharePosterModel;
 use App\Libs\Erp;
 use App\Models\SharePosterTaskListModel;
@@ -541,7 +543,76 @@ class SharePosterService
         $activityId = $params['activity_id'] ?? 0;
         $studentId = $params['student_id'] ?? 0;
         $imagePath = $params['image_path'] ?? '';
+        $taskNum = $params['task_num'] ?? 0;
 
+        $oldRuleLastActivityId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
+        if ($oldRuleLastActivityId < $activityId) {
+            /** 新活动规则 */
+            // 上传并发处理，但不显示任何错误内容，用户无感
+            $redis = RedisDB::getConn();
+            $lockKey = self::KEY_POSTER_UPLOAD_LOCK . $params['student_id'] . $params['activity_id'];
+            $lock = $redis->set($lockKey, $uploadRecord['id'] ?? 0, 'EX', 3, 'NX');
+            if (empty($lock)) {
+                throw new RunTimeException(['']);
+            }
+            $time = time();
+            //审核通过不允许上传截图
+            $uploadRecord = SharePosterModel::getRecord([
+                'student_id' => $studentId,
+                'activity_id' => $activityId,
+                'task_num' => $taskNum,
+                'ORDER' => ['id' => 'DESC']
+            ], ['verify_status', 'id']);
+            if (!empty($uploadRecord) && ($uploadRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_QUALIFIED)) {
+                throw new RunTimeException(['wait_for_next_event']);
+            }
+            /** 如果没上传过，则不校验身份 */
+            if (empty($uploadRecord)) {
+                //资格检测 - 获取用户身份属性
+                list($studentIsNormal) = UserService::checkDssStudentIdentityIsNormal($studentId);
+                // 不是有效用户，检查是否是指定的uuid
+                if (!$studentIsNormal) {
+                    $studentInfo = DssStudentModel::getRecord(['id' => $studentId]);
+                    // 检查用户是不是活动指定的uuid
+                    $designateUuid = SharePosterDesignateUuidModel::getRecord(['activity_id' => $activityId, 'uuid' => $studentInfo['uuid'] ?? '']);
+                    if (empty($designateUuid)) {
+                        throw new RunTimeException(['student_status_disable']);
+                    }
+                }
+            }
+            // 检查周周领奖活动是否可以上传
+            $activityInfo = WeekActivityModel::getRecord(['activity_id' => $activityId]);
+            if (!SharePosterService::checkWeekActivityAllowUpload($activityInfo, $time)) {
+                throw new RunTimeException(['wait_for_next_event']);
+            }
+
+            $data = [
+                'student_id'  => $studentId,
+                'type'        => SharePosterModel::TYPE_WEEK_UPLOAD,
+                'activity_id' => $activityId,
+                'image_path'  => $imagePath,
+                'verify_reason' => '',
+                'unique_code' => '',
+                'create_time' => $time,
+                'update_time' => $time,
+            ];
+            if (empty($uploadRecord) || $uploadRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
+                $res = SharePosterModel::insertRecord($data);
+            } else {
+                unset($data['create_time']);
+                $count = SharePosterModel::updateRecord($uploadRecord['id'], $data);
+                if (empty($count)) {
+                    throw new RunTimeException(['update_fail']);
+                }
+                $res = $uploadRecord['id'];
+            }
+            if (empty($res)) {
+                throw new RunTimeException(['share_poster_add_fail']);
+            }
+            //系统自动审核
+            QueueService::checkPoster(['id' => $res, 'app_id' => Constants::SMART_APP_ID]);
+            return $res;
+        }
         // 上传并发处理，但不显示任何错误内容，用户无感
         $redis = RedisDB::getConn();
         $lockKey = self::KEY_POSTER_UPLOAD_LOCK . $params['student_id'] . $params['activity_id'];
@@ -569,6 +640,25 @@ class SharePosterService
             && $uploadRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_QUALIFIED) {
             throw new RunTimeException(['wait_for_next_event']);
         }
+        // 检查活动是否是可以上传 - 如果不在可上传的列表提示活动已结束
+        if (empty($uploadRecord)) {
+            //资格检测 - 获取用户身份属性
+            list($studentIsNormal) = UserService::checkDssStudentIdentityIsNormal($studentId);
+            // 不是有效用户，检查是否是指定的uuid
+            if (!$studentIsNormal) {
+                $studentInfo = DssStudentModel::getRecord(['id' => $studentId]);
+                // 检查用户是不是活动指定的uuid
+                $designateUuid = SharePosterDesignateUuidModel::getRecord(['activity_id' => $activityId, 'uuid' => $studentInfo['uuid'] ?? '']);
+                if (empty($designateUuid)) {
+                    throw new RunTimeException(['student_status_disable']);
+                }
+            }
+        }
+        // 检查周周领奖活动是否可以上传
+        $activityInfo = WeekActivityModel::getRecord(['activity_id' => $activityId]);
+        if (!SharePosterService::checkWeekActivityAllowUpload($activityInfo, $time)) {
+            throw new RunTimeException(['wait_for_next_event']);
+        }
         $time = time();
         $data = [
             'student_id'  => $studentId,
@@ -580,14 +670,6 @@ class SharePosterService
             'create_time' => $time,
             'update_time' => $time,
         ];
-
-        // 检查活动是否是可以上传 - 如果不在可上传的列表提示活动已结束
-        $activeActivityList = WeekActivityModel::getSelectList([]);
-        $activeActivityIds = array_column($activeActivityList, 'activity_id');
-        if (!in_array($activityId, $activeActivityIds)) {
-            throw new RunTimeException(['event_pass_deadline']);
-        }
-
         if (empty($uploadRecord) || $uploadRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
             $res = SharePosterModel::insertRecord($data);
         } else {
@@ -923,28 +1005,35 @@ class SharePosterService
     }
 
     /**
-     * 获取指定活动某个任务学生上传的海报信息
-     * @param $studentId
-     * @param $activityId
+     * 智能 - 检查周周领奖活动是否可以上传
+     * @param $activityInfo
+     * @param $time
      * @return bool
      */
-    public static function getStudentWeekActivityCanUpload($studentId, $activityId): bool
+    public static function checkWeekActivityAllowUpload($activityInfo, $time): bool
     {
-        // 获取活动任务列表
-        $activityTaskList = SharePosterTaskListModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['task_num' => 'ASC']]);
-        if (empty($activityTaskList)) {
+        if (empty($activityInfo)) {
             return false;
         }
-        // 查看学生可参与的活动中已经审核通过的分享任务
-        $haveQualifiedActivityIds = SharePosterModel::getRecords([
-            'student_id'    => $studentId,
-            'activity_id'   => $activityId,
-            'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
-        ], 'task_num');
-        // 查看学生相对可参与活动的状态 - 计算差集
-        $diffActivityTaskNum = array_diff(array_column($activityTaskList, 'task_num'), $haveQualifiedActivityIds);
-        if (empty($diffActivityTaskNum)) {
+        $time = $time ?? time();
+        $activityOverAllowUploadSecond = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'activity_over_allow_upload_second');
+        // 能否重新上传 - 活动结束时间超过5天不能重新上传
+        if (($time - $activityInfo['end_time']) > $activityOverAllowUploadSecond) {
             return false;
+        }
+
+        /** 检查活动状态 - 非特殊活动中的id 需要检查活动启用状态 */
+        //获取奖励发放配置
+        list($wkIds, $oneActivityId, $twoActivityId) = DictConstants::get(DictConstants::XYZOP_1262_WEEK_ACTIVITY, [
+            'xyzop_1262_week_activity_ids',
+            'xyzop_1262_week_activity_one',
+            'xyzop_1262_week_activity_two'
+        ]);
+        $wkIds = array_merge(explode(',', $wkIds), [ $oneActivityId], explode(',', $twoActivityId));
+        if (!in_array($activityInfo['activity_id'], $wkIds)) {
+            if ($activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
+                return false;
+            }
         }
         return true;
     }

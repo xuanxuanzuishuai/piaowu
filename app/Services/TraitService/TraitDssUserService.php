@@ -87,6 +87,6 @@ trait TraitDssUserService
         if (!isset($studentIdAttribute['first_pay_time'])) {
             return [false, $studentIdAttribute];
         }
-        return [false, $studentIdAttribute];
+        return [true, $studentIdAttribute];
     }
 }

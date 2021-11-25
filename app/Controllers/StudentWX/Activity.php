@@ -11,8 +11,11 @@ namespace App\Controllers\StudentWX;
 use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Services\ActivityService;
+use App\Services\ErpUserEventTaskAwardGoldLeafService;
 use App\Services\SourceMaterialService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -195,6 +198,40 @@ class Activity extends ControllerBase
             $data = ActivityService::inviteActivityData($this->ci['user_info']['user_id'], $fromType);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 智能 - 周周领奖发奖记录
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function sharePosterSendAwardHistoryList(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'page',
+                'type' => 'integer',
+                'error_code' => 'page_is_integer'
+            ],
+            [
+                'key' => 'count',
+                'type' => 'integer',
+                'error_code' => 'count_is_integer'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $data = ErpUserEventTaskAwardGoldLeafService::getDssStudentWeekActivitySendAwardList($this->ci['user_info']['user_id'], $params);
+        } catch (RunTimeException $e) {
+            SimpleLogger::info("realSharePosterAwardList_error", ['params' => $params, 'err' => $e->getData()]);
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, $data);
     }

@@ -436,6 +436,7 @@ class SharePosterModel extends Model
             sp.points_award_id,
             sp.award_id,
             sp.type,
+            sp.task_num,
             ac.name activity_name,
             ac.start_time,
             ac.end_time

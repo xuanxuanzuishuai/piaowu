@@ -97,6 +97,11 @@ class Poster extends ControllerBase
                 'key' => 'image_path',
                 'type' => 'required',
                 'error_code' => 'image_path_is_required'
+            ],
+            [
+                'key' => 'task_num',
+                'type' => 'required',
+                'error_code' => 'task_num_is_required'
             ]
         ];
 

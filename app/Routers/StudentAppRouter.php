@@ -252,5 +252,7 @@ class StudentAppRouter extends RouterBase
             'call' => \App\Controllers\StudentApp\Activity::class.':getInviteActivity',
             'middles' => [AppAuthMiddleWare::class],
         ],
+        // 周周领奖发奖记录列表
+        '/student_wx/activity/share_poster_award_list' => ['method' => ['get'], 'call' => Activity::class . ':sharePosterSendAwardHistoryList'],
     ];
 }

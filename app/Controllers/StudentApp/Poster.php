@@ -20,6 +20,7 @@ use App\Services\ActivityService;
 use App\Services\PosterService;
 use App\Services\PosterTemplateService;
 use App\Services\UserService;
+use App\Services\WeekActivityService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -114,8 +115,11 @@ class Poster extends ControllerBase
         try {
             $userInfo = $this->ci['user_info'];
             $params['from_type'] = ActivityService::FROM_TYPE_APP;
-            $data = PosterTemplateService::getPosterList($userInfo['user_id'], $params['type'], $params['activity_id'] ?? 0, $params);
-
+            if ($params['type']) {
+                $data = WeekActivityService::getWeekActivityData($userInfo['user_id'], $params['activity_id'] ?? 0, $params);
+            } else {
+                $data = PosterTemplateService::getPosterList($userInfo['user_id'], $params['type'], $params['activity_id'] ?? 0, $params);
+            }
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
