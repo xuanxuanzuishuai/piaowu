@@ -85,7 +85,7 @@ class RealWeekActivityService
             'share_poster_prompt' => !empty($data['share_poster_prompt']) ? Util::textEncode($data['share_poster_prompt']) : '',
             'retention_copy' => !empty($data['retention_copy']) ? Util::textEncode($data['retention_copy']) : '',
             'poster_order' => $data['poster_order'],
-            'target_user_type' => $data['target_user_type'] ?? 0,
+            'target_user_type' => !empty($data['target_user_type']) ? intval($data['target_user_type']) : 0,
             'target_use_first_pay_time_start' => !empty($data['target_use_first_pay_time_start']) ? strtotime($data['target_use_first_pay_time_start']) : 0,
             'target_use_first_pay_time_end' => !empty($data['target_use_first_pay_time_end']) ? strtotime($data['target_use_first_pay_time_end']) : 0,
             'delay_second' => $delaySecond,
@@ -186,7 +186,7 @@ class RealWeekActivityService
             return 'award_rule_is_required';
         }
         // 部分真人付费有效用户 需要检查首次付费时间
-        $targetUserType = $data['target_user_type'] ?? 0;
+        $targetUserType = !empty($data['target_user_type']) ? intval($data['target_user_type']) : 0;
         $startFirstPayTime = !empty($data['target_use_first_pay_time_start']) ?  strtotime($data['target_use_first_pay_time_start']) : 0;
         $endFirstPayTime = !empty($data['target_use_first_pay_time_end']) ?  strtotime($data['target_use_first_pay_time_end']) : 0;
         if ($targetUserType == RealWeekActivityModel::TARGET_USER_PART) {
@@ -267,7 +267,7 @@ class RealWeekActivityService
         $info['delay_day'] = $activityInfo['delay_second']/Util::TIMESTAMP_ONEDAY;
         $info['format_target_use_first_pay_time_start'] = !empty($activityInfo['target_use_first_pay_time_start']) ? date("Y-m-d H:i:s", $activityInfo['target_use_first_pay_time_start']) : '';
         $info['format_target_use_first_pay_time_end'] = !empty($activityInfo['target_use_first_pay_time_end']) ? date("Y-m-d H:i:s", $activityInfo['target_use_first_pay_time_end']) : '';
-
+        $info['target_user_type'] = !empty($activityInfo['target_user_type']) ? $activityInfo['target_user_type'] : '';
         if (empty($info['remark'])) {
             $info['remark'] = $extInfo['remark'] ?? '';
         }
@@ -414,7 +414,7 @@ class RealWeekActivityService
             'share_poster_prompt' => !empty($data['share_poster_prompt']) ? Util::textEncode($data['share_poster_prompt']) : '',
             'retention_copy' => !empty($data['retention_copy']) ? Util::textEncode($data['retention_copy']) : '',
             'poster_order' => $data['poster_order'],
-            'target_user_type' => $data['target_user_type'] ?? 0,
+            'target_user_type' => !empty($data['target_user_type']) ? intval($data['target_user_type']) : 0,
             'target_use_first_pay_time_start' => !empty($data['target_use_first_pay_time_start']) ? strtotime($data['target_use_first_pay_time_start']) : 0,
             'target_use_first_pay_time_end' => !empty($data['target_use_first_pay_time_end']) ? strtotime($data['target_use_first_pay_time_end']) : 0,
             'delay_second' => $delaySecond,

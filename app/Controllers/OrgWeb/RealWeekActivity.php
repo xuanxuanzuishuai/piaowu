@@ -47,11 +47,6 @@ class RealWeekActivity extends ControllerBase
                 'error_code' => 'name_length_invalid'
             ],
             [
-               'key' => 'target_user_type',
-               'type' => 'required',
-               'error_code' => 'target_user_type_is_required'
-            ],
-            [
                 'key' => 'share_word',
                 'type' => 'required',
                 'error_code' => 'share_word_is_required'
