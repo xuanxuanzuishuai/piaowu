@@ -32,24 +32,9 @@ class ActivityPosterModel extends Model
      * @param string[] $order
      * @return array
      */
-    public static function getListByActivityId(
-        $activityId,
-        $status = self::NORMAL_STATUS,
-        $isDel = self::IS_DEL_FALSE,
-        $order = ['id' => 'ASC']
-    ) {
-        $redis = RedisDB::getConn();
-        $cacheKey = self::KEY_ACTIVITY_POSTER . implode('_', [$activityId, $status, $isDel]);
-        $cache = $redis->get($cacheKey);
-        if (!empty($cache)) {
-            return json_decode($cache, true);
-        }
-
-        $list = self::getRecords(['activity_id' => $activityId, 'status' => $status, 'is_del' => $isDel, 'ORDER' => $order]);
-        if (!empty($list)) {
-            $redis->setex($cacheKey, Util::TIMESTAMP_ONEDAY, json_encode($list));
-        }
-        return $list;
+    public static function getListByActivityId($activityId, $status = self::NORMAL_STATUS, $isDel = self::IS_DEL_FALSE, $order = ['id' => 'ASC'])
+    {
+        return self::getRecords(['activity_id' => $activityId, 'status' => $status, 'is_del' => $isDel, 'ORDER' => $order]);
     }
 
     /**

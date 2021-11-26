@@ -6,7 +6,6 @@
 namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
-use App\Libs\Constants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;

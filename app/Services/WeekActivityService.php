@@ -195,18 +195,21 @@ class WeekActivityService
         if (empty($data['award_rule'])) {
             return 'award_rule_is_required';
         }
-        // 部分真人付费有效用户 需要检查首次付费时间
-        $targetUserType = $data['target_user_type'] ?? 0;
-        $startFirstPayTime = !empty($data['target_use_first_pay_time_start']) ?  strtotime($data['target_use_first_pay_time_start']) : 0;
-        $endFirstPayTime = !empty($data['target_use_first_pay_time_end']) ?  strtotime($data['target_use_first_pay_time_end']) : 0;
-        if ($targetUserType == WeekActivityModel::TARGET_USER_PART) {
-            if ($startFirstPayTime <= 0 || $startFirstPayTime >= $endFirstPayTime) {
-                return 'first_start_time_eq_end_time';
+
+        // 周周领奖 - 分享任务不能为空
+        if ($type == self::WEEK_ACTIVITY_TYPE) {
+            if (empty($data['task_list'])) {
+                return 'task_list_is_required';
             }
-        }
-        // 分享任务不能为空
-        if (empty($data['task_list'])) {
-            return 'task_list_is_required';
+            // 部分真人付费有效用户 需要检查首次付费时间
+            $targetUserType = $data['target_user_type'] ?? 0;
+            $startFirstPayTime = !empty($data['target_use_first_pay_time_start']) ?  strtotime($data['target_use_first_pay_time_start']) : 0;
+            $endFirstPayTime = !empty($data['target_use_first_pay_time_end']) ?  strtotime($data['target_use_first_pay_time_end']) : 0;
+            if ($targetUserType == WeekActivityModel::TARGET_USER_PART) {
+                if ($startFirstPayTime <= 0 || $startFirstPayTime >= $endFirstPayTime) {
+                    return 'first_start_time_eq_end_time';
+                }
+            }
         }
         return '';
     }
@@ -389,8 +392,8 @@ class WeekActivityService
         }
         // 活动是待启用状态，检查导入的uuid是否正确
         if ($weekActivityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_OFF) {
-            $errUuid = UserService::checkStudentUuidExists(Constants::REAL_APP_ID, $data['designate_uuid'] ?? [], $activityId);
-            if (!empty($errUuid['no_exists_uuid']) || !empty($errUuid['activity_having_uuid'])) {
+            $errUuid = UserService::checkDssStudentUuidExists($data['designate_uuid'] ?? [], $activityId);
+            if (!empty($errUuid['no_exists_uuid'])) {
                 $returnData['no_exists_uuid'] = $errUuid['no_exists_uuid'];
                 $returnData['activity_having_uuid'] = $errUuid['activity_having_uuid'];
                 return $returnData;
@@ -499,13 +502,13 @@ class WeekActivityService
                 throw new RunTimeException(["add week activity fail"]);
             }
             // 更新uuid - 先删除， 后新增
+            $delRes = SharePosterDesignateUuidModel::delDesignateUUID($activityId, [], $employeeId);
+            if (empty($delRes)) {
+                $db->rollBack();
+                SimpleLogger::info("RealSharePosterDesignateUuidModel:delDesignateUUID batch del share_poster_designate_uuid fail", ['data' => $data]);
+                throw new RunTimeException(["add week activity fail"]);
+            }
             if (!empty($data['designate_uuid'])) {
-                $delRes = SharePosterDesignateUuidModel::delDesignateUUID($activityId, [], $employeeId);
-                if (empty($delRes)) {
-                    $db->rollBack();
-                    SimpleLogger::info("RealSharePosterDesignateUuidModel:delDesignateUUID batch del share_poster_designate_uuid fail", ['data' => $data]);
-                    throw new RunTimeException(["add week activity fail"]);
-                }
                 $saveUuidRes = SharePosterDesignateUuidModel::batchInsertUuid($activityId, array_unique($data['designate_uuid']), $employeeId, $time);
                 if (empty($saveUuidRes)) {
                     $db->rollBack();
@@ -540,31 +543,11 @@ class WeekActivityService
         if ($activityInfo['enable_status'] == $enableStatus) {
             return true;
         }
-        // 如果是启用 检查时间是否冲突
-        if ($enableStatus == OperationActivityModel::ENABLE_STATUS_ON) {
-            $startActivity = WeekActivityModel::checkTimeConflict($activityInfo['start_time'], $activityInfo['end_time'], $activityInfo['event_id']);
-            if (!empty($startActivity)) {
-                throw new RunTimeException(['activity_time_conflict_id', '', '', array_column($startActivity, 'activity_id')]);
-            }
-        }
-
         // 修改启用状态
         $res = WeekActivityModel::updateRecord($activityInfo['id'], ['enable_status' => $enableStatus, 'operator_id' => $employeeId, 'update_time' => time()]);
         if (is_null($res)) {
             throw new RunTimeException(['update_failure']);
         }
-
-        // 删除缓存
-        ActivityService::delActivityCache(
-            $activityId,
-            [
-                OperationActivityModel::KEY_CURRENT_ACTIVE,
-            ],
-            [
-                OperationActivityModel::KEY_CURRENT_ACTIVE . '_poster_type' => TemplatePosterModel::STANDARD_POSTER,   // 周周领奖 - 标准海报
-            ]
-        );
-
         return true;
     }
 
@@ -773,6 +756,7 @@ class WeekActivityService
     /**
      * 智能 - 获取学生可参与的周周领奖活动列表
      * 排序规则： 按照活动优先级从小到大， 相同优先级的再按照活动ID从大到小排序
+     * 必传字段:  [ student_id=> x ]
      * @param $studentInfo
      * @return array
      */
@@ -799,6 +783,7 @@ class WeekActivityService
                 'end_time[>]' => $time,
                 'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
                 'activity_id[>]' => $oldRuleLastActivityId,
+                'target_user_type[!]' => 0,
             ]);
             foreach ($activityList as $_activityKey => $_activityInfo) {
                 // 过滤掉 目标用户类型是部分有效付费用户首次付费时间
@@ -806,10 +791,12 @@ class WeekActivityService
                     if ($studentIdAttribute['first_pay_time'] <= $_activityInfo['target_use_first_pay_time_start']) {
                         // 用户首次付费时间小于活动设定的首次付费起始时间，删除
                         unset($activityList[$_activityKey]);
+                        continue;
                     }
                     if ($studentIdAttribute['first_pay_time'] > $_activityInfo['target_use_first_pay_time_end']) {
                         // 用户首次付费时间大于活动设定的首次付费截止时间， 删除
                         unset($activityList[$_activityKey]);
+                        continue;
                     }
                 }
             }
@@ -860,6 +847,8 @@ class WeekActivityService
         if (empty($activityInfo)) {
             return $data;
         }
+        // 格式化活动信息
+        $activityInfo = ActivityService::formatData($activityInfo);
         //练琴数据
         $practise = AprViewStudentModel::getStudentTotalSum($studentId);
         // 查询活动对应海报

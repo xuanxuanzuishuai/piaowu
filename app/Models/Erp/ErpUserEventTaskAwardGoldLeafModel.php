@@ -161,22 +161,30 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
         $oldRuleLastActivityId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
         $awardTableName        = self::getTableNameWithDb();
         $activityTableName     = OperationActivityModel::getTableNameWithDb();
-        $sqlWhere              = [
-            'a.uuid'           => $studentUUID,
-            'a.activity_id[>]' => $oldRuleLastActivityId,
-            'award_node'       => Constants::WEEK_SHARE_POSTER_AWARD_NODE,
-        ];
+        // 组合sql
+        $sqlWhere = 'a.uuid=' . "'" . $studentUUID . "'";
+        $sqlWhere .= ' AND a.award_node=' . "'" . Constants::WEEK_SHARE_POSTER_AWARD_NODE . "'";
+        $sqlWhere .= ' AND a.activity_id>' . $oldRuleLastActivityId;
 
         $db    = self::dbRO();
-        $count = $db->queryAll('select count(*) as total from ' . $awardTableName . ' as a where ' . $sqlWhere);
-        if ($count[0]['total'] <= 0) {
+        $totalCount = $db->queryAll('select count(*) as total from ' . $awardTableName . ' as a where ' . $sqlWhere);
+        if ($totalCount[0]['total'] <= 0) {
             return $returnList;
         }
-        $returnList['total'] = $count[0]['total'];
+        $returnList['total_count'] = $totalCount[0]['total'];
 
-        $sqlWhere['LIMIT']  = [($page - 1) * $count, $count];
-        $sqlWhere['ORDER']  = !empty($order) ? $order : ['id' => 'DESC'];
-        $fields = 'o.id (activity_id),o.name (activity_id),a.award_num,a.status,a.passes_num,a.create_time,a.update_time';
+        // 重新组合查询条件的sql
+        if (!empty($order)) {
+            $sqlWhere .= ' ORDER BY ';
+            foreach ($order as $_ok => $_ov) {
+                $sqlWhere .= $_ok . ' ' . $_ov;
+            }
+            unset($_ok, $_ok);
+        } else {
+            $sqlWhere .= ' ORDER BY a.id DESC';
+        }
+        $sqlWhere .= ' LIMIT ' . ($page - 1) * $count . ',' . $count;
+        $fields = 'o.id activity_id,o.name activity_name,a.award_num,a.status,a.passes_num,a.create_time,a.update_time';
         $list               = $db->queryAll('select ' . $fields . ' from ' . $awardTableName . ' as a ' .
             ' left join ' . $activityTableName . ' as o on a.activity_id=o.id ' .
             ' where ' . $sqlWhere);

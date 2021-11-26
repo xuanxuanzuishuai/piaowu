@@ -30,7 +30,7 @@ class RealStudentWXRouter extends RouterBase
         '/real_student_wx/activity/week_poster_upload' => ['method' => ['post'], 'call' => StudentActivity::class . ':weekActivityPosterScreenShotUpload'],
         '/real_student_wx/activity/share_poster_history' => ['method' => ['post'], 'call' => StudentActivity::class . ':sharePosterHistory'],
         '/real_student_wx/activity/share_poster_detail' => ['method' => ['post'], 'call' => StudentActivity::class . ':sharePosterDetail'],
-        '/real_student_wx/activity/share_poster_award_list' => ['method' => ['get'], 'call' => StudentActivity::class . ':realSharePosterAwardList'],
+        '/real_student_wx/activity/share_poster_award_list' => ['method' => ['post'], 'call' => StudentActivity::class . ':realSharePosterAwardList'],
         // 月月有奖 && 周周领奖 分享海报文案列表
         '/real_student_wx/poster/word_list'   => ['method' => ['post'], 'call' => StudentActivity::class . ':realSharePosterWordList'],
         // 月月有奖二次分享海报对应的二维码

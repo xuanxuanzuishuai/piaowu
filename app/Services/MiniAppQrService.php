@@ -36,9 +36,9 @@ class MiniAppQrService
 
     const REDIS_CREATE_MINI_APP_ID_LOCK   = 'create_mini_app_id_lock_new';    // 生成小程序码标识锁 - redis_key
     const REDIS_WAIT_USE_MINI_APP_ID_INFO = 'wait_use_mini_app_info_new';     // 等待使用的小程序码信息 - redis_key
-    const REDIS_WAIT_USE_MINI_APP_ID_LIST = 'wait_user_mini_app_list_new';    // 等待使用的小程序码标识 - redis_key
+    // const REDIS_WAIT_USE_MINI_APP_ID_LIST = 'wait_user_mini_app_list_new';    // 等待使用的小程序码标识 - redis_key
     const REDIS_FAIL_MINI_APP_ID_LIST     = 'fail_mini_app_list_new';         // 小程序码生成失败的标识列表 - redis_key
-    const REDIS_USE_MINI_APP_QR_NUM       = 'use_mini_app_qr_num_new';         // 小程序码已使用数量 - redis_key
+    // const REDIS_USE_MINI_APP_QR_NUM       = 'use_mini_app_qr_num_new';         // 小程序码已使用数量 - redis_key
     const REDIS_WAIT_USE_MINI_QR_ID       = 'mini_app_wait_use_qr_id_list_new';  // 等待使用的小程序码标识 - redis_key  set集合
 
     /**
@@ -191,14 +191,8 @@ class MiniAppQrService
     {
         $redis = RedisDB::getConn();
 
-        // TODO 这里当self::REDIS_WAIT_USE_MINI_APP_ID_LIST redis里面的数据为空后，可以删除这个逻辑
-        if ($appId == Constants::SMART_APP_ID && $busiesType == Constants::SMART_MINI_BUSI_TYPE) {
-            $isRedisExists = $redis->sismember(self::REDIS_WAIT_USE_MINI_APP_ID_LIST, $qrId);
-        }
         // 检查redis 同一个app_id,busies_type缓存中是否已经存在
-        if (empty($isRedisExists)) {
-            $isRedisExists = $redis->sismember(self::getRedisKeyMiniQrIdSignPrefix($appId, $busiesType) . self::REDIS_WAIT_USE_MINI_QR_ID, $qrId);
-        }
+        $isRedisExists = $redis->sismember(self::getRedisKeyMiniQrIdSignPrefix($appId, $busiesType) . self::REDIS_WAIT_USE_MINI_QR_ID, $qrId);
         if (!empty($isRedisExists)) {
             SimpleLogger::error("checkQrIdExists mini app qr id is redis exists", ['qr_id' => $qrId]);
             return true;
@@ -577,14 +571,7 @@ class MiniAppQrService
     {
         $signPrefix = self::getRedisKeyMiniQrIdSignPrefix($appId, $busiesType);
         $redis = RedisDB::getConn();
-        if ($appId == Constants::SMART_APP_ID && $busiesType == Constants::SMART_MINI_BUSI_TYPE) {
-            // TODO qingfeng.lian 新老redis key 兼容；这里当老的redis数据为空时，可以删除这里的逻辑
-            $qrInfo['qr_id'] = $redis->spop(self::REDIS_WAIT_USE_MINI_APP_ID_LIST);
-        }
-        if (empty($qrInfo['qr_id'])) {
-            $qrInfo['qr_id'] = $redis->spop($signPrefix . self::REDIS_WAIT_USE_MINI_QR_ID);
-
-        }
+        $qrInfo['qr_id'] = $redis->spop($signPrefix . self::REDIS_WAIT_USE_MINI_QR_ID);
         // 如果qr_id 为空，需要立即启动生成小程序
         if (empty($qrInfo['qr_id'])) {
             self::startCreateMiniAppId($appId, $busiesType);
@@ -600,13 +587,7 @@ class MiniAppQrService
         }
         SimpleLogger::info("getUserMiniAppQr qr_id", [$qrInfo, $appId, $busiesType, $tryNum]);
 
-        if ($appId == Constants::SMART_APP_ID && $busiesType == Constants::SMART_MINI_BUSI_TYPE) {
-            // TODO qingfeng.lian 新老redis key 兼容；这里当老的redis数据为空时，可以删除这里的逻辑
-            $miniAppIdInfo = $redis->hget(self::REDIS_WAIT_USE_MINI_APP_ID_INFO, $qrInfo['qr_id']);
-        }
-        if (empty($miniAppIdInfo)) {
-            $miniAppIdInfo = $redis->hget($signPrefix . self::REDIS_WAIT_USE_MINI_APP_ID_INFO, $qrInfo['qr_id']);
-        }
+        $miniAppIdInfo = $redis->hget($signPrefix . self::REDIS_WAIT_USE_MINI_APP_ID_INFO, $qrInfo['qr_id']);
         $miniAppIdInfo = json_decode($miniAppIdInfo, true);
         $qrInfo['qr_path'] = $miniAppIdInfo['qr_path'];
 
@@ -623,10 +604,6 @@ class MiniAppQrService
 
         // 清理缓存
         $redis->hdel($signPrefix . self::REDIS_WAIT_USE_MINI_APP_ID_INFO, [$qrInfo['qr_id']]);
-        if ($appId == Constants::SMART_APP_ID && $busiesType == Constants::SMART_MINI_BUSI_TYPE) {
-            // TODO qingfeng.lian 新老redis key 兼容；这里当老的redis数据为空时，可以删除这里的逻辑
-            $redis->hdel(self::REDIS_WAIT_USE_MINI_APP_ID_INFO, [$qrInfo['qr_id']]);
-        }
         return $qrData;
     }
 

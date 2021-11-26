@@ -498,8 +498,13 @@ class QueueService
     public static function addUserPosterAward($data)
     {
         try {
+            // 获取延时时间， 默认1-30秒随机数， 如果指定延时时间则使用指定的时间
+            $deferSecond = rand(1, 30);
+            if (!empty($data['defer_second'])) {
+                $deferSecond = intval($data['defer_second']);
+            }
             $topic = new UserPointsExchangeRedPackTopic();
-            $topic->addUserPosterAward($data)->publish(rand(1, 30));
+            $topic->addUserPosterAward($data)->publish($deferSecond);
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), [$data]);
             return false;

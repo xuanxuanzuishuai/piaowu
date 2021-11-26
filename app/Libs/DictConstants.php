@@ -1115,6 +1115,7 @@ class DictConstants {
             'send_award_gold_left_wx_msg_id',  // 发放奖励的消息id
             'refused_poster_wx_msg_id',  // 分享截图未通过消息id
             'approval_poster_wx_msg_id',  // 分享截图通过消息id
+            'week_activity_send_award_task_id',  // 周周领奖发放奖励时对应的task_id
         ],
     ];
 
@@ -1122,8 +1123,9 @@ class DictConstants {
     const DSS_JUMP_LINK_CONFIG = [
         'type' => 'DSS_JUMP_LINK_CONFIG',
         'keys' => [
-            'dss_share_poster_history_list',  // 周周领奖上传分享截图历史记录列表链接
-            'dss_week_activity_detail',  // 周周领奖详情页连接
+            'dss_share_poster_history_list',    // 周周领奖上传分享截图历史记录列表链接
+            'dss_week_activity_detail',         // 周周领奖详情页连接
+            'dss_gold_left_shop_url',           // 金叶子商城链接
         ],
     ];
 

@@ -563,7 +563,7 @@ class PosterService
             $studentInfo['student_id'] = $studentInfo['id'] ?? 0;
             $activityData = RealWeekActivityService::getStudentCanPartakeWeekActivityList($studentInfo)[0] ?? [];
         } elseif ($appId == Constants::SMART_APP_ID) {
-            $activityData = OperationActivityModel::getActiveActivity(TemplatePosterModel::STANDARD_POSTER);
+            $activityData = WeekActivityService::getDssStudentCanPartakeWeekActivityList(['student_id' => $studentId])[0] ?? [];
         }
 
         return $activityData['activity_id'] ?? 0;
