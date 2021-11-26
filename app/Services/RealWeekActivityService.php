@@ -752,20 +752,22 @@ class RealWeekActivityService
             'target_user_type[!]' => 0,
         ]);
         foreach ($activityList as $_activityKey => $_activityInfo) {
+            // 检查一下用户是否是有效用户，不是有效用户不可能有可参与的活动
+            if (!UserService::checkRealStudentIdentityIsNormal($studentId, $studentIdAttribute)) {
+                unset($activityList[$_activityKey]);
+                continue;
+            }
             // 过滤掉 目标用户类型是部分有效付费用户首次付费时间
             if ($_activityInfo['target_user_type'] == RealWeekActivityModel::TARGET_USER_PART) {
                 if ($studentIdAttribute['first_pay_time'] <= $_activityInfo['target_use_first_pay_time_start']) {
                     // 用户首次付费时间小于活动设定的首次付费起始时间，删除
                     unset($activityList[$_activityKey]);
+                    continue;
                 }
                 if ($studentIdAttribute['first_pay_time'] > $_activityInfo['target_use_first_pay_time_end']) {
                     // 用户首次付费时间大于活动设定的首次付费截止时间， 删除
                     unset($activityList[$_activityKey]);
-                }
-            } elseif ($_activityInfo['target_user_type'] == RealWeekActivityModel::TARGET_USER_ALL) {
-                // 全部付费用户活动， 检查一下用户是否是有效用户，不是有效用户不可能有可参与的活动
-                if (!UserService::checkRealStudentIdentityIsNormal($studentId, $studentIdAttribute)) {
-                    unset($activityList[$_activityKey]);
+                    continue;
                 }
             }
         }

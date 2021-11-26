@@ -74,11 +74,11 @@ class ScriptSendRealWeekActivityAward
             // 放入用户发奖队列
             foreach ($studentList as $_studentId) {
                 $queueData = [
-                    'app_id'      => Constants::REAL_APP_ID,
-                    'student_id'  => $_studentId,
-                    'activity_id' => $item['activity_id'],
-                    'act_status'  => RealUserAwardMagicStoneModel::STATUS_GIVE,
-                    'defer_second'=> self::getStudentWeekActivitySendAwardDeferSecond($_studentId)
+                    'app_id'       => Constants::REAL_APP_ID,
+                    'student_id'   => $_studentId,
+                    'activity_id'  => $item['activity_id'],
+                    'act_status'   => RealUserAwardMagicStoneModel::STATUS_GIVE,
+                    'defer_second' => self::getStudentWeekActivitySendAwardDeferSecond($_studentId)
                 ];
                 QueueService::addRealUserPosterAward($queueData);
                 SimpleLogger::info("qingfeng-test-addRealUserPosterAward", [$queueData]);
@@ -142,7 +142,8 @@ class ScriptSendRealWeekActivityAward
         $studentList = RealSharePosterModel::getRecords([
             'activity_id'   => $activityId,
             'verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED,
-            'GROUP' => ['student_id'],
+            'type'          => RealSharePosterModel::TYPE_WEEK_UPLOAD,
+            'GROUP'         => ['student_id'],
         ], ['student_id']);
         if (empty($studentList)) {
             return [];
@@ -152,7 +153,7 @@ class ScriptSendRealWeekActivityAward
 
     public static function lock()
     {
-        $redis        = RedisDB::getConn();
+        $redis      = RedisDB::getConn();
         $expireTime = strtotime(date("Y-m-d 23:59:59", time())) - time();
         return $redis->set(self::LOCK_KEY, 1, 'EX', $expireTime, 'NX');
     }
@@ -162,7 +163,8 @@ class ScriptSendRealWeekActivityAward
         return (RedisDB::getConn())->del([self::LOCK_KEY]);
     }
 
-    public static function returnResponse($isUnlock, $data){
+    public static function returnResponse($isUnlock, $data)
+    {
         if ($isUnlock) {
             self::unlock();
         }
