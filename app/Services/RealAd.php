@@ -31,10 +31,17 @@ class RealAd
     {
         switch ($msgBody['ad_channel']) {
             case RealAdCallback::CHANNEL_HUAWEI:
-                $trackIdArr          = json_decode($msgBody['track_id'], true);
-                $msgBody['ad_id']    = $trackIdArr['channel'] ?? '';
-                $msgBody['callback'] = $trackIdArr['callback'] ?? '';
-                $msgBody['ext']      = $msgBody['track_id'];
+                $trackIdArr = json_decode($msgBody['track_id'], true);
+                //正常的track_id参数
+                if (!is_null($trackIdArr)) {
+                    $msgBody['ad_id']    = $trackIdArr['channel'] ?? '';
+                    $msgBody['callback'] = $trackIdArr['callback'] ?? '';
+                    $msgBody['ext']      = $msgBody['track_id'];
+                }
+                //异常的track_id参数
+                if (!empty($msgBody['track_id']) && is_null($trackIdArr) && strlen($msgBody['track_id']) == 6) {
+                    $msgBody['ad_id'] = $msgBody['track_id'] ?? '';
+                }
                 unset($msgBody['track_id']);
         }
 
