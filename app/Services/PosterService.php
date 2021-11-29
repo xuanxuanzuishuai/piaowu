@@ -21,6 +21,7 @@ use App\Models\TemplatePosterModel;
 
 class PosterService
 {
+    private static $checkActivityData = [];
     /**
      * 生成带用户QR码海报
      * @param $posterPath
@@ -558,15 +559,18 @@ class PosterService
     public static function getCheckActivityId($appId, $studentId)
     {
         SimpleLogger::info('getCheckActivityId', [$appId, $studentId]);
+        $key = 'student_check_activity_' . $appId . '_' . $studentId;
+        if (isset(self::$checkActivityData[$key])) {
+            return self::$checkActivityData;
+        }
         if ($appId == Constants::REAL_APP_ID) {
             $studentInfo = ErpStudentModel::getRecord(['id' => $studentId]);
             $studentInfo['student_id'] = $studentInfo['id'] ?? 0;
-            $activityData = RealWeekActivityService::getStudentCanPartakeWeekActivityList($studentInfo)[0] ?? [];
+            self::$checkActivityData[$key] = RealWeekActivityService::getStudentCanPartakeWeekActivityList($studentInfo)[0] ?? [];
         } elseif ($appId == Constants::SMART_APP_ID) {
-            $activityData = WeekActivityService::getDssStudentCanPartakeWeekActivityList(['student_id' => $studentId])[0] ?? [];
+            self::$checkActivityData[$key] = WeekActivityService::getDssStudentCanPartakeWeekActivityList(['student_id' => $studentId])[0] ?? [];
         }
-
-        return $activityData['activity_id'] ?? 0;
+        return self::$checkActivityData[$key]['activity_id'] ?? 0;
     }
 
 

@@ -7,6 +7,7 @@
 
 namespace App\Services\TraitService;
 
+use App\Libs\Constants;
 use App\Libs\Dss;
 use App\Libs\SimpleLogger;
 use App\Models\Dss\DssStudentModel;
@@ -14,6 +15,8 @@ use App\Models\SharePosterDesignateUuidModel;
 
 trait TraitDssUserService
 {
+    private static $studentAttribute = [];
+
     /**
      * DSS - 检查uuid是否存在
      * @param $studentUuid
@@ -59,9 +62,12 @@ trait TraitDssUserService
         if (empty($studentId)) {
             return [];
         }
-        $studentIdAttribute = (new Dss())->getUserCanExchangeNum(['student_id' => $studentId]);
-        SimpleLogger::info('getDssStudentIdentityAttributeById', [$studentId, $studentIdAttribute]);
-        return $studentIdAttribute;
+        $key = Constants::SMART_APP_ID . '_' . $studentId;
+        if (!isset(self::$studentAttribute[$key])) {
+            self::$studentAttribute[$key] = (new Dss())->getUserCanExchangeNum(['student_id' => $studentId]);
+        }
+        SimpleLogger::info('getDssStudentIdentityAttributeById', [$studentId, self::$studentAttribute[$key]]);
+        return self::$studentAttribute[$key];
     }
 
     /**
