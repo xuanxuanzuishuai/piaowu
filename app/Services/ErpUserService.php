@@ -118,6 +118,11 @@ class ErpUserService
                 $payStatusData['pay_status'] = ErpStudentAppModel::STATUS_PAID_NO_REMAINING_COURSES;
             }
         }
+        //白名单认为付费
+        $res = UserService::checkRealStudentIdentityIsNormal($studentId);
+        if ($res) {
+            $studentAppData['status'] = ErpStudentAppModel::STATUS_PAID;
+        }
         $payStatusData['status_zh'] = ErpStudentAppModel::$statusMap[$studentAppData['status']];
         return $payStatusData;
     }
