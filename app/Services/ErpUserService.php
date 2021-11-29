@@ -121,7 +121,7 @@ class ErpUserService
         //白名单认为付费
         $res = UserService::checkRealStudentIdentityIsNormal($studentId);
         if ($res) {
-            $studentAppData['status'] = ErpStudentAppModel::STATUS_PAID;
+            $payStatusData['pay_status'] = $studentAppData['status'] = ErpStudentAppModel::STATUS_PAID;
         }
         $payStatusData['status_zh'] = ErpStudentAppModel::$statusMap[$studentAppData['status']];
         return $payStatusData;
