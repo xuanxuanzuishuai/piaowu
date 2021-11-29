@@ -45,12 +45,16 @@ class RealActivityService
         if (empty($studentDetail)) {
             throw new RunTimeException(['student_not_exist']);
         }
+        // 获取学生付费状态
+        $studentPayStatus = ErpUserService::getStudentStatus($studentId);
         $data['student_info'] = [
             'uuid' => $studentDetail['uuid'],
             'nickname' => !empty($studentDetail['name']) ? $studentDetail['name'] : ErpUserService::getStudentDefaultName($studentDetail['mobile']),
             'thumb' => ErpUserService::getStudentThumbUrl([$studentDetail['thumb']])[0],
             'real_person_paid' => 0,
             'can_upload' => true,
+            'pay_status' => $studentPayStatus['pay_status'] ?? '',
+            'pay_status_zh' => $studentPayStatus['status_zh'] ?? '',
         ];
         // 获取活动详情
         $activityList = RealWeekActivityService::getStudentCanPartakeWeekActivityList($studentDetail);
