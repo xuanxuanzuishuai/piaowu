@@ -585,31 +585,6 @@ class QueueService
     }
 
     /**
-     * 预生成小程序码
-     * @param string $openId
-     * @param array $data
-     * @return bool
-     */
-    public static function preGenerateQrCode($openId = '', $data = [])
-    {
-        // TODO 20210625 用户交互预生成停止， 启用新的预生成逻辑。
-        return true;
-        if (empty($openId) && empty($data['user_id'])) {
-            return false;
-        }
-        if (!empty($data['user_id']) && StudentService::isAnonymousStudentId($data['user_id'])) {
-            return false;
-        }
-        try {
-            (new SaveTicketTopic())->preGenQrCode(['open_id' => $openId, 'user_id' => $data['user_id']])->publish();
-        } catch (Exception $e) {
-            SimpleLogger::error($e->getMessage(), [$openId, $data]);
-            return false;
-        }
-        return true;
-    }
-
-    /**
      * 手动批量推送消息 - 周周有奖后台提醒发送功能
      * @param int $logId message_manual_push_log表主键
      * @param array $uuidArr 用户的uuid

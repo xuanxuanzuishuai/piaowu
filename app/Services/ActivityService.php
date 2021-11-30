@@ -408,42 +408,42 @@ class ActivityService
         return $activity;
     }
 
-    /**
-     * 周周有奖可选活动列表
-     * @param array $params
-     * @return mixed
-     */
-    public static function getWeekActivityList($params = [])
-    {
-        $list = WeekActivityModel::getSelectList($params);
-        if (empty($list)) {
-            return [];
-        }
-        $userId = $params['user_info']['user_id'];
-        $available = false;
-        //获取账户首次付费年卡时间
-        $lastPayInfo = DssGiftCodeModel::getUserFirstPayInfo($userId, DssCategoryV1Model::DURATION_TYPE_NORMAL, 'asc');
-        foreach ($list as $key => &$activity) {
-            $activity['is_show'] = Constants::STATUS_TRUE;
-            $where = [
-                'student_id' => $userId,
-                'activity_id' => $activity['activity_id'],
-                'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED
-            ];
-            $shareRecord = SharePosterModel::getRecord($where);
-            if (!empty($shareRecord) || $lastPayInfo['buy_time'] > $activity['end_time']) {
-                $activity['is_show'] = Constants::STATUS_FALSE;
-            } else {
-                $available = true;
-            }
-        }
-        // 没有活动可选
-        $error = '';
-        if (!$available) {
-            $error = Lang::getWord('wait_for_next_event');
-        }
-        return ['error' => $error, 'list' => $list, 'available' => $available];
-    }
+    // /**
+    //  * 周周有奖可选活动列表
+    //  * @param array $params
+    //  * @return mixed
+    //  */
+    // public static function getWeekActivityList($params = [])
+    // {
+    //     $list = WeekActivityModel::getSelectList($params);
+    //     if (empty($list)) {
+    //         return [];
+    //     }
+    //     $userId = $params['user_info']['user_id'];
+    //     $available = false;
+    //     //获取账户首次付费年卡时间
+    //     $lastPayInfo = DssGiftCodeModel::getUserFirstPayInfo($userId, DssCategoryV1Model::DURATION_TYPE_NORMAL, 'asc');
+    //     foreach ($list as $key => &$activity) {
+    //         $activity['is_show'] = Constants::STATUS_TRUE;
+    //         $where = [
+    //             'student_id' => $userId,
+    //             'activity_id' => $activity['activity_id'],
+    //             'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED
+    //         ];
+    //         $shareRecord = SharePosterModel::getRecord($where);
+    //         if (!empty($shareRecord) || $lastPayInfo['buy_time'] > $activity['end_time']) {
+    //             $activity['is_show'] = Constants::STATUS_FALSE;
+    //         } else {
+    //             $available = true;
+    //         }
+    //     }
+    //     // 没有活动可选
+    //     $error = '';
+    //     if (!$available) {
+    //         $error = Lang::getWord('wait_for_next_event');
+    //     }
+    //     return ['error' => $error, 'list' => $list, 'available' => $available];
+    // }
 
     /**
      * 删除活动缓存

@@ -115,7 +115,8 @@ class Poster extends ControllerBase
         try {
             $userInfo = $this->ci['user_info'];
             $params['from_type'] = ActivityService::FROM_TYPE_APP;
-            if ($params['type']) {
+            if ($params['type'] == 2) {
+                // 周周领奖
                 $data = WeekActivityService::getWeekActivityData($userInfo['user_id'], $params['activity_id'] ?? 0, $params);
             } else {
                 $data = PosterTemplateService::getPosterList($userInfo['user_id'], $params['type'], $params['activity_id'] ?? 0, $params);

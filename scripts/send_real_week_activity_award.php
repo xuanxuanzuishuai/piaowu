@@ -51,7 +51,7 @@ class ScriptSendRealWeekActivityAward
             return self::returnResponse(false, []);
         }
         self::$time           = time();
-        self::$todayFirstTime = date("Y-m-d", self::$time);
+        self::$todayFirstTime = strtotime(date("Y-m-d", strtotime("-1 day ")));
         // A队列： 获取所有当天应该结算的活动
         $activityList = self::getSendAwardActivityList();
         SimpleLogger::info("ScriptSendRealWeekActivityAward_activity_list", [$activityList]);

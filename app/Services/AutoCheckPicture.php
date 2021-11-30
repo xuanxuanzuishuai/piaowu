@@ -8,8 +8,6 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
-use App\Libs\RealDictConstants;
-use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\EmployeeModel;
@@ -152,7 +150,7 @@ class AutoCheckPicture
         $poster_id  = $data['id'];
         $params['employee_id']  = EmployeeModel::SYSTEM_EMPLOYEE_ID;
         if ($status > 0) {
-            $posterInfo = RealSharePosterModel::getRecord(['id' => $data['id'],], ['student_id', 'activity_id', 'image_path']);
+            $posterInfo = SharePosterModel::getRecord(['id' => $data['id'],], ['student_id', 'activity_id', 'image_path']);
             $params['activity_id'] = $posterInfo['activity_id'] ?? 0;
             //审核通过
             SharePosterService::approvalPoster([$poster_id], $params);

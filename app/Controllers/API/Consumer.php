@@ -318,8 +318,6 @@ class Consumer extends ControllerBase
 
                 case PushMessageTopic::EVENT_RECORD_USER_ACTIVE:
                     UserService::recordUserActiveConsumer($params['msg_body']);
-                    QueueService::preGenerateQrCode('', $params['msg_body']);
-
                     break;
                 case PushMessageTopic::EVENT_PUSH_BATCH_MANUAL_RULE_WX:
                     MessageService::batchPushWeekActivityInfo($params['msg_body']);

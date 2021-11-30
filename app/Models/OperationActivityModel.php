@@ -137,28 +137,6 @@ WHERE
     }
 
     /**
-     * 获取活动列表
-     * - 后期应该在operation_activity 增加基础字段， 然后直接读取operation_activity表数据
-     * @param $activityType
-     * @param array $fields
-     * @return array
-     */
-    public static function getActivityList($activityType, array $fields = []): array
-    {
-        $activityList = [];
-        switch ($activityType) {
-            case self::TYPE_GRADUATION_ACTIVITY:
-                $activityList = GraduationActivityModel::getRecords(['ORDER' => ['create_time' => 'DESC']], $fields);
-                break;
-            default:
-                break;
-        }
-        return [
-            'list' => is_array($activityList) ? $activityList : []
-        ];
-    }
-
-    /**
      * 活动时间状态和sql的查询条件映射
      * @param $timeStatus
      * @return array

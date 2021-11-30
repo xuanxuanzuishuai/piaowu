@@ -617,24 +617,24 @@ class PosterTemplateService
         }
         $activityInfo['ext'] = ActivityExtModel::getActivityExt($activityInfo['activity_id']);
         // 周周领奖限制检测
-        $canUploadFlag = true;
-        if ($type == TemplatePosterModel::STANDARD_POSTER) {
-            if ($userDetail['student_status'] != DssStudentModel::STATUS_BUY_NORMAL_COURSE) {
-                $activityInfo['error'] = Lang::getWord('only_year_user_enter_event');
-            }
-            // 所有活动列表
-            $activityList = ActivityService::getWeekActivityList(['user_info' => ['user_id' => $studentId]]);
-            // 无活动可用，不可上传
-            if (!$activityList['available']) {
-                $canUploadFlag = false;
-            }
-        }
+        // $canUploadFlag = true;
+        // if ($type == TemplatePosterModel::STANDARD_POSTER) {
+        //     if ($userDetail['student_status'] != DssStudentModel::STATUS_BUY_NORMAL_COURSE) {
+        //         $activityInfo['error'] = Lang::getWord('only_year_user_enter_event');
+        //     }
+        //     // 所有活动列表
+        //     $activityList = ActivityService::getWeekActivityList(['user_info' => ['user_id' => $studentId]]);
+        //     // 无活动可用，不可上传
+        //     if (!$activityList['available']) {
+        //         $canUploadFlag = false;
+        //     }
+        // }
         $data['list'] = $posterList;
         $data['activity'] = $activityInfo;
         $data['student_info'] = $userInfo;
         $data['student_status'] = $userDetail['student_status'];
         $data['student_status_zh'] = DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$userDetail['student_status']] ?? DssStudentModel::STATUS_REGISTER;
-        $data['can_upload'] = $canUploadFlag;
+        // $data['can_upload'] = $canUploadFlag;
         $data['practise'] = $practise;
         $data['uuid'] = $userDetail['student_info']['uuid'];
         return $data;

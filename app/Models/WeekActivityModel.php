@@ -272,12 +272,6 @@ class WeekActivityModel extends Model
             foreach ($activityList as $key => $item) {
                 // 格式化数据
                 $_tmpInfo = self::formatOne($item);
-                // 重新设置选中的活动
-                if ($key == $activeKey) {
-                    $_tmpInfo['active'] = Constants::STATUS_TRUE;
-                } else {
-                    $_tmpInfo['active'] = Constants::STATUS_FALSE;
-                }
                 // 区分是当期活动还是上期活动
                 if ($item['activity_id'] == $threeActivityId) {
                     $activityGroup['curr'][] = $_tmpInfo;

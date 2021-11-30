@@ -84,6 +84,7 @@ class SharePosterService
             foreach ($posters as &$poster) {
                 $poster['award_amount'] = 0;
                 $poster['award_type'] = '';
+
                 // 红包奖励
                 $ids = explode(',', $poster['award_id']);
                 foreach ($ids as $_id) {
@@ -103,6 +104,13 @@ class SharePosterService
                     $poster['award_type'] = ErpStudentAccountModel::SUB_TYPE_GOLD_LEAF;
                 }
                 $poster = self::formatOne($poster, $statusDict, $reasonDict);
+
+                // 如果task_num > 0 显示任务名称
+                if ($poster['task_num'] > 0) {
+                    $activityTaskList = SharePosterTaskListModel::getRecords(['activity_id' => $poster['activity_id']]);
+                    $activityTaskList = array_column($activityTaskList, 'task_name', 'task_num');
+                    $poster['activity_name'] = $activityTaskList[$poster['task_num']] ?? '';
+                }
             }
         }
 
@@ -181,6 +189,12 @@ class SharePosterService
             $poster['default_award_amount'] = "人工发放";
         }
         $poster['award'] = self::formatAwardInfo($poster['award_amount'], $poster['award_type']);
+
+        // 如果task_num 不等于0 读取task_num对应的分享任务名称
+        $poster['task_name'] = $poster['activity_name'];
+        if ($poster['task_num'] > 0) {
+            $poster['task_name'] = SharePosterTaskListModel::getRecord(['activity_id' => $poster['activity_id'], 'task_num' => $poster['task_num']])['task_name'] ?? '';
+        }
         return $poster;
     }
 
@@ -596,6 +610,7 @@ class SharePosterService
                 'unique_code' => '',
                 'create_time' => $time,
                 'update_time' => $time,
+                'task_num' => $taskNum,
             ];
             if (empty($uploadRecord) || $uploadRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
                 $res = SharePosterModel::insertRecord($data);
@@ -655,12 +670,12 @@ class SharePosterService
                 }
             }
         }
+        $time = time();
         // 检查周周领奖活动是否可以上传
         $activityInfo = WeekActivityModel::getRecord(['activity_id' => $activityId]);
         if (!SharePosterService::checkWeekActivityAllowUpload($activityInfo, $time)) {
             throw new RunTimeException(['wait_for_next_event']);
         }
-        $time = time();
         $data = [
             'student_id'  => $studentId,
             'type'        => $type,
@@ -901,11 +916,12 @@ class SharePosterService
             // 获取任务id
             $taskId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'week_activity_send_award_task_id');
             // 发放奖励
-            $res = (new Erp())->addEventTaskAward($studentUUID, $taskId, $status, 0, $studentUUID, [
+            $res = (new Erp())->addEventTaskAward($studentUUID, $taskId, $status, 0, '', [
                 'activity_id' => $activityId,
                 'amount' => $passAwardInfo['award_amount'] ?? 0,
-                'award_to' => ErpEventTaskModel::AWARD_TO_REFERRER,
+                'award_to' => ErpEventTaskModel::AWARD_TO_BE_REFERRER,
                 'passes_num' => $passAwardInfo['success_pass_num'] ?? 0,
+                'old_rule_last_activity_id' => $oldRuleLastActivityId,
             ]);
             SimpleLogger::info('dss_addUserAward_ERP_CREATE_USER_EVENT_TASK_AWARD_FAIL', [$data, $res]);
             // 发送消息
@@ -978,12 +994,14 @@ class SharePosterService
                 MessageService::sendPosterVerifyMessage($poster['open_id'], $vars);
             } else {
                 // 新活动推送新规则
-                $wechatConfigId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'refused_poster_wx_msg_id');
-                QueueService::sendUserWxMsg(Constants::SMART_APP_ID, $poster['student_id'], $wechatConfigId, [
-                    'replace_params' => [
-                        'url' => DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'dss_share_poster_history_list')
-                    ],
-                ]);
+                if ($status == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
+                    $wechatConfigId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'refused_poster_wx_msg_id');
+                    QueueService::sendUserWxMsg(Constants::SMART_APP_ID, $poster['student_id'], $wechatConfigId, [
+                        'replace_params' => [
+                            'url' => DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'dss_share_poster_history_list')
+                        ],
+                    ]);
+                }
             }
         }
 
@@ -1022,35 +1040,22 @@ class SharePosterService
             return [];
         }
         $poster['can_upload'] = Constants::STATUS_TRUE;
-        $activities = WeekActivityService::getCanPartakeWeekActivity(['id' => $userInfo['user_id']]);
-        $allIds = array_column($activities, 'activity_id');
-        if (!in_array($poster['activity_id'], $allIds)) {
-            $poster['can_upload'] = Constants::STATUS_FALSE;
-        }
         if ($poster['poster_status'] == SharePosterModel::VERIFY_STATUS_QUALIFIED) {
             $poster['can_upload'] = Constants::STATUS_FALSE;
         }
-
-        $activityId = $activities[0]['activity_id'] ?? 0;
         $time = time();
         // 检查周周领奖活动是否可以上传
-        $activityInfo = WeekActivityModel::getRecord(['activity_id' => $activityId]);
+        $activityInfo = WeekActivityModel::getRecord(['activity_id' => $poster['activity_id']]);
         if (!SharePosterService::checkWeekActivityAllowUpload($activityInfo, $time)) {
-            throw new RunTimeException(['wait_for_next_event']);
+            $poster['can_upload'] = Constants::STATUS_FALSE;
         }
 
         $gold_leaf = ErpUserEventTaskAwardGoldLeafModel::getRecord(['id'=>$poster['points_award_id']], ['status']);
         $poster['gold_leaf_status'] = $gold_leaf['status'];
-        $error = '';
-        if (!empty($userInfo['user_id'])) {
-            $userDetail = StudentService::dssStudentStatusCheck($userInfo['user_id'], false, null);
-            if ($userDetail['student_status'] != DssStudentModel::STATUS_BUY_NORMAL_COURSE) {
-                $error = Lang::getWord('only_year_user_enter_event');
-            }
-        }
         $poster = self::formatOne($poster);
-        $activity = ActivityService::getByTypeAndId(TemplatePosterModel::STANDARD_POSTER, $poster['activity_id']);
-        return ['poster' => $poster, 'activity' => $activity, 'error' => $error];
+        $activity = WeekActivityModel::getRecord(['activity_id' => $poster['activity_id']]);
+        $activity = ActivityService::formatData($activity);
+        return ['poster' => $poster, 'activity' => $activity];
     }
 
     /**
