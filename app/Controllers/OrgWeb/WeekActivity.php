@@ -154,6 +154,16 @@ class WeekActivity extends ControllerBase
                 'type' => 'integer',
                 'error_code' => 'poster_order_is_integer'
             ],
+            [
+                'key' => 'delay_day',
+                'type' => 'integer',
+                'error_code' => 'delay_day_is_integer'
+            ],
+            [
+                'key' => 'priority_level',
+                'type' => 'integer',
+                'error_code' => 'priority_level_is_integer'
+            ],
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);

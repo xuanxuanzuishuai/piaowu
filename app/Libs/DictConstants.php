@@ -1119,6 +1119,15 @@ class DictConstants {
         ],
     ];
 
+    // 智能分享截图活动配置 - 用户身份
+    const DSS_STUDENT_IDENTITY_CONFIG = [
+        'type' => 'DSS_STUDENT_IDENTITY_CONFIG',
+        'keys' => [
+            1,  // 有效付费用户范围 - 所有
+            2,  // 有效付费用户范围 - 部分
+        ],
+    ];
+
     // 所有跳转链接
     const DSS_JUMP_LINK_CONFIG = [
         'type' => 'DSS_JUMP_LINK_CONFIG',

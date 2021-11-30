@@ -17,6 +17,7 @@ use App\Libs\Valid;
 use App\Services\ActivityService;
 use App\Services\ErpUserEventTaskAwardGoldLeafService;
 use App\Services\SourceMaterialService;
+use App\Services\WeekActivityService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -112,8 +113,8 @@ class Activity extends ControllerBase
     {
         $params = $request->getParams();
         $params['user_info'] = $this->ci['user_info'];
-        $data = ActivityService::getWeekActivityList($params);
-        return HttpHelper::buildResponse($response, $data);
+        $data = WeekActivityService::getCanPartakeWeekActivity(['id' => $params['user_info']['user_id']]);
+        return HttpHelper::buildResponse($response, ['list' => $data]);
     }
 
     /**

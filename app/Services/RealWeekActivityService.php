@@ -786,6 +786,7 @@ class RealWeekActivityService
             // 活动去重
             if (in_array($item['activity_id'], $sortActivityId)) {
                 unset($activityList[$key]);
+                continue;
             }
             $sortPriorityLevel[] = $item['priority_level'];
             $sortActivityId[] = $item['activity_id'];

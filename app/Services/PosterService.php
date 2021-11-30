@@ -561,7 +561,7 @@ class PosterService
         SimpleLogger::info('getCheckActivityId', [$appId, $studentId]);
         $key = 'student_check_activity_' . $appId . '_' . $studentId;
         if (isset(self::$checkActivityData[$key])) {
-            return self::$checkActivityData;
+            return self::$checkActivityData[$key]['activity_id'];
         }
         if ($appId == Constants::REAL_APP_ID) {
             $studentInfo = ErpStudentModel::getRecord(['id' => $studentId]);

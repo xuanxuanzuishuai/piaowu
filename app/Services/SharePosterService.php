@@ -862,7 +862,7 @@ class SharePosterService
         $studentId = $data['student_id'] ?? 0;
         $studentInfo = DssStudentModel::getRecord(['id' => $studentId]);
         $studentUUID = $studentInfo['uuid'] ?? '';
-        $actStatus = $params['act_status'] ?? -1;
+        $actStatus = $data['act_status'] ?? -1;
         /** 新规则 */
         if (!empty($appId) && !empty($activityId) && !empty($studentUUID) && $activityId > $oldRuleLastActivityId && $actStatus >= 0) {
             $status = $poster['status'] ?? ErpReferralService::EVENT_TASK_STATUS_COMPLETE;
@@ -895,13 +895,13 @@ class SharePosterService
             // 根据成功通过审核次数获取应得奖励
             $passAwardInfo = SharePosterPassAwardRuleModel::getRecord(['activity_id' => $activityId, 'success_pass_num' => $successSharePosterCount]);
             if (empty($passAwardInfo)) {
-                SimpleLogger::info('addUserAward', ['msg' => 'SharePosterPassAwardRuleModel_not_found', $data, $passAwardInfo]);
+                SimpleLogger::info('addUserAward', ['msg' => 'SharePosterPassAwardRuleModel_not_found', $data, $passAwardInfo, $activityId, $successSharePosterCount]);
                 return false;
             }
             // 获取任务id
             $taskId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'week_activity_send_award_task_id');
             // 发放奖励
-            $res = (new Erp())->addEventTaskAward($studentUUID, $taskId, $status, 0, '', [
+            $res = (new Erp())->addEventTaskAward($studentUUID, $taskId, $status, 0, $studentUUID, [
                 'activity_id' => $activityId,
                 'amount' => $passAwardInfo['award_amount'] ?? 0,
                 'award_to' => ErpEventTaskModel::AWARD_TO_REFERRER,
@@ -1022,13 +1022,21 @@ class SharePosterService
             return [];
         }
         $poster['can_upload'] = Constants::STATUS_TRUE;
-        $activities = WeekActivityModel::getSelectList([]);
+        $activities = WeekActivityService::getCanPartakeWeekActivity(['id' => $userInfo['user_id']]);
         $allIds = array_column($activities, 'activity_id');
         if (!in_array($poster['activity_id'], $allIds)) {
             $poster['can_upload'] = Constants::STATUS_FALSE;
         }
         if ($poster['poster_status'] == SharePosterModel::VERIFY_STATUS_QUALIFIED) {
             $poster['can_upload'] = Constants::STATUS_FALSE;
+        }
+
+        $activityId = $activities[0]['activity_id'] ?? 0;
+        $time = time();
+        // 检查周周领奖活动是否可以上传
+        $activityInfo = WeekActivityModel::getRecord(['activity_id' => $activityId]);
+        if (!SharePosterService::checkWeekActivityAllowUpload($activityInfo, $time)) {
+            throw new RunTimeException(['wait_for_next_event']);
         }
 
         $gold_leaf = ErpUserEventTaskAwardGoldLeafModel::getRecord(['id'=>$poster['points_award_id']], ['status']);
