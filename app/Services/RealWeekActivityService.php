@@ -397,12 +397,14 @@ class RealWeekActivityService
         ];
         $delaySecond = !empty($data['delay_day']) ? $data['delay_day'] * Util::TIMESTAMP_ONEDAY : 0;
         $sendAwardBaseDelaySecond = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'send_award_base_delay_second');
+        $delayDay = (intval($sendAwardBaseDelaySecond) + $delaySecond) / Util::TIMESTAMP_ONEDAY;
+        $activityEndTime = Util::getDayLastSecondUnix($data['end_time']);
         $weekActivityData = [
             'activity_id' => $activityId,
             'name' => $activityData['name'],
             'share_word' => !empty($data['share_word']) ? Util::textEncode($data['share_word']) : '',
             'start_time' => Util::getDayFirstSecondUnix($data['start_time']),
-            'end_time' => Util::getDayLastSecondUnix($data['end_time']),
+            'end_time' => $activityEndTime,
             'banner' => $data['banner'] ?? '',
             'share_button_img' => $data['share_button_img'] ?? '',
             'award_detail_img' => $data['award_detail_img'] ?? '',
@@ -418,7 +420,7 @@ class RealWeekActivityService
             'target_use_first_pay_time_start' => !empty($data['target_use_first_pay_time_start']) ? strtotime($data['target_use_first_pay_time_start']) : 0,
             'target_use_first_pay_time_end' => !empty($data['target_use_first_pay_time_end']) ? strtotime($data['target_use_first_pay_time_end']) : 0,
             'delay_second' => $delaySecond,
-            'send_award_time' => $delaySecond + $time + intval($sendAwardBaseDelaySecond),
+            'send_award_time' => strtotime(date("Y-m-d", $activityEndTime) . " +$delayDay day"),
             'priority_level' => $data['priority_level'] ?? 0,
         ];
 
