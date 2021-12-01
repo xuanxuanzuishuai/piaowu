@@ -16,6 +16,7 @@ use App\Libs\KeyErrorRC4Exception;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\Dss\DssStudentModel;
+use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
 use App\Services\ActivityService;
 use App\Services\PosterService;
@@ -67,9 +68,9 @@ class Poster extends ControllerBase
         try {
             $userInfo = $this->ci['user_info'];
             $params['from_type'] = ActivityService::FROM_TYPE_WX;
-            if ($params['type'] == 2) {
+            if ($params['type'] == OperationActivityModel::TYPE_WEEK_ACTIVITY) {
                 // 周周领奖活动信息
-                $data = WeekActivityService::getWeekActivityData($userInfo['user_id'], $params['activity_id'] ?? 0, $params);
+                $data = WeekActivityService::getWeekActivityData($userInfo['user_id'], $params);
             } else {
                 $data = PosterTemplateService::getPosterList($userInfo['user_id'], $params['type'], $params['activity_id'] ?? 0, $params);
             }

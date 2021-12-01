@@ -763,6 +763,14 @@ class DictConstants {
         ]
     ];
 
+    // 数据检查异常报警邮件组
+    const CHECK_DATA_ABNORMAL_MAIL = [
+        'type' => 'CHECK_DATA_ABNORMAL_MAIL',
+        'keys' => [
+            'dss_check_data_week_award_mail', //智能业务线周周领奖分享截图奖励数据异常报警邮件组，多个逗号分隔
+        ]
+    ];
+
     //测试使用代理商ID
     const COMPANY_TEST_AGENT_IDS = [
         'type' => 'company_test_agent_ids',

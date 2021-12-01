@@ -835,7 +835,7 @@ class WeekActivityService
      * @return array[]
      * @throws RunTimeException
      */
-    public static function getWeekActivityData($studentId, $activityId = 0, $ext = [])
+    public static function getWeekActivityData($studentId, $ext = [])
     {
         $type= 2;   // 2 代表的是周周领奖活动 - 兼容老逻辑时用的到
         $data = ['list' => [], 'activity' => []];
@@ -914,7 +914,7 @@ class WeekActivityService
         }
         $activityInfo['ext'] = ActivityExtModel::getActivityExt($activityInfo['activity_id']);
         // 学生能否可上传
-        list($isCanUpload) = WeekActivityService::getStudentWeekActivityCanUpload($studentId, $activityId);
+        list($isCanUpload) = WeekActivityService::getStudentWeekActivityCanUpload($studentId, $activityInfo['activity_id']);
 
         $data['list'] = $posterList;
         $data['activity'] = $activityInfo;
@@ -966,7 +966,7 @@ class WeekActivityService
     }
 
     /**
-     * 获取指定活动某个任务学生上传的海报信息
+     * 检查学生能否上传： 如果已经全部参与也属于不能上传
      * @param $studentId
      * @param $activityId
      * @return array
