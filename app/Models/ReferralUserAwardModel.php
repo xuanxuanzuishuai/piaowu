@@ -81,11 +81,13 @@ class ReferralUserAwardModel extends Model
      */
     public static function disabledAwardByRefund($awardId): bool
     {
+        $time = time();
         self::updateRecord($awardId, [
             'award_status'  => self::STATUS_DISABLED,
             'reviewer_id'   => EmployeeModel::SYSTEM_EMPLOYEE_ID,
             'review_reason' => self::REASON_RETURN_COST,
-            'review_time'   => time()
+            'review_time'   => $time,
+            'update_time'   => $time,
         ]);
         return true;
     }
@@ -97,11 +99,13 @@ class ReferralUserAwardModel extends Model
      */
     public static function successSendAward($awardId): bool
     {
+        $time = time();
         self::updateRecord($awardId, [
             'award_status'  => self::STATUS_GIVE,
             'reviewer_id'   => EmployeeModel::SYSTEM_EMPLOYEE_ID,
             'review_reason' => '',
-            'review_time'   => time()
+            'review_time'   => $time,
+            'update_time'   => $time,
         ]);
         return true;
     }
@@ -113,11 +117,13 @@ class ReferralUserAwardModel extends Model
      */
     public static function disabledAwardByNoPlay($awardId): bool
     {
+        $time = time();
         self::updateRecord($awardId, [
             'award_status'  => self::STATUS_DISABLED,
             'reviewer_id'   => EmployeeModel::SYSTEM_EMPLOYEE_ID,
             'review_reason' => self::REASON_NO_PLAY,
-            'review_time'   => time()
+            'review_time'   => $time,
+            'update_time'   => $time,
         ]);
         return true;
     }
