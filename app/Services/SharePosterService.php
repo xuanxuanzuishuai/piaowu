@@ -882,7 +882,7 @@ class SharePosterService
         if (!empty($appId) && !empty($activityId) && !empty($studentUUID) && $activityId > $oldRuleLastActivityId && $actStatus >= 0) {
             $status = $poster['status'] ?? ErpReferralService::EVENT_TASK_STATUS_COMPLETE;
             // 奖励白名单用户，发放的奖励应该是待发放状态
-            $whiteList = WeekWhiteListModel::getRecord(['uuid' => $studentUUID]);
+            $whiteList = WeekWhiteListModel::getRecord(['uuid' => $studentUUID, 'status'=>WeekWhiteListModel::NORMAL_STATUS]);
             if (!empty($whiteList)) {
                 $status = ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING;   // 待发放
             }
