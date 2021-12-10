@@ -27,6 +27,8 @@ class Dss
     const GET_STUDENT_IDENTITY = '/op/user/get_student_identity'; //获取用户的状态
     const GET_WX_APP_ASSISTANT = '/op/user/get_wx_app_assistant'; //小程序客服
     const GET_USER_EXCHANGE_NUM = '/op/user/get_user_can_exchange'; //智能有效用户
+    const GET_STUDENT_REPEAT_INFO = '/api/operation/check_student_repeat'; //检测用户是否为被标记为重复用户(是否是薅羊毛用户)
+    const GET_USER_FIRST_PAY_TIME = '/op/user/get_user_first_pay_time'; //获取用户首次付费时间
 
     private $host;
 
@@ -259,6 +261,46 @@ class Dss
             SimpleLogger::error('get user can exchange num error', [$res, $params]);
             return [];
         }
+        return !empty($res['data']) ? $res['data'] : [];
+    }
+
+    /**
+     * 检测用户是否为被标记为重复用户(是否是薅羊毛用户)
+     * @param $uuid
+     * @param $pkg
+     * @return array|mixed
+     */
+    public function getStudentIsRepeatInfo($uuid, $pkg)
+    {
+        $params = [
+            'uuid' => $uuid,
+            'pkg'        => $pkg,
+        ];
+        $res    = self::commonAPI(self::GET_STUDENT_REPEAT_INFO, $params, 'GET');
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            SimpleLogger::error('checkStudentIsRepeat_error', [$res, $params]);
+            return [];
+        }
+        SimpleLogger::info('getStudentIsRepeatInfo', [$uuid, $pkg, $res]);
+        return !empty($res['data']) ? $res['data'] : [];
+    }
+
+    /**
+     * 获取用户首次付费时间
+     * @param $studentIds
+     * @return array|mixed
+     */
+    public function getStudentFirstPayTime($studentIds)
+    {
+        $params = [
+            'student_id' => $studentIds,
+        ];
+        $res    = self::commonAPI(self::GET_USER_FIRST_PAY_TIME, $params, 'POST');
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            SimpleLogger::error('checkStudentIsRepeat_error', [$res, $params]);
+            return [];
+        }
+        SimpleLogger::info('getStudentIsRepeatInfo', [$studentIds, $res]);
         return !empty($res['data']) ? $res['data'] : [];
     }
 }

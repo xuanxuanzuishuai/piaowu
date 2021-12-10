@@ -70,5 +70,7 @@ class StudentWebRouter extends RouterBase
         '/student_web/student/send_sms_code' => ['method' => ['get'], 'call'   => Student::class . ':sendSmsCode', 'middles' => []],
         //鲸鱼数据记录
         '/student_web/student/whale_data_record' => ['method' => ['get'], 'call'   => Student::class . ':whaleDataRecord', 'middles' => []],
+        //  获取学生是否是系统判定的重复用户，如果是购买指定课包时会返回其他课包
+        '/student_web/student/check_student_is_repeat' => ['method' => ['get'], 'call' => Student::class . ':checkStudentIsRepeat', 'middles' => []],
     ];
 }

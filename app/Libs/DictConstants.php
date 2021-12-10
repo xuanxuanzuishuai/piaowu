@@ -690,6 +690,7 @@ class DictConstants {
             'mini_package_id_v1',
             'mini_001_package_id',
             'mini_1_package_id',
+            'pkg_11_package_id',
             'package_id_v2'
         ]
     ];
@@ -1124,6 +1125,7 @@ class DictConstants {
             'refused_poster_wx_msg_id',  // 分享截图未通过消息id
             'approval_poster_wx_msg_id',  // 分享截图通过消息id
             'week_activity_send_award_task_id',  // 周周领奖发放奖励时对应的task_id
+            'white_list_last_first_pay_time',   // 周周领奖白名单最后的首次付费时间
         ],
     ];
 

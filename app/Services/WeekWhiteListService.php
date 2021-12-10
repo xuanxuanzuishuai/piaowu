@@ -8,12 +8,13 @@
 
 namespace App\Services;
 
+use App\Libs\DictConstants;
+use App\Libs\Dss;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\Util;
 use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssStudentModel;
-use App\Models\EmployeeModel;
 use App\Models\WeekWhiteListModel;
 use App\Models\WhiteRecordModel;
 
@@ -25,76 +26,84 @@ class WeekWhiteListService
      * @param $operator_id
      * @return array[]|bool
      */
-    public static function create($uuids, $operator_id){
+    public static function create($uuids, $operator_id)
+    {
+        $errData = [
+            'first_pay_time_err_list' => [],    // 首次付费时间不正确的uuid列表
+        ];
         //检测是否重复
-        $uniqueIds = array_unique($uuids);
-        $repeatIds = array_values(array_diff_assoc($uuids, $uniqueIds));
+        $uniqueIds            = array_unique($uuids);
+        $repeatIds            = array_values(array_diff_assoc($uuids, $uniqueIds));
         $errData['repeatIds'] = $repeatIds;
 
-
         //检测是否存在
-        $uuidList = DssStudentModel::getUuids($uniqueIds);
-        $uuidList = array_column($uuidList, null, 'uuid');
-        $diff = array_diff($uniqueIds, array_keys($uuidList));
+        $studentList = DssStudentModel::getUuids($uniqueIds);
+        $uuidList    = $studentIdList = [];
+        if (!empty($studentList)) {
+            foreach ($studentList as $item) {
+                $uuidList[$item['uuid']] = $item;
+                $studentIdList[]         = $item['id'];
+            }
+            unset($item);
+        }
+        $diff                  = array_diff($uniqueIds, array_keys($uuidList));
         $errData['not_exists'] = array_values($diff);
 
+        // 获取用户首次付费时间
+        $userFirstPayTimeList = (new Dss())->getStudentFirstPayTime($studentIdList);
+        $lastFirstPayTime = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'white_list_last_first_pay_time');
+        foreach ($userFirstPayTimeList as $item) {
+            if ($item['first_pay_time'] >= $lastFirstPayTime) {
+                $errData['first_pay_time_err_list'][] =$item['uuid'];
+            }
+        }
+        unset($item);
 
         //检测是否添加过
-        $exists = WeekWhiteListModel::getRecords(['uuid'=>$uniqueIds, 'status'=>WeekWhiteListModel::NORMAL_STATUS],'uuid');
-
+        $exists = WeekWhiteListModel::getRecords(['uuid' => $uniqueIds, 'status' => WeekWhiteListModel::NORMAL_STATUS], 'uuid');
         $errData['exists'] = $exists;
 
-        if($errData['repeatIds'] || $errData['not_exists'] || $errData['exists']){
+        // 如果有任意错误的uuid ，直接返回
+        if ($errData['repeatIds'] || $errData['not_exists'] || $errData['exists'] || !empty($errData['first_pay_time_err_list'])) {
             return ['errorList' => $errData];
         }
-
-        $insert = [];
+        $insert  = [];
         $logData = [];
-        $now = time();
-
-        foreach ($uniqueIds as $uuid){
-
-            $row = [
-                'student_id' => $uuidList[$uuid]['id'],
-                'uuid'  => $uuid,
-                'operator_id'   => $operator_id,
-                'create_time'   => $now,
-                'status'        => WeekWhiteListModel::NORMAL_STATUS
+        $now     = time();
+        foreach ($uniqueIds as $uuid) {
+            $row      = [
+                'student_id'  => $uuidList[$uuid]['id'],
+                'uuid'        => $uuid,
+                'operator_id' => $operator_id,
+                'create_time' => $now,
+                'status'      => WeekWhiteListModel::NORMAL_STATUS
             ];
             $insert[] = $row;
-
-            $log = [
-                'uuid' => $uuid,
+            $log       = [
+                'uuid'        => $uuid,
                 'operator_id' => $operator_id,
-                'type'   => WhiteRecordModel::TYPE_ADD,
-                'create_time'   => $now,
+                'type'        => WhiteRecordModel::TYPE_ADD,
+                'create_time' => $now,
             ];
             $logData[] = $log;
         }
-
-        try{
-
+        try {
             $db = MysqlDB::getDB();
             $db->beginTransaction();
-
             $insertWhite = WeekWhiteListModel::batchInsert($insert);
-            if(!$insertWhite){
+            if (!$insertWhite) {
                 throw new RunTimeException(['insert_failure'], $insert);
             }
-
             $insertRecord = WhiteRecordService::BatchCreate($logData);
-            if(!$insertRecord){
+            if (!$insertRecord) {
                 throw new RunTimeException(['insert_failure'], $logData);
             }
-
             $db->commit();
             return true;
-        }catch (RunTimeException $e){
+        } catch (RunTimeException $e) {
             $db->rollBack();
             return false;
         }
-
-
     }
 
     /**

@@ -9,12 +9,14 @@ namespace App\Services\TraitService;
 
 use App\Libs\Constants;
 use App\Libs\Dss;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Models\Dss\DssStudentModel;
 use App\Models\SharePosterDesignateUuidModel;
 
 trait TraitDssUserService
 {
+
     private static $studentAttribute = [];
 
     /**
@@ -94,5 +96,30 @@ trait TraitDssUserService
             return [false, $studentIdAttribute];
         }
         return [true, $studentIdAttribute];
+    }
+
+    /**
+     * DSS - 获取学生是否能够购买指定课包，系统判定的重复用户购买指定课包时会返回其他课包
+     * 检查条件： 未购买过体验课，不是重复用户
+     * @param string $uuid 学生uuid
+     * @param numeric $pkg PayServices::getPackageIDByParameterPkg方法参数
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function getDssStudentRepeatBuyPkg($uuid, $pkg)
+    {
+        // 检查用户是否是薅羊毛用户， 如果是走提价策略
+        $studentIsRepeatInfo = (new Dss())->getStudentIsRepeatInfo($uuid, $pkg);
+        if (!isset($studentIsRepeatInfo['is_repeat'])) {
+            SimpleLogger::info("getDssStudentRepeatBuyPkg", ['msg' => 'service_busy_try_later', 'info' => $studentIsRepeatInfo]);
+            throw new RunTimeException(['service_busy_try_later'], []);
+        }
+        return [
+            'is_repeat' => $studentIsRepeatInfo['is_repeat'],
+            'old_pkg'   => $studentIsRepeatInfo['old_pkg'],
+            'new_pkg'   => $studentIsRepeatInfo['new_pkg'],
+            'has_trail' => $studentIsRepeatInfo['has_trail'],
+            'is_check'  => $studentIsRepeatInfo['is_check'],
+        ];
     }
 }

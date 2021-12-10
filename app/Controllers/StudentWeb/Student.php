@@ -19,6 +19,7 @@ use App\Models\Dss\DssUserWeiXinModel;
 use App\Services\CommonServiceForApp;
 use App\Services\RecallLandingService;
 use App\Services\RtActivityService;
+use App\Services\UserService;
 use App\Services\WechatTokenService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -384,5 +385,38 @@ class Student extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * DSS - 获取学生是否能够购买指定课包，如果系统判定的重复用户购买指定课包时会返回其他课包
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function checkStudentIsRepeat(Request $request, Response $response)
+    {
+        $rules  = [
+            [
+                'key'        => 'pkg',
+                'type'       => 'required',
+                'error_code' => 'pkg_is_required'
+            ],
+            [
+                'key'        => 'uuid',
+                'type'       => 'required',
+                'error_code' => 'uuid_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $data = UserService::getDssStudentRepeatBuyPkg($params['uuid'], $params['pkg']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
     }
 }
