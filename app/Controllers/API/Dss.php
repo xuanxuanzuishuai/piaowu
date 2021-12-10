@@ -15,6 +15,7 @@ use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\MessagePushRulesModel;
 use App\Models\PosterModel;
@@ -28,6 +29,7 @@ use App\Services\ErpUserEventTaskAwardGoldLeafService;
 use App\Services\ErpUserEventTaskAwardService;
 use App\Services\PosterService;
 use App\Services\AgentService;
+use App\Services\QrInfoService;
 use App\Services\RealSharePosterService;
 use App\Services\ReferralActivityService;
 use App\Libs\Exceptions\RunTimeException;
@@ -133,6 +135,52 @@ class Dss extends ControllerBase
         }
         $id = ReferralActivityService::getParamsId($params);
         return HttpHelper::buildResponse($response, ['id' => $id]);
+    }
+
+    /**
+     * 通过参数生成转介绍param_id，不生成任何图片
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws RunTimeException
+     */
+    public static function getNewParamsId(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'app_id',
+                'type' => 'required',
+                'error_code' => 'app_id_is_required'
+            ],
+            [
+                'key' => 'user_id',
+                'type' => 'required',
+                'error_code' => 'user_id_is_required'
+            ],
+            [
+                'key' => 'channel_id',
+                'type' => 'required',
+                'error_code' => 'channel_id_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $qrType = DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_none');
+        $qrData = [
+            'user_id'     => $params['user_id'],
+            'user_type'   => DssUserQrTicketModel::STUDENT_TYPE,
+            'channel_id'  => $params['channel_id'],
+            'app_id'      => Constants::SMART_APP_ID,
+            'qr_type'     => $qrType,
+            'date'        => date('Y-m-d', time()),
+        ];
+        $qrInfo = QrInfoService::getQrIdList(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE, [$qrData]);
+        $qrId = !empty($qrInfo) ? end($qrInfo)['qr_id'] : null;
+        return HttpHelper::buildResponse($response, ['id' => $qrId]);
     }
 
     /**

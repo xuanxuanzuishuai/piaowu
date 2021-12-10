@@ -28,6 +28,7 @@ class DSSRouter extends RouterBase
         '/dss/referral/my_invite_student_list' => ['method' => ['get'], 'call' => Dss::class . ':myInviteStudentList'],
 
         '/dss/share_post/get_params_id' => ['method' => ['post'], 'call' => Dss::class . ':getParamsId'],
+        '/dss/referral/new_get_params_id' => ['method' => ['post'], 'call' => Dss::class . ':getNewParamsId'],
         '/dss/share_post/get_params_info' => ['method' => ['get'], 'call' => Dss::class . ':getParamsInfo'],
         // 上传截图奖励明细列表
         '/dss/share_post/award_list' => ['method' => ['get'], 'call' => Dss::class . ':sharePostAwardList'],

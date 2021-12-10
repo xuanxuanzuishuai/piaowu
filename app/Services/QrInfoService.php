@@ -185,8 +185,8 @@ class QrInfoService
 
     /**
      * 生成数据对应的qr_id - 支持批量 - 普通二维码需要传入qr_path
-     * @param numeric $appId
-     * @param numeric $busiesType
+     * @param  $appId
+     * @param  $busiesType
      * @param array $qrParams
      * @param array $field
      * @param bool $isFullUrl
