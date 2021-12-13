@@ -24,10 +24,11 @@ class QrInfoService
      * @param $qrData
      * @param $appId
      * @param $busiesType
+     * @param bool $onlyReferralBaseField 仅需要转介绍参数（只需要转介绍功能，不掺杂check_active_id这种升级业务逻辑的功能）
      * @return string
      * @throws RunTimeException
      */
-    public static function createQrSign($qrData, $appId, $busiesType): string
+    public static function createQrSign($qrData, $appId, $busiesType, bool $onlyReferralBaseField = false): string
     {
         $createTicketData = [];
         $signField = [
@@ -48,7 +49,7 @@ class QrInfoService
             'from_service'        => 'from_service',            // 请求来源服务
             'employee_uuid'       => 'employee_uuid',           // 员工uuid
         ];
-        $qrData['check_active_id'] = PosterService::getCheckActivityId($appId, $qrData['user_id'] ?? 0);
+        $qrData['check_active_id'] = $onlyReferralBaseField ? 0 : PosterService::getCheckActivityId($appId, $qrData['user_id'] ?? 0);
         foreach ($signField as $paramsFiled => $createField) {
             if (isset($qrData[$paramsFiled]) && !Util::emptyExceptZero($qrData[$paramsFiled])) {
                 $createTicketData[$createField] = $qrData[$paramsFiled];

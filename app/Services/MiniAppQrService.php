@@ -318,10 +318,11 @@ class MiniAppQrService
      * @param $channel
      * @param $landingType
      * @param array $extParams
+     * @param bool $onlyReferralBaseField 仅需要转介绍参数（只需要转介绍功能，不掺杂check_active_id这种升级业务逻辑的功能）
      * @return string[]
      * @throws RunTimeException
      */
-    public static function getUserMiniAppQr($appId, $busiesType, $userId, $userType, $channel, $landingType, array $extParams = [])
+    public static function getUserMiniAppQr($appId, $busiesType, $userId, $userType, $channel, $landingType, array $extParams = [], $onlyReferralBaseField = false)
     {
         $qrInfo = [
             'qr_path' => '',
@@ -341,13 +342,13 @@ class MiniAppQrService
             'app_id'          => $appId,
             'busies_type'     => $busiesType,
             'user_status'     => $extParams['user_status'] ?? ($extParams['user_current_status'] ?? 0),
-            'check_active_id' => PosterService::getCheckActivityId($appId, $userId),
+            'check_active_id' => $onlyReferralBaseField ? 0 : PosterService::getCheckActivityId($appId, $userId),
             'date'            => date('Y-m-d', time()),
             'from_service'    => $extParams['from_service'] ?? '',
             'employee_uuid'   => $extParams['employee_uuid'] ?? '',
         ];
         // 根据小程序码主要信息，查询CH
-        $qrSign = QrInfoService::createQrSign($qrData, $appId, $busiesType);
+        $qrSign = QrInfoService::createQrSign($qrData, $appId, $busiesType, $onlyReferralBaseField);
         $qrImage = QrInfoOpCHModel::getQrInfoBySign($qrSign, ['qr_path', 'qr_id'])[0] ?? [];
         // CH查到直接返回qr_path, qr_id
         if (!empty($qrImage) && AliOSS::doesObjectExist($qrImage['qr_path'])) {

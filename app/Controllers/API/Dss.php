@@ -227,7 +227,7 @@ class Dss extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $userQrInfo = MiniAppQrService::getUserMiniAppQr($params['app_id'], $params['busies_type'], $params['user_id'], $params['user_type'], $params['channel_id'], DssUserQrTicketModel::LANDING_TYPE_MINIAPP, ['user_current_status' => StudentService::dssStudentStatusCheck($params['user_id'])['student_status']]);
+        $userQrInfo = MiniAppQrService::getUserMiniAppQr($params['app_id'], $params['busies_type'], $params['user_id'], $params['user_type'], $params['channel_id'], DssUserQrTicketModel::LANDING_TYPE_MINIAPP, ['user_current_status' => StudentService::dssStudentStatusCheck($params['user_id'])['student_status']], true);
         return HttpHelper::buildResponse($response, ['qr_info' => $userQrInfo]);
     }
 
