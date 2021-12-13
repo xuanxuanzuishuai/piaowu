@@ -27,6 +27,7 @@ use App\Services\BillMapService;
 use App\Services\DssDictService;
 use App\Services\ErpUserEventTaskAwardGoldLeafService;
 use App\Services\ErpUserEventTaskAwardService;
+use App\Services\MiniAppQrService;
 use App\Services\PosterService;
 use App\Services\AgentService;
 use App\Services\QrInfoService;
@@ -37,6 +38,7 @@ use App\Services\ReferralService;
 use App\Services\RtActivityService;
 use App\Services\SharePosterService;
 use App\Services\SourceMaterialService;
+use App\Services\StudentService;
 use App\Services\ThirdPartBillService;
 use App\Services\UserPointsExchangeOrderService;
 use App\Services\UserRefereeService;
@@ -181,6 +183,52 @@ class Dss extends ControllerBase
         $qrInfo = QrInfoService::getQrIdList(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE, [$qrData]);
         $qrId = !empty($qrInfo) ? end($qrInfo)['qr_id'] : null;
         return HttpHelper::buildResponse($response, ['id' => $qrId]);
+    }
+
+    /**
+     * 通过参数得到转介绍的url
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws RunTimeException
+     */
+    public static function getReferralUrl(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'app_id',
+                'type' => 'required',
+                'error_code' => 'app_id_is_required'
+            ],
+            [
+                'key' => 'user_id',
+                'type' => 'required',
+                'error_code' => 'user_id_is_required'
+            ],
+            [
+                'key' => 'channel_id',
+                'type' => 'required',
+                'error_code' => 'channel_id_is_required'
+            ],
+            [
+                'key' => 'user_type',
+                'type' => 'required',
+                'error_code' => 'user_type_is_required'
+            ],
+            [
+                'key' => 'busies_type',
+                'type' => 'required',
+                'error_code' => 'busies_type_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $userQrInfo = MiniAppQrService::getUserMiniAppQr($params['app_id'], $params['busies_type'], $params['user_id'], $params['user_type'], $params['channel_id'], DssUserQrTicketModel::LANDING_TYPE_MINIAPP, ['user_current_status' => StudentService::dssStudentStatusCheck($params['user_id'])['student_status']]);
+        return HttpHelper::buildResponse($response, ['qr_info' => $userQrInfo]);
     }
 
     /**
