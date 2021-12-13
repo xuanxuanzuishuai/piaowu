@@ -51,7 +51,7 @@ class Landing extends ControllerBase
         try {
             $params = $request->getParams();
             $sceneData = ShowMiniAppService::getSceneData(urldecode($params['scene'] ?? ''));
-            parse_str($params['scene'], $res);
+            parse_str(urlencode(urldecode($params['scene'])), $res);
             !empty($res['play_id']) && $sceneData['play_id'] = $res['play_id'];
             $pageData = ShowMiniAppService::getMiniAppPlayReviewData($sceneData, $this->ci['open_id']);
             $pageData['share_scene'] = urlencode($params['scene']);
