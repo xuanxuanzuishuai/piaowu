@@ -114,6 +114,9 @@ trait TraitDssUserService
             SimpleLogger::info("getDssStudentRepeatBuyPkg", ['msg' => 'service_busy_try_later', 'info' => $studentIsRepeatInfo]);
             throw new RunTimeException(['service_busy_try_later'], []);
         }
+        if (!empty($studentIsRepeatInfo['has_trail'])) {
+            throw new RunTimeException(['has_trialed']);
+        }
         return [
             'is_repeat' => $studentIsRepeatInfo['is_repeat'],
             'old_pkg'   => $studentIsRepeatInfo['old_pkg'],
