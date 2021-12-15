@@ -125,7 +125,7 @@ class PayServices
             self::PACKAGE_1000    => DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'mini_1_package_id'), //1
             self::PACKAGE_4900    => DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'package_id'), //49
             self::PACKAGE_4900_v2 => DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'package_id_v2'), //49 v2
-            self::PACKAGE_99      => DictConstants::get(DictConstants::DSS_WEB_STUDENT_CONFIG, 'pkg_11_package_id'), //99
+            self::PACKAGE_99      => DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'pkg_11_package_id'), //99
             self::PACKAGE_490     => DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'package_id_4_9')
         ];
         return $arr[$pkg] ?? DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'mini_package_id_v1');

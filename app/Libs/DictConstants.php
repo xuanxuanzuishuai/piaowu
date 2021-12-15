@@ -690,7 +690,6 @@ class DictConstants {
             'mini_package_id_v1',
             'mini_001_package_id',
             'mini_1_package_id',
-            'pkg_11_package_id',
             'package_id_v2'
         ]
     ];
@@ -708,6 +707,7 @@ class DictConstants {
             'broadcast_config_users',
             'agent_mini_0_package_id',
             'agent_zero_order_remark',
+            'pkg_11_package_id',
             'package_id_4_9'
         ]
     ];
@@ -1114,7 +1114,7 @@ class DictConstants {
         ]
     ];
 
-    // 周周领奖动配置
+    // 周周领奖动配置 - 数据是存储在OP库dict表(DSS_ 代表的是项目)
     const DSS_WEEK_ACTIVITY_CONFIG = [
         'type' => 'DSS_WEEK_ACTIVITY_CONFIG',
         'keys' => [
@@ -1129,7 +1129,7 @@ class DictConstants {
         ],
     ];
 
-    // 智能分享截图活动配置 - 用户身份
+    // 智能分享截图活动配置 - 用户身份 - 数据是存储在OP库dict表(DSS_ 代表的是项目)
     const DSS_STUDENT_IDENTITY_CONFIG = [
         'type' => 'DSS_STUDENT_IDENTITY_CONFIG',
         'keys' => [
@@ -1138,7 +1138,7 @@ class DictConstants {
         ],
     ];
 
-    // 所有跳转链接
+    // 所有跳转链接 - 数据是存储在OP库dict表(DSS_ 代表的是项目)
     const DSS_JUMP_LINK_CONFIG = [
         'type' => 'DSS_JUMP_LINK_CONFIG',
         'keys' => [
