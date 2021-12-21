@@ -2,13 +2,17 @@
 namespace App\Controllers\ReferralMiniapp;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\HttpHelper;
 use App\Libs\NewSMS;
+use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\UserWeiXinModel;
 use App\Services\CommonServiceForApp;
+use App\Services\QrInfoService;
 use App\Services\ReferralService;
 use App\Services\ShowMiniAppService;
 use Slim\Http\Request;
@@ -107,7 +111,15 @@ class Landing extends ControllerBase
                 $sceneData
             );
             //获取分享scene
-            $shareScene = ReferralService::makeReferralMiniShareScene(['id' => $lastId], $sceneData);
+            // $shareScene = ReferralService::makeReferralMiniShareScene(['id' => $lastId], $sceneData);
+            $createShareSceneData = [
+                'type'                      => Constants::USER_TYPE_STUDENT,
+                'user_id'                   => $lastId,
+                'channel_id'                => DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT'),
+                'no_need_check_activity_id' => false,
+            ];
+            $shareScene = QrInfoService::getQrIdList(Constants::SMART_APP_ID, Constants::REAL_MINI_BUSI_TYPE, $createShareSceneData)[0]['qr_id'] ?? '';
+            SimpleLogger::info("referral_mini_register", [$shareScene, $lastId, $createShareSceneData]);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

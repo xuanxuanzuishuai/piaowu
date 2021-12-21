@@ -848,6 +848,7 @@ class ReferralService
      * @param array $sceneData
      * @param string $openid
      * @return array
+     * @throws RunTimeException
      */
     public static function getMiniAppIndexData(array $sceneData, string $openid): array
     {
@@ -908,7 +909,17 @@ class ReferralService
             $paramId = $sceneData['param_id'];
             $shareScene = urlencode('&param_id=' . $paramId);
         } else {
-            $shareScene = self::makeReferralMiniShareScene($mobile[0], $sceneData);
+            // $shareScene = self::makeReferralMiniShareScene($mobile[0], $sceneData);
+            $userId = $mobile[0]['id'] ?? 0;
+            $createShareSceneData = [
+                'app_id'                    => Constants::SMART_APP_ID,
+                'type'                      => Constants::USER_TYPE_STUDENT,
+                'user_id'                   => $userId,
+                'channel_id'                => DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, !empty($userId) ? 'NORMAL_STUDENT_INVITE_STUDENT' : 'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT'),
+                'no_need_check_activity_id' => false,
+            ];
+            $shareScene = QrInfoService::getQrIdList(Constants::SMART_APP_ID, Constants::REAL_MINI_BUSI_TYPE, $createShareSceneData)[0]['qr_id'] ?? '';
+            SimpleLogger::info("referral_mini_landing_index", [$shareScene, $mobile, $createShareSceneData]);
         }
 
         $data['share_scene'] = $shareScene;
@@ -919,6 +930,7 @@ class ReferralService
     }
 
     /**
+     * @deprecated 可以考虑用 QrInfoService::getQrIdList 代替； 后期可能会删除
      * 生成小程序非首页的分享转介绍参数
      * @param array $studentData 学生信息
      * @param array $scene 首页原始的分享参数

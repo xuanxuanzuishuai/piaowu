@@ -221,7 +221,7 @@ class QrInfoService
 
         $selectField = array_merge($field, ['qr_path', 'qr_id', 'qr_sign', 'qr_ticket']);
         //获取海报自动审核校验活动ID
-        $checkActiveId = PosterService::getCheckActivityId($appId, $qrParams[0]['user_id'] ?? 0);
+        $checkActiveId = !empty($qrParams['no_need_check_activity_id']) ? 0 : PosterService::getCheckActivityId($appId, $qrParams[0]['user_id'] ?? 0);
         // 查询ch
         $qrImageArr = QrInfoOpCHModel::getQrInfoBySign($qrSignArr, $selectField);
         $qrSignData = array_column($qrImageArr, null, 'qr_sign');
