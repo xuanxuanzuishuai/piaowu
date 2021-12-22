@@ -205,14 +205,14 @@ class QrInfoService
     {
         $returnQrSignArr = [];
         $saveQrData      = [];
-
+        $onlyReferralBaseField = empty($qrParams['no_need_check_activity_id']);
         if (empty($qrParams)) {
             return $returnQrSignArr;
         }
         // 生成qr_sign, qr_ticket
         $qrSignArr = [];
         foreach ($qrParams as &$item) {
-            $sign                   = self::createQrSign($item, $appId, $busiesType);
+            $sign                   = self::createQrSign($item, $appId, $busiesType, $onlyReferralBaseField);
             $qrSignArr[]            = $sign;
             $item['qr_sign']        = $sign;
             $returnQrSignArr[$sign] = [];
@@ -221,7 +221,7 @@ class QrInfoService
 
         $selectField = array_merge($field, ['qr_path', 'qr_id', 'qr_sign', 'qr_ticket']);
         //获取海报自动审核校验活动ID
-        $checkActiveId = !empty($qrParams['no_need_check_activity_id']) ? 0 : PosterService::getCheckActivityId($appId, $qrParams[0]['user_id'] ?? 0);
+        $checkActiveId = $onlyReferralBaseField ? PosterService::getCheckActivityId($appId, $qrParams[0]['user_id'] ?? 0) : 0;
         // 查询ch
         $qrImageArr = QrInfoOpCHModel::getQrInfoBySign($qrSignArr, $selectField);
         $qrSignData = array_column($qrImageArr, null, 'qr_sign');

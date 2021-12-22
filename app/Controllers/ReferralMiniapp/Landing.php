@@ -113,10 +113,12 @@ class Landing extends ControllerBase
             //获取分享scene
             // $shareScene = ReferralService::makeReferralMiniShareScene(['id' => $lastId], $sceneData);
             $createShareSceneData = [
-                'type'                      => Constants::USER_TYPE_STUDENT,
-                'user_id'                   => $lastId,
-                'channel_id'                => DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT'),
-                'no_need_check_activity_id' => false,
+                [
+                    'user_type'                 => Constants::USER_TYPE_STUDENT,
+                    'user_id'                   => $lastId,
+                    'channel_id'                => DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'NORMAL_STUDENT_INVITE_STUDENT'),
+                    'no_need_check_activity_id' => true,
+                ]
             ];
             $shareScene = QrInfoService::getQrIdList(Constants::SMART_APP_ID, Constants::REAL_MINI_BUSI_TYPE, $createShareSceneData)[0]['qr_id'] ?? '';
             SimpleLogger::info("referral_mini_register", [$shareScene, $lastId, $createShareSceneData]);
