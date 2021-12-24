@@ -12,9 +12,11 @@ use App\Libs\DictConstants;
 use App\Libs\Dss;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssStudentModel;
+use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\WeekWhiteListModel;
 use App\Models\WhiteRecordModel;
 
@@ -210,5 +212,58 @@ class WeekWhiteListService
             $db->rollBack();
             return false;
         }
+    }
+
+    /**
+     * 检查学生是否在白名单
+     * @param $openId
+     * @param $msgPushRuleId
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function checkStudentIsWhite($openId, $msgPushRuleId)
+    {
+        if (empty($openId) && empty($msgPushRuleId)) {
+            SimpleLogger::info('checkStudentIsWhite', ['msg' => 'open_id_and_rule_id_is_empty', $openId]);
+            throw new RunTimeException(['record_not_found']);
+        }
+        // 查询哪些规则不需要过滤白名单
+        $dictRuleIds = self::getNoCheckWeekWhiteMsgId();
+        if (!empty($dictRuleIds) && in_array($msgPushRuleId, $dictRuleIds)) {
+            return false;
+        }
+        $studentWeiXinInfo = DssUserWeiXinModel::getByOpenId($openId);
+        $studentId = $studentWeiXinInfo['user_id'] ?? 0;
+        if (empty($studentId)) {
+            SimpleLogger::info('checkStudentIsWhite', ['msg' => 'student_id_is_empty', $studentId, $openId]);
+            throw new RunTimeException(['unknown_user']);
+        }
+        $isExistsWeekWhiteList = WeekWhiteListModel::getListByStudentId($studentId);
+        if (!empty($isExistsWeekWhiteList)) {
+            SimpleLogger::info('send_verify_fail', ['msg' => 'is_white', $isExistsWeekWhiteList, $studentId, $openId, $studentWeiXinInfo ?? []]);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 查询不需要过滤周周领奖白名单用户的推送消息id
+     * @return array
+     */
+    public static function getNoCheckWeekWhiteMsgId()
+    {
+        // 查询哪些规则不需要过滤白名单
+        $dictRuleConfig = DictConstants::get(DictConstants::MESSAGE_RULE, 'no_check_week_white_msg_rule');
+        $dictRuleIdArr = DictConstants::getValues(DictConstants::MESSAGE_RULE, explode(',', $dictRuleConfig));
+        $dictRuleIds = [];
+        foreach ($dictRuleIdArr as $item) {
+            if (is_numeric($item)) {
+                $dictRuleIds[] = intval($item);
+            } else {
+                $dictRuleIds = array_merge($dictRuleIds, json_decode($item, true));
+            }
+        }
+        unset($item);
+        return $dictRuleIds;
     }
 }

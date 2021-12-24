@@ -10,6 +10,7 @@ namespace App\Services\Queue;
 
 use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssEmployeeModel;
@@ -17,6 +18,7 @@ use App\Models\EmployeeModel;
 use App\Services\MessageService;
 use App\Services\PushMessageService;
 use App\Services\StudentService;
+use App\Services\WeekWhiteListService;
 use Exception;
 
 class QueueService
@@ -159,18 +161,26 @@ class QueueService
                 if (!PushMessageService::checkLastActiveTime($student['open_id'])) {
                     continue;
                 }
-                $msgBody = [
-                    'student_id'    => $student['user_id'],
-                    'open_id'       => $student['open_id'],
-                    'guide_word'    => $guideWord,
-                    'share_word'    => $shareWord,
-                    'poster_url'    => $posterUrl,
-                    'push_wx_time'  => $pushTime,
-                    'activity_id'   => $activityId,
-                    'employee_id'   => $employeeId,
-                    'activity_type' => $activityType
-                ];
-                $topic->pushWX($msgBody)->publish(rand(0, $deferMax));
+                // 检查用户是否是周周领奖白名单
+                try {
+                    if (WeekWhiteListService::checkStudentIsWhite($student['open_id'], 0)) {
+                        throw new RunTimeException(['invalid_data']);
+                    }
+                    $msgBody = [
+                        'student_id'    => $student['user_id'],
+                        'open_id'       => $student['open_id'],
+                        'guide_word'    => $guideWord,
+                        'share_word'    => $shareWord,
+                        'poster_url'    => $posterUrl,
+                        'push_wx_time'  => $pushTime,
+                        'activity_id'   => $activityId,
+                        'employee_id'   => $employeeId,
+                        'activity_type' => $activityType
+                    ];
+                    $topic->pushWX($msgBody)->publish(rand(0, $deferMax));
+                } catch (RunTimeException $e) {
+                    SimpleLogger::info("pushWX", ['msg' => 'checkStudentIsWhite', $e->getAppErrorData(), $students, $guideWord, $shareWord, $posterUrl, $activityId, $employeeId, $activityType]);
+                }
             }
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $msgBody ?? []);

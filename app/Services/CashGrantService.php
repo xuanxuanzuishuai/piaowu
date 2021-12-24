@@ -9,6 +9,7 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
@@ -381,8 +382,21 @@ class CashGrantService
             if ($status != ErpUserEventTaskAwardModel::STATUS_GIVE) {
                 return;
             }
-            //红包接收成功发送微信消息
-            QueueService::messageRulePushMessage([['delay_time' => 0, 'rule_id' => DictConstants::get(DictConstants::MESSAGE_RULE, 'receive_red_pack_rule_id'), 'open_id' => $awardInfo['open_id']]]);
+            // 检查用户是否在白名单
+            try {
+                if (WeekWhiteListService::checkStudentIsWhite($awardInfo['open_id'], DictConstants::get(DictConstants::MESSAGE_RULE, 'receive_red_pack_rule_id'))) {
+                    throw new RunTimeException(['invalid_data']);
+                }
+                //红包接收成功发送微信消息
+                QueueService::messageRulePushMessage([
+                    [
+                        'delay_time' => 0, 'rule_id' => DictConstants::get(DictConstants::MESSAGE_RULE, 'receive_red_pack_rule_id'),
+                        'open_id'    => $awardInfo['open_id']
+                    ]
+                ]);
+            } catch (RunTimeException $e) {
+                SimpleLogger::info("checkStudentIsWhite", [$e->getAppErrorData(), $awardInfo, 'receive_red_pack_rule_id']);
+            }
         }
     }
 
