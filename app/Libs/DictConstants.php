@@ -1148,6 +1148,14 @@ class DictConstants {
         ],
     ];
 
+    // 投放相关配置
+    const TOU_FANG = [
+        'type' => 'TOU_FANG',
+        'keys' => [
+            'mini_tou_fang_default_channel',    // 投放小程序默认注册渠道
+        ],
+    ];
+
 
 
     /**

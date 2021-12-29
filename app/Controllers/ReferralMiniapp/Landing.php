@@ -194,7 +194,7 @@ class Landing extends ControllerBase
                 $params['mobile'] ?? '',
                 $params['country_code'] ?? '',
                  '', // referrer ticket
-                $paramArr['c'] ?? '', // channel id
+                $paramArr['c'] ?? DictConstants::get(DictConstants::TOU_FANG, 'mini_tou_fang_default_channel'), // channel id
                 $extParams
             );
         } catch (RunTimeException $e) {
