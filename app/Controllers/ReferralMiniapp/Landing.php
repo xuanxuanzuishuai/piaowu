@@ -181,7 +181,7 @@ class Landing extends ControllerBase
             // 获取open id
             $weChat = WeChatMiniPro::factory(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP);
             $sessionKey = $weChat->getSessionKey($openid, $params['wx_code'] ?? '');
-            $paramArr = $params['param_arr'];
+            parse_str($params['param_arr'], $paramArr);
             $channelId = $paramArr['channel_id'] ?? DictConstants::get(DictConstants::TOU_FANG, 'mini_tou_fang_default_channel');
             $extParams['app_id'] = ReferralService::REFERRAL_MINI_APP_ID;
             if (!empty($params['wx_code'])) {
