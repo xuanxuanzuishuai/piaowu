@@ -8,6 +8,7 @@ use App\Libs\HttpHelper;
 use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\UserWeiXinModel;
@@ -126,6 +127,80 @@ class Landing extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, ['openid' => $openid, 'last_id' => $lastId, 'mobile' => $mobile, 'uuid' => $uuid, 'had_purchased' => $hadPurchased,'share_scene' =>$shareScene]);
+    }
+
+    /**
+     * 投放注册
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws \App\Libs\KeyErrorRC4Exception
+     */
+    public function tfregister(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        if (isset($params['encrypted_data'])) {
+            $rules = [
+                [
+                    'key'        => 'iv',
+                    'type'       => 'required',
+                    'error_code' => 'iv_is_required'
+                ],
+                [
+                    'key'        => 'encrypted_data',
+                    'type'       => 'required',
+                    'error_code' => 'encrypted_data_is_required'
+                ],
+            ];
+        } else {
+            $rules = [
+                [
+                    'key'        => 'mobile',
+                    'type'       => 'required',
+                    'error_code' => 'mobile_is_required'
+                ],
+                [
+                    'key'        => 'sms_code',
+                    'type'       => 'required',
+                    'error_code' => 'validate_code_error'
+                ]
+            ];
+        }
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        // 验证手机验证码
+        if (!empty($params['sms_code']) && !CommonServiceForApp::checkValidateCode($params['mobile'], $params['sms_code'], $params['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE)) {
+            return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
+        }
+
+        try {
+            $openid = $this->ci['referral_miniapp_openid'];
+            // 获取open id
+            $weChat = WeChatMiniPro::factory(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP);
+            $sessionKey = $weChat->getSessionKey($openid, $params['wx_code'] ?? '');
+            $data = parse_url(urldecode(urldecode($params['url'])));
+            $paramArr = Util::convertUrlQuery($data['query']);
+            $extParams['app_id'] = ReferralService::REFERRAL_MINI_APP_ID;
+            if (!empty($params['wx_code'])) {
+                $extParams['wx_code'] = $params['wx_code'];
+            }
+            list($openid, $lastId, $mobile, $uuid, $hadPurchased) = ReferralService::remoteRegister(
+                $openid,
+                $params['iv'] ?? '',
+                $params['encrypted_data'] ?? '',
+                $sessionKey,
+                $params['mobile'] ?? '',
+                $params['country_code'] ?? '',
+                 '', // referrer ticket
+                $paramArr['c'] ?? '', // channel id
+                $extParams
+            );
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, ['openid' => $openid, 'last_id' => $lastId, 'mobile' => $mobile, 'uuid' => $uuid, 'had_purchased' => $hadPurchased]);
     }
 
     /**

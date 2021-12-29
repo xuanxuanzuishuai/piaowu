@@ -1449,4 +1449,20 @@ class Util
             return $num;
         }
     }
+
+    /**
+     * @param $query
+     * @return array
+     * 将query字符串转换数组
+     */
+    public static function convertUrlQuery($query)
+    {
+        $queryParts = explode('&', $query);
+        $params = array();
+        foreach ($queryParts as $param) {
+            $item = explode('=', $param);
+            $params[$item[0]] = $item[1];
+        }
+        return $params;
+    }
 }

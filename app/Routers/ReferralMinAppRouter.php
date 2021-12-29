@@ -32,6 +32,11 @@ class ReferralMinAppRouter extends RouterBase
              'call'    => Landing::class . ':register',
              'middles' => [ReferralMinAppAuthCheckMiddleware::class],
          ],
+        '/referral_miniapp/landing/tf_register' => [
+            'method'  => ['post'],
+            'call'    => Landing::class . ':tfregister',
+            'middles' => [ReferralMinAppAuthCheckMiddleware::class],
+        ],
          '/referral_miniapp/landing/index' => [
              'method'  => ['get'],
              'call'    => Landing::class . ':index',
