@@ -14,6 +14,7 @@ use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\UserWeiXinModel;
 use App\Services\CommonServiceForApp;
 use App\Services\QrInfoService;
+use App\Services\Queue\QueueService;
 use App\Services\ReferralService;
 use App\Services\ShowMiniAppService;
 use Slim\Http\Request;
@@ -180,8 +181,8 @@ class Landing extends ControllerBase
             // 获取open id
             $weChat = WeChatMiniPro::factory(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT, UserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP);
             $sessionKey = $weChat->getSessionKey($openid, $params['wx_code'] ?? '');
-            $data = parse_url(urldecode(urldecode($params['url'])));
-            $paramArr = Util::convertUrlQuery($data['query']);
+            $paramArr = $params['param_arr'];
+            $channelId = $paramArr['channel_id'] ?? DictConstants::get(DictConstants::TOU_FANG, 'mini_tou_fang_default_channel');
             $extParams['app_id'] = ReferralService::REFERRAL_MINI_APP_ID;
             if (!empty($params['wx_code'])) {
                 $extParams['wx_code'] = $params['wx_code'];
@@ -194,9 +195,17 @@ class Landing extends ControllerBase
                 $params['mobile'] ?? '',
                 $params['country_code'] ?? '',
                  '', // referrer ticket
-                $paramArr['c'] ?? DictConstants::get(DictConstants::TOU_FANG, 'mini_tou_fang_default_channel'), // channel id
+                $channelId, // channel id
                 $extParams
             );
+
+            //投放回传
+            //channel_id,callback,ref,user_id
+            QueueService::formRegister(array_merge([
+                'user_id' => $lastId,
+                'ref' => $params['path'] . '?' . http_build_query($paramArr),
+                'ad_channel' => 35,
+            ], $paramArr));
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }

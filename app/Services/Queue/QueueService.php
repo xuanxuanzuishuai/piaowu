@@ -905,6 +905,23 @@ class QueueService
         return true;
     }
 
+    /**
+     * @param $data
+     * @return bool
+     * 投放小程序注册
+     */
+    public static function formRegister($data)
+    {
+        try {
+            (new AdTrackTopic())->formRegister($data)->publish();
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), [$data]);
+            return false;
+        }
+        return true;
+    }
+
+
     /***********************************************************************/
     /******************** 真人业务的消息队列 start ****************************/
     /***********************************************************************/
