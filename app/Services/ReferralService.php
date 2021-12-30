@@ -1132,9 +1132,10 @@ class ReferralService
 
     /**
      * 前50名用户
+     * @param array $params
      * @return array
      */
-    public static function getBuyUserName(): array
+    public static function getBuyUserName(array $params): array
     {
         $redis = RedisDB::getConn();
         $username = $redis->get(self::BUY_NAME_CACHE_KEY);
@@ -1152,13 +1153,21 @@ class ReferralService
         }
 
         $words = [];
-        foreach ($username as $key => $value){
-            if ($key%2 == 0){
-                $words[] = '恭喜'.$value['name'].'抢到了<span>5天</span>体验营';
-            }else{
-                $words[] = '恭喜'.$value['name'].'获得了<span>19.8元</span>现金红包';
+        //根据不同使用场景，使用不同关键字
+        if($params['type'] == 'moment'){
+            foreach ($username as $key => $value){
+                $words[] = '恭喜'.$value['name'].'拼团成功';
+            }
+        }else{
+            foreach ($username as $key => $value){
+                if ($key%2 == 0){
+                    $words[] = '恭喜'.$value['name'].'抢到了<span>5天</span>体验营';
+                }else{
+                    $words[] = '恭喜'.$value['name'].'获得了<span>19.8元</span>现金红包';
+                }
             }
         }
+
 
         return $words;
     }

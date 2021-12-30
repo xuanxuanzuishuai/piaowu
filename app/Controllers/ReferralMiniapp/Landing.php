@@ -221,7 +221,8 @@ class Landing extends ControllerBase
     public function buyName(Request $request, Response $response)
     {
         try {
-            $data = ReferralService::getBuyUserName();
+            $params = $request->getParams();
+            $data = ReferralService::getBuyUserName($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
