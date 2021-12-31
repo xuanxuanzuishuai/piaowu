@@ -89,7 +89,7 @@ class Pay extends ControllerBase
             $payChannel   = PayServices::payChannelToV1($params['pay_channel']);
             $payType      = PayServices::PAY_TYPE_DIRECT;
             $employeeUuid = !empty($params['employee_id']) ? RC4::decrypt($_ENV['COOKIE_SECURITY_KEY'], $params['employee_id']) : null;
-            $channel      = $params['channel_id'] ?? ErpPackageV1Model::CHANNEL_WX;
+            $channel      = !empty($params['channel_id']) ? $params['channel_id'] : ErpPackageV1Model::CHANNEL_WX;
             if ($params['pkg'] == PayServices::PACKAGE_0) {
                 // 0元体验课订单
                 $remark = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'zero_order_remark');
