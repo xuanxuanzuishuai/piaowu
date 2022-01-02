@@ -187,7 +187,7 @@ class Landing extends ControllerBase
             if (!empty($params['wx_code'])) {
                 $extParams['wx_code'] = $params['wx_code'];
             }
-            list($openid, $lastId, $mobile, $uuid, $hadPurchased) = ReferralService::remoteRegister(
+            list($openid, $lastId, $mobile, $uuid, $hadPurchased, $isNew) = ReferralService::remoteRegister(
                 $openid,
                 $params['iv'] ?? '',
                 $params['encrypted_data'] ?? '',
@@ -201,11 +201,14 @@ class Landing extends ControllerBase
 
             //投放回传
             //channel_id,callback,ref,user_id
-            QueueService::formRegister(array_merge([
-                'user_id' => $lastId,
-                'ref' => $params['path'] . '?' . http_build_query($paramArr),
-                'ad_channel' => 35,
-            ], $paramArr));
+            if ($isNew) {
+                QueueService::formRegister(array_merge([
+                    'user_id' => $lastId,
+                    'ref' => $params['path'] . '?' . http_build_query($paramArr),
+                    'ad_channel' => 35,
+                ], $paramArr));
+            }
+
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
