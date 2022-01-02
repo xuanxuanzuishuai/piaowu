@@ -1054,7 +1054,7 @@ class ReferralService
         $uuid = $userInfo['uuid'] ?? '';
         $hadPurchased = self::getPurchasedStatus($lastId);
 
-        $isNew = empty($userInfo['is_new']);
+        $isNew = !empty($userInfo['is_new']);
 
         return [$openId, $lastId, $mobile, $uuid, $hadPurchased, $isNew];
     }
