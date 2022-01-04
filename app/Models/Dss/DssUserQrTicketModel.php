@@ -105,17 +105,6 @@ class DssUserQrTicketModel extends DssModel
                 ]
             );
         }
-        // INSERT NEW TICKET DATA INTO DSS
-        $data = [
-            'user_id'      => $userID,
-            'qr_ticket'    => $ticket,
-            'qr_url'       => $imagePath,
-            'channel_id'   => $channelID,
-            'type'         => $type,
-            'landing_type' => $landingType,
-            'ext'          => json_encode($extParamsDict)
-        ];
-        QueueService::saveTicket($data);
         return $imagePath;
     }
 

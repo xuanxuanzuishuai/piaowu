@@ -779,10 +779,6 @@ class Consumer extends ControllerBase
 
         try {
             switch ($params['event_type']) {
-                case SaveTicketTopic::EVENT_SEND_TICKET:
-                    (new Dss())->saveTicket($params['msg_body']);
-                    break;
-
                 case SaveTicketTopic::EVENT_GENERATE_TICKET:
                     DssUserQrTicketModel::getUserQrURL(
                         $params['msg_body']['user_id'],
@@ -791,10 +787,6 @@ class Consumer extends ControllerBase
                         $params['msg_body']['landing_type'],
                         $params['msg_body']['ext']
                     );
-                    break;
-
-                case SaveTicketTopic::EVENT_PRE_GENERATE_QR_CODE:
-                    PosterTemplateService::preGenQRCode($params['msg_body']['open_id'], $params['msg_body']['user_id']);
                     break;
             }
         } catch (RunTimeException $runTimeException) {

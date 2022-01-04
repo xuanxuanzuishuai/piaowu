@@ -346,6 +346,8 @@ class MiniAppQrService
             'date'            => date('Y-m-d', time()),
             'from_service'    => $extParams['from_service'] ?? '',
             'employee_uuid'   => $extParams['employee_uuid'] ?? '',
+            'diversion_type'  => $extParams['diversion_type'] ?? 0,
+            'dss_uuid'        => $extParams['dss_uuid'] ?? '',
         ];
         // 根据小程序码主要信息，查询CH
         $qrSign = QrInfoService::createQrSign($qrData, $appId, $busiesType, $onlyReferralBaseField);

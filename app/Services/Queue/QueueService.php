@@ -14,6 +14,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssEmployeeModel;
+use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\EmployeeModel;
 use App\Services\MessageService;
 use App\Services\PushMessageService;
@@ -557,22 +558,6 @@ class QueueService
             $topic->checkPoster($data)->publish(5);
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), $data ?? []);
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * 保存 QR Ticket
-     * @param $data
-     * @return bool
-     */
-    public static function saveTicket($data)
-    {
-        try {
-            (new SaveTicketTopic())->sendTicket($data)->publish();
-        } catch (Exception $e) {
-            SimpleLogger::error($e->getMessage(), $data);
             return false;
         }
         return true;

@@ -233,7 +233,8 @@ class WeChatMiniPro
         list($appId, $busiType) = explode('_', $this->nowWxApp);
         $selfBusiList = [
             DssUserWeiXinModel::BUSI_TYPE_SHOW_MINAPP,
-            DssUserWeiXinModel::BUSI_TYPE_AI_PLAY_MINAPP
+            DssUserWeiXinModel::BUSI_TYPE_AI_PLAY_MINAPP,
+            DssUserWeiXinModel::BUSI_TYPE_YEAR_CARD_MINAPP,
         ];
         if ($appId == Constants::SMART_APP_ID && in_array($busiType, $selfBusiList)) {
             $this->requestAccessToken();

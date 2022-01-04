@@ -13,9 +13,11 @@ use App\Libs\MysqlDB;
 class ParamMapModel extends Model
 {
     public static $table = "param_map";
-    //用户类型：1智能陪练学生 4运营系统代理商
+    //用户类型：1智能陪练学生 4运营系统代理商 5公司内部员工
     const TYPE_STUDENT = 1;
     const TYPE_AGENT = 4;
+    const EMPLOYEE_TYPE = 5;
+
     /**
      * 更新小程序二维码图片地址
      * @param $id
