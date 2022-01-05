@@ -118,11 +118,11 @@ trait TraitDssUserService
             throw new RunTimeException(['has_trialed']);
         }
         return [
-            'is_repeat' => $studentIsRepeatInfo['is_repeat'],
-            'old_pkg'   => $studentIsRepeatInfo['old_pkg'],
-            'new_pkg'   => $studentIsRepeatInfo['new_pkg'],
+            'is_repeat' => (int)$studentIsRepeatInfo['is_repeat'],
+            'old_pkg'   => (int)$studentIsRepeatInfo['old_pkg'],
+            'new_pkg'   => (int)$studentIsRepeatInfo['new_pkg'],
             'has_trail' => $studentIsRepeatInfo['has_trail'],
-            'is_check'  => $studentIsRepeatInfo['is_check'],
+            'is_check'  => (int)$studentIsRepeatInfo['is_check'],
         ];
     }
 }
