@@ -374,28 +374,36 @@ class MessageService
         $info = MessageManualPushLogModel::getById($data['log_id']);
         $appId = DssUserWeiXinModel::dealAppId($data['app_id']);
         if ($info['type'] == MessagePushRulesModel::PUSH_TYPE_TEMPLATE) {
-            //模版消息
-            $templateConfig = json_decode($info['data'], true);
-            $sendData = [];
-            //根据关键标志替换模板内容
-            $sendData['first']['value'] = $templateConfig['first_sentence'] ?? '';
-            $sendData['keyword1']['value'] = $templateConfig['activity_detail'] ?? '';
-            $sendData['keyword2']['value'] = $templateConfig['activity_desc'] ?? '';
-            $sendData['remark']['value'] = $templateConfig['remark'] ?? '';
-            $result = PushMessageService::notifyUserWeixinTemplateInfo(
-                $appId,
-                $data['open_id'],
-                DictConstants::get(DictConstants::MESSAGE_RULE, 'assign_template_id'),
-                $sendData,
-                $templateConfig['link']
-            );
-            //推送日志记录
-            MessageRecordService::addRecordLog(
-                $data['open_id'],
-                $data['activity_type'],
-                $data['log_id'],
-                (empty($result) || !empty($result['errcode'])) ? MessageRecordLogModel::PUSH_FAIL : MessageRecordLogModel::PUSH_SUCCESS
-            );
+            // 检查用户是否是周周领奖白名单
+            try {
+                if (WeekWhiteListService::checkStudentIsWhite($data['open_id'], 0)) {
+                    throw new RunTimeException(['invalid_data']);
+                }
+                //模版消息
+                $templateConfig = json_decode($info['data'], true);
+                $sendData = [];
+                //根据关键标志替换模板内容
+                $sendData['first']['value'] = $templateConfig['first_sentence'] ?? '';
+                $sendData['keyword1']['value'] = $templateConfig['activity_detail'] ?? '';
+                $sendData['keyword2']['value'] = $templateConfig['activity_desc'] ?? '';
+                $sendData['remark']['value'] = $templateConfig['remark'] ?? '';
+                $result = PushMessageService::notifyUserWeixinTemplateInfo(
+                    $appId,
+                    $data['open_id'],
+                    DictConstants::get(DictConstants::MESSAGE_RULE, 'assign_template_id'),
+                    $sendData,
+                    $templateConfig['link']
+                );
+                //推送日志记录
+                MessageRecordService::addRecordLog(
+                    $data['open_id'],
+                    $data['activity_type'],
+                    $data['log_id'],
+                    (empty($result) || !empty($result['errcode'])) ? MessageRecordLogModel::PUSH_FAIL : MessageRecordLogModel::PUSH_SUCCESS
+                );
+            } catch (RunTimeException $e) {
+                SimpleLogger::info("realSendManualMessage", ['msg' => 'checkStudentIsWhite', $e->getAppErrorData(), $data]);
+            }
         }
     }
 
@@ -662,6 +670,16 @@ class MessageService
     {
         if (self::isActiveClickPushMessage($ruleId)) {
             return false;
+        }
+
+        // 检查用户是否在白名单
+        try {
+            if (WeekWhiteListService::checkStudentIsWhite($openId, $ruleId)) {
+                throw new RunTimeException(['invalid_data']);
+            }
+        } catch (RunTimeException $e) {
+            SimpleLogger::info('judgeOverMessageRuleLimit', ['msg' => 'checkStudentIsWhite', $openId, $ruleId]);
+            return true;
         }
 
         $redis = RedisDB::getConn();

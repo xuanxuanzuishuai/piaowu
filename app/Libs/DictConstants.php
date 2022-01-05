@@ -445,6 +445,7 @@ class DictConstants {
             'invite_friend_rule_id',
             'invite_friend_pay_rule_id',
             'invite_friend_not_pay_rule_id',
+            'no_check_week_white_msg_rule', // 不需要过虑周周领奖白名单用户的推送消息配置
         ]
     ];
 
