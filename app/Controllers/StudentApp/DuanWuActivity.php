@@ -22,14 +22,15 @@ class DuanWuActivity extends ControllerBase
      */
     public function activityInfo(Request $request, Response $response)
     {
-        try {
-            $params = $request->getParams();
-            $params['user_info'] = $this->ci['user_info'];
-            $data = ActivityDuanWuService::activityInfo($params);
-        } catch (\Exception $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
-        }
-        return HttpHelper::buildResponse($response, $data);
+        return HttpHelper::buildResponse($response, []);
+//        try {
+//            $params = $request->getParams();
+//            $params['user_info'] = $this->ci['user_info'];
+//            $data = ActivityDuanWuService::activityInfo($params);
+//        } catch (\Exception $e) {
+//            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+//        }
+//        return HttpHelper::buildResponse($response, $data);
     }
     
     /**
@@ -40,14 +41,15 @@ class DuanWuActivity extends ControllerBase
      */
     public function refereeList(Request $request, Response $response)
     {
-        try {
-            $params = $request->getParams();
-            $params['user_info'] = $this->ci['user_info'];
-            list($page, $count) = Util::formatPageCount($params);
-            $data = ActivityDuanWuService::refereeList($params, $page, $count);
-        } catch (\Exception $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
-        }
-        return HttpHelper::buildResponse($response, $data);
+        return HttpHelper::buildResponse($response, []);
+//        try {
+//            $params = $request->getParams();
+//            $params['user_info'] = $this->ci['user_info'];
+//            list($page, $count) = Util::formatPageCount($params);
+//            $data = ActivityDuanWuService::refereeList($params, $page, $count);
+//        } catch (\Exception $e) {
+//            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+//        }
+//        return HttpHelper::buildResponse($response, $data);
     }
 }

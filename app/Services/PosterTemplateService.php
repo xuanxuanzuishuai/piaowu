@@ -38,9 +38,10 @@ class PosterTemplateService
      * 海报模板列表
      * @param $studentId
      * @param $templateType
-     * @param $activityId
+     * @param null $activityId
      * @return array
-     * @throws \App\Libs\Exceptions\RunTimeException
+     * @throws RunTimeException
+     * @throws \App\Libs\KeyErrorRC4Exception
      */
     public static function templatePosterList($studentId, $templateType, $activityId = null)
     {

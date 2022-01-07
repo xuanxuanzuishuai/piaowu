@@ -10,9 +10,7 @@ namespace App\Services;
 
 
 use App\Libs\SimpleLogger;
-use App\Libs\UserCenter;
 use App\Models\BillMapModel;
-use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\ParamMapModel;
 
 class BillMapService

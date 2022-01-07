@@ -52,7 +52,7 @@ class RouterFactory
         self::CLIENT_API => APIRouter::class, // 外部api调用
         self::CLIENT_STUDENT_WX => StudentWXRouter::class, // 家长微信
         self::CLIENT_DSS => DSSRouter::class, // 家长微信
-        self::CLIENT_AGENT_MINI => AgentMiniAppRouter::class, // 代理小程序
+//        self::CLIENT_AGENT_MINI => AgentMiniAppRouter::class, // 代理小程序禁止使用2022-1-8
         self::CLIENT_SHOW_MINI => ShowMiniAppRouter::class, // 测评分享小程序
         self::CLIENT_STUDENT_WEB => StudentWebRouter::class, // WEB端
         self::CLIENT_ERP_API => ErpRouter::class, // ERP

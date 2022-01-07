@@ -943,6 +943,30 @@ class QueueService
         return true;
     }
 
+
+    /**
+     * 智能年卡小程序 - 启动批量生成小程序码id的任务
+     * @param $data
+     * @param $deferTime
+     * @return bool
+     */
+    public static function dssYearCardStartCreateMiniAppId($data = [], $deferTime = 0)
+    {
+        try {
+            if (empty($data)) {
+                $data['time'] = time();
+            }
+            $data['app_id'] = Constants::SMART_APP_ID;
+            $data['busies_type'] = DssUserWeiXinModel::BUSI_TYPE_YEAR_CARD_MINAPP;
+            (new WechatTopic())->startCreateMiniAppId($data)->publish($deferTime);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data);
+            return false;
+        }
+        return true;
+    }
+
+
     /**
      * 真人 - 用户积分(魔法石)入账
      * @param $uuid

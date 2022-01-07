@@ -559,6 +559,10 @@ class MiniAppQrService
                 // 启动 真人小程序码生成队列
                 QueueService::realStartCreateMiniAppId();
                 break;
+            case Constants::SMART_APP_ID . '_' . DssUserWeiXinModel::BUSI_TYPE_YEAR_CARD_MINAPP:
+                // 启动 智能年卡小程序码生成队列
+                QueueService::dssYearCardStartCreateMiniAppId();
+                break;
             default:
         }
     }
