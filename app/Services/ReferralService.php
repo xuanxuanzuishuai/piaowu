@@ -1353,19 +1353,20 @@ class ReferralService
      */
     public static function getMiniAppPackage($sceneData = [], $referee = [])
     {
+        //默认课包
         $package = PayServices::PACKAGE_490;
-        // 0元单：
-        // 代理
-        // 推荐人是年卡或者购买过年卡
+        //代理
         if ($sceneData['type'] == DssUserQrTicketModel::AGENT_TYPE) {
             $package = PayServices::PACKAGE_0;
         } elseif ($sceneData['type'] == DssUserQrTicketModel::STUDENT_TYPE) {
+            //推荐人:年卡
             if (!empty($referee['has_review_course']) && $referee['has_review_course'] == DssStudentModel::REVIEW_COURSE_1980) {
-                $package = PayServices::PACKAGE_0;
+                $package = PayServices::PACKAGE_1;
             } elseif (!empty($referee['id'])) {
+                //推荐人:购买过年卡
                 $giftCode = DssGiftCodeModel::hadPurchasePackageByType($referee['id'], DssPackageExtModel::PACKAGE_TYPE_NORMAL);
                 if (!empty($giftCode)) {
-                    $package = PayServices::PACKAGE_0;
+                    $package = PayServices::PACKAGE_1;
                 }
             }
         }

@@ -66,8 +66,8 @@ class ReferralMinAppRouter extends RouterBase
             'call'    => Landing::class . ':assistantInfo',
             'middles' => [ReferralMinAppAuthCheckMiddleware::class],
         ],
-
-
+        //  获取学生是否是系统判定的重复用户，如果是购买指定课包时会返回其他课包
+        '/referral_miniapp/student/check_student_is_repeat' => ['method' => ['get'], 'call' => Landing::class . ':checkStudentIsRepeat', 'middles' => []],
     ];
 
 }
