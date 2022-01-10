@@ -29,6 +29,8 @@ class BillMapService
         //检测票据是否存在param_map中
         if (!empty($sceneData['qr_id'])) {
             $paramInfo = MiniAppQrService::getQrInfoById($sceneData['qr_id']);
+        } elseif (ctype_alnum($sceneData['param_id']) && strlen($sceneData['param_id']) >= 6) {
+            $paramInfo = MiniAppQrService::getQrInfoById($sceneData['param_id']);
         } elseif (isset($sceneData['param_id']) && !empty($sceneData['param_id'])) {
             $paramInfo = ParamMapModel::getParamByQrById($sceneData['param_id']);
             $subInfo = json_decode($paramInfo['param_info'], true);

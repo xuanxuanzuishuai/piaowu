@@ -1082,40 +1082,33 @@ class RtActivityService
     }
 
     /**
-     * ParamMap插入
+     * ParamMap插入:切换为ck保存数据:2022.1.10
      * @param $userId
      * @param $activityId
      * @param $posterId
-     * @return int|mixed|string|null
-     * @throws \App\Libs\KeyErrorRC4Exception
+     * @param $employeeId
+     * @param int $createType
+     * @return null
+     * @throws RunTimeException
      */
     public static function addParamMap($userId, $activityId, $posterId, $employeeId, $createType = 0)
     {
-        $ticket = RC4::encrypt($_ENV['COOKIE_SECURITY_KEY'], ParamMapModel::TYPE_STUDENT . "_" . $userId);
-        $paramInfo = [
-            'r' => $ticket,
-            'c' => self::getRtChannel(),
-            'a' => $activityId,
-            'e' => $employeeId,
-            'p' => $posterId,
-            'create_type' => $createType,
-            'user_current_status' => DssStudentModel::STATUS_BUY_NORMAL_COURSE
+        //获取qrId
+        $qrData = [
+            'user_id'        => $userId,
+            'user_type'      => DssUserQrTicketModel::STUDENT_TYPE,
+            'channel_id'     => self::getRtChannel(),
+            'employee_id'    => $employeeId,
+            'user_status'    => DssStudentModel::STATUS_BUY_NORMAL_COURSE,
+            'app_id'         => Constants::SMART_APP_ID,
+            'qr_type'        => DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_none'),
+            'create_type'    => $createType,
+            'poster_id'    => $posterId,
+            'activity_id'    => $activityId,
         ];
-        $paramInfo = json_encode($paramInfo);
-        $result = ParamMapModel::getRecord(['param_info' => $paramInfo], ['id']);
-        if (!empty($result)) {
-            return $result['id'];
-        }
-        $insert = [
-            'app_id'      => Constants::SMART_APP_ID,
-            'type'        => ParamMapModel::TYPE_STUDENT,
-            'user_id'     => $userId,
-            'param_info'  => $paramInfo,
-            'create_time' => time(),
-        ];
-        ParamMapModel::insertRecord($insert);
-        $result = ParamMapModel::getRecord(['param_info' => $paramInfo], ['id']);
-        return $result['id'];
+        $qrInfo = QrInfoService::getQrIdList(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE, [$qrData]);
+        $qrId = !empty($qrInfo) ? end($qrInfo)['qr_id'] : null;
+        return $qrId;
     }
 
     /**
