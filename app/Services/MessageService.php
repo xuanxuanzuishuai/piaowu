@@ -882,7 +882,7 @@ class MessageService
                     $appId = DssUserWeiXinModel::dealAppId($appId);
                     //即时发送
                     $wechat = WeChatMiniPro::factory($appId, PushMessageService::APPID_BUSI_TYPE_DICT[$appId]);
-                    $wxData = $wechat->getTempMedia('image', 'abcd20220111', AliOSS::replaceCdnDomainForDss('prod/img//AB_test/af2e02e2eb992a23eeb38b9bfcf7871d.png'));
+                    $wxData = $wechat->getTempMedia('image', 'af2e02e2eb992a23eeb38b9bfcf7871d.png', AliOSS::replaceCdnDomainForDss('prod/img//AB_test/af2e02e2eb992a23eeb38b9bfcf7871d.png'));
                     if (!empty($wxData['media_id'])) {
                         $wechat->sendImage($userOpenId, $wxData['media_id']);
                     }
