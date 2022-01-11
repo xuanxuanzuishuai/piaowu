@@ -8,6 +8,7 @@ namespace App\Models;
 use App\Libs\Constants;
 use App\Libs\MysqlDB;
 use App\Libs\Util;
+use Medoo\Medoo;
 
 class RealWeekActivityModel extends Model
 {
@@ -111,6 +112,7 @@ class RealWeekActivityModel extends Model
                 'w.priority_level',
                 'w.target_use_first_pay_time_start',
                 'w.target_use_first_pay_time_end',
+                'w.award_prize_type',
                 'a.award_rule',
                 'a.remark',
             ],
@@ -203,5 +205,40 @@ class RealWeekActivityModel extends Model
             ]
         );
         return empty($activityData) ? [] : $activityData;
+    }
+
+    /**
+     * 获取活动分享任务活动数据
+     * @param $activityIds
+     * @return array
+     */
+    public static function getActivityAndTaskData($activityIds)
+    {
+        $db = MysqlDB::getDB();
+        $list = $db->select(self::$table,
+            [
+                '[>]' . RealSharePosterPassAwardRuleModel::$table => ['activity_id' => 'activity_id'],
+            ],
+            [
+                self::$table . '.name',
+                self::$table . '.activity_id',
+                self::$table . '.start_time',
+                self::$table . '.end_time',
+                self::$table . '.enable_status',
+                self::$table . '.delay_second',
+                self::$table . '.award_prize_type',
+                'task_num_count' => Medoo::raw('max('.RealSharePosterPassAwardRuleModel::$table . '.success_pass_num'.')'),
+                'task_data' => Medoo::raw('group_concat(concat_ws(:separator,'.
+                    RealSharePosterPassAwardRuleModel::$table . '.success_pass_num,'.
+                    RealSharePosterPassAwardRuleModel::$table . '.award_amount,'.
+                    RealSharePosterPassAwardRuleModel::$table . '.award_type) ORDER BY '.
+                    RealSharePosterPassAwardRuleModel::$table . '.success_pass_num)',[":separator"=>'-']),
+            ],
+            [
+                self::$table . '.activity_id' => $activityIds,
+                "GROUP" => [self::$table . '.activity_id'],
+                'ORDER' => ['activity_id' => 'DESC'],
+            ]);
+        return empty($list) ? [] : $list;
     }
 }

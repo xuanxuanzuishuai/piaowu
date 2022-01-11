@@ -31,6 +31,7 @@ use App\Models\MessageRecordModel;
 use App\Models\PosterModel;
 use App\Models\RealSharePosterAwardModel;
 use App\Models\RealSharePosterModel;
+use App\Models\RealSharePosterPassAwardRuleModel;
 use App\Models\RealUserAwardMagicStoneModel;
 use App\Models\RealWeekActivityModel;
 use App\Models\SharePosterModel;
@@ -1294,8 +1295,7 @@ class MessageService
     
     /**
      * 真人 - 发送分享截图审核结果消息
-     * @param $openId
-     * @param array $params
+     * @param $params
      * @return bool
      * @throws RunTimeException
      */
@@ -1312,7 +1312,7 @@ class MessageService
             return false;
         }
         // 获取活动信息
-        $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $sharePosterInfo['activity_id']]);
+        $activityInfo = RealWeekActivityModel::getActivityAndTaskData($sharePosterInfo['activity_id'])[0];
         if (empty($activityInfo)) {
             SimpleLogger::info("sendRealSharePosterMessage activity not found", [$params, $sharePosterInfo]);
             return false;
@@ -1326,10 +1326,11 @@ class MessageService
             SimpleLogger::info("send_real_share_poster_message_lock", [$lock, $sharePosterId, $sharePosterInfo]);
             return false;
         }
-
+        //模板消息扩展信息
+        $ext = [];
         switch ($sharePosterInfo['verify_status']) {
             case RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED: // 审核未通过，发消息
-                $jumpLink = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_refused_poster_url');
+                $ext['url'] = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_refused_poster_url');
                 $awardInfo['type'] = RealSharePosterModel::TYPE_CHECKIN_UPLOAD;
                 $awardInfo['app_id'] = Constants::REAL_APP_ID;
                 $awardInfo['verify_status'] = RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED;
@@ -1338,21 +1339,6 @@ class MessageService
             case RealSharePosterModel::VERIFY_STATUS_WAIT:  // 待审核 不能发送消息
                 break;
             case RealSharePosterModel::VERIFY_STATUS_QUALIFIED: // 审核通过
-                $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
-                if ($activityInfo['activity_id'] <= $oldRuleLastActivityId) {
-                    // 获取海报对应的奖励id
-                    $sharePosterAwardInfo = RealSharePosterAwardModel::getRecord(['share_poster_id' => $sharePosterId]);
-                    if (empty($sharePosterAwardInfo)) {
-                        SimpleLogger::info("sendRealSharePosterMessage share_poster_info empty", [$params]);
-                        return false;
-                    }
-                    // 获取奖励详细信息
-                    $awardInfo = RealUserAwardMagicStoneModel::getRecord(['id' => $sharePosterAwardInfo['award_id']]);
-                    if (empty($awardInfo)) {
-                        SimpleLogger::info("sendRealSharePosterMessage award_info empty", [$params, $sharePosterAwardInfo]);
-                        return false;
-                    }
-                }
                 // 获取基本的延时发放时间，单位秒
                 $sendAwardBaseDelaySecond = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'send_award_base_delay_second');
                 // 指定必要字段
@@ -1362,23 +1348,27 @@ class MessageService
                 $awardInfo['delay_send_award_day'] = intval((intval($sendAwardBaseDelaySecond) + intval($activityInfo['delay_second'])) / Util::TIMESTAMP_ONEDAY);
                 $awardInfo['user_id'] = $sharePosterInfo['student_id'] ?? 0;
                 $jumpLink = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_week_activity_url');
+                $awardData = RealSharePosterPassAwardRuleModel::getRecord(['activity_id'=>$activityInfo['activity_id'],'success_pass_num'=>$params['check_success_numbers']],['award_amount','award_type']);
+                $ext = [
+                    'activity_name' => RealWeekActivityService::formatWeekActivityName($activityInfo),
+                    'url' => !empty($jumpLink) ? $jumpLink : '',
+                    'award_amount' => $awardData['award_amount'],
+                    'award_type' => $awardData['award_type'],
+                    'award_data' => $awardData['award_amount']."魔法石",
+                    'delay_send_award_day' => $awardInfo['delay_send_award_day'] ?? 0,
+                    'activity_id' => $activityInfo['activity_id'],
+                    'check_success_numbers' =>$params['check_success_numbers'],
+                    'award_prize_type' =>$activityInfo['award_prize_type'],
+                ];
                 break;
             default:
-                // 待审核 不能发送消息
                 SimpleLogger::info("sendRealSharePosterMessage share_poster VERIFY_STATUS_WAIT", [$params]);
                 break;
         }
-
         if (empty($awardInfo)) {
             return false;
         }
-        $ext = [
-            'activity_name' => $activityInfo['name'] ?? '',
-            'url' => !empty($jumpLink) ? $jumpLink : '',
-            'award_amount' => $awardInfo['award_amount'] ?? 0,
-            'delay_send_award_day' => $awardInfo['delay_send_award_day'] ?? 0,
-            'activity_id' => $activityInfo['activity_id'] ?? 0,
-        ];
+        //发送消息
         PushMessageService::realSendMessage($awardInfo, $ext);
         return true;
     }

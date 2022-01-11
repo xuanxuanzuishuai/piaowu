@@ -111,7 +111,7 @@ class RealUserAwardMagicStoneService
         );
 
         // 发送消息
-        QueueService::realSendPosterAwardMessage(["share_poster_id" => $sharePosterId]);
+        QueueService::realSendPosterAwardMessage([["share_poster_id" => $sharePosterId]]);
 
         // 返回结果
         return true;
@@ -222,12 +222,7 @@ class RealUserAwardMagicStoneService
             return false;
         }
         // 获取用户活动中上传截图成功通过审核的次数
-        $successSharePosterCount = RealSharePosterModel::getCount([
-            'activity_id' => $activityId,
-            'student_id' => $studentId,
-            'type' => RealSharePosterModel::TYPE_WEEK_UPLOAD,
-            'verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED
-        ]);
+        $successSharePosterCount = RealSharePosterService:: getSharePosterVerifySuccessCountData($studentId, $activityId);
         // 根据成功通过审核次数获取应得奖励
         $passAwardInfo = RealSharePosterPassAwardRuleModel::getRecord(['activity_id' => $activityId, 'success_pass_num' => $successSharePosterCount]);
         if (empty($passAwardInfo)) {

@@ -1157,6 +1157,11 @@ class DictConstants {
         ],
     ];
 
+    // 运营活动奖品发放方式类型配置
+    const AWARD_PRIZE_TYPE = [
+        'type' => 'award_prize_type',
+        'keys' => [1, 2],
+    ];
 
 
     /**

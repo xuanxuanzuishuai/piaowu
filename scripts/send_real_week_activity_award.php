@@ -22,6 +22,7 @@ use App\Libs\Constants;
 use App\Libs\RealDictConstants;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
+use App\Models\OperationActivityModel;
 use App\Models\RealSharePosterModel;
 use App\Models\RealUserAwardMagicStoneModel;
 use App\Models\RealWeekActivityModel;
@@ -58,6 +59,7 @@ class ScriptSendRealWeekActivityAward
         if (empty($activityList)) {
             return self::returnResponse(true, []);
         }
+        $queueData = [];
         // 获取活动参与用户
         foreach ($activityList as $item) {
             // 检查活动奖励是否已经发放
@@ -73,18 +75,20 @@ class ScriptSendRealWeekActivityAward
             }
             // 放入用户发奖队列
             foreach ($studentList as $_studentId) {
-                $queueData = [
+                $queueData[] = [
                     'app_id'       => Constants::REAL_APP_ID,
                     'student_id'   => $_studentId,
                     'activity_id'  => $item['activity_id'],
                     'act_status'   => RealUserAwardMagicStoneModel::STATUS_GIVE,
                     'defer_second' => self::getStudentWeekActivitySendAwardDeferSecond($_studentId)
                 ];
-                QueueService::addRealUserPosterAward($queueData);
-                SimpleLogger::info("qingfeng-test-addRealUserPosterAward", [$queueData]);
             }
             unset($_studentId);
         }
+        //批量投递消费消费队列
+        QueueService::addRealUserPosterAward($queueData);
+        SimpleLogger::info("qingfeng-test-addRealUserPosterAward", [$queueData]);
+
         unset($item);
 
         // 清理队列延时发放时间
@@ -128,7 +132,8 @@ class ScriptSendRealWeekActivityAward
         return RealWeekActivityModel::getRecords([
             'send_award_time[>=]' => self::$todayFirstTime,
             'send_award_time[<=]' => self::$time,
-            'activity_id[>]'      => $oldRuleLastActivityId
+            'activity_id[>]'      => $oldRuleLastActivityId,
+            'award_prize_type'    => OperationActivityModel::AWARD_PRIZE_TYPE_DELAY
         ]);
     }
 

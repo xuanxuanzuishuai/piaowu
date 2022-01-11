@@ -15,14 +15,13 @@ use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
-use App\Models\Dss\DssStudentModel;
+use App\Models\ActivityExtModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\RealSharePosterModel;
 use App\Models\RealWeekActivityModel;
 use App\Services\RealActivityService;
 use App\Services\RealSharePosterService;
 use App\Services\RealUserAwardMagicStoneService;
-use App\Services\RealWeekActivityService;
 use App\Services\SharePosterService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -36,7 +35,7 @@ use Slim\Http\StatusCode;
 class StudentActivity extends ControllerBase
 {
     /**
-     * 获取周周领奖活动信息
+     * 获取周周领奖活动信息：当前时间有效活动
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -300,4 +299,74 @@ class StudentActivity extends ControllerBase
         }
         return HttpHelper::buildResponse($response, $data);
     }
+
+    /**
+     * 真人 - 周周领奖活动奖励细则
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getWeekActivityAwardRule(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'activity_id',
+                'type' => 'required',
+                'error_code' => 'activity_id_is_required'
+            ],
+            [
+                'key' => 'activity_id',
+                'type' => 'integer',
+                'error_code' => 'activity_id_is_integer'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $data = ActivityExtModel::getRecord(['activity_id'=>(int)$params['activity_id']],['award_rule']);
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 真人 - 周周领奖活动分享任务审核记录
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getWeekActivityVerifyList(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'activity_id',
+                'type' => 'required',
+                'error_code' => 'activity_id_is_required'
+            ],
+            [
+                'key' => 'activity_id',
+                'type' => 'integer',
+                'error_code' => 'activity_id_is_integer'
+            ],
+            [
+                'key' => 'page',
+                'type' => 'integer',
+                'error_code' => 'page_is_integer'
+            ],
+            [
+                'key' => 'count',
+                'type' => 'integer',
+                'error_code' => 'count_is_integer'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        list($page, $limit) = Util::formatPageCount($params);
+        $data = RealSharePosterService::getWeekActivityVerifyList( $this->ci['user_info']['user_id'], (int)$params['activity_id'], $page, $limit);
+        return HttpHelper::buildResponse($response, $data);
+    }
+
 }

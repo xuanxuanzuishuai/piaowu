@@ -10,7 +10,6 @@ use App\Libs\RealDictConstants;
 use App\Libs\Util;
 use App\Models\ActivityExtModel;
 use App\Models\Dss\DssUserQrTicketModel;
-use App\Models\Erp\ErpStudentAppModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\OperationActivityModel;
 use App\Models\RealMonthActivityModel;
@@ -20,6 +19,7 @@ use App\Models\RealSharePosterTaskListModel;
 use App\Models\RealWeekActivityModel;
 use App\Models\TemplatePosterModel;
 use App\Services\Queue\QueueService;
+use Medoo\Medoo;
 
 class RealActivityService
 {
@@ -38,7 +38,8 @@ class RealActivityService
             'activity' => [],
             'student_info' => [],
             'channel_list' => [],
-            'is_have_activity' => true,
+            'is_have_activity' => true,//当前时间是否存在生效的活动
+            'no_re_activity_reason' => 1,//补卡活动的状态
         ];
         //获取学生信息
         $studentDetail = ErpStudentModel::getStudentInfoById($studentId);
@@ -56,6 +57,7 @@ class RealActivityService
             'pay_status' => $studentPayStatus['pay_status'] ?? '',
             'pay_status_zh' => $studentPayStatus['status_zh'] ?? '',
         ];
+        $data['no_re_activity_reason'] = self::getReCardActivityList($studentDetail)['no_re_activity_reason'];
         // 获取活动详情
         $activityList = RealWeekActivityService::getStudentCanPartakeWeekActivityList($studentDetail);
         $canPartakeActivityId = $activityList[0]['activity_id'] ?? 0;
@@ -77,12 +79,53 @@ class RealActivityService
         if (empty($diffActivityTaskNum)) {
             $data['student_info']['can_upload'] = false;
         }
-
         // 获取活动海报
         list($data['list'], $data['activity']) = self::getWeekActivityPosterList($activityList[0], $fromType, $studentDetail);
         //渠道获取
         list($data['channel_list']['first']) = DictConstants::getValues(DictConstants::ACTIVITY_CONFIG, ['channel_week_' . $fromType]);
         return $data;
+    }
+
+    /**
+     * 获取可以补卡的活动列表:以结束并结束时间距离现在5天内
+     * @param $studentInfo
+     * @return array 1当前没有具备补卡资格的活动 2具备补卡资格的活动分享任务都已通过 3存在有效的补卡活动
+     */
+    public static function getReCardActivityList($studentInfo)
+    {
+        $reCardActivity = [
+            'no_re_activity_reason' => 1,
+            'list' => [],
+        ];
+        $activityList = RealWeekActivityService::getStudentCanPartakeWeekActivityList($studentInfo, 2);
+        if (empty($activityList)) {
+            return $reCardActivity;
+        }
+        $activityIds = array_column($activityList, 'activity_id');
+        // 获取活动任务列表
+        $activityTaskList = RealSharePosterTaskListModel::getActivityTaskList($activityIds);
+        if (empty($activityTaskList)) {
+            return $reCardActivity;
+        }
+        $activityTaskList = array_column($activityTaskList, null, 'activity_task');
+        // 查看学生可参与的活动中已经审核通过的分享任务
+        $haveQualifiedActivityIds = RealSharePosterModel::getRecords([
+            'student_id' => $studentInfo['id'],
+            'activity_id' => $activityIds,
+            'verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED,
+            'task_num' => array_unique(array_column($activityTaskList, 'task_num')),
+        ], ["activity_task" => Medoo::raw('concat_ws(:separator,activity_id,task_num)', [":separator" => '-'])]);
+        // 差集
+        $diffActivityTaskNum = array_diff(array_column($activityTaskList, 'activity_task'), array_column($haveQualifiedActivityIds, 'activity_task'));
+        if (empty($diffActivityTaskNum)) {
+            $reCardActivity['empty_reason'] = 2;
+        }
+        // 交集
+        $canPartakeActivity = array_intersect_key($activityTaskList, array_flip($diffActivityTaskNum));
+        array_multisort(array_column($canPartakeActivity, 'start_time'), SORT_DESC, array_column($canPartakeActivity, 'task_num'), SORT_ASC, $canPartakeActivity);
+        $reCardActivity['empty_reason'] = 3;
+        $reCardActivity['list'] = $canPartakeActivity;
+        return $reCardActivity;
     }
 
 
@@ -297,44 +340,58 @@ class RealActivityService
         if (empty($studentInfo)) {
             return [];
         }
-        // 获取用户可参与的活动
-        $activityList         = RealWeekActivityService::getStudentCanPartakeWeekActivityList([
+        $time = time();
+        // 获取当前时间有效的活动
+        $nowAffectActivityData = RealWeekActivityService::getStudentCanPartakeWeekActivityList([
             'student_id' => $studentInfo['id'],
-            'uuid'       => $studentInfo['uuid'],
+            'uuid' => $studentInfo['uuid'],
         ]);
-        $canPartakeActivityId = $activityList[0]['activity_id'] ?? 0;
-        if (empty($canPartakeActivityId)) {
-            return [];
+        //有效活动的开始时间是否在24小时内：true是 false不是
+        $activityTimeStatusIn24 = true;
+        $currentActivityCanPartakeActivity = [];
+        $currentActivity = array_shift($nowAffectActivityData);
+        if (!empty($currentActivity) && (($time - $currentActivity['start_time']) > (Util::TIMESTAMP_1H * 24))) {
+            $activityTimeStatusIn24 = false;
         }
         // 获取活动任务列表
-        $activityTaskList = RealSharePosterTaskListModel::getRecords(['activity_id' => $canPartakeActivityId, 'ORDER' => ['task_num' => 'ASC']]);
-        if (empty($activityTaskList)) {
-            return [];
-        }
-        // 查看学生可参与的活动中已经审核通过的分享任务
-        $haveQualifiedActivityIds = RealSharePosterModel::getRecords([
-            'student_id'    => $studentInfo['id'],
-            'activity_id'   => $canPartakeActivityId,
-            'verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED,
-        ], 'task_num');
-        // 查看学生相对可参与活动的状态 - 计算差集
-        $diffActivityTaskNum = array_diff(array_column($activityTaskList, 'task_num'), $haveQualifiedActivityIds);
-        if (empty($diffActivityTaskNum)) {
-            return [];
-        }
-        // 拼接可参与活动的列表
-        foreach ($activityTaskList as $_taskInfo) {
-            if (!in_array($_taskInfo['task_num'], $diffActivityTaskNum)) {
-                continue;
+        $activityTaskList = RealSharePosterTaskListModel::getActivityTaskList($currentActivity['activity_id']);
+        if (!empty($activityTaskList)) {
+            $activityTaskList = array_column($activityTaskList, null, 'activity_task');
+            // 查看学生可参与的活动中已经审核通过的分享任务
+            $haveQualifiedActivityIds = RealSharePosterModel::getRecords([
+                'student_id' => $studentInfo['id'],
+                'activity_id' => $currentActivity['activity_id'],
+                'verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED,
+                'task_num' => array_unique(array_column($activityTaskList, 'task_num')),
+            ], ["activity_task" => Medoo::raw('concat_ws(:separator,activity_id,task_num)', [":separator" => '-'])]);
+            // 差集
+            $diffActivityTaskNum = array_diff(array_column($activityTaskList, 'activity_task'), array_column($haveQualifiedActivityIds, 'activity_task'));
+            if (!empty($diffActivityTaskNum)) {
+                // 交集
+                $currentActivityCanPartakeActivity = array_intersect_key($activityTaskList, array_flip($diffActivityTaskNum));
             }
-            $result[] = [
-                'activity_id'         => $_taskInfo['activity_id'],
-                'task_num'            => $_taskInfo['task_num'],
-                'name'                => $_taskInfo['task_name'],
-            ];
         }
-        unset($_taskInfo);
-        return $result ?? [];
+        //获取可以补卡的活动
+        $reCardActivityList = self::getReCardActivityList(['student_id' => $studentInfo['id'], 'uuid' => $studentInfo['uuid'],])['list'];
+        if ($activityTimeStatusIn24) {
+            //当前活动开始24小时内
+            $totalActivityList = array_merge($reCardActivityList, $currentActivityCanPartakeActivity);
+        } else {
+            //当前活动开始24小时后
+            $totalActivityList = array_merge($currentActivityCanPartakeActivity, $reCardActivityList);
+        }
+        if (empty($totalActivityList)) {
+            return [];
+        }
+        // 格式化数据
+        $result = array_map(function ($av) {
+            return [
+                'activity_id' => $av['activity_id'],
+                'task_num' => $av['task_num'],
+                'name' => RealWeekActivityService::formatWeekActivityTaskName($av),
+            ];
+        }, $totalActivityList);
+        return array_values($result);
     }
 
     /**
@@ -348,79 +405,6 @@ class RealActivityService
      */
     public static function weekActivityPosterScreenShotUpload($studentData, $activityId, $imagePath, $taskNum)
     {
-        $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
-        /** 老活动奖励规则 */
-        if ($activityId <= $oldRuleLastActivityId) {
-            $time = time();
-            //审核通过不允许上传截图
-            $uploadRecord = RealSharePosterModel::getRecord([
-                'student_id' => $studentData['id'],
-                'activity_id' => $activityId,
-                'ORDER' => ['id' => 'DESC']
-            ], ['verify_status', 'id']);
-            if (!empty($uploadRecord) && ($uploadRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED)) {
-                throw new RunTimeException(['wait_for_next_event']);
-            }
-            /** 如果没上传过，则不校验身份 */
-            if (empty($uploadRecord)) {
-                //资格检测 - 获取用户身份属性
-                $studentIdAttribute = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentData['id'], '');
-                // 检查一下用户是否是有效用户，不是有效用户不可能有可参与的活动
-                if (!UserService::checkRealStudentIdentityIsNormal($studentData['id'], $studentIdAttribute)) {
-                    throw new RunTimeException(['student_status_disable']);
-                }
-                // 检查用户首次付费时间
-                if (self::xyzopCheckIsSpecialActivityId(['activity_id' => $activityId])) {
-                    // 指定活动 - 判断首次付费时间是否是在指定时间内
-                    if (!self::xyzopCheckCondition(['first_pay_time' => $studentIdAttribute['first_pay_time']])) {
-                        throw new RunTimeException(['student_status_disable']);
-                    }
-                } else {
-                    // 最普通的活动， 检查用户首次付费时间是不是在10.26号之前
-                    $splitTime = DictConstants::get(DictConstants::ACTIVITY_CONFIG, 'real_week_tab_first_pay_split_time');
-                    if ($studentIdAttribute['first_pay_time'] <= $splitTime) {
-                        throw new RunTimeException(['student_status_disable']);
-                    }
-                }
-            }
-
-            // 活动检测：获取活动信息， 活动是启用中，并且当前时间小于活动结束时间+5天
-            $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $activityId]);
-            if (empty($activityInfo) || !in_array($activityInfo['enable_status'], [OperationActivityModel::ENABLE_STATUS_ON, OperationActivityModel::ENABLE_STATUS_OFF]) || ($activityInfo['end_time']+5*Util::TIMESTAMP_ONEDAY) < $time) {
-                throw new RunTimeException(['activity_over_not_upload_share_poster']);
-            }
-            // 老活动只能是未通过，未审核的可以重新上传， 不支持补卡
-            if ($activityInfo['end_time'] < $time && ($activityInfo['end_time']+5*Util::TIMESTAMP_ONEDAY) >= $time && empty($uploadRecord)) {
-                throw new RunTimeException(['wait_for_next_event']);
-            }
-
-            $data = [
-                'student_id' => $studentData['id'],
-                'type' => RealSharePosterModel::TYPE_WEEK_UPLOAD,
-                'activity_id' => $activityId,
-                'image_path' => $imagePath,
-                'verify_reason' => '',
-                'unique_code' => '',
-                'create_time' => $time,
-                'update_time' => $time,
-            ];
-            if (empty($uploadRecord) || $uploadRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
-                $res = RealSharePosterModel::insertRecord($data);
-            } else {
-                unset($data['create_time']);
-                $count = RealSharePosterModel::updateRecord($uploadRecord['id'], $data);
-                if (empty($count)) {
-                    throw new RunTimeException(['update_fail']);
-                }
-                $res = $uploadRecord['id'];
-            }
-            if (empty($res)) {
-                throw new RunTimeException(['share_poster_add_fail']);
-            }
-            //系统自动审核
-            QueueService::checkPoster(['id' => $res, 'app_id' => Constants::REAL_APP_ID]);
-            return $res;
-        }
         /** 新奖励规则 */
         $time = time();
         //审核通过不允许上传截图
@@ -433,7 +417,7 @@ class RealActivityService
         if (!empty($uploadRecord) && ($uploadRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED)) {
             throw new RunTimeException(['wait_for_next_event']);
         }
-        /** 如果没上传过，则不校验身份 */
+        //重新上传不校验资格，否则需要校验活动以及身份数据
         if (empty($uploadRecord)) {
             //资格检测 - 获取用户身份属性
             $studentIdAttribute = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentData['id'], '');
@@ -446,15 +430,11 @@ class RealActivityService
                     throw new RunTimeException(['student_status_disable']);
                 }
             }
-        }
-        // 检查周周领奖活动是否可以上传 - 未结束 或 已结束但没超过5天
-        $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $activityId]);
-        if (!RealSharePosterService::checkWeekActivityAllowUpload($activityInfo, $time)) {
-            throw new RunTimeException(['wait_for_next_event']);
-        }
-        // 已结束的活动，未审核或审核未通过的活动结束后5天内可以重新上传， 不支持补卡
-        if ($activityInfo['end_time'] < $time && ($activityInfo['end_time']+5*Util::TIMESTAMP_ONEDAY) >= $time && empty($uploadRecord)) {
-            throw new RunTimeException(['wait_for_next_event']);
+            // 检查周周领奖活动是否可以上传 - 未结束 或 已结束但没超过5天
+            $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $activityId]);
+            if (!RealSharePosterService::checkWeekActivityAllowUpload($activityInfo, $time)) {
+                throw new RunTimeException(['wait_for_next_event']);
+            }
         }
         $data = [
             'student_id' => $studentData['id'],

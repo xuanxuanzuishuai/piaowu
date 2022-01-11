@@ -9,6 +9,7 @@ namespace App\Models;
 use App\Libs\Constants;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
+use Medoo\Medoo;
 
 class RealSharePosterTaskListModel extends Model
 {
@@ -27,7 +28,7 @@ class RealSharePosterTaskListModel extends Model
         foreach ($taskList as $_taskNum => $_item) {
             $info = [
                 'activity_id' => $activityId,
-                'task_name' => $_item['task_name'],
+                'task_name' => '',
                 'task_num' => $_taskNum + 1,
                 'create_time' => $createTime,
             ];
@@ -54,5 +55,31 @@ class RealSharePosterTaskListModel extends Model
             return false;
         }
         return self::batchInsertActivityTask($activityId, $taskList, $createTime);
+    }
+
+    /**
+     * 获取活动分享任务活动数据
+     * @param $activityIds
+     * @return array
+     */
+    public static function getActivityTaskList($activityIds)
+    {
+        $db = MysqlDB::getDB();
+        $list = $db->select(self::$table,
+            [
+                '[>]' . RealWeekActivityModel::$table => ['activity_id' => 'activity_id'],
+            ],
+            [
+                RealWeekActivityModel::$table . '.name',
+                RealWeekActivityModel::$table . '.start_time',
+                RealWeekActivityModel::$table . '.end_time',
+                self::$table . '.task_num',
+                self::$table . '.activity_id',
+                "activity_task" => Medoo::raw('concat_ws(:separator,'.self::$table . '.activity_id'.','.self::$table . '.task_num'.')',[":separator"=>'-']),
+            ],
+            [
+                self::$table . '.activity_id' => $activityIds,
+            ]);
+        return empty($list) ? [] : $list;
     }
 }

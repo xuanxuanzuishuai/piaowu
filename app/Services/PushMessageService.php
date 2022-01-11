@@ -157,10 +157,11 @@ class PushMessageService
     /**
      * 微信发送自定义消息
      * @param $id
-     * @param array $replaceParams      动态参数
+     * @param $replaceParams
      * @param $openId
      * @param $appId
-     * @return array|bool|mixed
+     * @return array|bool|false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
      */
     public static function notifyUserCustomizeMessage($id, $replaceParams, $openId, $appId)
     {
@@ -329,9 +330,10 @@ class PushMessageService
 
     /**
      * 真人 - 消息推送
-     * @param array $awardDetailInfo  奖励信息
-     * @param array $ext 扩展信息
+     * @param array $awardDetailInfo
+     * @param array $ext
      * @return bool
+     * @throws \App\Libs\Exceptions\RunTimeException
      */
     public static function realSendMessage(array $awardDetailInfo, array $ext = [])
     {
@@ -341,7 +343,7 @@ class PushMessageService
         }
 
         // 获取奖励id
-        $baseTemId = self::realGetWechatConfigId(array_merge($awardDetailInfo, ['activity_id' => $ext['activity_id'] ?? 0]));
+        $baseTemId = self::realGetWechatConfigId(array_merge($awardDetailInfo, ['award_prize_type' => $ext['award_prize_type']]));
         if (empty($baseTemId)) {
             SimpleLogger::info('not found tem id', ['award' => $awardDetailInfo]);
             return false;
@@ -360,29 +362,20 @@ class PushMessageService
     }
 
     /**
-     * 真人 - 获取奖励id
+     * 真人 - 获取奖励消息id
      * @param $awardInfo
      * @return int
      */
     public static function realGetWechatConfigId($awardInfo)
     {
-        $oldRuleLastActivityId = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
-        $activityId = $awardInfo['activity_id'] ?? 0;
         //当前奖励要发放的数据库的消息模板
-        if ($activityId <= $oldRuleLastActivityId) {
-            $wechatConfigId = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_CONFIG, $awardInfo['verify_status']);
-        } else {
-            $wechatConfigId = RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_CONFIG, 'new-' . $awardInfo['verify_status']);
-        }
-        return $wechatConfigId;
+        return RealDictConstants::get(RealDictConstants::REAL_SHARE_POSTER_CONFIG, $awardInfo['verify_status'] .'-'. $awardInfo['award_prize_type']);
     }
 
     /**
      * 发送客服消息
-     * @param $appId
-     * @param $userId
-     * @param $wechatConfigId
-     * @param $replaceParams
+     * @param $msgBody
+     * @throws \App\Libs\Exceptions\RunTimeException
      */
     public static function sendUserWxMsg($msgBody)
     {
