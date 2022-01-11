@@ -10,9 +10,7 @@ namespace App\Services;
 
 
 use App\Libs\SimpleLogger;
-use App\Libs\UserCenter;
 use App\Models\BillMapModel;
-use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\ParamMapModel;
 
 class BillMapService
@@ -29,12 +27,14 @@ class BillMapService
         //检测票据是否存在param_map中
         if (!empty($sceneData['qr_id'])) {
             $paramInfo = MiniAppQrService::getQrInfoById($sceneData['qr_id']);
-        } elseif (ctype_alnum($sceneData['param_id']) && strlen($sceneData['param_id']) >= 6) {
-            $paramInfo = MiniAppQrService::getQrInfoById($sceneData['param_id']);
         } elseif (isset($sceneData['param_id']) && !empty($sceneData['param_id'])) {
-            $paramInfo = ParamMapModel::getParamByQrById($sceneData['param_id']);
-            $subInfo = json_decode($paramInfo['param_info'], true);
-            $paramInfo['c'] = $subInfo['c'] ?? 0;
+            //先查询ck,在查询param map
+            $paramInfo = MiniAppQrService::getQrInfoById($sceneData['param_id']);
+            if (empty($paramInfo)) {
+                $paramInfo = ParamMapModel::getParamByQrById($sceneData['param_id']);
+                $subInfo = json_decode($paramInfo['param_info'], true);
+                $paramInfo['c'] = $subInfo['c'] ?? 0;
+            }
         } elseif(!empty($sceneData['r'])){
             //获取票据对应的用户身份类型
             $identityData = StudentInviteService::checkQrTicketIdentity($sceneData['r'], $sceneData['qr_id']);
