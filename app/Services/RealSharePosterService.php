@@ -10,6 +10,7 @@ namespace App\Services;
 
 use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\AliOSS;
 use App\Libs\RealDictConstants;
@@ -25,6 +26,7 @@ use App\Models\OperationActivityModel;
 use App\Models\QrInfoOpCHModel;
 use App\Models\RealSharePosterAwardModel;
 use App\Models\RealSharePosterModel;
+use App\Models\RealSharePosterPassAwardRuleModel;
 use App\Models\RealSharePosterTaskListModel;
 use App\Models\RealUserAwardMagicStoneModel;
 use App\Models\RealWeekActivityModel;
@@ -216,6 +218,8 @@ class RealSharePosterService
             'update_time'   => $now,
         ];
         $redis = RedisDB::getConn();
+        //请求erp发放奖励学员uuid数组
+        $requestErpUuidData = [];
         foreach ($posters as $key => $poster) {
             // 审核数据操作锁，解决并发导致的重复审核和发奖
             $lockKey = self::KEY_POSTER_VERIFY_LOCK . $poster['id'];
@@ -238,9 +242,65 @@ class RealSharePosterService
 
             // 发送消息
             QueueService::realSendPosterAwardMessage(["share_poster_id" => $poster['id']]);
+            $requestErpUuidData[] = [
+                "uuid" => $poster['uuid'],
+                "mobile" => $poster['mobile'],
+                "student_id" => $poster['student_id'],
+                'activity_id' => $poster['activity_id'],
+                'task_num' => $poster['task_num'],
+            ];
+        }
+        self::tmpRequestErpSendAwardInTime($requestErpUuidData);
+        return true;
+    }
+
+    /**
+     * 临时方法：真人奖励及时发放
+     * @param $requestErpUuidData
+     * @return bool
+     */
+    public static function tmpRequestErpSendAwardInTime($requestErpUuidData)
+    {
+        if (empty($requestErpUuidData)) {
+            return false;
+        }
+        //活动奖励数据：奖励取活动的第一次分享任务的奖励数量
+        $activityIds = array_column($requestErpUuidData, 'activity_id');
+        $activityData = array_column(RealWeekActivityModel::getRecords(['activity_id' => $activityIds], ['activity_id', 'name']), null, 'activity_id');
+        $awardData = array_column(RealSharePosterPassAwardRuleModel::getRecords(['activity_id' => $activityIds, 'success_pass_num' => 1], ['award_amount', 'activity_id']),
+            null,
+            'activity_id');
+        foreach ($requestErpUuidData as $rv) {
+            if (empty($awardData[$rv['activity_id']]['award_amount'])) {
+                SimpleLogger::info(" real share poster send award error data", [$rv]);
+                continue;
+            }
+            $requestErpData[] = [
+                'uuid' => $rv['uuid'],
+                'mobile' => $rv['mobile'],
+                'student_id' => $rv['student_id'],
+                'num' => $awardData[$rv['activity_id']]['award_amount'],
+                'remark' => $activityData[$rv['activity_id']]['name'],
+            ];
+        }
+        if (empty($requestErpData)) {
+            return false;
+        }
+        // 发放积分
+        $erpObj = new Erp();
+        foreach ($requestErpData as $ev) {
+            $requestErpRes = $erpObj->batchAwardPoints([
+                'award_points_list' => [$ev],
+                'app_id' => Constants::REAL_APP_ID,
+                'sub_type' => Constants::ERP_ACCOUNT_NAME_MAGIC,
+                'remark' => $ev['remark'],
+            ]);
+            SimpleLogger::info(" real share poster send award request erp", ['res' => $requestErpRes, 'params' => $ev]);
         }
         return true;
     }
+
+
 
     /**
      * 截图审核-发奖-消费者

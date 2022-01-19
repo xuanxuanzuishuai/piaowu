@@ -76,7 +76,6 @@ class RealSharePosterModel extends Model
     {
         $sp = self::getTableNameWithDb();
         $s  = ErpStudentModel::getTableNameWithDb();
-        $uw = ErpUserWeiXinModel::getTableNameWithDb();
         $ac = OperationActivityModel::getTableNameWithDb();
         $sql = "
         SELECT
@@ -88,6 +87,7 @@ class RealSharePosterModel extends Model
             sp.ext->>'$.node_order' day,
             sp.create_time,
             sp.type,
+            sp.task_num,
             ac.name activity_name,
             s.uuid,
             s.mobile
