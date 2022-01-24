@@ -110,7 +110,7 @@ class RealActivityService
         $activityTaskList = array_column($activityTaskList, null, 'activity_task');
         // 查看学生可参与的活动中已经审核通过的分享任务
         $haveQualifiedActivityIds = RealSharePosterModel::getRecords([
-            'student_id' => $studentInfo['id'],
+            'student_id' => $studentInfo['student_id'],
             'activity_id' => $activityIds,
             'verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED,
             'task_num' => array_unique(array_column($activityTaskList, 'task_num')),
@@ -359,7 +359,7 @@ class RealActivityService
             $activityTaskList = array_column($activityTaskList, null, 'activity_task');
             // 查看学生可参与的活动中已经审核通过的分享任务
             $haveQualifiedActivityIds = RealSharePosterModel::getRecords([
-                'student_id' => $studentInfo['id'],
+                'student_id' => $studentData['id'],
                 'activity_id' => $currentActivity['activity_id'],
                 'verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED,
                 'task_num' => array_unique(array_column($activityTaskList, 'task_num')),

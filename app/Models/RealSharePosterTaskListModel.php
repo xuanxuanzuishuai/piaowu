@@ -75,10 +75,12 @@ class RealSharePosterTaskListModel extends Model
                 RealWeekActivityModel::$table . '.end_time',
                 self::$table . '.task_num',
                 self::$table . '.activity_id',
+                "task_num_count" => Medoo::raw('max('.self::$table . '.task_num)'),
                 "activity_task" => Medoo::raw('concat_ws(:separator,'.self::$table . '.activity_id'.','.self::$table . '.task_num'.')',[":separator"=>'-']),
             ],
             [
                 self::$table . '.activity_id' => $activityIds,
+                'GROUP' => [self::$table . '.task_num', self::$table . '.activity_id',],
             ]);
         return empty($list) ? [] : $list;
     }

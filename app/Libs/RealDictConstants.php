@@ -78,6 +78,7 @@ class RealDictConstants extends DictConstants
             'old_rule_last_activity_id',  // 旧规则最后的活动id
             'activity_over_allow_upload_second',  // 活动结束后允许上传时间，单位秒
             'send_award_magic_stone_msg_id',  // 发放魔法石奖励到账通知消息id
+            '2000_send_award_activity_id',  // 运营配置的发放奖励时间为5+2000天后发放的活动id
         ],
     ];
 

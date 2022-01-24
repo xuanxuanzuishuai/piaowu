@@ -306,21 +306,9 @@ class RealWeekActivityService
         }
         $activityInfo['poster'] = $poster;
         $activityInfo['personality_poster'] = $personality_poster;
-
         // 获取活动对应的任务
-        $activityInfo['task_list'] = RealSharePosterTaskListModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['task_num' => 'ASC']]);
-        // 获取奖励
-        $activityInfo['pass_award_rule_list'] = RealSharePosterPassAwardRuleModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['success_pass_num' => 'ASC']]);
-        foreach ($activityInfo['task_list'] as $index => &$item) {
-            $passAwardRuleInfo = $activityInfo['pass_award_rule_list'][$index] ?? [];
-            if (empty($passAwardRuleInfo)) {
-                continue;
-            }
-            // 前端展示 - 兼容字段
-            $passAwardRuleInfo['task_award'] = $passAwardRuleInfo['award_amount'];
-            $item = array_merge($item, $passAwardRuleInfo);
-        }
-        unset($index, $item);
+        $activityInfo['task_list'] = array_column(RealSharePosterPassAwardRuleModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['success_pass_num' => 'ASC']]),'award_amount');
+
         //分享任务总数
         $activityInfo['task_num_count'] = count($activityInfo['task_list']);
         // 获取uuid
@@ -478,10 +466,8 @@ class RealWeekActivityService
         //启用活动：检测当前是否存在开始时间小于当前活动的结束时间并启用状态为已启动的活动
         if ($enableStatus == OperationActivityModel::ENABLE_STATUS_ON) {
             $conflictData = RealWeekActivityModel::getCount([
-                'OR' => [
-                    'start_time[<=]' => $activityInfo['end_time'],
-                    'end_time[>=]' => $activityInfo['start_time'],
-                ],
+                'start_time[<=]' => $activityInfo['end_time'],
+                'end_time[>=]' => $activityInfo['start_time'],
                 'enable_status' => OperationActivityModel::ENABLE_STATUS_ON]);
             if ($conflictData > 0) {
                 throw new RunTimeException(['activity_conflict']);
@@ -784,7 +770,7 @@ class RealWeekActivityService
     {
         $taskNumCount = empty($activityData['task_num_count']) ? '1' : $activityData['task_num_count'];
         $timeFormat = '(' . date("m.d", $activityData['start_time']) . '-' . date("m.d", $activityData['end_time']) . ')';
-        return $taskNumCount . '次' . $activityData['name'] . $timeFormat;
+        return $taskNumCount . '次分享截图活动' . $timeFormat;
     }
 
     /**
@@ -797,6 +783,6 @@ class RealWeekActivityService
         $taskNumCount = empty($activityTaskData['task_num_count']) ? '1' : $activityTaskData['task_num_count'];
         $timeFormat = '(' . date("m.d", $activityTaskData['start_time']) . '-' . date("m.d", $activityTaskData['end_time']) . ')';
         $taskNum = empty($activityTaskData['task_num']) ? 1 : $activityTaskData['task_num'];
-        return $taskNumCount . '次' . $activityTaskData['name'] . '-'.$taskNum .$timeFormat;
+        return $taskNumCount . '次分享截图活动-'.$taskNum .$timeFormat;
     }
 }
