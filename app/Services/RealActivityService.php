@@ -118,13 +118,15 @@ class RealActivityService
         // 差集
         $diffActivityTaskNum = array_diff(array_column($activityTaskList, 'activity_task'), array_column($haveQualifiedActivityIds, 'activity_task'));
         if (empty($diffActivityTaskNum)) {
-            $reCardActivity['empty_reason'] = 2;
+            $reCardActivity['no_re_activity_reason'] = 2;
+        } else {
+            // 交集
+            $canPartakeActivity = array_intersect_key($activityTaskList, array_flip($diffActivityTaskNum));
+            array_multisort(array_column($canPartakeActivity, 'start_time'), SORT_DESC, array_column($canPartakeActivity, 'task_num'), SORT_ASC, $canPartakeActivity);
+            $reCardActivity['no_re_activity_reason'] = 3;
+            $reCardActivity['list'] = $canPartakeActivity;
         }
-        // 交集
-        $canPartakeActivity = array_intersect_key($activityTaskList, array_flip($diffActivityTaskNum));
-        array_multisort(array_column($canPartakeActivity, 'start_time'), SORT_DESC, array_column($canPartakeActivity, 'task_num'), SORT_ASC, $canPartakeActivity);
-        $reCardActivity['empty_reason'] = 3;
-        $reCardActivity['list'] = $canPartakeActivity;
+
         return $reCardActivity;
     }
 

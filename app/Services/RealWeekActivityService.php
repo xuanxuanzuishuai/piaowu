@@ -463,15 +463,33 @@ class RealWeekActivityService
         if ($activityInfo['enable_status'] == $enableStatus) {
             return true;
         }
-        //启用活动：检测当前是否存在开始时间小于当前活动的结束时间并启用状态为已启动的活动
-        if ($enableStatus == OperationActivityModel::ENABLE_STATUS_ON) {
+        $conflictData = 0;
+        if ($enableStatus == OperationActivityModel::ENABLE_STATUS_ON && $activityInfo['target_user_type'] == RealWeekActivityModel::TARGET_USER_ALL) {
+            //启用的活动目标用户是全部
             $conflictData = RealWeekActivityModel::getCount([
                 'start_time[<=]' => $activityInfo['end_time'],
                 'end_time[>=]' => $activityInfo['start_time'],
                 'enable_status' => OperationActivityModel::ENABLE_STATUS_ON]);
-            if ($conflictData > 0) {
-                throw new RunTimeException(['activity_conflict']);
-            }
+        } elseif ($enableStatus == OperationActivityModel::ENABLE_STATUS_ON && $activityInfo['target_user_type'] == RealWeekActivityModel::TARGET_USER_PART) {
+            //启用的活动目标用户是部分
+            $conflictData = RealWeekActivityModel::getCount([
+                'start_time[<=]' => $activityInfo['end_time'],
+                'end_time[>=]' => $activityInfo['start_time'],
+                'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
+                'OR' => [
+                    'AND #one' => [
+                        'target_user_type' => RealWeekActivityModel::TARGET_USER_ALL,
+                    ],
+                    'AND #two' => [
+                        'target_use_first_pay_time_start[<=]' => $activityInfo['target_use_first_pay_time_end'],
+                        'target_use_first_pay_time_end[>=]' => $activityInfo['target_use_first_pay_time_start'],
+                        'target_user_type' => RealWeekActivityModel::TARGET_USER_PART,
+                    ],
+                ],
+            ]);
+        }
+        if ($conflictData > 0) {
+            throw new RunTimeException(['activity_conflict']);
         }
         // 修改启用状态
         $res = RealWeekActivityModel::updateRecord($activityInfo['id'], ['enable_status' => $enableStatus, 'operator_id' => $employeeId, 'update_time' => time()]);
@@ -731,7 +749,7 @@ class RealWeekActivityService
         if (empty($activityList)) {
             return [];
         }
-        return $activityList;
+        return array_values($activityList);
     }
 
 

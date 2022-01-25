@@ -68,6 +68,7 @@ class RealSharePosterTaskListModel extends Model
         $list = $db->select(self::$table,
             [
                 '[>]' . RealWeekActivityModel::$table => ['activity_id' => 'activity_id'],
+                '[>]' . RealSharePosterPassAwardRuleModel::$table => ['activity_id' => 'activity_id'],
             ],
             [
                 RealWeekActivityModel::$table . '.name',
@@ -75,12 +76,12 @@ class RealSharePosterTaskListModel extends Model
                 RealWeekActivityModel::$table . '.end_time',
                 self::$table . '.task_num',
                 self::$table . '.activity_id',
-                "task_num_count" => Medoo::raw('max('.self::$table . '.task_num)'),
+                "task_num_count" => Medoo::raw('max('.RealSharePosterPassAwardRuleModel::$table . '.success_pass_num)'),
                 "activity_task" => Medoo::raw('concat_ws(:separator,'.self::$table . '.activity_id'.','.self::$table . '.task_num'.')',[":separator"=>'-']),
             ],
             [
                 self::$table . '.activity_id' => $activityIds,
-                'GROUP' => [self::$table . '.task_num', self::$table . '.activity_id',],
+                'GROUP' => [self::$table . '.activity_id', self::$table . '.task_num',],
             ]);
         return empty($list) ? [] : $list;
     }

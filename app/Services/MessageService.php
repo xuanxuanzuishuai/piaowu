@@ -1330,12 +1330,16 @@ class MessageService
         $ext = [];
         switch ($sharePosterInfo['verify_status']) {
             case RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED: // 审核未通过，发消息
-                $ext['url'] = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_refused_poster_url');
-                $ext['award_prize_type'] = $activityInfo['award_prize_type'];
                 $awardInfo['type'] = RealSharePosterModel::TYPE_CHECKIN_UPLOAD;
                 $awardInfo['app_id'] = Constants::REAL_APP_ID;
                 $awardInfo['verify_status'] = RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED;
                 $awardInfo['user_id'] = $sharePosterInfo['student_id'];
+                $ext = [
+                    'url' => Util::pregReplaceTargetStr(
+                        RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_refused_poster_url'),
+                        ['activity_id_params' => $activityInfo['activity_id']]),
+                    'award_prize_type' => $activityInfo['award_prize_type'],
+                ];
                 break;
             case RealSharePosterModel::VERIFY_STATUS_WAIT:  // 待审核 不能发送消息
                 break;
@@ -1348,11 +1352,10 @@ class MessageService
                 $awardInfo['verify_status'] = RealSharePosterModel::VERIFY_STATUS_QUALIFIED;
                 $awardInfo['delay_send_award_day'] = intval((intval($sendAwardBaseDelaySecond) + intval($activityInfo['delay_second'])) / Util::TIMESTAMP_ONEDAY);
                 $awardInfo['user_id'] = $sharePosterInfo['student_id'] ?? 0;
-                $jumpLink = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_week_activity_url');
                 $awardData = RealSharePosterPassAwardRuleModel::getRecord(['activity_id'=>$activityInfo['activity_id'],'success_pass_num'=>$params['check_success_numbers']],['award_amount','award_type']);
                 $ext = [
                     'activity_name' => RealWeekActivityService::formatWeekActivityName($activityInfo),
-                    'url' => !empty($jumpLink) ? $jumpLink : '',
+                    'url' => RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_magic_stone_shop_url'),
                     'award_amount' => $awardData['award_amount'],
                     'award_type' => $awardData['award_type'],
                     'award_data' => $awardData['award_amount']."魔法石",

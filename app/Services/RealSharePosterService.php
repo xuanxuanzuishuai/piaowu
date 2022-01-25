@@ -120,17 +120,17 @@ class RealSharePosterService
             $joinRecordFormat[$jv['activity_id'] . '_' . (empty($jv['task_num']) ? 1 : $jv['task_num'])] = $jv;
             $joinVerifyData[$jv['activity_id']][$jv['verify_status']] += 1;
         }
-        $enableStatusDisableZh = DictConstants::get(DictConstants::ACTIVITY_ENABLE_STATUS, OperationActivityModel::ENABLE_STATUS_DISABLE);
+        $dictData = RealDictConstants::getTypesMap([RealDictConstants::REAL_ACTIVITY_CONFIG['type'],DictConstants::ACTIVITY_ENABLE_STATUS['type']]);
         foreach ($activityBaseInfo as $ak => $av) {
             $taskNumCount = empty($av['task_num_count']) ? '1' : $av['task_num_count'];
             $tmpFormatData = [
                 'activity_id' => $av['activity_id'],
                 'task_num_count' => $taskNumCount,
                 'award_prize_type' => $av['award_prize_type'],
-                'delay_second' => $av['delay_second'] / Util::TIMESTAMP_ONEDAY,
+                'delay_second' => ($dictData[RealDictConstants::REAL_ACTIVITY_CONFIG['type']]['send_award_base_delay_second']['value'] + $av['delay_second']) / Util::TIMESTAMP_ONEDAY,
                 'activity_name' => RealWeekActivityService::formatWeekActivityName($av),
                 'activity_status_zh' => ($av['enable_status'] == OperationActivityModel::ENABLE_STATUS_DISABLE)
-                    ? $enableStatusDisableZh : RealWeekActivityService::formatActivityTimeStatus($av)['activity_status_zh'],
+                    ? $dictData[DictConstants::ACTIVITY_ENABLE_STATUS['type']][OperationActivityModel::ENABLE_STATUS_DISABLE]['value'] : RealWeekActivityService::formatActivityTimeStatus($av)['activity_status_zh'],
                 'success' => (int)$joinVerifyData[$av['activity_id']][RealSharePosterModel::VERIFY_STATUS_QUALIFIED],
                 'fail' => (int)$joinVerifyData[$av['activity_id']][RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED],
                 'wait' => (int)$joinVerifyData[$av['activity_id']][RealSharePosterModel::VERIFY_STATUS_WAIT],
@@ -218,7 +218,7 @@ class RealSharePosterService
             'update_time'   => $now,
         ];
         //获取活动信息
-        $activityData = array_column(RealWeekActivityModel::getRecords(['id'=> array_column($posters,'activity_id')],['activity_id','award_prize_type']),null,'activity_id');
+        $activityData = array_column(RealWeekActivityModel::getRecords(['activity_id'=> array_column($posters,'activity_id')],['activity_id','award_prize_type']),null,'activity_id');
         $sendAwardQueueData = $sendWxMessageQueueData = [];
         //处理数据
         $redis = RedisDB::getConn();
