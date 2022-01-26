@@ -10,7 +10,6 @@ namespace App\Services;
 
 use App\Libs\Constants;
 use App\Libs\DictConstants;
-use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\AliOSS;
 use App\Libs\RealDictConstants;
@@ -26,8 +25,6 @@ use App\Models\OperationActivityModel;
 use App\Models\QrInfoOpCHModel;
 use App\Models\RealSharePosterAwardModel;
 use App\Models\RealSharePosterModel;
-use App\Models\RealSharePosterPassAwardRuleModel;
-use App\Models\RealSharePosterTaskListModel;
 use App\Models\RealUserAwardMagicStoneModel;
 use App\Models\RealWeekActivityModel;
 use App\Models\WeChatConfigModel;
@@ -182,7 +179,7 @@ class RealSharePosterService
             'award_status' => RealUserAwardMagicStoneModel::STATUS_NOT_OWN,
             'award_status_zh' => RealUserAwardMagicStoneModel::STATUS_ZH[RealUserAwardMagicStoneModel::STATUS_NOT_OWN],
         ];
-        //指定临时指定的多次分享任务的活动
+        //临时指定的多次分享任务的活动
         $activityDictData = RealDictConstants::getTypesMap([RealDictConstants::REAL_XYZOP_1321_CONFIG['type'], RealDictConstants::REAL_ACTIVITY_CONFIG['type']]);
         $specialDictActivityIds = explode(',', $activityDictData[RealDictConstants::REAL_XYZOP_1321_CONFIG['type']]['real_xyzop_1321_activity_ids']['value'] . ',' . $activityDictData[RealDictConstants::REAL_ACTIVITY_CONFIG['type']]['2000_send_award_activity_id']['value']);
         if (in_array($activityId, $specialDictActivityIds) && ($joinRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED)) {
@@ -191,6 +188,9 @@ class RealSharePosterService
         } elseif (!is_null($joinRecord['award_status'])) {
             $data['award_status'] = $joinRecord['award_status'];
             $data['award_status_zh'] = RealUserAwardMagicStoneModel::STATUS_ZH[$data['award_status']];
+        } elseif (is_null($joinRecord['award_status']) && ($joinRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED)) {
+            $data['award_status'] = RealUserAwardMagicStoneModel::STATUS_WAITING;
+            $data['award_status_zh'] = RealUserAwardMagicStoneModel::STATUS_ZH[RealUserAwardMagicStoneModel::STATUS_WAITING];
         }
         return $data;
     }
@@ -241,6 +241,8 @@ class RealSharePosterService
             }
             //真人产品激活
             QueueService::autoActivate(['student_uuid' => $poster['uuid'], 'passed_time' => time(),'app_id' => Constants::REAL_APP_ID]);
+            //查询当前活动已完成次数
+            $checkSuccessNumbers = self::getSharePosterVerifySuccessCountData($poster['student_id'], $poster['activity_id']);
             //区分奖励发放方式
             if($activityData[$poster['activity_id']]['award_prize_type'] == OperationActivityModel::AWARD_PRIZE_TYPE_IN_TIME){
                 $sendAwardQueueData[] = [
@@ -248,14 +250,16 @@ class RealSharePosterService
                     'student_id'   => $poster['student_id'],
                     'activity_id'  => $poster['activity_id'],
                     'act_status'   => RealUserAwardMagicStoneModel::STATUS_GIVE,
-                    'defer_second' => 0
+                    'defer_second' => 0,
+                    "check_success_numbers" => $checkSuccessNumbers,
                 ];
             }
             // 发送消息
             $sendWxMessageQueueData[] = [
                 "share_poster_id" => $poster['id'],
-                "check_success_numbers" => self::getSharePosterVerifySuccessCountData($poster['student_id'], $poster['activity_id']),
-            ];
+                "check_success_numbers" => $checkSuccessNumbers,
+                'verify_status'=>RealSharePosterModel::VERIFY_STATUS_QUALIFIED,
+                ];
         }
         //批量投递消费消费队列
         QueueService::addRealUserPosterAward($sendAwardQueueData);
@@ -310,17 +314,22 @@ class RealSharePosterService
         $time   = time();
         $update = RealSharePosterModel::updateRecord($poster['id'], [
             'verify_status' => $status,
-            'verify_time'   => $time,
-            'verify_user'   => $params['employee_id'],
+            'verify_time' => $time,
+            'verify_user' => $params['employee_id'],
             'verify_reason' => implode(',', $reason),
-            'update_time'   => $time,
-            'remark'        => $remark,
+            'update_time' => $time,
+            'remark' => $remark,
         ]);
         // 审核不通过, 发送模版消息
-        if ($update > 0) {
-            QueueService::realSendPosterAwardMessage([["share_poster_id" => $posterId]]);
+        if ($update > 0 && ($status != RealSharePosterModel::VERIFY_STATUS_WAIT)) {
+            QueueService::realSendPosterAwardMessage([
+                [
+                    "share_poster_id" => $posterId,
+                    "check_success_numbers" => 0,
+                    'verify_status' => $status
+                ]
+            ]);
         }
-
         return $update > 0;
     }
 

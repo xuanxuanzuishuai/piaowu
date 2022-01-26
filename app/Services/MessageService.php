@@ -1301,11 +1301,11 @@ class MessageService
      */
     public static function sendRealSharePosterMessage($params)
     {
+        //上传记录ID
         $sharePosterId = $params['share_poster_id'] ?? 0;
-        if (empty($sharePosterId)) {
-            SimpleLogger::info("sendRealSharePosterMessage share_poster_id empty", [$params]);
-            return false;
-        }
+        //上传记录审核状态
+        $verifyStatus = $params['verify_status'];
+        //获取记录数据
         $sharePosterInfo = RealSharePosterModel::getRecord(['id' => $sharePosterId]);
         if (empty($sharePosterInfo)) {
             SimpleLogger::info("sendRealSharePosterMessage share_poster empty", [$params]);
@@ -1319,7 +1319,7 @@ class MessageService
         }
 
         // 加锁，同一张海报同一个状态同一时间只能操作一次
-        $lockKey = 'send_real_share_poster_message_lock_' . $sharePosterId . '_' . $sharePosterInfo['verify_status'];
+        $lockKey = 'send_real_share_poster_message_lock_' . $sharePosterId . '_' . $verifyStatus;
         $redis = RedisDB::getConn();
         $lock = $redis->set($lockKey, $sharePosterId, 'EX', 20, 'NX');
         if (empty($lock)) {
@@ -1328,7 +1328,7 @@ class MessageService
         }
         //模板消息扩展信息
         $ext = [];
-        switch ($sharePosterInfo['verify_status']) {
+        switch ($verifyStatus) {
             case RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED: // 审核未通过，发消息
                 $awardInfo['type'] = RealSharePosterModel::TYPE_CHECKIN_UPLOAD;
                 $awardInfo['app_id'] = Constants::REAL_APP_ID;
@@ -1366,7 +1366,7 @@ class MessageService
                 ];
                 break;
             default:
-                SimpleLogger::info("sendRealSharePosterMessage share_poster VERIFY_STATUS_WAIT", [$params]);
+                SimpleLogger::info("sendRealSharePosterMessage share_poster error", [$params]);
                 break;
         }
         if (empty($awardInfo)) {
