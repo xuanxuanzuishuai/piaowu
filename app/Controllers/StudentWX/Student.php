@@ -22,6 +22,7 @@ use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\DictModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Services\MiniAppQrService;
 use App\Services\ReferralActivityService;
 use App\Services\ReferralService;
 use App\Services\StudentService;
@@ -100,7 +101,7 @@ class Student extends ControllerBase
             }
             $info = UserService::studentRegisterBound($appId, $params['mobile'], $channelId, $data['openid'], $busiType, $userType, $params["referee_id"]);
             if (empty($info['is_new'])) {
-                StudentService::studentLoginActivePushQueue($appId, $info['student_id'], Constants::DSS_STUDENT_LOGIN_TYPE_WX);
+                StudentService::studentLoginActivePushQueue($appId, $info['student_id'], Constants::DSS_STUDENT_LOGIN_TYPE_WX, $channelId);
             }
             $token = WechatTokenService::generateToken(
                 $info['student_id'],
@@ -141,7 +142,9 @@ class Student extends ControllerBase
 
         $token = WechatTokenService::generateToken($boundInfo["user_id"], $this->ci['user_type'],
             $this->ci["app_id"], $openId);
-        StudentService::studentLoginActivePushQueue($this->ci["app_id"], $boundInfo['user_id'], Constants::DSS_STUDENT_LOGIN_TYPE_WX);
+        $params = $request->getParams();
+        $channelId = $params['channel_id'] ?? 0;
+        StudentService::studentLoginActivePushQueue($this->ci["app_id"], $boundInfo['user_id'], Constants::DSS_STUDENT_LOGIN_TYPE_WX, $channelId);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => ["token" => $token]
@@ -169,6 +172,10 @@ class Student extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
+
+        // 账户粒子激活
+        $scene = MiniAppQrService::getQrInfoById($params['scene'] ?? '');
+        StudentService::mobileSendSMSCodeActive(Constants::SMART_APP_ID, $params['mobile'], Constants::DSS_STUDENT_LOGIN_TYPE_WX, $scene['channel_id'] ?? 0);
 
         empty($params['country_code']) &&  $params['country_code']=NewSMS::DEFAULT_COUNTRY_CODE;
         $errorCode = CommonServiceForApp::sendValidateCode($params['mobile'], CommonServiceForApp::SIGN_WX_STUDENT_APP, $params['country_code']);

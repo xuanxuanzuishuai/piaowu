@@ -125,7 +125,8 @@ class Landing extends ControllerBase
                     $give = false;
                     $word = 'only_new_user_allowed';
                 }
-                StudentService::studentLoginActivePushQueue($appId, $student['id'], Constants::DSS_STUDENT_LOGIN_TYPE_H5);
+                // 用传过来的渠道，不用学生注册渠道
+                StudentService::studentLoginActivePushQueue($appId, $student['id'], Constants::DSS_STUDENT_LOGIN_TYPE_H5, $params['channel_id'] ?? 0);
 
             }
             if ($give && !empty($uuid)) {

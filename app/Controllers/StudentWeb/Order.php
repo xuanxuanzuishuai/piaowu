@@ -504,7 +504,7 @@ class Order extends ControllerBase
                         throw new RunTimeException(['student_down_stage_not_allowed']);
                     }
                 }
-                StudentService::studentLoginActivePushQueue($appId, $student['id'], Constants::DSS_STUDENT_LOGIN_TYPE_H5);
+                StudentService::studentLoginActivePushQueue($appId, $student['id'], Constants::DSS_STUDENT_LOGIN_TYPE_H5, $params['channel_id'] ?? 0);
 
             } else {
                 //未注册用户自动注册

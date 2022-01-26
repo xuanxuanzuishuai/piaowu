@@ -63,10 +63,6 @@ class RealReferralService
         //查询账号是否存在
         $studentInfo = ErpStudentModel::getRecord(['mobile' => $mobile]);
         $isNew       = empty($studentInfo) ? true : false;
-        //粒子激活
-        if(!empty($studentInfo)){
-            StudentService::studentLoginActivePushQueue($appId, $studentInfo['id'], Constants::REAL_STUDENT_LOGIN_TYPE_REFERRAL_MINI);
-        }
         //默认渠道
         $channel = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'register_default_channel');
         //获取转介绍相关信息
@@ -74,6 +70,10 @@ class RealReferralService
             $qrData    = MiniAppQrService::getQrInfoById($params['qr_id'], ['user_id', 'channel_id']);
             $refereeId = $qrData['user_id'];
             $channel   = !empty($qrData['channel_id']) ? $qrData['channel_id'] : $channel;
+        }
+        //粒子激活
+        if(!empty($studentInfo)){
+            StudentService::studentLoginActivePushQueue($appId, $studentInfo['id'], Constants::REAL_STUDENT_LOGIN_TYPE_REFERRAL_MINI, $channel);
         }
         $registerData = [
             'app_id'          => $appId,

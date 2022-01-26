@@ -30,6 +30,7 @@ use App\Services\Queue\RealStudentActiveTopic;
 use App\Services\Queue\StudentAccountAwardPointsTopic;
 use App\Services\Queue\StudentActiveTopic;
 use I18N\Lang;
+use Monolog\Logger;
 
 class StudentService
 {
@@ -434,9 +435,10 @@ class StudentService
      * @param $appId
      * @param $studentId
      * @param $activeType
+     * @param $channelId
      * @return bool
      */
-    public static function studentLoginActivePushQueue($appId, $studentId, $activeType)
+    public static function studentLoginActivePushQueue($appId, $studentId, $activeType, $channelId)
     {
         try {
             if ($appId == Constants::SMART_APP_ID) {
@@ -445,6 +447,7 @@ class StudentService
                     'student_id' => $studentId,
                     'active_time' => time(),
                     'active_type' => $activeType,
+                    'channel_id' => $channelId,
                 ];
             } elseif ($appId == Constants::REAL_APP_ID) {
                 $studentData = ErpStudentModel::getRecord(['id' => $studentId], ['uuid']);
@@ -452,6 +455,7 @@ class StudentService
                 $pushData = [
                     'uuid' => $studentData['uuid'],
                     'active_type' => $activeType,
+                    'channel_id' => $channelId,
                     'active_time' => time()
                 ];
             } else {
@@ -463,5 +467,29 @@ class StudentService
             return false;
         }
         return true;
+    }
+
+    /**
+     * 手机号发送短信验证码激活线索
+     * @param $appId
+     * @param $mobile
+     * @param $activeType
+     * @param $channelId
+     * @return bool
+     */
+    public static function mobileSendSMSCodeActive($appId, $mobile, $activeType, $channelId)
+    {
+        if ($appId == Constants::SMART_APP_ID) {
+            $studentInfo = DssStudentModel::getRecord(['mobile' => $mobile]);
+        } elseif ($appId == Constants::REAL_APP_ID) {
+            $studentInfo = ErpStudentModel::getRecord(['mobile' => $mobile]);
+        } else {
+            return false;
+        }
+        SimpleLogger::info("mobileSendSMSCodeActive", [$appId, $mobile, $activeType, $channelId, $studentInfo]);
+        if (empty($studentInfo)) {
+            return false;
+        }
+        return StudentService::studentLoginActivePushQueue($appId, $studentInfo['id'], $activeType, $channelId);
     }
 }

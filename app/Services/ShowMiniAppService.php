@@ -296,14 +296,15 @@ class ShowMiniAppService
             }
             $mobile = $jsonMobile['purePhoneNumber'];
         }
+        $channelId = $channel ?: DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT');
         //检测用户是否已存在
         $studentExists = DssStudentModel::getRecord(['mobile' => $mobile], ['id']);
         if (!empty($studentExists)) {
-            StudentService::studentLoginActivePushQueue(Constants::SMART_APP_ID, $studentExists['id'], Constants::DSS_STUDENT_LOGIN_TYPE_SHOW_MINI);
+            StudentService::studentLoginActivePushQueue(Constants::SMART_APP_ID, $studentExists['id'], Constants::DSS_STUDENT_LOGIN_TYPE_SHOW_MINI, $channelId);
         }
         $userInfo = (new Dss())->studentRegisterBound([
             'mobile'       => $mobile,
-            'channel_id'   => $channel ?: DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT'),
+            'channel_id'   => $channelId,
             'open_id'      => $openId,
             'busi_type'    => UserWeiXinModel::BUSI_TYPE_SHOW_MINI,
             'user_type'    => UserWeiXinModel::USER_TYPE_STUDENT,

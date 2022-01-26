@@ -73,7 +73,7 @@ class Ref extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $result = StudentService::studentLoginActivePushQueue(Constants::REAL_APP_ID, $params['student_id'], $params['active_type']);
+        $result = StudentService::studentLoginActivePushQueue(Constants::REAL_APP_ID, $params['student_id'], $params['active_type'], $params['channel_id'] ?? 0);
         return HttpHelper::buildResponse($response, $result);
     }
 }

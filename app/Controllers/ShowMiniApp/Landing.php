@@ -10,6 +10,7 @@ namespace App\Controllers\ShowMiniApp;
 
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
 use App\Libs\Dss;
 use App\Libs\HttpHelper;
 use App\Libs\UserCenter;
@@ -17,8 +18,10 @@ use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Services\CommonServiceForApp;
+use App\Services\MiniAppQrService;
 use App\Services\PayServices;
 use App\Services\ShowMiniAppService;
+use App\Services\StudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use App\Libs\Exceptions\RunTimeException;
@@ -111,6 +114,9 @@ class Landing extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
+        // 账户粒子激活
+        $scene = MiniAppQrService::getQrInfoById($params['scene'] ?? '');
+        StudentService::mobileSendSMSCodeActive(Constants::SMART_APP_ID, $params['mobile'], Constants::DSS_STUDENT_LOGIN_TYPE_SHOW_MINI, $scene['channel_id'] ?? 0);
 
         $errorCode = CommonServiceForApp::sendValidateCode($params['mobile'], CommonServiceForApp::SIGN_WX_STUDENT_APP, $params['country_code']);
         if (!empty($errorCode)) {

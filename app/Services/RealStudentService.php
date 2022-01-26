@@ -65,7 +65,7 @@ class RealStudentService
         }
         //粒子激活记录
         if ($sendActiveQueueData['active_type'] && $sendActiveQueueData['is_send_active']) {
-            StudentService::studentLoginActivePushQueue($registerData['app_id'], $studentInfo['id'], $sendActiveQueueData['active_type']);
+            StudentService::studentLoginActivePushQueue($registerData['app_id'], $studentInfo['id'], $sendActiveQueueData['active_type'], $channel);
         }
         $result = [
             'is_new' => $isNew,
