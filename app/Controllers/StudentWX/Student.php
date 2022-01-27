@@ -174,8 +174,11 @@ class Student extends ControllerBase
         }
 
         // 账户粒子激活
-        $scene = MiniAppQrService::getQrInfoById($params['scene'] ?? '');
-        StudentService::mobileSendSMSCodeActive(Constants::SMART_APP_ID, $params['mobile'], Constants::DSS_STUDENT_LOGIN_TYPE_WX, $scene['channel_id'] ?? 0);
+        $channelId = $params['channel_id'] ?? 0;
+        if (empty($channelId) && !empty($params['scene'])) {
+            $channelId = MiniAppQrService::getQrInfoById($params['scene'])['channel_id'] ?? 0;
+        }
+        StudentService::mobileSendSMSCodeActive(Constants::SMART_APP_ID, $params['mobile'], Constants::DSS_STUDENT_LOGIN_TYPE_WX, $channelId);
 
         empty($params['country_code']) &&  $params['country_code']=NewSMS::DEFAULT_COUNTRY_CODE;
         $errorCode = CommonServiceForApp::sendValidateCode($params['mobile'], CommonServiceForApp::SIGN_WX_STUDENT_APP, $params['country_code']);
