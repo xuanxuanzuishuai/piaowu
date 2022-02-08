@@ -55,11 +55,18 @@ class RealUserAwardMagicStoneService
             SimpleLogger::info('sendUserMagicStoneAward_student_not_found', [$params, $studentInfo]);
             return false;
         }
+
         // 根据成功通过审核次数获取应得奖励
         $passAwardInfo = RealSharePosterPassAwardRuleModel::getRecord(['activity_id' => $activityId, 'success_pass_num' => $checkSuccessNumbers]);
         if (empty($passAwardInfo)) {
             SimpleLogger::info('sendUserMagicStoneAward not found', [$params, $passAwardInfo]);
             return false;
+        }
+        //特殊活动ID：使用第一个分享任务配置的奖励
+        $specialDictActivityIds = explode(',', RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, '2000_send_award_activity_id'));
+        if (in_array($activityId, $specialDictActivityIds) && ($checkSuccessNumbers != 1)) {
+            $firstTaskAwardInfo = RealSharePosterPassAwardRuleModel::getRecord(['activity_id' => $activityId, 'success_pass_num' => 1], ['award_amount']);
+            $passAwardInfo['award_amount'] = $firstTaskAwardInfo['award_amount'];
         }
         // 发放奖励
         return self::realSaveStudentWeekAwardRecord($studentInfo, $activityInfo, $passAwardInfo);

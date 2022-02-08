@@ -241,7 +241,10 @@ class RealSharePosterModel extends Model
     public static function getSharePosterHistoryGroupActivityIdAndTaskNum($studentId, $activityIds)
     {
         $sql = "SELECT
-                    tmp.*,pa.award_type,pa.award_amount,ms.award_status
+                    	tmp.*,
+                        3001 as award_type,
+                        ms.award_amount,
+                        ms.award_status 
                 FROM
                     (
                     SELECT
@@ -258,8 +261,10 @@ class RealSharePosterModel extends Model
                         AND
                         activity_id in (".implode(',', $activityIds).")
                     ) AS tmp 
-                    left join ".RealSharePosterAwardModel::$table." as pa on tmp.id=pa.share_poster_id
-                    left join ".RealUserAwardMagicStoneModel::$table." as ms on pa.award_id=ms.id
+                    LEFT join ".RealUserAwardMagicStoneModel::$table." AS ms ON
+                        tmp.student_id = ms.user_id 
+                        AND tmp.activity_id = ms.activity_id 
+                        AND tmp.task_num = ms.passes_num 
                 WHERE
                     tmp.upload_order = 1";
         $db = MysqlDB::getDB();

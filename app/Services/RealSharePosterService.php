@@ -124,7 +124,7 @@ class RealSharePosterService
                 'activity_id' => $av['activity_id'],
                 'task_num_count' => $taskNumCount,
                 'award_prize_type' => $av['award_prize_type'],
-                'delay_second' => ($dictData[RealDictConstants::REAL_ACTIVITY_CONFIG['type']]['send_award_base_delay_second']['value'] + $av['delay_second']) / Util::TIMESTAMP_ONEDAY,
+                'delay_second' => empty($av['delay_second']) ? 0 : ($dictData[RealDictConstants::REAL_ACTIVITY_CONFIG['type']]['send_award_base_delay_second']['value'] + $av['delay_second']) / Util::TIMESTAMP_ONEDAY,
                 'activity_name' => RealWeekActivityService::formatWeekActivityName($av),
                 'activity_status_zh' => ($av['enable_status'] == OperationActivityModel::ENABLE_STATUS_DISABLE)
                     ? $dictData[DictConstants::ACTIVITY_ENABLE_STATUS['type']][OperationActivityModel::ENABLE_STATUS_DISABLE]['value'] : RealWeekActivityService::formatActivityTimeStatus($av)['activity_status_zh'],
@@ -139,15 +139,15 @@ class RealSharePosterService
                 $tmpFormatAwardData = self::formatSharePosterAwardStatus($av['activity_id'], $joinRecordFormat[$tmpJoinRecordFormatKey]);
                 $tmpFormatData['task_list'][] = [
                     'task_num' => $taskNumCount,
-                    'award_amount' => $tmpFormatAwardData['award_amount'],
                     'award_type' => empty($joinRecordFormat[$tmpJoinRecordFormatKey]['award_type']) ? '' : $joinRecordFormat[$tmpJoinRecordFormatKey]['award_type'],
                     'verify_status' => (int)$joinRecordFormat[$tmpJoinRecordFormatKey]['verify_status'],
+                    'award_amount' => $tmpFormatAwardData['award_amount'],
                     'award_status' => $tmpFormatAwardData['award_status'],
                     'award_status_zh' => $tmpFormatAwardData['award_status_zh'],
                 ];
             } else {
                 //多次分享任务
-                $tmpTask = explode(',', $av['task_data']);
+                list($tmpTask, $tmpTaskNumCount) = self::filterSpecialActivityTaskData(explode(',', $av['task_data']), $av['activity_id'], $taskNumCount);
                 $tmpFormatData['task_list'] = array_map(function ($tmv) use ($joinRecordFormat, $av) {
                     list($tmpTaskNode['task_num'],
                         $tmpTaskNode['award_amount'],
@@ -160,11 +160,30 @@ class RealSharePosterService
                     $tmpTaskNode['award_status_zh'] = $tmpFormatAwardData['award_status_zh'];
                     return $tmpTaskNode;
                 }, $tmpTask);
+                $tmpFormatData ['task_num_count'] = $tmpTaskNumCount;
             }
             $returnData['list'][] = $tmpFormatData;
         }
         return $returnData;
     }
+
+    /**
+     * 过滤活动的任务列表数据
+     * @param $taskListData
+     * @param $activityId
+     * @param $taskNumCount
+     * @return mixed
+     */
+    private static function filterSpecialActivityTaskData($taskListData, $activityId, $taskNumCount)
+    {
+        //活动设置为1.多次分享任务 2.奖励延时发放,但是手动提前发放奖励的活动ID,分享任务使用第一个任务
+        $specialDictActivityIds = explode(',', RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, '2000_send_award_activity_id'));
+        if (in_array($activityId, $specialDictActivityIds)) {
+            return [[$taskListData[0]], 1];
+        }
+        return [$taskListData, $taskNumCount];
+    }
+
 
     /**
      * 格式化处理截图上传奖励发放状态
@@ -181,10 +200,14 @@ class RealSharePosterService
         ];
         //临时指定的多次分享任务的活动
         $activityDictData = RealDictConstants::getTypesMap([RealDictConstants::REAL_XYZOP_1321_CONFIG['type'], RealDictConstants::REAL_ACTIVITY_CONFIG['type']]);
-        $specialDictActivityIds = explode(',', $activityDictData[RealDictConstants::REAL_XYZOP_1321_CONFIG['type']]['real_xyzop_1321_activity_ids']['value'] . ',' . $activityDictData[RealDictConstants::REAL_ACTIVITY_CONFIG['type']]['2000_send_award_activity_id']['value']);
-        if (in_array($activityId, $specialDictActivityIds) && ($joinRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED)) {
-            $data['award_status'] = RealUserAwardMagicStoneModel::STATUS_GIVE;
-            $data['award_status_zh'] = "人工发放";
+        $specialDictActivityIds1321 = explode(',', $activityDictData[RealDictConstants::REAL_XYZOP_1321_CONFIG['type']]['real_xyzop_1321_activity_ids']['value']);
+        $specialDictActivityIds2000 = explode(',', $activityDictData[RealDictConstants::REAL_ACTIVITY_CONFIG['type']]['2000_send_award_activity_id']['value']);
+        if (in_array($activityId, array_merge($specialDictActivityIds1321, $specialDictActivityIds2000))) {
+            $data['award_amount'] = "--";
+            if ($joinRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED) {
+                $data['award_status'] = RealUserAwardMagicStoneModel::STATUS_GIVE;
+                $data['award_status_zh'] = "人工发放";
+            }
         } elseif (!is_null($joinRecord['award_status'])) {
             $data['award_status'] = $joinRecord['award_status'];
             $data['award_status_zh'] = RealUserAwardMagicStoneModel::STATUS_ZH[$data['award_status']];
@@ -220,6 +243,9 @@ class RealSharePosterService
         //获取活动信息
         $activityData = array_column(RealWeekActivityModel::getRecords(['activity_id'=> array_column($posters,'activity_id')],['activity_id','award_prize_type']),null,'activity_id');
         $sendAwardQueueData = $sendWxMessageQueueData = [];
+
+        //特殊活动ID：延时任务奖励使用第一个分享任务配置的奖励并且奖励已经发放的活动ID
+        $specialDictActivityIds = explode(',', RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, '2000_send_award_activity_id'));
         //处理数据
         $redis = RedisDB::getConn();
         foreach ($posters as $key => $poster) {
@@ -244,13 +270,14 @@ class RealSharePosterService
             //查询当前活动已完成次数
             $checkSuccessNumbers = self::getSharePosterVerifySuccessCountData($poster['student_id'], $poster['activity_id']);
             //区分奖励发放方式
-            if($activityData[$poster['activity_id']]['award_prize_type'] == OperationActivityModel::AWARD_PRIZE_TYPE_IN_TIME){
+            if (($activityData[$poster['activity_id']]['award_prize_type'] == OperationActivityModel::AWARD_PRIZE_TYPE_IN_TIME)
+                || in_array($poster['activity_id'], $specialDictActivityIds)) {
                 $sendAwardQueueData[] = [
-                    'app_id'       => Constants::REAL_APP_ID,
-                    'student_id'   => $poster['student_id'],
-                    'activity_id'  => $poster['activity_id'],
-                    'act_status'   => RealUserAwardMagicStoneModel::STATUS_GIVE,
-                    'defer_second' => 0,
+                    'app_id' => Constants::REAL_APP_ID,
+                    'student_id' => $poster['student_id'],
+                    'activity_id' => $poster['activity_id'],
+                    'act_status' => RealUserAwardMagicStoneModel::STATUS_GIVE,
+                    'defer_second' => $checkSuccessNumbers,
                     "check_success_numbers" => $checkSuccessNumbers,
                 ];
             }
@@ -336,10 +363,9 @@ class RealSharePosterService
     /**
      * 真人 - 截图审核详情
      * @param $id
-     * @param $studentData
      * @return array
      */
-    public static function realSharePosterDetail($id, $studentData)
+    public static function realSharePosterDetail($id)
     {
         $returnData = [];
         if (empty($id)) {
@@ -367,7 +393,7 @@ class RealSharePosterService
         // 根据状态判断展示逻辑
         switch ($sharePosterInfo['verify_status']) {
             case RealSharePosterModel::VERIFY_STATUS_QUALIFIED: // 审核通过
-                // 获取奖励
+                // 获取奖励:活动ID小于245的活动展示奖品数量，之后的活动不在展示，此处代码兼容活动数据
                 $awardInfo = RealSharePosterAwardModel::getRecord(['share_poster_id' => $id]);
                 if (!empty($awardInfo)) {
                     $returnData['award_amount'] = $awardInfo['award_amount'];

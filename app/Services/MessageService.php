@@ -29,10 +29,8 @@ use App\Models\MessageManualPushLogModel;
 use App\Models\MessageRecordLogModel;
 use App\Models\MessageRecordModel;
 use App\Models\PosterModel;
-use App\Models\RealSharePosterAwardModel;
 use App\Models\RealSharePosterModel;
 use App\Models\RealSharePosterPassAwardRuleModel;
-use App\Models\RealUserAwardMagicStoneModel;
 use App\Models\RealWeekActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\Dss\DssStudentModel;
@@ -1352,7 +1350,12 @@ class MessageService
                 $awardInfo['verify_status'] = RealSharePosterModel::VERIFY_STATUS_QUALIFIED;
                 $awardInfo['delay_send_award_day'] = intval((intval($sendAwardBaseDelaySecond) + intval($activityInfo['delay_second'])) / Util::TIMESTAMP_ONEDAY);
                 $awardInfo['user_id'] = $sharePosterInfo['student_id'] ?? 0;
-                $awardData = RealSharePosterPassAwardRuleModel::getRecord(['activity_id'=>$activityInfo['activity_id'],'success_pass_num'=>$params['check_success_numbers']],['award_amount','award_type']);
+                $awardData = RealSharePosterPassAwardRuleModel::getRecord(
+                    [
+                        'activity_id'=>$activityInfo['activity_id'],
+                        'success_pass_num'=>$params['check_success_numbers']
+                    ],
+                    ['award_amount','award_type']);
                 $ext = [
                     'activity_name' => RealWeekActivityService::formatWeekActivityName($activityInfo),
                     'url' => RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'real_magic_stone_shop_url'),
