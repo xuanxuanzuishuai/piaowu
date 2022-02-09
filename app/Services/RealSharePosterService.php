@@ -277,7 +277,7 @@ class RealSharePosterService
                     'student_id' => $poster['student_id'],
                     'activity_id' => $poster['activity_id'],
                     'act_status' => RealUserAwardMagicStoneModel::STATUS_GIVE,
-                    'defer_second' => $checkSuccessNumbers,
+                    'defer_second' => $checkSuccessNumbers * 10,
                     "check_success_numbers" => $checkSuccessNumbers,
                 ];
             }

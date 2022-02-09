@@ -731,6 +731,11 @@ class RealWeekActivityService
                 unset($activityList[$_activityKey]);
                 continue;
             }
+            // 检测用户首次付费时间与活动结束时间大小关系
+            if ($studentIdAttribute['first_pay_time'] > $_activityInfo['end_time']) {
+                unset($activityList[$_activityKey]);
+                continue;
+            }
             // 过滤掉 目标用户类型是部分有效付费用户首次付费时间
             if ($_activityInfo['target_user_type'] == RealWeekActivityModel::TARGET_USER_PART) {
                 if ($studentIdAttribute['first_pay_time'] <= $_activityInfo['target_use_first_pay_time_start']) {
