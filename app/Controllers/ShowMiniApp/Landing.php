@@ -115,7 +115,7 @@ class Landing extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         // 账户粒子激活
-        $scene = MiniAppQrService::getQrInfoById($params['scene'] ?? '');
+        $scene = ShowMiniAppService::getSceneData(urldecode($params['scene'] ?? ''));
         StudentService::mobileSendSMSCodeActive(Constants::SMART_APP_ID, $params['mobile'], Constants::DSS_STUDENT_LOGIN_TYPE_SHOW_MINI, $scene['channel_id'] ?? 0);
 
         $errorCode = CommonServiceForApp::sendValidateCode($params['mobile'], CommonServiceForApp::SIGN_WX_STUDENT_APP, $params['country_code']);

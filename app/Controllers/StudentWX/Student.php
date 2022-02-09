@@ -25,6 +25,7 @@ use App\Models\Dss\DssUserWeiXinModel;
 use App\Services\MiniAppQrService;
 use App\Services\ReferralActivityService;
 use App\Services\ReferralService;
+use App\Services\ShowMiniAppService;
 use App\Services\StudentService;
 use App\Services\UserService;
 use App\Services\WechatService;
@@ -176,7 +177,7 @@ class Student extends ControllerBase
         // 账户粒子激活
         $channelId = $params['channel_id'] ?? 0;
         if (empty($channelId) && !empty($params['scene'])) {
-            $channelId = MiniAppQrService::getQrInfoById($params['scene'])['channel_id'] ?? 0;
+            $channelId = ShowMiniAppService::getSceneData(urldecode($params['scene'] ?? ''))['channel_id'] ?? 0;
         }
         StudentService::mobileSendSMSCodeActive(Constants::SMART_APP_ID, $params['mobile'], Constants::DSS_STUDENT_LOGIN_TYPE_WX, $channelId);
 
