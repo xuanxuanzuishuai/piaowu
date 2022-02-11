@@ -202,12 +202,14 @@ class RealSharePosterService
         $activityDictData = RealDictConstants::getTypesMap([RealDictConstants::REAL_XYZOP_1321_CONFIG['type'], RealDictConstants::REAL_ACTIVITY_CONFIG['type']]);
         $specialDictActivityIds1321 = explode(',', $activityDictData[RealDictConstants::REAL_XYZOP_1321_CONFIG['type']]['real_xyzop_1321_activity_ids']['value']);
         $specialDictActivityIds2000 = explode(',', $activityDictData[RealDictConstants::REAL_ACTIVITY_CONFIG['type']]['2000_send_award_activity_id']['value']);
-        if (in_array($activityId, array_merge($specialDictActivityIds1321, $specialDictActivityIds2000))) {
+        if (in_array($activityId, $specialDictActivityIds1321) && ($joinRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED)) {
             $data['award_amount'] = "--";
-            if ($joinRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED) {
-                $data['award_status'] = RealUserAwardMagicStoneModel::STATUS_GIVE;
-                $data['award_status_zh'] = "人工发放";
-            }
+            $data['award_status'] = RealUserAwardMagicStoneModel::STATUS_GIVE;
+            $data['award_status_zh'] = "人工发放";
+        } elseif (in_array($activityId, $specialDictActivityIds2000)) {
+            $data['award_amount'] = "--";
+            $data['award_status'] = RealUserAwardMagicStoneModel::STATUS_GIVE;
+            $data['award_status_zh'] = "人工发放";
         } elseif (!is_null($joinRecord['award_status'])) {
             $data['award_status'] = $joinRecord['award_status'];
             $data['award_status_zh'] = RealUserAwardMagicStoneModel::STATUS_ZH[$data['award_status']];

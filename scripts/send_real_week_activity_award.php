@@ -28,6 +28,7 @@ use App\Models\RealUserAwardMagicStoneModel;
 use App\Models\RealWeekActivityModel;
 use App\Services\Queue\QueueService;
 use Dotenv\Dotenv;
+use Medoo\Medoo;
 
 $dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();
@@ -74,16 +75,17 @@ class ScriptSendRealWeekActivityAward
                 continue;
             }
             // 放入用户发奖队列
-            foreach ($studentList as $_studentId) {
+            foreach ($studentList as $sa) {
                 $queueData[] = [
                     'app_id'       => Constants::REAL_APP_ID,
-                    'student_id'   => $_studentId,
+                    'student_id'   => $sa['student_id'],
                     'activity_id'  => $item['activity_id'],
                     'act_status'   => RealUserAwardMagicStoneModel::STATUS_GIVE,
-                    'defer_second' => self::getStudentWeekActivitySendAwardDeferSecond($_studentId)
+                    'defer_second' => self::getStudentWeekActivitySendAwardDeferSecond($sa['student_id']),
+                    "check_success_numbers" => $sa['check_success_numbers'],
+
                 ];
             }
-            unset($_studentId);
         }
         //批量投递消费消费队列
         QueueService::addRealUserPosterAward($queueData);
@@ -148,12 +150,12 @@ class ScriptSendRealWeekActivityAward
             'activity_id'   => $activityId,
             'verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED,
             'type'          => RealSharePosterModel::TYPE_WEEK_UPLOAD,
-            'GROUP'         => ['student_id'],
-        ], ['student_id']);
+            'GROUP'         => ['student_id',],
+        ], ['student_id', 'check_success_numbers' => Medoo::raw('count(id)')]);
         if (empty($studentList)) {
             return [];
         }
-        return array_unique(array_column($studentList, 'student_id'));
+        return $studentList;
     }
 
     public static function lock()
