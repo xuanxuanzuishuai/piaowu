@@ -236,19 +236,13 @@ class Landing extends ControllerBase
 
     /**
      * 小程序已购买转介绍海报
-     *
      * @param Request $request
      * @param Response $response
      * @return Response
      */
     public function buyPageReferralPoster(Request $request, Response $response)
     {
-        try {
-            $pageData = ReferralService::miniBuyPageReferralPoster($this->ci['referral_miniapp_openid']);
-        } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
-        }
-        return HttpHelper::buildResponse($response, $pageData);
+        return HttpHelper::buildResponse($response, []);
     }
 
     /**

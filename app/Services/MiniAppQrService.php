@@ -346,6 +346,8 @@ class MiniAppQrService
             'date'            => date('Y-m-d', time()),
             'from_service'    => $extParams['from_service'] ?? '',
             'employee_uuid'   => $extParams['employee_uuid'] ?? '',
+            'diversion_type'  => $extParams['diversion_type'] ?? 0,
+            'dss_uuid'        => $extParams['dss_uuid'] ?? '',
         ];
         // 根据小程序码主要信息，查询CH
         $qrSign = QrInfoService::createQrSign($qrData, $appId, $busiesType, $onlyReferralBaseField);
@@ -556,6 +558,10 @@ class MiniAppQrService
             case Constants::REAL_APP_ID . '_' . Constants::REAL_MINI_BUSI_TYPE:
                 // 启动 真人小程序码生成队列
                 QueueService::realStartCreateMiniAppId();
+                break;
+            case Constants::SMART_APP_ID . '_' . DssUserWeiXinModel::BUSI_TYPE_YEAR_CARD_MINAPP:
+                // 启动 智能年卡小程序码生成队列
+                QueueService::dssYearCardStartCreateMiniAppId();
                 break;
             default:
         }

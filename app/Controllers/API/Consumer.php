@@ -13,7 +13,6 @@ use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
-use App\Libs\Dss;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\PhpMail;
@@ -25,7 +24,6 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\BillMapModel;
-use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
@@ -42,7 +40,6 @@ use App\Services\CountingActivityAwardService;
 use App\Services\CountingActivitySignService;
 use App\Services\MessageService;
 use App\Services\MiniAppQrService;
-use App\Services\PosterTemplateService;
 use App\Services\PushMessageService;
 use App\Services\QrInfoService;
 use App\Services\Queue\AgentTopic;
@@ -50,7 +47,6 @@ use App\Services\Queue\CheckPosterSyncTopic;
 use App\Services\Queue\DurationTopic;
 use App\Services\Queue\GrantAwardTopic;
 use App\Services\Queue\PushMessageTopic;
-use App\Services\Queue\QueueService;
 use App\Services\Queue\RealReferralTopic;
 use App\Services\Queue\SaveTicketTopic;
 use App\Services\Queue\StudentAccountAwardPointsTopic;
@@ -779,10 +775,6 @@ class Consumer extends ControllerBase
 
         try {
             switch ($params['event_type']) {
-                case SaveTicketTopic::EVENT_SEND_TICKET:
-                    (new Dss())->saveTicket($params['msg_body']);
-                    break;
-
                 case SaveTicketTopic::EVENT_GENERATE_TICKET:
                     DssUserQrTicketModel::getUserQrURL(
                         $params['msg_body']['user_id'],
@@ -791,10 +783,6 @@ class Consumer extends ControllerBase
                         $params['msg_body']['landing_type'],
                         $params['msg_body']['ext']
                     );
-                    break;
-
-                case SaveTicketTopic::EVENT_PRE_GENERATE_QR_CODE:
-                    PosterTemplateService::preGenQRCode($params['msg_body']['open_id'], $params['msg_body']['user_id']);
                     break;
             }
         } catch (RunTimeException $runTimeException) {

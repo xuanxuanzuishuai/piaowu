@@ -19,10 +19,8 @@ use App\Libs\Util;
 use App\Models\ActivityExtModel;
 use App\Models\ActivityPosterModel;
 use App\Models\CHModel\AprViewStudentModel;
-use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssCollectionModel;
 use App\Models\Dss\DssEmployeeModel;
-use App\Models\Dss\DssGiftCodeDetailedModel;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
@@ -32,8 +30,6 @@ use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\InviteActivityModel;
 use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
-use App\Models\WeekActivityModel;
-use I18N\Lang;
 
 class ActivityService
 {
