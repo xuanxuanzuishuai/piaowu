@@ -28,9 +28,13 @@ class BillMapService
         if (!empty($sceneData['qr_id'])) {
             $paramInfo = MiniAppQrService::getQrInfoById($sceneData['qr_id']);
         } elseif (isset($sceneData['param_id']) && !empty($sceneData['param_id'])) {
-            $paramInfo = ParamMapModel::getParamByQrById($sceneData['param_id']);
-            $subInfo = json_decode($paramInfo['param_info'], true);
-            $paramInfo['c'] = $subInfo['c'] ?? 0;
+            //先查询ck,在查询param map
+            $paramInfo = MiniAppQrService::getQrInfoById($sceneData['param_id']);
+            if (empty($paramInfo)) {
+                $paramInfo = ParamMapModel::getParamByQrById($sceneData['param_id']);
+                $subInfo = json_decode($paramInfo['param_info'], true);
+                $paramInfo['c'] = $subInfo['c'] ?? 0;
+            }
         } elseif(!empty($sceneData['r'])){
             //获取票据对应的用户身份类型
             $identityData = StudentInviteService::checkQrTicketIdentity($sceneData['r'], $sceneData['qr_id']);
