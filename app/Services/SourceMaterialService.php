@@ -434,7 +434,7 @@ class SourceMaterialService
             'image_type'  => $request['image_type'],
             'image_path'  => $request['image_path'],
             'jump_rule'   => $request['jump_rule'],
-            'jump_url'    => $request['jump_rule'] == BannerConfigModel::IS_ALLOW_JUMP ? urlencode($request['jump_url']) : '',
+            'jump_url' => !empty($request['jump_rule']) ? trim(urlencode($request['jump_rule'])) : '',
             'order'       => $request['order'],
             'remark'      => $request['remark'],
             'operator_id' => $request['employee_id'],
@@ -567,7 +567,7 @@ class SourceMaterialService
             throw new RunTimeException(['record_not_found']);
         }
         $bannerInfo['image_url']  = AliOSS::replaceCdnDomainForDss($bannerInfo['image_path']);
-        $bannerInfo['jump_url']   = $bannerInfo['jump_rule'] == BannerConfigModel::IS_ALLOW_JUMP ? urldecode($bannerInfo['jump_url']) : '';
+        $bannerInfo['jump_url']   = urldecode($bannerInfo['jump_url']);
 
         return $bannerInfo;
     }
@@ -597,9 +597,20 @@ class SourceMaterialService
         if (empty($bannerLists)) {
             array_push($bannerLists, ['id' => 1, 'image_path' => $defaultBanner, 'jump_url' => '']);
         }
+        $goodsDetailUrl = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'dss_gold_left_goods_detail');
         foreach ($bannerLists as &$val) {
             $val['image_path'] = AliOSS::replaceCdnDomainForDss($val['image_path']);
-            $val['jump_url']   = $val['jump_rule'] == BannerConfigModel::IS_ALLOW_JUMP ? urldecode($val['jump_url']) : '';
+            // 获取跳转链接完整的url
+            if ($val['jump_rule'] == BannerConfigModel::JUMP_PACKAGE) {
+                // 产品包连接
+                $val['jump_url'] = $goodsDetailUrl . urldecode($val['jump_url']);
+            } elseif ($val['jump_rule'] == BannerConfigModel::JUMP_POSTER) {
+                // 海报连接
+                $val['jump_url'] = AliOSS::replaceCdnDomainForDss(urldecode($val['jump_url']));
+            } else {
+                // 其他连接或者不跳转
+                $val['jump_url'] = $val['jump_rule'] == BannerConfigModel::IS_ALLOW_JUMP ? urldecode($val['jump_url']) : '';
+            }
         }
         $data = [
             'gold_leaf_num' => Util::unitConvert($goldLeaf),

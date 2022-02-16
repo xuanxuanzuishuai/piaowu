@@ -25,7 +25,6 @@ use App\Controllers\OrgWeb\Channel;
 use App\Controllers\OrgWeb\CopyManage;
 use App\Controllers\OrgWeb\CountingActivity;
 use App\Controllers\OrgWeb\Dept;
-use App\Controllers\OrgWeb\GraduationActivity;
 use App\Controllers\OrgWeb\InviteActivity;
 use App\Controllers\OrgWeb\LandingRecall;
 use App\Controllers\OrgWeb\Message;
@@ -327,10 +326,6 @@ class OrgWebRouter extends RouterBase
         '/op_web/share_poster/activity_list'     => ['method' => ['get'], 'call' => SharePoster::class . ':activityList'],
         // 分享截图审核
         '/op_web/share_poster/verify'     => ['method' => ['post'], 'call' => SharePoster::class . ':verifyPoster'],
-        // 结班分享领奖 - 参与记录列表
-        '/op_web/graduation/record_list'     => ['method' => ['get'], 'call' => GraduationActivity::class . ':graduationRecordList'],
-        // 结班分享领奖 - 参与详情
-        '/op_web/graduation/user_record_detail'     => ['method' => ['get'], 'call' => GraduationActivity::class . ':graduationUserRecordDetail'],
 
         /********************************************************************************************************************************************************
          * 真人业务线管理后台接口统一放到下面

@@ -1146,6 +1146,7 @@ class DictConstants {
             'dss_share_poster_history_list',    // 周周领奖上传分享截图历史记录列表链接
             'dss_week_activity_detail',         // 周周领奖详情页连接
             'dss_gold_left_shop_url',           // 金叶子商城链接
+            'dss_gold_left_goods_detail',       // 金叶子商城产品包详情页
         ],
     ];
 
