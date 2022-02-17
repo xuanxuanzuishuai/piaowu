@@ -119,7 +119,7 @@ class Constants
     const DSS_STUDENT_LOGIN_TYPE_CALLBACK_H5 = 6;
 
 
-    //真人业务线账户登陆类型：1: app登录 2：公众号登录 3：真人转介绍小程序 4：领课小程序 5：官网领课 6:主课H5
+    //真人业务线账户登陆类型：1: app登录 2：公众号登录 3：真人转介绍小程序 4：领课小程序 5：官网领课 6:H5
     const REAL_STUDENT_LOGIN_TYPE_APP = 1;
     const REAL_STUDENT_LOGIN_TYPE_WX = 2;
     const REAL_STUDENT_LOGIN_TYPE_REFERRAL_MINI = 3;

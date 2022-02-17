@@ -174,6 +174,7 @@ class CommonServiceForApp
 
     /**
      * 获取国家区号：按照热度排序
+     * @return array
      */
     public static function getCountryCodeOrderByHot()
     {

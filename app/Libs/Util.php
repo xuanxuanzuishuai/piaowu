@@ -5,6 +5,8 @@ namespace App\Libs;
 use App\Libs\Exceptions\RunTimeException;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Services\DictService;
+use libphonenumber\NumberParseException;
+use libphonenumber\PhoneNumberUtil;
 
 /**
  * 工具类
@@ -1464,5 +1466,25 @@ class Util
             $params[$item[0]] = $item[1];
         }
         return $params;
+    }
+
+
+    /**
+     * 校验海外手机号码格式
+     * @param  {String} $number      [手机号]
+     * @param  {String} $countryCode [手机区号]
+     * @return {[bool]}
+     */
+    public static function validPhoneNumber($number, $countryCode)
+    {
+        $fullPhone = '+' . $countryCode . $number;
+        $phoneUtil = PhoneNumberUtil::getInstance();
+        try {
+            $numberParse = $phoneUtil->parse($fullPhone, null);
+            return $phoneUtil->isValidNumber($numberParse);
+        } catch (NumberParseException $e) {
+            SimpleLogger::error('PhoneNumberUtil exception', [$e]);
+            return false;
+        }
     }
 }

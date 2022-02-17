@@ -14,7 +14,6 @@ use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\NewSMS;
 use App\Libs\RealDictConstants;
-use App\Models\Erp\ErpStudentModel;
 
 class RealStudentService
 {
@@ -25,52 +24,45 @@ class RealStudentService
      * @param int $channel
      * @param array $referralData
      * @param array $weChatData
-     * @param array $sendActiveQueueData
-     * @return array|bool|mixed
+     * @param array $loginActiveType
+     * @param array $extData
+     * @return array|bool|mixed [
+     * student_id    number ERP端学员ID
+     * is_new    bool    是否是新注册用户
+     * uuid    str     全局唯一uuid
+     * ]
      * @throws RunTimeException
      */
-    public static function register($mobile, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE, $channel = 0, $referralData = [], $weChatData = [], $sendActiveQueueData = [])
+    public static function register($mobile, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE, $channel = 0, $referralData = [], $weChatData = [], $loginActiveType = 0, $extData = [])
     {
+        $registerData = $extData;
         $registerData['app_id'] = Constants::REAL_APP_ID;
-        //查询账号是否存在
-        $studentInfo = ErpStudentModel::getStudentInfoByMobile($mobile);
-        $isNew = empty($studentInfo) ? true : false;
+        $registerData['mobile'] = $mobile;
+        $registerData['country_code'] = $countryCode;
+        $registerData['channel_id'] = empty($channel) ? RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'register_default_channel') : $channel;
+        //获取转介绍相关信息
+        if (!empty($referralData['qr_id'])) {
+            $qrData = MiniAppQrService::getQrInfoById($referralData['qr_id'], ['user_id', 'channel_id', 'user_type']);
+            $registerData['referee_id'] = RealReferralService::DEFAULT_REFEREE_ID;
+            $registerData['referee_type'] = $qrData['user_type'];
+            $registerData['referee_user_id'] = $qrData['user_id'];
+            $registerData['channel_id'] = !empty($qrData['channel_id']) ? $qrData['channel_id'] : $channel;
+        }
+        //微信相关信息
+        if (!empty($weChatData['open_id'])) {
+            $registerData['open_id'] = $weChatData['open_id'];
+            $registerData['user_type'] = $weChatData['user_type'];
+            $registerData['busi_type'] = $weChatData['busi_type'];
+        }
+        //注册用户
+        $studentInfo = (new Erp())->refereeStudentRegister($registerData);
         if (empty($studentInfo)) {
-            $registerData['mobile'] = $mobile;
-            $registerData['country_code'] = $countryCode;
-            if (empty($channel)) {
-                //默认渠道
-                $channel = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'register_default_channel');
-            }
-            $registerData['channel_id'] = $channel;
-            //获取转介绍相关信息
-            if (!empty($referralData['qr_id'])) {
-                $qrData = MiniAppQrService::getQrInfoById($referralData['qr_id'], ['user_id', 'channel_id', 'user_type']);
-                $registerData['referee_id'] = RealReferralService::DEFAULT_REFEREE_ID;
-                $registerData['referee_type'] = $qrData['user_type'];
-                $registerData['referee_user_id'] = $qrData['user_id'];
-                $registerData['channel_id'] = !empty($qrData['channel_id']) ? $qrData['channel_id'] : $channel;
-            }
-            //微信相关信息
-            if (!empty($weChatData['open_id'])) {
-                $registerData['open_id'] = $weChatData['open_id'];
-                $registerData['user_type'] = $weChatData['user_type'];
-                $registerData['busi_type'] = $weChatData['busi_type'];
-            }
-            //注册用户
-            $studentInfo = (new Erp())->refereeStudentRegister($registerData);
-            if (empty($studentInfo)) {
-                throw new RunTimeException(['user_register_fail']);
-            }
+            throw new RunTimeException(['user_register_fail']);
         }
         //粒子激活记录
-        if ($sendActiveQueueData['active_type'] && $sendActiveQueueData['is_send_active']) {
-            StudentService::studentLoginActivePushQueue($registerData['app_id'], $studentInfo['id'], $sendActiveQueueData['active_type'], $channel);
-        }
-        $result = [
-            'is_new' => $isNew,
-            'uuid' => $studentInfo['uuid'],
-        ];
-        return $result;
+//        if (!empty($loginActiveType) && ($studentInfo['is_new'] == false)) {
+//            StudentService::studentLoginActivePushQueue($registerData['app_id'], $studentInfo['id'], $loginActiveType, $channel);
+//        }
+        return $studentInfo;
     }
 }

@@ -1157,13 +1157,22 @@ class DictConstants {
             'mini_tou_fang_default_channel',    // 投放小程序默认注册渠道
         ],
     ];
-
     // 运营活动奖品发放方式类型配置
     const AWARD_PRIZE_TYPE = [
         'type' => 'award_prize_type',
         'keys' => [1, 2],
     ];
+    //========================真人海外投放配置start========================
+    const REAL_STUDENT_OVERSEAS_DELIVERY = [
+        'type' => 'real_student_overseas_delivery',
+        'keys' => [
+            'default_cc_qr_code',//默认cc客服微信二维码
+            'default_cc_mobile',//默认cc客服微信号
+        ],
+    ];
 
+
+    //========================真人海外投放配置end========================
 
     /**
      * 单个获取op系统dict配置数据

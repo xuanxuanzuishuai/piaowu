@@ -7,6 +7,10 @@ use App\Libs\Constants;
 class ErpStudentModel extends ErpModel
 {
     public static $table = 'erp_student';
+    //社交账号类型：1邮箱 2微信 3脸书
+    const SOCIAL_ACCOUNT_TYPE_EMAIL = 1;
+    const SOCIAL_ACCOUNT_TYPE_WX = 2;
+    const SOCIAL_ACCOUNT_TYPE_FACEBOOK = 3;
 
     /**
      * 根据uuid或者手机号获取学生信息

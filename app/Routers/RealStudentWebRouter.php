@@ -9,6 +9,7 @@
 namespace App\Routers;
 
 use App\Controllers\Real\LandingPromotion;
+use App\Controllers\RealStudentOverseas\Delivery;
 use App\Controllers\Real\StudentAuth;
 
 class RealStudentWebRouter extends RouterBase
@@ -19,7 +20,10 @@ class RealStudentWebRouter extends RouterBase
         //注册登陆
         '/real_student_web/auth/sms_code_register' => ['method' => ['post'], 'call' => StudentAuth::class . ':smsCodeRegister', 'middles' => []],
         '/real_student_web/auth/send_sms_code' => ['method' => ['post'], 'call' => StudentAuth::class . ':sendSmsCode', 'middles' => []],
-        //web端H5推广落地页路由
+        //国内：H5推广落地页路由
         '/real_student_web/landing/main_course_promoted_record_v1' => ['method' => ['post'], 'call' => LandingPromotion::class . ':mainCoursePromotedRecordV1', 'middles' => []],
+
+        //海外：H5推广落地页路由
+        '/real_student_web/landing_overseas/delivery_v1' => ['method' => ['post'], 'call' => Delivery::class . ':deliveryV1', 'middles' => []],
     ];
 }

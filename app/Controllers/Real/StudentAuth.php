@@ -9,6 +9,7 @@
 namespace App\Controllers\Real;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\NewSMS;
@@ -53,12 +54,13 @@ class StudentAuth extends ControllerBase
         }
         $params['country_code'] = $params['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE;
         $params['channel_id'] = $params['channel_id'] ?? 0;
+        $params['login_type'] = $params['login_type'] ?? Constants::REAL_STUDENT_LOGIN_TYPE_MAIN_LESSON_H5;
         // 验证手机验证码
         if (!empty($params['sms_code']) && !CommonServiceForApp::checkValidateCode($params['mobile'], $params['sms_code'], $params['country_code'])) {
             return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
         }
         try {
-            $result = RealStudentService::register($params['mobile'], $params['country_code'], $params['channel_id']);
+            $result = RealStudentService::register($params['mobile'], $params['country_code'], $params['channel_id'], [], [], $params['login_type']);
         } Catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
