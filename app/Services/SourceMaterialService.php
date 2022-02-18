@@ -628,7 +628,7 @@ class SourceMaterialService
         foreach ($bannerLists as &$val) {
             $val['image_path'] = AliOSS::replaceCdnDomainForDss($val['image_path']);
             // 获取跳转链接完整的url
-            $val['jump_url'] = self::getJumpRuleUrl($val['jump_rule'], $val['jump_url']);
+            $val['jump_url'] = self::getJumpRuleUrl($val['jump_rule'], $val['jump_url'], true);
         }
         $data = [
             'gold_leaf_num' => Util::unitConvert($goldLeaf),
