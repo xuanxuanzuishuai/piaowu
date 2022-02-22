@@ -326,6 +326,7 @@ class StudentActivity extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $data = ActivityExtModel::getRecord(['activity_id'=>(int)$params['activity_id']],['award_rule']);
+        $data['award_rule'] = Util::textDecode($data['award_rule']);
         return HttpHelper::buildResponse($response, $data);
     }
 
