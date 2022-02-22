@@ -434,7 +434,7 @@ class SourceMaterialService
             'image_type'  => $request['image_type'],
             'image_path'  => $request['image_path'],
             'jump_rule'   => $request['jump_rule'],
-            'jump_url'    => $request['jump_rule'] == BannerConfigModel::IS_ALLOW_JUMP ? urlencode($request['jump_url']) : '',
+            'jump_url'    => urlencode(trim($request['jump_url'])),
             'order'       => $request['order'],
             'remark'      => $request['remark'],
             'operator_id' => $request['employee_id'],
@@ -567,9 +567,37 @@ class SourceMaterialService
             throw new RunTimeException(['record_not_found']);
         }
         $bannerInfo['image_url']  = AliOSS::replaceCdnDomainForDss($bannerInfo['image_path']);
-        $bannerInfo['jump_url']   = $bannerInfo['jump_rule'] == BannerConfigModel::IS_ALLOW_JUMP ? urldecode($bannerInfo['jump_url']) : '';
+        $bannerInfo['jump_url']   = self::getJumpRuleUrl($bannerInfo['jump_rule'], $bannerInfo['jump_url'], true);
 
         return $bannerInfo;
+    }
+
+    /**
+     * 获取banner跳转链接
+     * @param $jumpRule
+     * @param $jumpUrl
+     * @param bool $isGetPackageId 如果是产品包是否只返回产品包id
+     * @return string|string[]
+     */
+    public static function getJumpRuleUrl($jumpRule, $jumpUrl, bool $isGetPackageId = false)
+    {
+        $jumpUrl        = urldecode($jumpUrl);
+        $newJumpUrl     = '';
+        $goodsDetailUrl = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'dss_gold_left_goods_detail');
+        // 获取跳转链接完整的url
+        if ($jumpRule == BannerConfigModel::JUMP_PACKAGE && $isGetPackageId) {
+            $newJumpUrl = $jumpUrl;
+        } elseif ($jumpRule == BannerConfigModel::JUMP_PACKAGE) {
+            // 产品包连接
+            $newJumpUrl = $goodsDetailUrl . $jumpUrl;
+        } elseif ($jumpRule == BannerConfigModel::JUMP_POSTER) {
+            // 海报连接
+            $newJumpUrl = AliOSS::replaceCdnDomainForDss($jumpUrl);
+        } else {
+            // 其他连接或者不跳转
+            $newJumpUrl = $jumpRule == BannerConfigModel::IS_ALLOW_JUMP ? $jumpUrl : '';
+        }
+        return $newJumpUrl;
     }
 
     /**
@@ -599,7 +627,8 @@ class SourceMaterialService
         }
         foreach ($bannerLists as &$val) {
             $val['image_path'] = AliOSS::replaceCdnDomainForDss($val['image_path']);
-            $val['jump_url']   = $val['jump_rule'] == BannerConfigModel::IS_ALLOW_JUMP ? urldecode($val['jump_url']) : '';
+            // 获取跳转链接完整的url
+            $val['jump_url'] = self::getJumpRuleUrl($val['jump_rule'], $val['jump_url'], true);
         }
         $data = [
             'gold_leaf_num' => Util::unitConvert($goldLeaf),
