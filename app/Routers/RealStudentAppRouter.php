@@ -23,6 +23,8 @@ class RealStudentAppRouter extends RouterBase
     protected $uriConfig = [
         // 月月有奖 && 周周领奖
         '/real_student_app/activity/week' => ['method' => ['post'], 'call' => StudentActivity::class . ':getWeekActivity'],
+        '/real_student_app/activity/week_award_rule' => ['method' => ['post'], 'call' => StudentActivity::class . ':getWeekActivityAwardRule'],
+        '/real_student_app/activity/verify_list' => ['method' => ['post'], 'call' => StudentActivity::class . ':getWeekActivityVerifyList'],
         '/real_student_app/activity/show_tab' => ['method' => ['post'], 'call' => StudentActivity::class . ':monthAndWeekActivityShowTab'],
         '/real_student_app/activity/month' => ['method' => ['post'], 'call' => StudentActivity::class . ':getMonthActivity'],
         '/real_student_app/activity/can_participate_week' => ['method' => ['post'], 'call' => StudentActivity::class . ':getCanParticipateWeekActivityList'],

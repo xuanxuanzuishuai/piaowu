@@ -532,13 +532,19 @@ class QueueService
     public static function addRealUserPosterAward($data): bool
     {
         try {
+            if (!is_array($data) || empty($data)) {
+                return false;
+            }
             $topic = new RealReferralTopic();
             // 获取延时时间， 默认1-30秒随机数， 如果指定延时时间则使用指定的时间
             $deferSecond = rand(1, 30);
-            if (!empty($data['defer_second'])) {
-                $deferSecond = intval($data['defer_second']);
+            foreach ($data as $dv) {
+                if (!empty($dv['defer_second'])) {
+                    $deferSecond = intval($dv['defer_second']);
+                }
+                $topic->realSendPosterAward($dv)->publish($deferSecond);
             }
-            $topic->realSendPosterAward($data)->publish($deferSecond);
+
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), ['addRealUserPosterAward', $data]);
             return false;
@@ -1009,7 +1015,13 @@ class QueueService
     public static function realSendPosterAwardMessage($data)
     {
         try {
-            (new RealReferralTopic())->realSendPosterAwardMessage($data)->publish(5);
+            if (!is_array($data) || empty($data)) {
+                return false;
+            }
+            $topicObj = new RealReferralTopic();
+            foreach ($data as $dk => $dv) {
+                $topicObj->realSendPosterAwardMessage($dv)->publish(5);
+            }
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), [$data]);
             return false;

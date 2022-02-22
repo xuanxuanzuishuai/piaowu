@@ -36,10 +36,14 @@ class RealDictConstants extends DictConstants
     const REAL_SHARE_POSTER_CONFIG = [
         'type' => 'REAL_SHARE_POSTER_CONFIG',
         'keys' => [
-            '2',  // 审核状态 - 审核通过消息id
-            '3',  // 审核状态 - 审核未通过消息id
-            'new-2',  // 新规则 - 审核状态 - 审核通过消息id
-            'new-3',  // 新规则 - 审核状态 - 审核未通过消息id
+            '2',  // 审核状态 - 审核通过消息id(废弃)
+            '3',  // 审核状态 - 审核未通过消息id(废弃)
+            'new-2',  // 新规则 - 审核状态 - 审核通过消息id(废弃)
+            'new-3',  // 新规则 - 审核状态 - 审核未通过消息id(废弃)
+            '2-1',  // 审核通过消息id:审核状态-及时发放
+            '2-2',  // 审核通过消息id:审核状态-延时发放发放
+            '3-1',  // 审核未通过消息id:审核状态-及时发放
+            '3-2',  // 审核未通过消息id:审核状态-延时发放发放
         ]
     ];
 
@@ -74,6 +78,7 @@ class RealDictConstants extends DictConstants
             'old_rule_last_activity_id',  // 旧规则最后的活动id
             'activity_over_allow_upload_second',  // 活动结束后允许上传时间，单位秒
             'send_award_magic_stone_msg_id',  // 发放魔法石奖励到账通知消息id
+            '2000_send_award_activity_id',  // 运营配置的发放奖励时间为5+2000天后发放的活动id
         ],
     ];
 

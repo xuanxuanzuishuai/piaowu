@@ -41,6 +41,10 @@ class OperationActivityModel extends Model
     const TIME_STATUS_ONGOING = 2;//进行中
     const TIME_STATUS_FINISHED = 3;//已结束
 
+    // 活动奖品发奖方式类型:1立即发放 2延时发放
+    const AWARD_PRIZE_TYPE_IN_TIME = 1;
+    const AWARD_PRIZE_TYPE_DELAY = 2;
+
 
     /**
      * 当前阶段为付费正式课且未参加当前活动的学员手微信open_id

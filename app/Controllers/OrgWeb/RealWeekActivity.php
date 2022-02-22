@@ -139,9 +139,32 @@ class RealWeekActivity extends ControllerBase
                 'error_code' => 'delay_day_is_integer'
             ],
             [
-                'key' => 'priority_level',
-                'type' => 'integer',
-                'error_code' => 'priority_level_is_integer'
+                'key' => 'delay_day',
+                'type' => 'max',
+                'value' => 10,
+                'error_code' => 'delay_day_max_is_ten'
+            ],
+            [
+                'key' => 'target_user_type',
+                'type' => 'required',
+                'error_code' => 'target_user_type_is_required'
+            ],
+            [
+                'key' => 'target_user_type',
+                'type' => 'in',
+                'value'=>[1,2],
+                'error_code' => 'target_user_type_value_error'
+            ],
+            [
+                'key' => 'award_prize_type',
+                'type' => 'required',
+                'error_code' => 'award_prize_type_is_required'
+            ],
+            [
+                'key' => 'award_prize_type',
+                'type' => 'in',
+                'value'=>[1,2],
+                'error_code' => 'award_prize_type_value_error'
             ],
         ];
         $params = $request->getParams();

@@ -50,6 +50,7 @@ class SharePoster extends ControllerBase
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws \Exception
      */
     public function approved(Request $request, Response $response)
     {

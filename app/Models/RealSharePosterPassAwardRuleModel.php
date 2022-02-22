@@ -28,7 +28,7 @@ class RealSharePosterPassAwardRuleModel extends Model
             $info = [
                 'activity_id' => $activityId,
                 'success_pass_num' => $_taskNum + 1,
-                'award_amount' => $_item['task_award'],
+                'award_amount' => $_item,
                 'award_type' => Constants::ERP_ACCOUNT_NAME_MAGIC,
                 'create_time' => $createTime,
             ];

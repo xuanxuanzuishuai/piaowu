@@ -12,6 +12,7 @@ class RealUserAwardMagicStoneModel extends Model
     public static $table = 'real_user_award_magic_stone';
 
     //奖励发放状态
+    const STATUS_NOT_OWN = -1; // 未获取
     const STATUS_DISABLED = 0; // 不发放
     const STATUS_WAITING = 1; // 待发放
     const STATUS_REVIEWING = 2; // 审核中
@@ -19,6 +20,15 @@ class RealUserAwardMagicStoneModel extends Model
     const STATUS_GIVE_ING = 4; // 发放中/已发放待领取
     const STATUS_GIVE_FAIL = 5; // 发放失败
 
+    const STATUS_ZH = [
+        self::STATUS_NOT_OWN => '未获取',
+        self::STATUS_DISABLED => '不发放',
+        self::STATUS_WAITING => '待发放',
+        self::STATUS_REVIEWING => '审核中',
+        self::STATUS_GIVE => '已发放',
+        self::STATUS_GIVE_ING => '发放中',
+        self::STATUS_GIVE_FAIL => '发放失败',
+    ];
     /**
      * 获取列表
      * @param $where

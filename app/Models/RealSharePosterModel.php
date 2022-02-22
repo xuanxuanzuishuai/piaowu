@@ -216,6 +216,10 @@ class RealSharePosterModel extends Model
             $where['student_id'] = $data['student_id'];
         }
 
+        if (!empty($data['activity_id'])) {
+            $where['activity_id'] = $data['activity_id'];
+        }
+
         $returnData['total_count'] = self::getCount($where);
         if (empty($returnData['total_count'])) {
             return $returnData;
@@ -226,5 +230,61 @@ class RealSharePosterModel extends Model
         $where['ORDER'] = ['id' => 'DESC'];
         $returnData['list'] = self::getRecords($where);
         return $returnData;
+    }
+
+    /**
+     * 查询用户参与记录：活动和分享任务次数分组
+     * @param $studentId
+     * @param $activityIds
+     * @return array|null
+     */
+    public static function getSharePosterHistoryGroupActivityIdAndTaskNum($studentId, $activityIds)
+    {
+        $sql = "SELECT
+                    	tmp.*,
+                        3001 as award_type,
+                        ms.award_amount,
+                        ms.award_status 
+                FROM
+                    (
+                    SELECT
+                        id,
+                        activity_id,
+                        student_id,
+                        task_num,
+                        verify_status,
+                        dense_rank() over ( PARTITION BY activity_id, task_num ORDER BY id DESC ) AS upload_order 
+                    FROM
+                        " . self::$table . " 
+                    WHERE
+                        student_id = " . $studentId . " 
+                        AND
+                        activity_id in (".implode(',', $activityIds).")
+                    ) AS tmp 
+                    LEFT join ".RealUserAwardMagicStoneModel::$table." AS ms ON
+                        tmp.student_id = ms.user_id 
+                        AND tmp.activity_id = ms.activity_id 
+                        AND tmp.task_num = ms.passes_num 
+                WHERE
+                    tmp.upload_order = 1";
+        $db = MysqlDB::getDB();
+        $data = $db->queryall($sql);
+        return $data;
+    }
+
+    /**
+     * 获取上传截图的活动
+     * @param $studentId
+     * @return array
+     */
+    public static function getStudentJoinActivityList($studentId)
+    {
+        $where = [
+            'student_id' => $studentId,
+            'GROUP' => ['activity_id'],
+            'ORDER' => ['activity_id' => 'DESC'],
+        ];
+        $data = self::getRecords($where, ['activity_id']);
+        return empty($data) ? [] : array_column($data, 'activity_id');
     }
 }
