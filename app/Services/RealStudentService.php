@@ -61,7 +61,7 @@ class RealStudentService
         }
         //粒子激活记录
        if (!empty($loginActiveType) && ($studentInfo['is_new'] == false)) {
-           StudentService::studentLoginActivePushQueue($registerData['app_id'], $studentInfo['id'], $loginActiveType, $channel);
+           StudentService::studentLoginActivePushQueue($registerData['app_id'], $studentInfo['student_id'], $loginActiveType, $registerData['channel_id']);
        }
         return $studentInfo;
     }
