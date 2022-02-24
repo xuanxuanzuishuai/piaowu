@@ -60,9 +60,9 @@ class RealStudentService
             throw new RunTimeException(['user_register_fail']);
         }
         //粒子激活记录
-//        if (!empty($loginActiveType) && ($studentInfo['is_new'] == false)) {
-//            StudentService::studentLoginActivePushQueue($registerData['app_id'], $studentInfo['id'], $loginActiveType, $channel);
-//        }
+       if (!empty($loginActiveType) && ($studentInfo['is_new'] == false)) {
+           StudentService::studentLoginActivePushQueue($registerData['app_id'], $studentInfo['id'], $loginActiveType, $channel);
+       }
         return $studentInfo;
     }
 }

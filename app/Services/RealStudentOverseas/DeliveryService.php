@@ -78,7 +78,7 @@ class DeliveryService
                 throw new RunTimeException(['email_address_error']);
             }
             $extData['email'] = trim($socialAccount);
-        } elseif ($socialAccountType == ErpStudentModel::SOCIAL_ACCOUNT_TYPE_EMAIL) {
+        } elseif ($socialAccountType == ErpStudentModel::SOCIAL_ACCOUNT_TYPE_WX) {
             $extData['wechat'] = trim($socialAccount);
         } else {
             $extData[] = '';
