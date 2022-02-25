@@ -1127,6 +1127,7 @@ class DictConstants {
             'approval_poster_wx_msg_id',  // 分享截图通过消息id
             'week_activity_send_award_task_id',  // 周周领奖发放奖励时对应的task_id
             'white_list_last_first_pay_time',   // 周周领奖白名单最后的首次付费时间
+            'tmp_rule_last_activity_id',  // 临时规则最后的活动id
         ],
     ];
 

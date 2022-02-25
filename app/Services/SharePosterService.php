@@ -37,10 +37,12 @@ use App\Models\WeChatAwardCashDealModel;
 use App\Models\WeekActivityModel;
 use App\Models\WeekWhiteListModel;
 use App\Services\Queue\QueueService;
+use App\Services\TraitService\TraitSharePosterService;
 use I18N\Lang;
 
 class SharePosterService
 {
+    use TraitSharePosterService;
     public static $redisExpire = 432000; // 12小时
 
     const KEY_POSTER_VERIFY_LOCK = 'POSTER_VERIFY_LOCK';
@@ -714,75 +716,14 @@ class SharePosterService
     public static function approvalPoster($id, $params = [])
     {
         $type = $params['type'] ?? SharePosterModel::TYPE_WEEK_UPLOAD;
-        $oldRuleLastActivityId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
-        /** 周周领奖分享截图审核新规则 */
-        if ($oldRuleLastActivityId < $params['activity_id'] && $type == SharePosterModel::TYPE_WEEK_UPLOAD) {
-            $posters = SharePosterModel::getPostersByIds($id, $type);
-            if (count($posters) != count($id)) {
-                throw new RunTimeException(['get_share_poster_error']);
-            }
-            $activityInfo = WeekActivityModel::getRecord(['activity_id' => $params['activity_id']]);
-            if (empty($activityInfo)) {
-                throw new RunTimeException(['week_activity_not_found']);
-            }
-            $now = time();
-            $updateData = [
-                'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
-                'verify_time'   => $now,
-                'verify_user'   => $params['employee_id'] ?? 0,
-                'remark'        => $params['remark'] ?? '',
-                'update_time'   => $now,
-            ];
-            $redis = RedisDB::getConn();
-            $msgId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'approval_poster_wx_msg_id');
-            $msgUrl = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'dss_week_activity_detail');
-            $sendAwardBaseDelaySecond = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'send_award_base_delay_second');
-
-            foreach ($posters as $key => $poster) {
-                // 审核数据操作锁，解决并发导致的重复审核和发奖
-                $lockKey = self::KEY_POSTER_VERIFY_LOCK . $poster['id'];
-                $lock = $redis->set($lockKey, $poster['id'], 'EX', 120, 'NX');
-                if (empty($lock)) {
-                    continue;
-                }
-                if (!empty($poster['award_id'])) {
-                    $needRejectAward[] = $poster['award_id'];
-                }
-                $where = [
-                    'id' => $poster['id'],
-                    'verify_status' => $poster['poster_status']
-                ];
-                $update = SharePosterModel::batchUpdateRecord($updateData, $where);
-                // 影响行数是0 ，说明没有执行成功，不做后续处理
-                if (empty($update)) {
-                    // CountingActivitySignService::countSign($poster['student_id'], null, $poster['activity_id']);
-                    SimpleLogger::info("DSS_approvalPoster", [$poster, $update]);
-                    continue;
-                }
-                //智能产品激活
-                QueueService::autoActivate(['student_uuid' => $poster['uuid'], 'passed_time' => time(), 'app_id' => Constants::SMART_APP_ID]);
-                // 发送消息
-                QueueService::sendUserWxMsg(Constants::SMART_APP_ID, $poster['student_id'], $msgId, [
-                    'replace_params' => [
-                        'delay_send_award_day' => intval((intval($sendAwardBaseDelaySecond) + intval($activityInfo['delay_second'])) / Util::TIMESTAMP_ONEDAY),
-                        'url' => $msgUrl,
-                    ],
-                ]);
-            }
-            return true;
-        }
-        $type = $params['type'] ?? SharePosterModel::TYPE_WEEK_UPLOAD;
         $posters = SharePosterModel::getPostersByIds($id, $type);
         if (count($posters) != count($id)) {
             throw new RunTimeException(['get_share_poster_error']);
         }
-
-        //根据uuid获取白名单
-        $uuids = array_column($posters, 'uuid');
-        $whiteList = WeekWhiteListModel::getRecords(['uuid'=>$uuids, 'status'=>WeekWhiteListModel::NORMAL_STATUS],['uuid']);
-        $whiteList = array_column($whiteList, null, 'uuid');
-        //奖励配置
-        $taskConfig = DictConstants::getSet(DictConstants::NORMAL_UPLOAD_POSTER_TASK);
+        $activityInfo = WeekActivityModel::getRecord(['activity_id' => $params['activity_id']]);
+        if (empty($activityInfo)) {
+            throw new RunTimeException(['week_activity_not_found']);
+        }
         $now = time();
         $updateData = [
             'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
@@ -792,18 +733,11 @@ class SharePosterService
             'update_time'   => $now,
         ];
         $redis = RedisDB::getConn();
-        $needAwardList = [];
-        //获取奖励发放配置
-        list($msgId, $msgUrl, $wkIds, $oneActivityId, $twoActivityId) = DictConstants::get(DictConstants::XYZOP_1262_WEEK_ACTIVITY, [
-            'xyzop_1262_msg_id',
-            'xyzop_1262_msg_url',
-            'xyzop_1262_week_activity_ids',
-            'xyzop_1262_week_activity_one',
-            'xyzop_1262_week_activity_two'
-        ]);
-        $wkIds = array_merge(explode(',', $wkIds), [ $oneActivityId], explode(',', $twoActivityId));
+        $msgId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'approval_poster_wx_msg_id');
+        $msgUrl = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'dss_week_activity_detail');
+        $sendAwardBaseDelaySecond = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'send_award_base_delay_second');
+
         foreach ($posters as $key => $poster) {
-            $needAwardList = [];
             // 审核数据操作锁，解决并发导致的重复审核和发奖
             $lockKey = self::KEY_POSTER_VERIFY_LOCK . $poster['id'];
             $lock = $redis->set($lockKey, $poster['id'], 'EX', 120, 'NX');
@@ -818,46 +752,32 @@ class SharePosterService
                 'verify_status' => $poster['poster_status']
             ];
             $update = SharePosterModel::batchUpdateRecord($updateData, $where);
-            if ($update && $poster['type'] == SharePosterModel::TYPE_WEEK_UPLOAD) {
-                CountingActivitySignService::countSign($poster['student_id'], null, $poster['activity_id']);
-            }
-
-            if (in_array($poster['activity_id'], $wkIds)) {
-                QueueService::sendUserWxMsg(Constants::SMART_APP_ID, $poster['student_id'], $msgId, [
-                    'replace_params' => [
-                        'task_name' => $poster['activity_name'] ?? '',
-                        'url' => $msgUrl,
-                    ],
-                ]);
+            // 影响行数是0 ，说明没有执行成功，不做后续处理
+            if (empty($update)) {
+                SimpleLogger::info("DSS_approvalPoster", [$poster, $update]);
                 continue;
-            }
-            //计算当前真正应该获得的奖励---2021.10.26修改为固定奖励1000金叶子，不再考虑阶梯奖励
-            $taskId = $taskConfig['-2'];
-            if (!empty($update) && empty($poster['points_award_ids'])) {
-                $endDate = DictConstants::get(DictConstants::WEEK_WHITE_TERM_OF_VALIDITY, 'term_of_validity');
-                $endDate = strtotime($endDate);
-                //是周周领奖&在白名单内&在指定时间内
-                if ($poster['type'] == SharePosterModel::TYPE_WEEK_UPLOAD && isset($whiteList[$poster['uuid']]) && $endDate >= $now) {
-                    $status = ErpReferralService::EVENT_TASK_STATUS_UNCOMPLETE;
-                } else {
-                    $status = ErpReferralService::EVENT_TASK_STATUS_COMPLETE;
-                }
-
-                $needAwardList[] = [
-                    'id' => $poster['id'],
-                    'uuid' => $poster['uuid'],
-                    'task_id' => $taskId,
-                    'activity_id' => $poster['activity_id'],
-                    'status' => $status,
-                ];
             }
             //智能产品激活
             QueueService::autoActivate(['student_uuid' => $poster['uuid'], 'passed_time' => time(), 'app_id' => Constants::SMART_APP_ID]);
+            // 发送消息
+            QueueService::sendUserWxMsg(Constants::SMART_APP_ID, $poster['student_id'], $msgId, [
+                'replace_params' => [
+                    'delay_send_award_day' => intval((intval($sendAwardBaseDelaySecond) + intval($activityInfo['delay_second'])) / Util::TIMESTAMP_ONEDAY),
+                    'url' => $msgUrl,
+                ],
+            ]);
 
-            if (!empty($needAwardList)) {
-                QueueService::addUserPosterAward($needAwardList);
+            // 区分发奖规则 - 保存即时发奖的数据
+            if (self::checkIsNewRule($poster['activity_id'])) {
+                QueueService::addUserPosterAward([
+                    'app_id'      => Constants::SMART_APP_ID,
+                    'student_id'  => $poster['student_id'],
+                    'activity_id' => $poster['activity_id'],
+                    'act_status'  => ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE,
+                ]);
             }
         }
+
         return true;
     }
 
@@ -878,75 +798,48 @@ class SharePosterService
         $studentInfo = DssStudentModel::getRecord(['id' => $studentId]);
         $studentUUID = $studentInfo['uuid'] ?? '';
         $actStatus = $data['act_status'] ?? -1;
-        /** 新规则 */
-        if (!empty($appId) && !empty($activityId) && !empty($studentUUID) && $activityId > $oldRuleLastActivityId && $actStatus >= 0) {
-            $status = $poster['status'] ?? ErpReferralService::EVENT_TASK_STATUS_COMPLETE;
-            // 奖励白名单用户，发放的奖励应该是待发放状态
-            $whiteList = WeekWhiteListModel::getRecord(['uuid' => $studentUUID, 'status'=>WeekWhiteListModel::NORMAL_STATUS]);
-            if (!empty($whiteList)) {
-                $status = ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING;   // 待发放
-            }
-            // 获取活动信息
-            $activityInfo = WeekActivityModel::getRecord(['activity_id' => $activityId]);
-            // 活动不存在停止发奖并记录日志
-            if (empty($activityInfo)) {
-                SimpleLogger::info('addUserAward', ['msg' => 'activity_not_found', $data, $activityInfo]);
-                return false;
-            }
-            // 获取学生信息
-            $studentInfo = DssStudentModel::getRecord(['id' => $studentId]);
-            // 指定业务线(真人)中学生是否存在
-            if (empty($studentInfo)) {
-                SimpleLogger::info('addUserAward', ['msg' => 'student_not_found', $data, $studentInfo]);
-                return false;
-            }
-            // 获取用户活动中上传截图成功通过审核的次数
-            $successSharePosterCount = SharePosterModel::getCount([
-                'activity_id' => $activityId,
-                'student_id' => $studentId,
-                'type' => SharePosterModel::TYPE_WEEK_UPLOAD,
-                'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED
-            ]);
-            // 根据成功通过审核次数获取应得奖励
-            $passAwardInfo = SharePosterPassAwardRuleModel::getRecord(['activity_id' => $activityId, 'success_pass_num' => $successSharePosterCount]);
-            if (empty($passAwardInfo)) {
-                SimpleLogger::info('addUserAward', ['msg' => 'SharePosterPassAwardRuleModel_not_found', $data, $passAwardInfo, $activityId, $successSharePosterCount]);
-                return false;
-            }
-            // 获取任务id
-            $taskId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'week_activity_send_award_task_id');
-            // 发放奖励
-            $res = (new Erp())->addEventTaskAward($studentUUID, $taskId, $status, 0, '', [
-                'activity_id' => $activityId,
-                'amount' => $passAwardInfo['award_amount'] ?? 0,
-                'award_to' => ErpEventTaskModel::AWARD_TO_BE_REFERRER,
-                'passes_num' => $passAwardInfo['success_pass_num'] ?? 0,
-                'old_rule_last_activity_id' => $oldRuleLastActivityId,
-            ]);
-            SimpleLogger::info('dss_addUserAward_ERP_CREATE_USER_EVENT_TASK_AWARD_FAIL', [$data, $res]);
-            // 发送消息
-            $msgId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'send_award_gold_left_wx_msg_id');
-            $msgUrl = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'dss_gold_left_shop_url');
-            QueueService::sendUserWxMsg(Constants::SMART_APP_ID, $studentId, $msgId, [
-                'replace_params' => [
-                    'url' => $msgUrl,
-                ],
-            ]);
-            return true;
+        $status = $data['status'] ?? ErpReferralService::EVENT_TASK_STATUS_COMPLETE;
+
+        // 奖励白名单用户，发放的奖励应该是待发放状态
+        $whiteList = WeekWhiteListModel::getRecord(['uuid' => $studentUUID, 'status'=>WeekWhiteListModel::NORMAL_STATUS]);
+        if (!empty($whiteList)) {
+            $status = ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING;   // 待发放
         }
-        foreach ($data as $poster) {
-            $status = $poster['status'] ?? ErpReferralService::EVENT_TASK_STATUS_COMPLETE;
-            $res = (new Erp())->addEventTaskAward($poster['uuid'], $poster['task_id'], $status);
-            if (empty($res['data'])) {
-                SimpleLogger::error('ERP_CREATE_USER_EVENT_TASK_AWARD_FAIL', [$poster]);
-            }
-            $awardIds  = $res['data']['user_award_ids'] ?? [];
-            $pointsIds = $res['data']['points_award_ids'] ?? [];
-            $awardId   = implode(',', $awardIds);
-            $pointsId  = implode(',', $pointsIds);
-            SharePosterModel::updateRecord($poster['id'], ['award_id' => $awardId, 'points_award_id'=> $pointsId]);
-            QueueService::sharePosterAwardMessage(['points_award_ids' => $pointsIds, 'activity_id' => $poster['activity_id'] ?? 0]);
+        // 获取活动信息
+        $activityInfo = WeekActivityModel::getRecord(['activity_id' => $activityId]);
+        // 活动不存在停止发奖并记录日志
+        if (empty($activityInfo)) {
+            SimpleLogger::info('addUserAward', ['msg' => 'activity_not_found', $data, $activityInfo]);
+            return false;
         }
+        // 获取学生信息
+        $studentInfo = DssStudentModel::getRecord(['id' => $studentId]);
+        // 指定业务线中学生是否存在
+        if (empty($studentInfo)) {
+            SimpleLogger::info('addUserAward', ['msg' => 'student_not_found', $data, $studentInfo]);
+            return false;
+        }
+        // 获取审核通过奖励规则
+        $passAwardInfo = self::getStudentAwardRule($studentId, $activityId);
+        // 获取任务id
+        $taskId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'week_activity_send_award_task_id');
+        // 发放奖励
+        $res = (new Erp())->addEventTaskAward($studentUUID, $taskId, $status, 0, '', [
+            'activity_id' => $activityId,
+            'amount' => $passAwardInfo['award_amount'] ?? 0,
+            'award_to' => ErpEventTaskModel::AWARD_TO_BE_REFERRER,
+            'passes_num' => $passAwardInfo['success_pass_num'] ?? 0,
+            'old_rule_last_activity_id' => $oldRuleLastActivityId,
+        ]);
+        SimpleLogger::info('dss_addUserAward_ERP_CREATE_USER_EVENT_TASK_AWARD_FAIL', [$data, $res]);
+        // 发送消息
+        $msgId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'send_award_gold_left_wx_msg_id');
+        $msgUrl = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'dss_gold_left_shop_url');
+        QueueService::sendUserWxMsg(Constants::SMART_APP_ID, $studentId, $msgId, [
+            'replace_params' => [
+                'url' => $msgUrl,
+            ],
+        ]);
         return true;
     }
 

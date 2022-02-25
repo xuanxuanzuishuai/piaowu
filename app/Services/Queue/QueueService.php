@@ -514,6 +514,7 @@ class QueueService
             if (!empty($data['defer_second'])) {
                 $deferSecond = intval($data['defer_second']);
             }
+            SimpleLogger::info("addUserPosterAward", [$data]);
             $topic = new UserPointsExchangeRedPackTopic();
             $topic->addUserPosterAward($data)->publish($deferSecond);
         } catch (Exception $e) {
