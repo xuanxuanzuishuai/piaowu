@@ -13,6 +13,7 @@ use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\NewSMS;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Services\CommonServiceForApp;
 use App\Services\RealStudentService;
@@ -89,6 +90,11 @@ class StudentAuth extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         empty($params['country_code']) && $params['country_code'] = NewSMS::DEFAULT_COUNTRY_CODE;
+        // 校验手机号
+        $phoneNumberValid = Util::validPhoneNumber($params['mobile'], $params['country_code']);
+        if (empty($phoneNumberValid)) {
+            return $response->withJson(Valid::addAppErrors([], 'invalid_mobile'), StatusCode::HTTP_OK);
+        }
         $errorCode = CommonServiceForApp::sendValidateCode($params['mobile'], CommonServiceForApp::SIGN_WX_STUDENT_APP, $params['country_code']);
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
