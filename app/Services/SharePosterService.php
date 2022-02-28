@@ -830,6 +830,7 @@ class SharePosterService
             'award_to' => ErpEventTaskModel::AWARD_TO_BE_REFERRER,
             'passes_num' => $passAwardInfo['success_pass_num'] ?? 0,
             'old_rule_last_activity_id' => $oldRuleLastActivityId,
+            'remark' => self::checkIsNewRule($activityId) ? $activityInfo['name'] : '',
         ]);
         SimpleLogger::info('dss_addUserAward_ERP_CREATE_USER_EVENT_TASK_AWARD_FAIL', [$data, $res]);
         // 发送消息
