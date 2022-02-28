@@ -75,6 +75,7 @@ class RealWeekActivityService
             'delay_second' => $delaySendAwardTimeData['delay_second'],
             'send_award_time' => $delaySendAwardTimeData['send_award_time'],
             'award_prize_type' => $data['award_prize_type'],
+            'clean_is_join' => $data['clean_is_join'],
         ];
         
         $activityExtData = [
@@ -366,14 +367,17 @@ class RealWeekActivityService
             'share_poster_prompt' => !empty($data['share_poster_prompt']) ? Util::textEncode($data['share_poster_prompt']) : '',
             'retention_copy' => !empty($data['retention_copy']) ? Util::textEncode($data['retention_copy']) : '',
             'poster_order' => $data['poster_order'],
+        ];
+        //区分不同启用状态可修改数据
+        $discriminateStatusWeekActivityData = [
             'target_user_type' => !empty($data['target_user_type']) ? intval($data['target_user_type']) : 0,
             'target_use_first_pay_time_start' => !empty($data['target_use_first_pay_time_start']) ? strtotime($data['target_use_first_pay_time_start']) : 0,
             'target_use_first_pay_time_end' => !empty($data['target_use_first_pay_time_end']) ? strtotime($data['target_use_first_pay_time_end']) : 0,
             'delay_second' => $delaySendAwardTimeData['delay_second'],
             'send_award_time' => $delaySendAwardTimeData['send_award_time'],
             'award_prize_type' => $data['award_prize_type'],
+            'clean_is_join' => $data['clean_is_join'],
         ];
-
         $activityExtData = [
             'award_rule' => !empty($data['award_rule']) ? Util::textEncode($data['award_rule']) : '',
             'remark' => $data['remark'] ?? ''
@@ -385,13 +389,6 @@ class RealWeekActivityService
         if (is_null($res)) {
             $db->rollBack();
             SimpleLogger::info("WeekActivityService:add update operation_activity fail", ['data' => $activityData, 'activity_id' => $activityId]);
-            throw new RunTimeException(["update week activity fail"]);
-        }
-        // 更新周周领奖配置信息
-        $res = RealWeekActivityModel::batchUpdateRecord($weekActivityData, ['activity_id' => $activityId]);
-        if (is_null($res)) {
-            $db->rollBack();
-            SimpleLogger::info("WeekActivityService:add update week_activity fail", ['data' => $weekActivityData, 'activity_id' => $activityId]);
             throw new RunTimeException(["update week activity fail"]);
         }
         // 更新周周领奖扩展信息
@@ -436,6 +433,14 @@ class RealWeekActivityService
                 SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_task_rule fail", ['data' => $data]);
                 throw new RunTimeException(["add week activity fail"]);
             }
+            $weekActivityData = array_merge($weekActivityData, $discriminateStatusWeekActivityData);
+        }
+        // 更新周周领奖配置信息
+        $res = RealWeekActivityModel::batchUpdateRecord($weekActivityData, ['activity_id' => $activityId]);
+        if (is_null($res)) {
+            $db->rollBack();
+            SimpleLogger::info("WeekActivityService:add update week_activity fail", ['data' => $weekActivityData, 'activity_id' => $activityId]);
+            throw new RunTimeException(["update week activity fail"]);
         }
         $db->commit();
 
@@ -731,13 +736,26 @@ class RealWeekActivityService
                 unset($activityList[$_activityKey]);
                 continue;
             }
-            // 检测用户首次付费时间与活动结束时间大小关系
+            //检测用户首次付费时间与活动结束时间大小关系
             if ($studentIdAttribute['first_pay_time'] > $_activityInfo['end_time']) {
                 unset($activityList[$_activityKey]);
                 continue;
             }
-            // 过滤掉 目标用户类型是部分有效付费用户首次付费时间
-            if ($_activityInfo['target_user_type'] == RealWeekActivityModel::TARGET_USER_PART) {
+            /**
+             * 清退再续费用户定义：清退用户&首次清退后再续费&当前付费有效
+             * 优先级：清退再续费用户 》活动对象：
+             * 1。活动此选项选择"是"：可以参与
+             * 2。活动此选项选择"否"：不可参与
+             */
+            if (($studentIdAttribute['is_cleaned'] == Constants::STATUS_TRUE) && ($studentIdAttribute['buy_after_clean'] == Constants::STATUS_TRUE)) {
+                if ($_activityInfo['clean_is_join'] == RealWeekActivityModel::CLEAN_IS_JOIN_YES) {
+                    continue;
+                } else {
+                    unset($activityList[$_activityKey]);
+                    continue;
+                }
+            } elseif ($_activityInfo['target_user_type'] == RealWeekActivityModel::TARGET_USER_PART) {
+                // 过滤掉 目标用户类型是部分有效付费用户首次付费时间
                 if ($studentIdAttribute['first_pay_time'] <= $_activityInfo['target_use_first_pay_time_start']) {
                     // 用户首次付费时间小于活动设定的首次付费起始时间，删除
                     unset($activityList[$_activityKey]);

@@ -166,6 +166,17 @@ class RealWeekActivity extends ControllerBase
                 'value'=>[1,2],
                 'error_code' => 'award_prize_type_value_error'
             ],
+            [
+                'key' => 'clean_is_join',
+                'type' => 'required',
+                'error_code' => 'clean_is_join_is_required'
+            ],
+            [
+                'key' => 'clean_is_join',
+                'type' => 'in',
+                'value'=>[1,2],
+                'error_code' => 'clean_is_join_value_error'
+            ],
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);
