@@ -861,11 +861,11 @@ class SharePosterService
                 }
                 // 发奖
                 foreach ($sharePosterList as $poster) {
-                    $passAwardNum = $isSendAwardNum+1;
+                    $isSendAwardNum +=1;
                     // 获取审核通过奖励规则
-                    $passAwardInfo = self::getActivityForthwithSendAwardRule($activityId, $passAwardNum);
-                    SimpleLogger::info("addUserAward_poster", [$poster]);
-                    self::sendStudentWeekActivityAward($studentInfo, $activityInfo, $passAwardInfo, $status, [$poster]);
+                    $passAwardInfo = self::getActivityForthwithSendAwardRule($activityId, $isSendAwardNum);
+                    SimpleLogger::info("addUserAward_poster", [$poster, $isSendAwardNum]);
+                    self::sendStudentWeekActivityAward($studentInfo, $activityInfo, $passAwardInfo, $status, [$poster['id']]);
                 }
             } else {
                 // 获取审核通过奖励规则
