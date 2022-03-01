@@ -4,6 +4,7 @@ namespace App;
 
 use App\Middleware\NotFound;
 use App\Middleware\PhpError;
+use App\Middleware\SSOAuthMiddleWare;
 use Dotenv\Dotenv;
 use I18N\Lang;
 use Slim\App;
@@ -33,4 +34,5 @@ $container['errorHandler'] = $container['phpErrorHandler'] = function (Container
     return new PhpError();
 };
 
+$app->add(new SSOAuthMiddleWare($container));
 
