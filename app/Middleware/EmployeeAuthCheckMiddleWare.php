@@ -20,14 +20,17 @@ class EmployeeAuthCheckMiddleWare extends MiddlewareBase
     public function __invoke(Request $request, Response $response, $next)
     {
         /** @var array $token */
-        $token = $request->getHeader('token');
-        if (empty($token) && $request->getMethod() == 'GET'){
-            $params = $request->getParams();
-            $token[0] = $params['token'] ?? '';
+        $token = $request->getCookieParam('token');
+        if (empty($token)) {
+            $token = $request->getHeader('token');
+            if (empty($token) && $request->getMethod() == 'GET'){
+                $params = $request->getParams();
+                $token = $params['token'] ?? '';
+            }
         }
         SimpleLogger::info('token',[$token]);
 
-        if (empty($token) || empty($token[0])) {
+        if (empty($token)) {
             // token为空时检查是否是开发环境，如果是，设置一个默认的登录用户
             if(isset($_ENV['ENV_NAME']) && $_ENV['ENV_NAME'] == 'dev' && !empty($_ENV['DEV_EMPLOYEE_ID'])) {
                 $token = '';
@@ -37,7 +40,6 @@ class EmployeeAuthCheckMiddleWare extends MiddlewareBase
                 return $response->withJson(Valid::addErrors(['code' => -1], 'auth_check1', 'token_can_not_empty'));
             }
         }else{
-            $token = $token[0];
             $cacheEmployeeId = EmployeeModel::getEmployeeToken($token);
         }
 
@@ -48,7 +50,7 @@ class EmployeeAuthCheckMiddleWare extends MiddlewareBase
 
         $employee = EmployeeModel::getById($cacheEmployeeId);
         // 延长登录token过期时间
-        EmployeeModel::refreshEmployeeCache($token);
+        //EmployeeModel::refreshEmployeeCache($token);
 
         //数据权限
         $employee['only_read_self'] = EmployeePrivilegeService::checkEmployeeDataPermission($employee);

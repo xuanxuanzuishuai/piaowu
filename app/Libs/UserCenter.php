@@ -27,6 +27,9 @@ class UserCenter
     const API_AUTH_UNAUTH = '/rapi/v1/authorization/';
     const API_UPDATEUSER = '/rapi/v1/user/';
     const API_CHANGEPASSWORD = '/rapi/v1/changepassword/';
+    const API_SSO_ST_VERYIFY = '/sso/verify';
+    const API_SSO_LOGOUT = '/sso/logout';
+    const API_SSO_LOGIN = '/sso/login';
 
     const AUTH_APP_ID_STUDENT = 11;
     const AUTH_APP_ID_TEACHER = 12;
@@ -212,5 +215,64 @@ class UserCenter
             return Valid::addErrors([], 'uc_conflict_user', 'uc_conflict_user');
         }
         return $result['data'];
+    }
+
+    /**
+     * 验证SSO service ticket
+     */
+    function VerifyServiceTicket($st)
+    {
+        try {
+            $client = new Client([
+                'debug' => false
+            ]);
+            $fullUrl = $this->hostBaseUrl . self::API_SSO_ST_VERYIFY . '?appId=' . $this->appId . '&secret=' . $this->appSecret . "&sso_service_ticket={$st}";
+            SimpleLogger::info(__FILE__ . ':' . __LINE__, ["api" => $fullUrl]);
+            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+            $domainName = $_SERVER['HTTP_HOST'].'/';
+            $referer = $protocol.$domainName;
+            $options = [
+                'headers' => [
+                    'Referer' => $referer
+                ]
+            ];
+
+            $response = $client->request("GET", $fullUrl, $options);
+            $body = $response->getBody()->getContents();
+            $status = $response->getStatusCode();
+            SimpleLogger::info(__FILE__ . ':' . __LINE__, ["api" => $fullUrl, "body" => $body, "status" => $status]);
+
+            if (StatusCode::HTTP_OK == $status) {
+                $res = json_decode($body, true);
+                if (!empty($res['code']) && $res['code'] !== self::RSP_CODE_SUCCESS) {
+                    SimpleLogger::info(__FILE__ . ':' . __LINE__, [print_r($res, true)]);
+                    return $res;
+                }
+                return $res;
+            } else {
+                SimpleLogger::info(__FILE__ . ':' . __LINE__, [print_r($body, true)]);
+                $res = json_decode($body, true);
+                return $res;
+            }
+        } catch (\Exception $e) {
+            //实例化sentry，用来记录错误
+            $sentryClient = new \Raven_Client($_ENV['SENTRY_NOTIFY_URL']);
+            $sentryClient->captureMessage('PandaCustom Error', [
+                'api' => self::API_SSO_ST_VERYIFY,
+                'method' => "GET",
+                'data' => [],
+                'error_code' => $e->getCode(),
+                'error_data' => $e->getMessage()
+            ]);
+            unset($sentryClient);
+
+            SimpleLogger::error(__FILE__ . ':' . __LINE__, [print_r($e->getMessage(), true)]);
+        }
+        return false;
+    }
+
+    function GetSSOLogoutUrl()
+    {
+        return $this->hostBaseUrl . self::API_SSO_LOGOUT . "?app_id={$this->appId}";
     }
 }
