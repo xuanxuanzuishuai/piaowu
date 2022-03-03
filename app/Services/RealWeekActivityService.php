@@ -433,6 +433,8 @@ class RealWeekActivityService
                 SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_task_rule fail", ['data' => $data]);
                 throw new RunTimeException(["add week activity fail"]);
             }
+        }
+        if ($weekActivityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
             $weekActivityData = array_merge($weekActivityData, $discriminateStatusWeekActivityData);
         }
         // 更新周周领奖配置信息
