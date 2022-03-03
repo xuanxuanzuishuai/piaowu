@@ -1660,8 +1660,11 @@ class RtActivityService
             throw new RunTimeException(['request_repeat']);
         }
         //是否已注册
-        $student = DssStudentModel::getRecord(['mobile' => $request['mobile']], ['id']);
+        $student = DssStudentModel::getRecord(['mobile' => $request['mobile']], ['id', 'has_review_course']);
         if ($student) {
+            if ($student['has_review_course'] > 0) {
+                throw new RunTimeException(["user_have_register_stop_exchange"]);
+            }
             $record = ExternalUserDataRecordModel::getRecord(['student_id' => $student['id']], ['id']);
             if ($record) {
                 return true;
