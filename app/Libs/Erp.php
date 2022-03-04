@@ -741,6 +741,7 @@ class Erp
             'award_to' => $extParams['award_to'] ?? 0,
             'passes_num' => $extParams['passes_num'] ?? 0,
             'old_rule_last_activity_id' => $extParams['old_rule_last_activity_id'] ?? 0,
+            'remark' => $extParams['remark'] ?? '',
         ];
         return HttpHelper::requestJson($this->host . self::API_ADD_EVENT_TASK_AWARD, $params, 'POST');
     }
