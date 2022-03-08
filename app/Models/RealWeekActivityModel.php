@@ -18,7 +18,9 @@ class RealWeekActivityModel extends Model
 
     const TARGET_USER_ALL = 1;  // 有效付费用户范围 - 所有
     const TARGET_USER_PART = 2; // 有效付费用户范围 - 部分
-
+    //清退用户是否可参与:1是2否
+    const CLEAN_IS_JOIN_YES = 1;
+    const CLEAN_IS_JOIN_NO = 2;
     /**
      * 获取周周领奖活动列表和总数
      * @param $params
@@ -113,6 +115,7 @@ class RealWeekActivityModel extends Model
                 'w.target_use_first_pay_time_start',
                 'w.target_use_first_pay_time_end',
                 'w.award_prize_type',
+                'w.clean_is_join',
                 'a.award_rule',
                 'a.remark',
             ],
