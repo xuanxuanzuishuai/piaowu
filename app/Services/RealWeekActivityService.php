@@ -174,8 +174,8 @@ class RealWeekActivityService
         if (empty($data['task_list'])) {
             return 'task_list_is_required';
         }
-        if (count($data['task_list']) > 5) {
-            return 'task_list_max_five';
+        if (count($data['task_list']) > 10) {
+            return 'task_list_max_ten';
         }
         return '';
     }
