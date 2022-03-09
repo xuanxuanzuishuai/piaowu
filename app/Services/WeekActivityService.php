@@ -103,6 +103,7 @@ class WeekActivityService
             'delay_second' => $delaySecond,
             'send_award_time' => strtotime(date("Y-m-d", $activityEndTime) . " +$delayDay day"),
             'priority_level' => $data['priority_level'] ?? 0,
+            'activity_country_code' => trim($data['activity_country_code']) ?? 0,    // 0代表全部
         ];
 
         $activityExtData = [
@@ -440,6 +441,10 @@ class WeekActivityService
             'send_award_time' => strtotime(date("Y-m-d", $activityEndTime) . " +$delayDay day"),
             'priority_level' => $data['priority_level'] ?? 0,
         ];
+        // 待启用才可以编辑的字段
+        $weekActivityEnableStatudEditData = [
+            'activity_country_code' => trim($data['activity_country_code']) ?? 0,    // 0代表全部
+        ];
 
         $activityExtData = [
             'award_rule' => !empty($data['award_rule']) ? Util::textEncode($data['award_rule']) : '',
@@ -453,13 +458,6 @@ class WeekActivityService
         if (is_null($res)) {
             $db->rollBack();
             SimpleLogger::info("WeekActivityService:add update operation_activity fail", ['data' => $activityData, 'activity_id' => $activityId]);
-            throw new RunTimeException(["update week activity fail"]);
-        }
-        // 更新周周领奖配置信息
-        $res = WeekActivityModel::batchUpdateRecord($weekActivityData, ['activity_id' => $activityId]);
-        if (is_null($res)) {
-            $db->rollBack();
-            SimpleLogger::info("WeekActivityService:add update week_activity fail", ['data' => $weekActivityData, 'activity_id' => $activityId]);
             throw new RunTimeException(["update week activity fail"]);
         }
         // 更新周周领奖扩展信息
@@ -518,6 +516,15 @@ class WeekActivityService
                     throw new RunTimeException(["add week activity fail"]);
                 }
             }
+            // 只有待启用允许更新的字段加入到需要更新的数据中去
+            $weekActivityData = array_merge($weekActivityData, $weekActivityEnableStatudEditData);
+        }
+        // 更新周周领奖配置信息
+        $res = WeekActivityModel::batchUpdateRecord($weekActivityData, ['activity_id' => $activityId]);
+        if (is_null($res)) {
+            $db->rollBack();
+            SimpleLogger::info("WeekActivityService:add update week_activity fail", ['data' => $weekActivityData, 'activity_id' => $activityId]);
+            throw new RunTimeException(["update week activity fail"]);
         }
         $db->commit();
 
@@ -535,7 +542,7 @@ class WeekActivityService
      */
     public static function editEnableStatus($activityId, $enableStatus, $employeeId)
     {
-        if (!in_array($enableStatus, [OperationActivityModel::ENABLE_STATUS_OFF, OperationActivityModel::ENABLE_STATUS_ON, OperationActivityModel::ENABLE_STATUS_DISABLE])) {
+        if (!in_array($enableStatus, [OperationActivityModel::ENABLE_STATUS_ON, OperationActivityModel::ENABLE_STATUS_DISABLE])) {
             throw new RunTimeException(['enable_status_invalid']);
         }
         $activityInfo = WeekActivityModel::getRecord(['activity_id' => $activityId]);
@@ -758,18 +765,20 @@ class WeekActivityService
     /**
      * 智能 - 获取学生可参与的周周领奖活动列表
      * 排序规则： 按照活动优先级从小到大， 相同优先级的再按照活动ID从大到小排序
-     * 必传字段:  [ student_id=> x ]
-     * @param $studentInfo
+     * @param $studentId
+     * @param string $studentUUID
+     * @param null $activityCountryCode null:代表获取所有， 如果传入空字符串会获取学生id对应的country_code, 不为空直接使用
      * @return array
      */
-    public static function getDssStudentCanPartakeWeekActivityList($studentInfo): array
+    public static function getDssStudentCanPartakeWeekActivityList($studentId, string $studentUUID = '', $activityCountryCode = null): array
     {
         $time = time();
-        $studentId = $studentInfo['student_id'] ?? 0;
-        $studentUUID = $studentInfo['uuid'] ?? '';
-        if (empty($studentUUID)) {
-            $dssStudentInfo = DssStudentModel::getRecord(['id' => $studentId], ['uuid']);
-            $studentUUID = $dssStudentInfo['uuid'] ?? '';
+        // 如果activity_country_code不是null并且是空则用学生信息的country_code;
+        // 如果uuid没有传入，需要补充uuid
+        if ((!is_null($activityCountryCode) && empty($activityCountryCode)) || empty($studentUUID)) {
+            $studentInfo = DssStudentModel::getRecord(['id' => $studentId], ['uuid', 'country_code']);
+            $activityCountryCode = $studentInfo['country_code'] ?? '';
+            $studentUUID = $studentInfo['uuid'] ?? '';
         }
         if (empty($studentId) || empty($studentUUID)) {
             return [];
@@ -780,13 +789,15 @@ class WeekActivityService
         if ($isNormalStudent) {
             /** 如果是付费有效用户，获取付费时间内可参与的活动列表 */
             // 获取所有当前时间启用中的活动信息列表
-            $activityList = WeekActivityModel::getRecords([
+            $where = [
                 'start_time[<]' => $time,
                 'end_time[>]' => $time,
                 'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
                 'activity_id[>]' => $oldRuleLastActivityId,
                 'target_user_type[!]' => 0,
-            ]);
+            ];
+            !empty($activityCountryCode) && $where['activity_country_code'] = $activityCountryCode;
+            $activityList = WeekActivityModel::getRecords($where);
             foreach ($activityList as $_activityKey => $_activityInfo) {
                 // 过滤掉 目标用户类型是部分有效付费用户首次付费时间
                 if ($_activityInfo['target_user_type'] == WeekActivityModel::TARGET_USER_PART) {
@@ -837,16 +848,21 @@ class WeekActivityService
      */
     public static function getWeekActivityData($studentId, $ext = [])
     {
-        $type= 2;   // 2 代表的是周周领奖活动 - 兼容老逻辑时用的到
         $data = ['list' => [], 'activity' => []];
         $posterConfig = PosterService::getPosterConfig();
         $userDetail = StudentService::dssStudentStatusCheck($studentId, false, null);
+        if (empty($userDetail['student_info'])) {
+            // 如果学生不存在，直接返回空
+            return $data;
+        }
         $userInfo = [
             'nickname' => $userDetail['student_info']['name'] ?? '',
             'headimgurl' => StudentService::getStudentThumb($userDetail['student_info']['thumb'])
         ];
         // 查询活动：
-        $activityInfo = self::getDssStudentCanPartakeWeekActivityList(['student_id' => $studentId, 'uuid' => $userDetail['student_info']['uuid'] ?? ''])[0] ?? [];
+        $uuid = $userDetail['student_info']['uuid'] ?? '';
+        $activityCountryCode = $userDetail['student_info']['country_code'] ?? '';
+        $activityInfo = self::getDssStudentCanPartakeWeekActivityList($studentId, $uuid, $activityCountryCode)[0] ?? [];
         if (empty($activityInfo)) {
             return $data;
         }
@@ -865,7 +881,7 @@ class WeekActivityService
         if ($activityInfo['poster_order'] == TemplatePosterModel::POSTER_ORDER) {
             array_multisort($typeColumn, SORT_DESC, $activityPosterIdColumn, SORT_ASC, $posterList);
         }
-        $channel = PosterTemplateService::getChannel($type, $ext['from_type']);
+        $channel = PosterTemplateService::getChannel(OperationActivityModel::TYPE_WEEK_ACTIVITY, $ext['from_type']);
         $extParams = [
             'user_current_status' => $userDetail['student_status'] ?? 0,
             'activity_id' => $activityInfo['activity_id'],
@@ -880,7 +896,7 @@ class WeekActivityService
             $_tmp['user_type'] = Constants::USER_TYPE_STUDENT;
             $_tmp['channel_id'] = $channel;
             $_tmp['landing_type'] = DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
-            $_tmp['date'] = date('Y-m-d',time());
+            $_tmp['date'] = date('Y-m-d', time());
             $userQrParams[] = $_tmp;
         }
         unset($item);
@@ -941,10 +957,7 @@ class WeekActivityService
             return [];
         }
         // 获取用户可参与的活动
-        $activityList         = WeekActivityService::getDssStudentCanPartakeWeekActivityList([
-            'student_id' => $studentInfo['id'],
-            'uuid'       => $studentInfo['uuid'],
-        ]);
+        $activityList = WeekActivityService::getDssStudentCanPartakeWeekActivityList($studentInfo['id'], $studentInfo['uuid'], $studentInfo['country_code']);
         $canPartakeActivityId = $activityList[0]['activity_id'] ?? 0;
         if (empty($canPartakeActivityId)) {
             return [];

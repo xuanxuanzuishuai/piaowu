@@ -45,6 +45,11 @@ class OperationActivityModel extends Model
     const AWARD_PRIZE_TYPE_IN_TIME = 1;
     const AWARD_PRIZE_TYPE_DELAY = 2;
 
+    // 活动投放地区
+    const ACTIVITY_COUNTRY_ALL = 0; // 所有地区
+    const ACTIVITY_COUNTRY_CN = 86; // 中国
+    const ACTIVITY_COUNTRY_EN = 1;  // 所有非中国地区
+
 
     /**
      * 当前阶段为付费正式课且未参加当前活动的学员手微信open_id

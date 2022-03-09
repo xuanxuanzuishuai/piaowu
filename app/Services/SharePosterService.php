@@ -562,75 +562,7 @@ class SharePosterService
         $imagePath = $params['image_path'] ?? '';
         $taskNum = $params['task_num'] ?? 0;
 
-        $oldRuleLastActivityId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
-        if ($oldRuleLastActivityId < $activityId) {
-            /** 新活动规则 */
-            // 上传并发处理，但不显示任何错误内容，用户无感
-            $redis = RedisDB::getConn();
-            $lockKey = self::KEY_POSTER_UPLOAD_LOCK . $params['student_id'] . $params['activity_id'];
-            $lock = $redis->set($lockKey, $uploadRecord['id'] ?? 0, 'EX', 3, 'NX');
-            if (empty($lock)) {
-                throw new RunTimeException(['']);
-            }
-            $time = time();
-            //审核通过不允许上传截图
-            $uploadRecord = SharePosterModel::getRecord([
-                'student_id' => $studentId,
-                'activity_id' => $activityId,
-                'task_num' => $taskNum,
-                'ORDER' => ['id' => 'DESC']
-            ], ['verify_status', 'id']);
-            if (!empty($uploadRecord) && ($uploadRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_QUALIFIED)) {
-                throw new RunTimeException(['wait_for_next_event']);
-            }
-            /** 如果没上传过，则不校验身份 */
-            if (empty($uploadRecord)) {
-                //资格检测 - 获取用户身份属性
-                list($studentIsNormal) = UserService::checkDssStudentIdentityIsNormal($studentId);
-                // 不是有效用户，检查是否是指定的uuid
-                if (!$studentIsNormal) {
-                    $studentInfo = DssStudentModel::getRecord(['id' => $studentId]);
-                    // 检查用户是不是活动指定的uuid
-                    $designateUuid = SharePosterDesignateUuidModel::getRecord(['activity_id' => $activityId, 'uuid' => $studentInfo['uuid'] ?? '']);
-                    if (empty($designateUuid)) {
-                        throw new RunTimeException(['student_status_disable']);
-                    }
-                }
-            }
-            // 检查周周领奖活动是否可以上传
-            $activityInfo = WeekActivityModel::getRecord(['activity_id' => $activityId]);
-            if (!SharePosterService::checkWeekActivityAllowUpload($activityInfo, $time)) {
-                throw new RunTimeException(['wait_for_next_event']);
-            }
-
-            $data = [
-                'student_id'  => $studentId,
-                'type'        => SharePosterModel::TYPE_WEEK_UPLOAD,
-                'activity_id' => $activityId,
-                'image_path'  => $imagePath,
-                'verify_reason' => '',
-                'unique_code' => '',
-                'create_time' => $time,
-                'update_time' => $time,
-                'task_num' => $taskNum,
-            ];
-            if (empty($uploadRecord) || $uploadRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
-                $res = SharePosterModel::insertRecord($data);
-            } else {
-                unset($data['create_time']);
-                $count = SharePosterModel::updateRecord($uploadRecord['id'], $data);
-                if (empty($count)) {
-                    throw new RunTimeException(['update_fail']);
-                }
-                $res = $uploadRecord['id'];
-            }
-            if (empty($res)) {
-                throw new RunTimeException(['share_poster_add_fail']);
-            }
-            //系统自动审核
-            QueueService::checkPoster(['id' => $res, 'app_id' => Constants::SMART_APP_ID]);
-            return $res;
-        }
+        $activityInfo = WeekActivityModel::getRecord(['activity_id' => $activityId]);
         // 上传并发处理，但不显示任何错误内容，用户无感
         $redis = RedisDB::getConn();
         $lockKey = self::KEY_POSTER_UPLOAD_LOCK . $params['student_id'] . $params['activity_id'];
@@ -638,55 +570,48 @@ class SharePosterService
         if (empty($lock)) {
             throw new RunTimeException(['']);
         }
-
-        //获取学生信息
-        $studentDetail = StudentService::dssStudentStatusCheck($studentId, false, null);
-        if ($studentDetail['student_status'] != DssStudentModel::STATUS_BUY_NORMAL_COURSE) {
-            throw new RunTimeException(['student_status_disable']);
-        }
+        $time = time();
         //审核通过不允许上传截图
-        $type = SharePosterModel::TYPE_WEEK_UPLOAD;
-        $where = [
+        $uploadRecord = SharePosterModel::getRecord([
+            'student_id' => $studentId,
             'activity_id' => $activityId,
-            'student_id'  => $studentId,
-            'type'        => $type,
-            'ORDER'       => ['id' => 'DESC']
-        ];
-        $field = ['id', 'verify_status', 'award_id'];
-        $uploadRecord = SharePosterModel::getRecord($where, $field);
-        if (!empty($uploadRecord['verify_status'])
-            && $uploadRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_QUALIFIED) {
+            'task_num' => $taskNum,
+            'ORDER' => ['id' => 'DESC']
+        ], ['verify_status', 'id']);
+        if (!empty($uploadRecord) && ($uploadRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_QUALIFIED)) {
             throw new RunTimeException(['wait_for_next_event']);
         }
-        // 检查活动是否是可以上传 - 如果不在可上传的列表提示活动已结束
+        /** 如果没上传过，则校验身份 */
         if (empty($uploadRecord)) {
+            $studentInfo = DssStudentModel::getRecord(['id' => $studentId]);
             //资格检测 - 获取用户身份属性
             list($studentIsNormal) = UserService::checkDssStudentIdentityIsNormal($studentId);
             // 不是有效用户，检查是否是指定的uuid
             if (!$studentIsNormal) {
-                $studentInfo = DssStudentModel::getRecord(['id' => $studentId]);
                 // 检查用户是不是活动指定的uuid
                 $designateUuid = SharePosterDesignateUuidModel::getRecord(['activity_id' => $activityId, 'uuid' => $studentInfo['uuid'] ?? '']);
                 if (empty($designateUuid)) {
                     throw new RunTimeException(['student_status_disable']);
                 }
             }
+            // 检查活动是否在用户所在的国家
+            self::checkWeekActivityCountryCode($activityInfo, $studentInfo['country_code']);
         }
-        $time = time();
         // 检查周周领奖活动是否可以上传
-        $activityInfo = WeekActivityModel::getRecord(['activity_id' => $activityId]);
         if (!SharePosterService::checkWeekActivityAllowUpload($activityInfo, $time)) {
             throw new RunTimeException(['wait_for_next_event']);
         }
+
         $data = [
             'student_id'  => $studentId,
-            'type'        => $type,
+            'type'        => SharePosterModel::TYPE_WEEK_UPLOAD,
             'activity_id' => $activityId,
             'image_path'  => $imagePath,
             'verify_reason' => '',
             'unique_code' => '',
             'create_time' => $time,
             'update_time' => $time,
+            'task_num' => $taskNum,
         ];
         if (empty($uploadRecord) || $uploadRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
             $res = SharePosterModel::insertRecord($data);
@@ -1009,7 +934,7 @@ class SharePosterService
     }
 
     /**
-     * 智能 - 检查周周领奖活动是否可以上传
+     * 智能 - 检查周周领奖活动是否可以上传 - 不校验是学生是否能参与该活动
      * @param $activityInfo
      * @param $time
      * @return bool
@@ -1038,6 +963,24 @@ class SharePosterService
             if ($activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
                 return false;
             }
+        }
+        return true;
+    }
+
+    /**
+     * 检查活动是不是指定的country_code
+     * @param $activityInfo
+     * @param $activityCountryCode
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function checkWeekActivityCountryCode($activityInfo, $activityCountryCode)
+    {
+        if (!isset($activityInfo['activity_country_code'])) {
+            throw new RunTimeException(['week_activity_student_cannot_upload']);
+        }
+        if (!empty($activityInfo['activity_country_code']) && $activityInfo['activity_country_code'] != $activityCountryCode) {
+            throw new RunTimeException(['week_activity_student_cannot_upload']);
         }
         return true;
     }

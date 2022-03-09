@@ -421,11 +421,11 @@ class RealActivityService
         }
         //重新上传不校验资格，否则需要校验活动以及身份数据
         if (empty($uploadRecord)) {
+            $studentInfo = ErpStudentModel::getRecord(['id' => $studentData['id']]);
             //资格检测 - 获取用户身份属性
             $studentIdAttribute = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentData['id'], '');
             // 检查一下用户是否是有效用户，不是有效用户不可能有可参与的活动
             if (!UserService::checkRealStudentIdentityIsNormal($studentData['id'], $studentIdAttribute)) {
-                $studentInfo = ErpStudentModel::getRecord(['id' => $studentData['id']]);
                 // 检查用户是不是活动指定的uuid
                 $designateUuid = RealSharePosterDesignateUuidModel::getRecord(['activity_id' => $activityId, 'uuid' => $studentInfo['uuid'] ?? '']);
                 if (empty($designateUuid)) {
@@ -437,6 +437,8 @@ class RealActivityService
             if (!RealSharePosterService::checkWeekActivityAllowUpload($activityInfo, $time)) {
                 throw new RunTimeException(['wait_for_next_event']);
             }
+            // 校验用户是否能参与活动
+            RealWeekActivityService::checkWeekActivityCountryCode($activityInfo, $studentInfo['country_code']);
         }
         $data = [
             'student_id' => $studentData['id'],
