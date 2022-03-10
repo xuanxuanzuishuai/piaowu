@@ -9,11 +9,14 @@
 namespace App\Models;
 
 use App\Libs\Constants;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 use App\Libs\Util;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\Erp\ErpStudentModel;
+use App\Services\CommonServiceForApp;
 
 class OperationActivityModel extends Model
 {
@@ -188,5 +191,47 @@ WHERE
             $timeStatus = self::TIME_STATUS_FINISHED;
         }
         return $timeStatus;
+    }
+
+    /**
+     * 获取学生周周领奖活动投放区域
+     * @param $studentInfo
+     * @param int $appId
+     * @return array
+     */
+    public static function getStudentWeekActivityCountryCode($studentInfo, int $appId = Constants::SMART_APP_ID)
+    {
+        $studentId = $studentInfo['id'] ?? ($studentInfo['student_id'] ?? 0);
+        if ($appId == Constants::REAL_APP_ID) {
+            $studentCountryCode = $studentInfo['country_code'] ?? ErpStudentModel::getStudentInfoById($studentId)['country_code'];
+        } else {
+            $studentCountryCode = $studentInfo['country_code'] ?? DssStudentModel::getRecord(['id' => $studentId], ['country_code'])['country_code'];
+        }
+        if ($studentCountryCode == CommonServiceForApp::DEFAULT_COUNTRY_CODE) {
+            $studentAllowJoinActivityCountryCode = [self::ACTIVITY_COUNTRY_ALL, CommonServiceForApp::DEFAULT_COUNTRY_CODE];
+        } else {
+            $studentAllowJoinActivityCountryCode = [self::ACTIVITY_COUNTRY_ALL, self::ACTIVITY_COUNTRY_EN];
+        }
+        return $studentAllowJoinActivityCountryCode;
+    }
+
+    /**
+     * 检查活动是不是指定的country_code
+     * @param $studentInfo
+     * @param $activityInfo
+     * @param int $appId
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function checkWeekActivityCountryCode($studentInfo, $activityInfo, int $appId = Constants::SMART_APP_ID)
+    {
+        if (!isset($activityInfo['activity_country_code'])) {
+            throw new RunTimeException(['week_activity_student_cannot_upload']);
+        }
+        $studentAllowJoinActivityCountryCode = self::getStudentWeekActivityCountryCode($studentInfo, $appId);
+        if (!in_array($activityInfo['activity_country_code'], $studentAllowJoinActivityCountryCode)) {
+            throw new RunTimeException(['week_activity_student_cannot_upload']);
+        }
+        return true;
     }
 }

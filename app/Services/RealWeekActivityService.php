@@ -746,6 +746,7 @@ class RealWeekActivityService
         } else {
             return [];
         }
+        $baseWhere['activity_country_code'] = OperationActivityModel::getStudentWeekActivityCountryCode($studentInfo, Constants::REAL_APP_ID);
         //获取活动
         $activityList = RealWeekActivityModel::getRecords($baseWhere);
         foreach ($activityList as $_activityKey => $_activityInfo) {
@@ -843,24 +844,5 @@ class RealWeekActivityService
         $timeFormat = '(' . date("m.d", $activityTaskData['start_time']) . '-' . date("m.d", $activityTaskData['end_time']) . ')';
         $taskNum = empty($activityTaskData['task_num']) ? 1 : $activityTaskData['task_num'];
         return $taskNumCount . '次分享截图活动-'.$taskNum .$timeFormat;
-    }
-
-
-    /**
-     * 检查活动是不是指定的country_code
-     * @param $activityInfo
-     * @param $activityCountryCode
-     * @return bool
-     * @throws RunTimeException
-     */
-    public static function checkWeekActivityCountryCode($activityInfo, $activityCountryCode)
-    {
-        if (!isset($activityInfo['activity_country_code'])) {
-            throw new RunTimeException(['week_activity_student_cannot_upload']);
-        }
-        if (!empty($activityInfo['activity_country_code']) && $activityInfo['activity_country_code'] != $activityCountryCode) {
-            throw new RunTimeException(['week_activity_student_cannot_upload']);
-        }
-        return true;
     }
 }

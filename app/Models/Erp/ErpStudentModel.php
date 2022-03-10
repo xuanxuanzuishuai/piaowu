@@ -93,6 +93,7 @@ class ErpStudentModel extends ErpModel
                 self::$table . '.mobile',
                 self::$table . '.thumb',
                 self::$table . '.channel_id',
+                self::$table . '.country_code',
                 ErpStudentAppModel::$table . '.status',
                 ErpStudentAppModel::$table . '.first_pay_time',
                 ErpStudentAppModel::$table . '.student_id',

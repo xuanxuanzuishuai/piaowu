@@ -438,7 +438,7 @@ class RealActivityService
                 throw new RunTimeException(['wait_for_next_event']);
             }
             // 校验用户是否能参与活动
-            RealWeekActivityService::checkWeekActivityCountryCode($activityInfo, $studentInfo['country_code']);
+            OperationActivityModel::checkWeekActivityCountryCode($studentInfo, $activityInfo, Constants::REAL_APP_ID);
         }
         $data = [
             'student_id' => $studentData['id'],

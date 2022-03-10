@@ -595,7 +595,7 @@ class SharePosterService
                 }
             }
             // 检查活动是否在用户所在的国家
-            self::checkWeekActivityCountryCode($activityInfo, $studentInfo['country_code']);
+            OperationActivityModel::checkWeekActivityCountryCode($studentInfo, $activityInfo);
         }
         // 检查周周领奖活动是否可以上传
         if (!SharePosterService::checkWeekActivityAllowUpload($activityInfo, $time)) {
@@ -963,24 +963,6 @@ class SharePosterService
             if ($activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
                 return false;
             }
-        }
-        return true;
-    }
-
-    /**
-     * 检查活动是不是指定的country_code
-     * @param $activityInfo
-     * @param $activityCountryCode
-     * @return bool
-     * @throws RunTimeException
-     */
-    public static function checkWeekActivityCountryCode($activityInfo, $activityCountryCode)
-    {
-        if (!isset($activityInfo['activity_country_code'])) {
-            throw new RunTimeException(['week_activity_student_cannot_upload']);
-        }
-        if (!empty($activityInfo['activity_country_code']) && $activityInfo['activity_country_code'] != $activityCountryCode) {
-            throw new RunTimeException(['week_activity_student_cannot_upload']);
         }
         return true;
     }

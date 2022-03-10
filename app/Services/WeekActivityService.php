@@ -777,8 +777,8 @@ class WeekActivityService
         // 如果uuid没有传入，需要补充uuid
         if ((!is_null($activityCountryCode) && empty($activityCountryCode)) || empty($studentUUID)) {
             $studentInfo = DssStudentModel::getRecord(['id' => $studentId], ['uuid', 'country_code']);
-            $activityCountryCode = $studentInfo['country_code'] ?? '';
             $studentUUID = $studentInfo['uuid'] ?? '';
+            !is_null($activityCountryCode) && empty($activityCountryCode) && $activityCountryCode = $studentInfo['country_code'];
         }
         if (empty($studentId) || empty($studentUUID)) {
             return [];
@@ -796,7 +796,7 @@ class WeekActivityService
                 'activity_id[>]' => $oldRuleLastActivityId,
                 'target_user_type[!]' => 0,
             ];
-            !empty($activityCountryCode) && $where['activity_country_code'] = $activityCountryCode;
+            !empty($activityCountryCode) && $where['activity_country_code'] = OperationActivityModel::getStudentWeekActivityCountryCode(['country_code' => $activityCountryCode]);
             $activityList = WeekActivityModel::getRecords($where);
             foreach ($activityList as $_activityKey => $_activityInfo) {
                 // 过滤掉 目标用户类型是部分有效付费用户首次付费时间
