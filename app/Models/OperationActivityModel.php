@@ -16,7 +16,6 @@ use App\Libs\Util;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpStudentModel;
-use App\Services\CommonServiceForApp;
 
 class OperationActivityModel extends Model
 {
@@ -199,18 +198,24 @@ WHERE
      * @param int $appId
      * @return array
      */
-    public static function getStudentWeekActivityCountryCode($studentInfo, int $appId = Constants::SMART_APP_ID)
+    public static function getStudentWeekActivityCountryCode($studentInfo, int $appId = Constants::SMART_APP_ID): array
     {
         $studentId = $studentInfo['id'] ?? ($studentInfo['student_id'] ?? 0);
+        // 如果学生信息中不存在国家代码，则去查询信息
         if ($appId == Constants::REAL_APP_ID) {
             $studentCountryCode = $studentInfo['country_code'] ?? ErpStudentModel::getStudentInfoById($studentId)['country_code'];
         } else {
             $studentCountryCode = $studentInfo['country_code'] ?? DssStudentModel::getRecord(['id' => $studentId], ['country_code'])['country_code'];
         }
-        if ($studentCountryCode == CommonServiceForApp::DEFAULT_COUNTRY_CODE) {
-            $studentAllowJoinActivityCountryCode = [self::ACTIVITY_COUNTRY_ALL, CommonServiceForApp::DEFAULT_COUNTRY_CODE];
-        } else {
+        if ($studentCountryCode == self::ACTIVITY_COUNTRY_CN) {
+            // 国内+全球的标识
+            $studentAllowJoinActivityCountryCode = [self::ACTIVITY_COUNTRY_ALL, self::ACTIVITY_COUNTRY_CN];
+        } elseif ($studentCountryCode == self::ACTIVITY_COUNTRY_EN) {
+            // 国外+全球的标识
             $studentAllowJoinActivityCountryCode = [self::ACTIVITY_COUNTRY_ALL, self::ACTIVITY_COUNTRY_EN];
+        } else {
+            // 如果没有国家代码，只返回全球标识
+            $studentAllowJoinActivityCountryCode = [self::ACTIVITY_COUNTRY_ALL];
         }
         return $studentAllowJoinActivityCountryCode;
     }
