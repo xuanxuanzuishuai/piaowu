@@ -210,7 +210,7 @@ WHERE
         if ($studentCountryCode == self::ACTIVITY_COUNTRY_CN) {
             // 国内+全球的标识
             $studentAllowJoinActivityCountryCode = [self::ACTIVITY_COUNTRY_ALL, self::ACTIVITY_COUNTRY_CN];
-        } elseif ($studentCountryCode == self::ACTIVITY_COUNTRY_EN) {
+        } elseif (!empty($studentCountryCode)) {
             // 国外+全球的标识
             $studentAllowJoinActivityCountryCode = [self::ACTIVITY_COUNTRY_ALL, self::ACTIVITY_COUNTRY_EN];
         } else {

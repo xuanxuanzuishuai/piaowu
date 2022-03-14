@@ -730,7 +730,7 @@ class RealWeekActivityService
     public static function getStudentCanPartakeWeekActivityList($studentInfo, $operationType = 1): array
     {
         $time = time();
-        $studentId = $studentInfo['student_id'] ?? 0;
+        $studentId = $studentInfo['student_id'] ?? ($studentInfo['id'] ?? 0);
         $studentUUID = $studentInfo['uuid'] ?? '';
         if (empty($studentId) || empty($studentUUID)) {
             return [];
