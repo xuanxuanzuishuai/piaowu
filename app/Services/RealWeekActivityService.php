@@ -520,6 +520,15 @@ class RealWeekActivityService
         ];
         // 如果活动指定了投放地区，搜索时需要区分投放地区
         $activityInfo['activity_country_code'] && $conflictWhere['activity_country_code'] = [OperationActivityModel::ACTIVITY_COUNTRY_ALL, $activityInfo['activity_country_code']];
+        // 清退用户同一时刻同一区域只能启用一个
+        if ($activityInfo['clean_is_join'] == RealWeekActivityModel::CLEAN_IS_JOIN_YES) {
+            $cleanConflictWhere = $conflictWhere;
+            $cleanConflictWhere['clean_is_join'] = RealWeekActivityModel::CLEAN_IS_JOIN_YES;
+            $conflictData = RealWeekActivityModel::getCount($cleanConflictWhere);
+            if ($conflictData > 0) {
+                throw new RunTimeException(['activity_conflict']);
+            }
+        }
         if ($activityInfo['target_user_type'] == RealWeekActivityModel::TARGET_USER_PART) {
             //启用的活动目标用户是部分
             $conflictWhere['OR'] =  [
