@@ -233,6 +233,13 @@ WHERE
         if (!isset($activityInfo['activity_country_code'])) {
             throw new RunTimeException(['week_activity_student_cannot_upload']);
         }
+        // 先查是否指定的uuid
+        if ($appId == Constants::SMART_APP_ID) {
+            $info = SharePosterDesignateUuidModel::getRecord(['uuid' => $studentInfo['uuid']]);
+            if (!empty($info)) {
+                return true;
+            }
+        }
         $studentAllowJoinActivityCountryCode = self::getStudentWeekActivityCountryCode($studentInfo, $appId);
         if (!in_array($activityInfo['activity_country_code'], $studentAllowJoinActivityCountryCode)) {
             throw new RunTimeException(['week_activity_student_cannot_upload']);
