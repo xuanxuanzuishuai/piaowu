@@ -17,6 +17,9 @@ class WeekActivityModel extends Model
     public static $table = 'week_activity';
     const TARGET_USER_ALL = 1;  // 有效付费用户范围 - 所有
     const TARGET_USER_PART = 2; // 有效付费用户范围 - 部分
+
+    const MAX_TASK_NUM = 10;    // 最大分享任务数量
+
     /**
      * 获取周周领奖活动列表和总数
      * @param $params
@@ -115,6 +118,7 @@ class WeekActivityModel extends Model
                 'w.send_award_time',
                 'w.priority_level',
                 'w.activity_country_code',
+                'w.award_prize_type',
                 'a.award_rule',
                 'a.remark',
             ],

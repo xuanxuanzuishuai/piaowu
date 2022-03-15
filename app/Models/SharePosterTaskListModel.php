@@ -18,16 +18,18 @@ class SharePosterTaskListModel extends Model
      * @param $activityId
      * @param $taskList
      * @param $createTime
+     * @param string $activityName
      * @return bool
      */
-    public static function batchInsertActivityTask($activityId, $taskList, $createTime): bool
+    public static function batchInsertActivityTask($activityId, $taskList, $createTime, string $activityName = ''): bool
     {
         $realSharePosterTaskRuleData = [];
         foreach ($taskList as $_taskNum => $_item) {
+            $num = $_taskNum + 1;
             $info = [
                 'activity_id' => $activityId,
-                'task_name' => $_item['task_name'],
-                'task_num' => $_taskNum + 1,
+                'task_name' => !empty($_item['task_name']) ? trim($_item['task_name']) : $num . trim($activityName),
+                'task_num' => $num,
                 'create_time' => $createTime,
             ];
             $realSharePosterTaskRuleData[] = $info;
@@ -41,9 +43,10 @@ class SharePosterTaskListModel extends Model
      * @param $activityId
      * @param $taskList
      * @param $createTime
+     * @param string $activityName
      * @return bool
      */
-    public static function batchUpdateActivityTask($activityId, $taskList, $createTime): bool
+    public static function batchUpdateActivityTask($activityId, $taskList, $createTime, string $activityName = ''): bool
     {
         SimpleLogger::info("batchUpdateRuleTaskAwardData", [$activityId, $taskList, $createTime]);
         $delRes = MysqlDB::getDB()->delete(self::$table, [
@@ -52,6 +55,6 @@ class SharePosterTaskListModel extends Model
         if ($delRes->errorCode() != \PDO::ERR_NONE) {
             return false;
         }
-        return self::batchInsertActivityTask($activityId, $taskList, $createTime);
+        return self::batchInsertActivityTask($activityId, $taskList, $createTime, $activityName);
     }
 }

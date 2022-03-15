@@ -9,6 +9,7 @@ namespace App\Models;
 use App\Libs\Constants;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
+use Medoo\Medoo;
 
 class SharePosterPassAwardRuleModel extends Model
 {
@@ -55,5 +56,32 @@ class SharePosterPassAwardRuleModel extends Model
             return false;
         }
         return self::batchInsertPassAwardRule($activityId, $taskList, $createTime);
+    }
+
+    /**
+     * 获取活动分享任务活动数据
+     * @param $activityIds
+     * @return array
+     */
+    public static function getActivityTaskList($activityIds)
+    {
+        $db = MysqlDB::getDB();
+        $list = $db->select(self::$table,
+            [
+                '[>]' . WeekActivityModel::$table => ['activity_id' => 'activity_id'],
+            ],
+            [
+                WeekActivityModel::$table . '.name',
+                WeekActivityModel::$table . '.start_time',
+                WeekActivityModel::$table . '.end_time',
+                self::$table . '.task_num',
+                self::$table . '.activity_id',
+                "activity_task" => Medoo::raw('concat_ws(:separator,'.self::$table . '.activity_id'.','.self::$table . '.task_num'.')',[":separator"=>'-']),
+            ],
+            [
+                self::$table . '.activity_id' => $activityIds,
+                'GROUP' => [self::$table . '.activity_id', self::$table . '.task_num',],
+            ]);
+        return empty($list) ? [] : $list;
     }
 }

@@ -661,7 +661,10 @@ class SharePosterService
         $msgId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'approval_poster_wx_msg_id');
         $msgUrl = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'dss_week_activity_detail');
         $sendAwardBaseDelaySecond = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'send_award_base_delay_second');
-
+        $replaceParams = [
+            'delay_send_award_day' => intval((intval($sendAwardBaseDelaySecond) + intval($activityInfo['delay_second'])) / Util::TIMESTAMP_ONEDAY),
+            'url'                  => $msgUrl,
+        ];
         $operationStudentActivity = [];
         //开始处理数据
         foreach ($posters as $key => $poster) {
@@ -684,13 +687,6 @@ class SharePosterService
                 }
                 //智能产品激活
                 QueueService::autoActivate(['student_uuid' => $poster['uuid'], 'passed_time' => time(), 'app_id' => Constants::SMART_APP_ID]);
-                // 发送消息
-                QueueService::sendUserWxMsg(Constants::SMART_APP_ID, $poster['student_id'], $msgId, [
-                    'replace_params' => [
-                        'delay_send_award_day' => intval((intval($sendAwardBaseDelaySecond) + intval($activityInfo['delay_second'])) / Util::TIMESTAMP_ONEDAY),
-                        'url'                  => $msgUrl,
-                    ],
-                ]);
 
                 // 区分发奖规则 - 保存即时发奖的数据
                 if (self::checkIsNewRule($poster['activity_id'])) {
@@ -705,7 +701,25 @@ class SharePosterService
                         ]);
                         $operationStudentActivity[$poster['student_id'] . '_' . $poster['activity_id']] = $now;
                     }
+                    $msgId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'approval_poster_forthwith_wx_msg_id');
+                    // 计算奖励
+                    $awardNum = SharePosterModel::getCount([
+                        'student_id' => $poster['student_id'],
+                        'activity_id' => $poster['activity_id'],
+                        'type' => SharePosterModel::TYPE_WEEK_UPLOAD,
+                        'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
+                    ]);
+                    $replaceParams = [
+                        'activity_name' => $poster['activity_id'],
+                        'url' => $msgUrl,
+                        'passes_num' => $poster['task_num'],
+                        'award_num' => $awardNum,
+                    ];
                 }
+                // 发送消息
+                QueueService::sendUserWxMsg(Constants::SMART_APP_ID, $poster['student_id'], $msgId, [
+                    'replace_params' => $replaceParams,
+                ]);
             } finally {
                 $res = Util::unLock($lockKey);
                 SimpleLogger::info("DSS_approvalPoster_try_finally_lock", [$poster, $lockKey, $res]);
