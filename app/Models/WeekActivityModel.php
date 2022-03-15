@@ -114,6 +114,7 @@ class WeekActivityModel extends Model
                 'w.delay_second',
                 'w.send_award_time',
                 'w.priority_level',
+                'w.activity_country_code',
                 'a.award_rule',
                 'a.remark',
             ],

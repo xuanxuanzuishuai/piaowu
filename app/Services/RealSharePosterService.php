@@ -426,7 +426,7 @@ class RealSharePosterService
     }
 
     /**
-     * 真人 - 检查周周领奖活动是否可以上传
+     * 真人 - 检查周周领奖活动是否可以上传 - 只校验了活动状态，没有校验用户是否有资格参与
      * @param $activityInfo
      * @param $time
      * @return bool

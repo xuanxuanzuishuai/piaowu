@@ -76,6 +76,7 @@ class RealWeekActivityService
             'send_award_time' => $delaySendAwardTimeData['send_award_time'],
             'award_prize_type' => $data['award_prize_type'],
             'clean_is_join' => $data['clean_is_join'],
+            'activity_country_code' => trim($data['activity_country_code']) ?? 0,    // 0代表全部
         ];
         
         $activityExtData = [
@@ -378,6 +379,10 @@ class RealWeekActivityService
             'award_prize_type' => $data['award_prize_type'],
             'clean_is_join' => $data['clean_is_join'],
         ];
+        // 待启用才可以编辑的字段
+        $weekActivityEnableStatudEditData = [
+            'activity_country_code' => trim($data['activity_country_code']) ?? 0,    // 0代表全部
+        ];
         $activityExtData = [
             'award_rule' => !empty($data['award_rule']) ? Util::textEncode($data['award_rule']) : '',
             'remark' => $data['remark'] ?? ''
@@ -433,6 +438,7 @@ class RealWeekActivityService
                 SimpleLogger::info("WeekActivityService:add batch insert real_share_poster_task_rule fail", ['data' => $data]);
                 throw new RunTimeException(["add week activity fail"]);
             }
+            $weekActivityData = array_merge($weekActivityData, $weekActivityEnableStatudEditData);
         }
         if ($weekActivityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
             $weekActivityData = array_merge($weekActivityData, $discriminateStatusWeekActivityData);
@@ -470,33 +476,9 @@ class RealWeekActivityService
         if ($activityInfo['enable_status'] == $enableStatus) {
             return true;
         }
-        $conflictData = 0;
-        if ($enableStatus == OperationActivityModel::ENABLE_STATUS_ON && $activityInfo['target_user_type'] == RealWeekActivityModel::TARGET_USER_ALL) {
-            //启用的活动目标用户是全部
-            $conflictData = RealWeekActivityModel::getCount([
-                'start_time[<=]' => $activityInfo['end_time'],
-                'end_time[>=]' => $activityInfo['start_time'],
-                'enable_status' => OperationActivityModel::ENABLE_STATUS_ON]);
-        } elseif ($enableStatus == OperationActivityModel::ENABLE_STATUS_ON && $activityInfo['target_user_type'] == RealWeekActivityModel::TARGET_USER_PART) {
-            //启用的活动目标用户是部分
-            $conflictData = RealWeekActivityModel::getCount([
-                'start_time[<=]' => $activityInfo['end_time'],
-                'end_time[>=]' => $activityInfo['start_time'],
-                'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
-                'OR' => [
-                    'AND #one' => [
-                        'target_user_type' => RealWeekActivityModel::TARGET_USER_ALL,
-                    ],
-                    'AND #two' => [
-                        'target_use_first_pay_time_start[<=]' => $activityInfo['target_use_first_pay_time_end'],
-                        'target_use_first_pay_time_end[>=]' => $activityInfo['target_use_first_pay_time_start'],
-                        'target_user_type' => RealWeekActivityModel::TARGET_USER_PART,
-                    ],
-                ],
-            ]);
-        }
-        if ($conflictData > 0) {
-            throw new RunTimeException(['activity_conflict']);
+        if ($enableStatus == OperationActivityModel::ENABLE_STATUS_ON) {
+            // 如果是启用活动 - 校验活动是否允许启动
+            self::checkActivityIsAllowEnable($activityInfo);
         }
         // 修改启用状态
         $res = RealWeekActivityModel::updateRecord($activityInfo['id'], ['enable_status' => $enableStatus, 'operator_id' => $employeeId, 'update_time' => time()]);
@@ -521,6 +503,49 @@ class RealWeekActivityService
             return false;
         }
         return true;
+    }
+
+    /**
+     * 检查活动是否可以启用
+     * @param $activityInfo
+     * @return void
+     * @throws RunTimeException
+     */
+    public static function checkActivityIsAllowEnable($activityInfo)
+    {
+        $conflictWhere = [
+            'start_time[<=]' => $activityInfo['end_time'],
+            'end_time[>=]'   => $activityInfo['start_time'],
+            'enable_status'  => OperationActivityModel::ENABLE_STATUS_ON,
+        ];
+        // 如果活动指定了投放地区，搜索时需要区分投放地区
+        $activityInfo['activity_country_code'] && $conflictWhere['activity_country_code'] = [OperationActivityModel::ACTIVITY_COUNTRY_ALL, $activityInfo['activity_country_code']];
+        // 清退用户同一时刻同一区域只能启用一个
+        if ($activityInfo['clean_is_join'] == RealWeekActivityModel::CLEAN_IS_JOIN_YES) {
+            $cleanConflictWhere = $conflictWhere;
+            $cleanConflictWhere['clean_is_join'] = RealWeekActivityModel::CLEAN_IS_JOIN_YES;
+            $conflictData = RealWeekActivityModel::getCount($cleanConflictWhere);
+            if ($conflictData > 0) {
+                throw new RunTimeException(['activity_conflict']);
+            }
+        }
+        if ($activityInfo['target_user_type'] == RealWeekActivityModel::TARGET_USER_PART) {
+            //启用的活动目标用户是部分
+            $conflictWhere['OR'] =  [
+                    'AND #one' => [
+                        'target_user_type' => RealWeekActivityModel::TARGET_USER_ALL,
+                    ],
+                    'AND #two' => [
+                        'target_use_first_pay_time_start[<=]' => $activityInfo['target_use_first_pay_time_end'],
+                        'target_use_first_pay_time_end[>=]'   => $activityInfo['target_use_first_pay_time_start'],
+                        'target_user_type'                    => RealWeekActivityModel::TARGET_USER_PART,
+                    ],
+            ];
+        }
+        $conflictData = RealWeekActivityModel::getCount($conflictWhere);
+        if ($conflictData > 0) {
+            throw new RunTimeException(['activity_conflict']);
+        }
     }
 
     /**
@@ -705,7 +730,7 @@ class RealWeekActivityService
     public static function getStudentCanPartakeWeekActivityList($studentInfo, $operationType = 1): array
     {
         $time = time();
-        $studentId = $studentInfo['student_id'] ?? 0;
+        $studentId = $studentInfo['student_id'] ?? ($studentInfo['id'] ?? 0);
         $studentUUID = $studentInfo['uuid'] ?? '';
         if (empty($studentId) || empty($studentUUID)) {
             return [];
@@ -730,6 +755,7 @@ class RealWeekActivityService
         } else {
             return [];
         }
+        $baseWhere['activity_country_code'] = OperationActivityModel::getStudentWeekActivityCountryCode($studentInfo, Constants::REAL_APP_ID);
         //获取活动
         $activityList = RealWeekActivityModel::getRecords($baseWhere);
         foreach ($activityList as $_activityKey => $_activityInfo) {

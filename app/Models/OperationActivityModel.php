@@ -9,11 +9,13 @@
 namespace App\Models;
 
 use App\Libs\Constants;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 use App\Libs\Util;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\Erp\ErpStudentModel;
 
 class OperationActivityModel extends Model
 {
@@ -44,6 +46,11 @@ class OperationActivityModel extends Model
     // 活动奖品发奖方式类型:1立即发放 2延时发放
     const AWARD_PRIZE_TYPE_IN_TIME = 1;
     const AWARD_PRIZE_TYPE_DELAY = 2;
+
+    // 活动投放地区
+    const ACTIVITY_COUNTRY_ALL = 0; // 所有地区
+    const ACTIVITY_COUNTRY_CN = 86; // 中国
+    const ACTIVITY_COUNTRY_EN = 1;  // 所有非中国地区
 
 
     /**
@@ -183,5 +190,60 @@ WHERE
             $timeStatus = self::TIME_STATUS_FINISHED;
         }
         return $timeStatus;
+    }
+
+    /**
+     * 获取学生周周领奖活动投放区域
+     * @param $studentInfo
+     * @param int $appId
+     * @return array
+     */
+    public static function getStudentWeekActivityCountryCode($studentInfo, int $appId = Constants::SMART_APP_ID): array
+    {
+        $studentId = $studentInfo['id'] ?? ($studentInfo['student_id'] ?? 0);
+        // 如果学生信息中不存在国家代码，则去查询信息
+        if ($appId == Constants::REAL_APP_ID) {
+            $studentCountryCode = $studentInfo['country_code'] ?? ErpStudentModel::getStudentInfoById($studentId)['country_code'];
+        } else {
+            $studentCountryCode = $studentInfo['country_code'] ?? DssStudentModel::getRecord(['id' => $studentId], ['country_code'])['country_code'];
+        }
+        if ($studentCountryCode == self::ACTIVITY_COUNTRY_CN) {
+            // 国内+全球的标识
+            $studentAllowJoinActivityCountryCode = [self::ACTIVITY_COUNTRY_ALL, self::ACTIVITY_COUNTRY_CN];
+        } elseif (!empty($studentCountryCode)) {
+            // 国外+全球的标识
+            $studentAllowJoinActivityCountryCode = [self::ACTIVITY_COUNTRY_ALL, self::ACTIVITY_COUNTRY_EN];
+        } else {
+            // 如果没有国家代码，只返回全球标识
+            $studentAllowJoinActivityCountryCode = [self::ACTIVITY_COUNTRY_ALL];
+        }
+        return $studentAllowJoinActivityCountryCode;
+    }
+
+    /**
+     * 检查活动是不是指定的country_code
+     * @param $studentInfo
+     * @param $activityInfo
+     * @param int $appId
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function checkWeekActivityCountryCode($studentInfo, $activityInfo, int $appId = Constants::SMART_APP_ID)
+    {
+        if (!isset($activityInfo['activity_country_code'])) {
+            throw new RunTimeException(['week_activity_student_cannot_upload']);
+        }
+        // 先查是否指定的uuid
+        if ($appId == Constants::SMART_APP_ID) {
+            $info = SharePosterDesignateUuidModel::getRecord(['uuid' => $studentInfo['uuid']]);
+            if (!empty($info)) {
+                return true;
+            }
+        }
+        $studentAllowJoinActivityCountryCode = self::getStudentWeekActivityCountryCode($studentInfo, $appId);
+        if (!in_array($activityInfo['activity_country_code'], $studentAllowJoinActivityCountryCode)) {
+            throw new RunTimeException(['week_activity_student_cannot_upload']);
+        }
+        return true;
     }
 }

@@ -116,6 +116,7 @@ class RealWeekActivityModel extends Model
                 'w.target_use_first_pay_time_end',
                 'w.award_prize_type',
                 'w.clean_is_join',
+                'w.activity_country_code',
                 'a.award_rule',
                 'a.remark',
             ],
