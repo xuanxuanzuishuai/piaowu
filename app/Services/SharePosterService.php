@@ -286,17 +286,25 @@ class SharePosterService
                     }
                 }
                 if (!empty($taskId)) {
-                    $taskRes = self::completeTask($poster['uuid'], $taskId, ErpUserEventTaskModel::EVENT_TASK_STATUS_COMPLETE);
-                    if (empty($taskRes['user_award_ids'])) {
-                        throw new RuntimeException(['empty erp award ids']);
-                    }
-                    $needDealAward = [];
-                    foreach ($taskRes['user_award_ids'] as $awardId) {
-                        $needDealAward[$awardId] = ['id' => $awardId];
-                    }
-                    if (!empty($needDealAward)) {
-                        //实际发放结果数据 调用微信红包，
-                        QueueService::sendRedPack($needDealAward);
+                    //黑名单不再发红包
+                    $redis = RedisDB::getConn();
+                    $info = $redis->hget($poster['uuid'], 'black_198_uuid_list');
+
+                    if (!empty($info)) {
+                        $taskRes = self::completeTask($poster['uuid'], $taskId, ErpUserEventTaskModel::EVENT_TASK_STATUS_COMPLETE);
+                        if (empty($taskRes['user_award_ids'])) {
+                            throw new RuntimeException(['empty erp award ids']);
+                        }
+                        $needDealAward = [];
+                        foreach ($taskRes['user_award_ids'] as $awardId) {
+                            $needDealAward[$awardId] = ['id' => $awardId];
+                        }
+                        if (!empty($needDealAward)) {
+                            //实际发放结果数据 调用微信红包，
+                            QueueService::sendRedPack($needDealAward);
+                        }
+                    } else {
+                        SimpleLogger::info('black_198_uuid', ['uuid' => $poster['uuid']]);
                     }
                 }
             }
