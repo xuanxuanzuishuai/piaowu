@@ -288,7 +288,7 @@ class SharePosterService
                 if (!empty($taskId)) {
                     //黑名单不再发红包
                     $redis = RedisDB::getConn();
-                    $info = $redis->hget($poster['uuid'], 'black_198_uuid_list');
+                    $info = $redis->hget('black_198_uuid_list', $poster['uuid']);
 
                     if (!empty($info)) {
                         $taskRes = self::completeTask($poster['uuid'], $taskId, ErpUserEventTaskModel::EVENT_TASK_STATUS_COMPLETE);
