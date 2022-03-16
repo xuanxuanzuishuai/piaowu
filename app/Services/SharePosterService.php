@@ -290,7 +290,7 @@ class SharePosterService
                     $redis = RedisDB::getConn();
                     $info = $redis->hget('black_198_uuid_list', $poster['uuid']);
 
-                    if (!empty($info)) {
+                    if (empty($info)) {
                         $taskRes = self::completeTask($poster['uuid'], $taskId, ErpUserEventTaskModel::EVENT_TASK_STATUS_COMPLETE);
                         if (empty($taskRes['user_award_ids'])) {
                             throw new RuntimeException(['empty erp award ids']);
@@ -304,7 +304,7 @@ class SharePosterService
                             QueueService::sendRedPack($needDealAward);
                         }
                     } else {
-                        SimpleLogger::info('black_198_uuid', ['uuid' => $poster['uuid']]);
+                        SimpleLogger::info('black_198_uuid', ['uuid' => $poster['uuid'], 'task_id' => $taskId]);
                     }
                 }
             }
