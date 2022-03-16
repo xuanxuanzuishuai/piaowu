@@ -473,6 +473,7 @@ class DictConstants {
             'day_channel_app',
             'day_channel_wx',
             'day_channel_push',
+            'daily_play_duration_min',
         ],
     ];
     // 转介绍相关配置

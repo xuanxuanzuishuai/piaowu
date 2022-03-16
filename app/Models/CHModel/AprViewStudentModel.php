@@ -32,8 +32,7 @@ class AprViewStudentModel extends CHOBModel
         $playData = self::getStudentSumByDate($studentId, $startTime, $endTime);
         //怀旧模式练琴数
         $goldenPicturePlayData = self::getStudentSumByDateGoldenPicture($studentId, $startTime, $endTime);
-        $playData = array_merge($playData, $goldenPicturePlayData);
-        return $playData;
+        return array_merge($playData, $goldenPicturePlayData);
     }
     
     /**

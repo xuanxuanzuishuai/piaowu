@@ -265,16 +265,20 @@ class ActivityService
         //练琴数据
         $playRecordStartTime = strtotime(min(array_column($nodeData, 'node_play_date')));
         $playRecordEndTime = strtotime(max(array_column($nodeData, 'node_play_date'))) + Util::TIMESTAMP_ONEDAY;
-        //$playRecordData = array_column(DssAiPlayRecordCHModel::getStudentBetweenTimePlayRecord($studentId, $playRecordStartTime, $playRecordEndTime), null, 'create_date');
-        $playRecordData = array_column(AprViewStudentModel::getStudentBetweenTimePlayRecord($studentId, $playRecordStartTime, $playRecordEndTime), null, 'create_date');
+        $playRecordData = [];
+        $clickRecordData = AprViewStudentModel::getStudentBetweenTimePlayRecord($studentId, $playRecordStartTime, $playRecordEndTime);
+        array_walk($clickRecordData, function ($pv) use (&$playRecordData) {
+            $playRecordData[$pv['create_date']] += $pv['sum_duration'];
+        });
         //截图上传数据
         $nodeIdList = array_column($nodeData, 'node_id');
         $posterData = array_column(SharePosterModel::signInNodePoster($studentId, implode(',', $nodeIdList)), null, 'node_id');
-        $nodeSignData['days'] = 0;
         if (!empty($posterData)) {
             $posterData = self::posterCheckReason($posterData);
         }
-        array_map(function ($node) use (&$nodeSignData, $time, $playRecordData, $posterData) {
+        //每日练琴时长最小值：单位秒
+        $dailyPlayDurationMin = DictConstants::get(DictConstants::CHECKIN_PUSH_CONFIG, 'daily_play_duration_min');
+        array_map(function ($node) use (&$nodeSignData, $time, $playRecordData, $posterData, $dailyPlayDurationMin) {
             //节点上传截图数据
             $node['poster_id'] = $node['verify_time'] = 0;
             $node['image_path'] = $node['verify_reason'] = '';
@@ -295,7 +299,7 @@ class ActivityService
                 //审核中
                 $node['node_status'] = SharePosterModel::NODE_STATUS_VERIFY_ING;
             } else {
-                if (empty($playRecordData[$node['node_play_date']])) {
+                if (empty($playRecordData[$node['node_play_date']]) || ($playRecordData[$node['node_play_date']] < $dailyPlayDurationMin)) {
                     //未练琴
                     $node['node_status'] = SharePosterModel::NODE_STATUS_UN_PLAY;
                 } elseif (empty($posterData[$node['node_id']])) {
