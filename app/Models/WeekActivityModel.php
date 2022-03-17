@@ -11,6 +11,7 @@ use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Erp\ErpEventModel;
+use Medoo\Medoo;
 
 class WeekActivityModel extends Model
 {
@@ -318,5 +319,40 @@ class WeekActivityModel extends Model
         }
 
         return $item;
+    }
+
+    /**
+     * 获取活动分享任务活动数据
+     * @param $activityIds
+     * @return array
+     */
+    public static function getActivityAndTaskData($activityIds): array
+    {
+        $db = MysqlDB::getDB();
+        $list = $db->select(self::$table,
+            [
+                '[>]' . SharePosterPassAwardRuleModel::$table => ['activity_id' => 'activity_id'],
+            ],
+            [
+                self::$table . '.name',
+                self::$table . '.activity_id',
+                self::$table . '.start_time',
+                self::$table . '.end_time',
+                self::$table . '.enable_status',
+                self::$table . '.delay_second',
+                self::$table . '.award_prize_type',
+                'task_num_count' => Medoo::raw('max('.SharePosterPassAwardRuleModel::$table . '.success_pass_num'.')'),
+                'task_data' => Medoo::raw('group_concat(concat_ws(:separator,'.
+                    SharePosterPassAwardRuleModel::$table . '.success_pass_num,'.
+                    SharePosterPassAwardRuleModel::$table . '.award_amount,'.
+                    SharePosterPassAwardRuleModel::$table . '.award_type) ORDER BY '.
+                    SharePosterPassAwardRuleModel::$table . '.success_pass_num)',[":separator"=>'-']),
+            ],
+            [
+                self::$table . '.activity_id' => $activityIds,
+                "GROUP" => [self::$table . '.activity_id'],
+                'ORDER' => ['activity_id' => 'DESC'],
+            ]);
+        return empty($list) ? [] : $list;
     }
 }

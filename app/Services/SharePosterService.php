@@ -43,12 +43,14 @@ use I18N\Lang;
 class SharePosterService
 {
     use TraitSharePosterService;
+
     public static $redisExpire = 432000; // 12小时
 
     const KEY_POSTER_VERIFY_LOCK = 'POSTER_VERIFY_LOCK';
     const KEY_POSTER_UPLOAD_LOCK = 'POSTER_UPLOAD_LOCK';
 
     /**
+     * TODO qingfeng.lian  delete function
      * 上传截图列表
      * @param $params
      * @return array
@@ -120,6 +122,89 @@ class SharePosterService
     }
 
     /**
+     * 上传截图审核历史记录
+     * 周周领奖用户参与记录
+     * @param $params
+     * @return array
+     */
+    public static function weekActivityStudentUploadHistory($params)
+    {
+        $returnData = ['total_count' => 0, 'list' => []];
+        $page = $params['page'] ?? 1;
+        $count = $params['count'] ?? 20;
+        $studentId = $params['user_id'] ?? 0;
+        // 获取参与的活动列表
+        $joinActivityIds = SharePosterModel::getStudentJoinActivityList($studentId);
+        if (empty($joinActivityIds)) {
+            return $returnData;
+        }
+        $returnData['total_count'] = count($joinActivityIds);
+        $activityIdOffset = array_slice($joinActivityIds, ($page - 1) * $count, $count);
+        if (empty($activityIdOffset)) {
+            return $returnData;
+        }
+        // 获取活动基础数据
+        $activityBaseInfo = array_column(WeekActivityModel::getActivityAndTaskData($activityIdOffset), null, 'activity_id');
+        $dictData = DictConstants::getTypesMap([DictConstants::ACTIVITY_ENABLE_STATUS['type']]);
+        $weekActivityConfig = DictConstants::getSet(DictConstants::DSS_WEEK_ACTIVITY_CONFIG);
+        $activityEnableStatusConfig = DictConstants::getSet(DictConstants::ACTIVITY_ENABLE_STATUS);
+        // 统计一个活动中用户参与次数， 成功，失败、等待审核
+        $joinRecord = SharePosterModel::getSharePosterHistoryGroupActivityIdAndTaskNum($studentId, $activityIdOffset);
+        $joinRecordFormat = $joinVerifyData = [];
+        foreach ($joinRecord as $jk => $jv) {
+            $joinRecordFormat[$jv['activity_id'] . '_' . (empty($jv['task_num']) ? 1 : $jv['task_num'])] = $jv;
+            $joinVerifyData[$jv['activity_id']][$jv['verify_status']] += 1;
+        }
+        foreach ($activityBaseInfo as $info) {
+            // 最早的活动不支持多次分享 所以task_num_count会是0， 给默认1
+            $taskNumCount = empty($info['task_num_count']) ? '1' : $info['task_num_count'];
+            $tmpFormatData = [
+                'activity_id' => $info['activity_id'],
+                'task_num_count' => $taskNumCount,
+                'award_prize_type' => $info['award_prize_type'],
+                'delay_second' => empty($info['delay_second']) ? 0 : ($weekActivityConfig['send_award_base_delay_second'] + $info['delay_second']) / Util::TIMESTAMP_ONEDAY,
+                'activity_name' => self::formatWeekActivityName($info),
+                'activity_status_zh' => ($info['enable_status'] == OperationActivityModel::ENABLE_STATUS_DISABLE) ? $weekActivityConfig[OperationActivityModel::ENABLE_STATUS_DISABLE] : WeekActivityService::formatActivityTimeStatus($info)['activity_status_zh'],
+                'success' => intval($joinVerifyData[$info['activity_id']][SharePosterModel::VERIFY_STATUS_QUALIFIED] ?? 0),
+                'fail' => intval($joinVerifyData[$info['activity_id']][SharePosterModel::VERIFY_STATUS_UNQUALIFIED] ?? 0),
+                'wait' => intval($joinVerifyData[$info['activity_id']][SharePosterModel::VERIFY_STATUS_WAIT] ?? 0),
+                'task_list' => []
+            ];
+            // 单次分享任务
+            if (empty($info['task_data'])) {
+                $tmpJoinRecordFormatKey = $info['activity_id'] . '_' . $taskNumCount;
+                $tmpFormatAwardData = self::formatSharePosterAwardStatus($info['activity_id'], $joinRecordFormat[$tmpJoinRecordFormatKey]);
+                $tmpFormatData['task_list'][] = [
+                    'task_num' => $taskNumCount,
+                    'award_type' => empty($joinRecordFormat[$tmpJoinRecordFormatKey]['award_type']) ? '' : $joinRecordFormat[$tmpJoinRecordFormatKey]['award_type'],
+                    'verify_status' => (int)$joinRecordFormat[$tmpJoinRecordFormatKey]['verify_status'],
+                    'award_amount' => $tmpFormatAwardData['award_amount'],
+                    'award_status' => $tmpFormatAwardData['award_status'],
+                    'award_status_zh' => $tmpFormatAwardData['award_status_zh'],
+                ];
+            } else {
+                //多次分享任务
+                list($tmpTask, $tmpTaskNumCount) = self::filterSpecialActivityTaskData(explode(',', $info['task_data']), $info['activity_id'], $taskNumCount);
+                $tmpFormatData['task_list'] = array_map(function ($tmv) use ($joinRecordFormat, $info) {
+                    list($tmpTaskNode['task_num'],
+                        $tmpTaskNode['award_amount'],
+                        $tmpTaskNode['award_type'],) = explode('-', $tmv);
+                    $tmpTaskNode['verify_status'] = (int)$joinRecordFormat[$info['activity_id'] . '_' . $tmpTaskNode['task_num']]['verify_status'];
+                    $tmpTaskNode['award_status'] = $joinRecordFormat[$info['activity_id'] . '_' . $tmpTaskNode['task_num']]['award_status'];
+                    $tmpFormatAwardData = self::formatSharePosterAwardStatus($info['activity_id'], $tmpTaskNode);
+                    $tmpTaskNode['award_amount'] = $tmpFormatAwardData['award_amount'];
+                    $tmpTaskNode['award_status'] = $tmpFormatAwardData['award_status'];
+                    $tmpTaskNode['award_status_zh'] = $tmpFormatAwardData['award_status_zh'];
+                    return $tmpTaskNode;
+                }, $tmpTask);
+                $tmpFormatData ['task_num_count'] = $tmpTaskNumCount;
+            }
+            $returnData['list'][] = $tmpFormatData;
+        }
+        return $returnData;
+    }
+
+    /**
      * 格式化单条数据
      * @param $poster
      * @param array $statusDict
@@ -136,11 +221,11 @@ class SharePosterService
         }
         $imgSizeH = DictConstants::get(DictConstants::ALI_OSS_CONFIG, 'img_size_h');
         $poster['status_name'] = $statusDict[$poster['poster_status']];
-        $poster['reason_str']  = self::reasonToStr($poster['verify_reason'], $reasonDict);
+        $poster['reason_str'] = self::reasonToStr($poster['verify_reason'], $reasonDict);
         $poster['mobile'] = isset($poster['mobile']) ? Util::hideUserMobile($poster['mobile']) : '';
         $poster['create_time'] = date('Y-m-d H:i', $poster['create_time']);
-        $poster['check_time']  = Util::formatTimestamp($poster['check_time'], '');
-        $poster['img_url']     = AliOSS::signUrls(
+        $poster['check_time'] = Util::formatTimestamp($poster['check_time'], '');
+        $poster['img_url'] = AliOSS::signUrls(
             $poster['image_path'],
             "",
             "",
@@ -271,8 +356,8 @@ class SharePosterService
                 $taskId = 0;
                 // 检查打卡次数，发红包
                 $total = SharePosterModel::getCount([
-                    'type'          => SharePosterModel::TYPE_CHECKIN_UPLOAD,
-                    'student_id'    => $poster['student_id'],
+                    'type' => SharePosterModel::TYPE_CHECKIN_UPLOAD,
+                    'student_id' => $poster['student_id'],
                     'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
                     'id[!]' => $poster['id']
                 ]);
@@ -300,16 +385,16 @@ class SharePosterService
                     }
                 }
             }
-            
+
             // 更新记录
             $updateRecord = SharePosterModel::updateRecord(
                 $poster['id'],
                 [
                     'verify_status' => $status,
-                    'award_id'      => $awardId,
-                    'verify_time'   => $time,
-                    'update_time'   => $time,
-                    'verify_user'   => $employeeId,
+                    'award_id' => $awardId,
+                    'verify_time' => $time,
+                    'update_time' => $time,
+                    'verify_user' => $employeeId,
                 ]
             );
             if (empty($updateRecord)) {
@@ -373,12 +458,12 @@ class SharePosterService
         $time = time();
         $updateData = [
             'verify_status' => $status,
-            'award_id'      => $poster['award_id'],
-            'verify_time'   => $time,
-            'update_time'   => $time,
-            'verify_user'   => $employeeId,
+            'award_id' => $poster['award_id'],
+            'verify_time' => $time,
+            'update_time' => $time,
+            'verify_user' => $employeeId,
             'verify_reason' => implode(',', $reason),
-            'remark'        => $remark,
+            'remark' => $remark,
         ];
         $update = SharePosterModel::updateRecord($poster['id'], $updateData);
         // 审核不通过, 发送模版消息
@@ -495,7 +580,7 @@ class SharePosterService
         }
         $queryWhere['ORDER'] = ['create_time' => 'DESC'];
         $queryWhere['LIMIT'] = [$offset, $limit];
-        $activityList = DssSharePosterModel::getRecords($queryWhere, ['id','activity_id', 'status', 'create_time', 'img_url', 'reason', 'remark', 'award_id', 'points_award_id']);
+        $activityList = DssSharePosterModel::getRecords($queryWhere, ['id', 'activity_id', 'status', 'create_time', 'img_url', 'reason', 'remark', 'award_id', 'points_award_id']);
         if (empty($activityList)) {
             return $data;
         }
@@ -504,7 +589,7 @@ class SharePosterService
         $awardInfo = $redPackDeal = [];
         if (!empty($awardIds)) {
             //奖励相关的状态
-            $awardInfo = array_column(ErpUserEventTaskAwardModel::getRecords(['id'=>$awardIds], ['id','award_amount','award_type','status','reason']), null, 'id');
+            $awardInfo = array_column(ErpUserEventTaskAwardModel::getRecords(['id' => $awardIds], ['id', 'award_amount', 'award_type', 'status', 'reason']), null, 'id');
             //红包相关的发放状态
             $redPackDeal = array_column(WeChatAwardCashDealModel::getRecords(['user_event_task_award_id' => $awardIds]), null, 'user_event_task_award_id');
         }
@@ -528,17 +613,17 @@ class SharePosterService
             $data['list'][$k]['reason_str'] = $v['reason_str'];
             $data['list'][$k]['id'] = $v['id'];
             // 计算奖励
-            if ($v['points_award_id'] >0) {
+            if ($v['points_award_id'] > 0) {
                 $_pointsAwardInfo = !empty($pointsAwardArr[$v['points_award_id']]) ? $pointsAwardArr[$v['points_award_id']] : [];
                 // 积分奖励
-                $_awardNum =  $_pointsAwardInfo['award_num'] ?? 0;
-                $_awardType =  ErpStudentAccountModel::SUB_TYPE_GOLD_LEAF;
+                $_awardNum = $_pointsAwardInfo['award_num'] ?? 0;
+                $_awardType = ErpStudentAccountModel::SUB_TYPE_GOLD_LEAF;
                 $awardStatusZh = ErpReferralService::AWARD_STATUS[$_pointsAwardInfo['status']];
                 $failReasonZh = "";
-            }else {
+            } else {
                 // 老版现金奖励
-                $_awardNum =  !empty($awardInfo[$v['award_id']]) ? $awardInfo[$v['award_id']]['award_amount'] : 0;
-                $_awardType =  !empty($awardInfo[$v['award_id']]) ? $awardInfo[$v['award_id']]['award_type'] : 0;
+                $_awardNum = !empty($awardInfo[$v['award_id']]) ? $awardInfo[$v['award_id']]['award_amount'] : 0;
+                $_awardType = !empty($awardInfo[$v['award_id']]) ? $awardInfo[$v['award_id']]['award_type'] : 0;
                 list($awardStatusZh, $failReasonZh) = !empty($v['award_id']) ? self::displayAwardExplain($awardInfo[$v['award_id']], $awardInfo[$v['award_id']], $redPackDeal[$v['award_id']] ?? null) : [];
             }
 
@@ -603,10 +688,10 @@ class SharePosterService
         }
 
         $data = [
-            'student_id'  => $studentId,
-            'type'        => SharePosterModel::TYPE_WEEK_UPLOAD,
+            'student_id' => $studentId,
+            'type' => SharePosterModel::TYPE_WEEK_UPLOAD,
             'activity_id' => $activityId,
-            'image_path'  => $imagePath,
+            'image_path' => $imagePath,
             'verify_reason' => '',
             'unique_code' => '',
             'create_time' => $time,
@@ -652,10 +737,10 @@ class SharePosterService
         $now = time();
         $updateData = [
             'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
-            'verify_time'   => $now,
-            'verify_user'   => $params['employee_id'] ?? 0,
-            'remark'        => $params['remark'] ?? '',
-            'update_time'   => $now,
+            'verify_time' => $now,
+            'verify_user' => $params['employee_id'] ?? 0,
+            'remark' => $params['remark'] ?? '',
+            'update_time' => $now,
         ];
         $redis = RedisDB::getConn();
         $msgId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'approval_poster_wx_msg_id');
@@ -663,7 +748,7 @@ class SharePosterService
         $sendAwardBaseDelaySecond = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'send_award_base_delay_second');
         $replaceParams = [
             'delay_send_award_day' => intval((intval($sendAwardBaseDelaySecond) + intval($activityInfo['delay_second'])) / Util::TIMESTAMP_ONEDAY),
-            'url'                  => $msgUrl,
+            'url' => $msgUrl,
         ];
         $operationStudentActivity = [];
         //开始处理数据
@@ -675,8 +760,8 @@ class SharePosterService
                     continue;
                 }
 
-                $where  = [
-                    'id'            => $poster['id'],
+                $where = [
+                    'id' => $poster['id'],
                     'verify_status' => $poster['poster_status']
                 ];
                 $update = SharePosterModel::batchUpdateRecord($updateData, $where);
@@ -693,10 +778,10 @@ class SharePosterService
                     if (!isset($operationStudentActivity[$poster['student_id'] . '_' . $poster['activity_id']])) {
                         // 投递发奖信息
                         QueueService::addUserPosterAward([
-                            'app_id'      => Constants::SMART_APP_ID,
-                            'student_id'  => $poster['student_id'],
+                            'app_id' => Constants::SMART_APP_ID,
+                            'student_id' => $poster['student_id'],
                             'activity_id' => $poster['activity_id'],
-                            'act_status'  => ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE,
+                            'act_status' => ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE,
                             'verify_time' => $now,
                         ]);
                         $operationStudentActivity[$poster['student_id'] . '_' . $poster['activity_id']] = $now;
@@ -745,23 +830,23 @@ class SharePosterService
         $verifyTime = $data['verify_time'] ?? 0;
         $status = $data['status'] ?? ErpReferralService::EVENT_TASK_STATUS_COMPLETE;
 
-        $lockKey = "queue_dss_add_user_award_lock_" .$studentId .'_'. $activityId;
+        $lockKey = "queue_dss_add_user_award_lock_" . $studentId . '_' . $activityId;
         try {
             // 加锁失败扔回队列
             if (!Util::setLock($lockKey, 60)) {
                 // 扔回队列
                 QueueService::addUserPosterAward([
-                    'app_id'      => Constants::SMART_APP_ID,
-                    'student_id'  => $studentId,
+                    'app_id' => Constants::SMART_APP_ID,
+                    'student_id' => $studentId,
                     'activity_id' => $activityId,
-                    'act_status'  => ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE,
+                    'act_status' => ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE,
                     'verify_time' => $verifyTime,
                 ]);
                 SimpleLogger::info("queue_dss_add_user_award_set_lock_fail", $data);
                 return true;
             }
             // 奖励白名单用户，发放的奖励应该是待发放状态
-            $whiteList = WeekWhiteListModel::getRecord(['uuid' => $studentUUID, 'status'=>WeekWhiteListModel::NORMAL_STATUS]);
+            $whiteList = WeekWhiteListModel::getRecord(['uuid' => $studentUUID, 'status' => WeekWhiteListModel::NORMAL_STATUS]);
             if (!empty($whiteList)) {
                 $status = ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING;   // 待发放
             }
@@ -788,7 +873,7 @@ class SharePosterService
                 $isSendAwardNum = 0;
                 foreach ($sharePosterList as $key => $item) {
                     if ($item['verify_time'] < $verifyTime || !empty($item['points_award_id'])) {
-                        $isSendAwardNum +=1;
+                        $isSendAwardNum += 1;
                         unset($sharePosterList[$key]);
                     }
                 }
@@ -800,7 +885,7 @@ class SharePosterService
                 }
                 // 发奖
                 foreach ($sharePosterList as $poster) {
-                    $isSendAwardNum +=1;
+                    $isSendAwardNum += 1;
                     // 获取审核通过奖励规则
                     $passAwardInfo = self::getActivityForthwithSendAwardRule($activityId, $isSendAwardNum);
                     SimpleLogger::info("addUserAward_poster", [$poster, $isSendAwardNum]);
@@ -834,14 +919,14 @@ class SharePosterService
             throw new RunTimeException(['get_share_poster_error']);
         }
 
-        $time   = time();
+        $time = time();
         $update = SharePosterModel::updateRecord($poster['id'], [
             'verify_status' => $status,
-            'verify_time'   => $time,
-            'verify_user'   => $params['employee_id'],
+            'verify_time' => $time,
+            'verify_user' => $params['employee_id'],
             'verify_reason' => implode(',', $params['reason']),
-            'update_time'   => $time,
-            'remark'        => $params['remark'] ?? '',
+            'update_time' => $time,
+            'remark' => $params['remark'] ?? '',
         ]);
         if (!empty($poster['award_id'])) {
             (new Erp())->updateAward(
@@ -917,7 +1002,7 @@ class SharePosterService
             $poster['can_upload'] = Constants::STATUS_FALSE;
         }
 
-        $gold_leaf = ErpUserEventTaskAwardGoldLeafModel::getRecord(['id'=>$poster['points_award_id']], ['status']);
+        $gold_leaf = ErpUserEventTaskAwardGoldLeafModel::getRecord(['id' => $poster['points_award_id']], ['status']);
         $poster['gold_leaf_status'] = $gold_leaf['status'];
         $poster = self::formatOne($poster);
         $activity = WeekActivityModel::getRecord(['activity_id' => $poster['activity_id']]);
@@ -972,12 +1057,110 @@ class SharePosterService
             'xyzop_1262_week_activity_one',
             'xyzop_1262_week_activity_two'
         ]);
-        $wkIds = array_merge(explode(',', $wkIds), [ $oneActivityId], explode(',', $twoActivityId));
+        $wkIds = array_merge(explode(',', $wkIds), [$oneActivityId], explode(',', $twoActivityId));
         if (!in_array($activityInfo['activity_id'], $wkIds)) {
             if ($activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_ON) {
                 return false;
             }
         }
         return true;
+    }
+
+    /**
+     * 格式化处理活动名称
+     * @param $activityData
+     * @return string
+     */
+    public static function formatWeekActivityName($activityData)
+    {
+        $taskNumCount = empty($activityData['task_num_count']) ? '1' : $activityData['task_num_count'];
+        $timeFormat = '(' . date("m.d", $activityData['start_time']) . '-' . date("m.d", $activityData['end_time']) . ')';
+        return $taskNumCount . '次分享截图活动' . $timeFormat;
+    }
+
+    /**
+     * 格式化处理截图上传奖励发放状态
+     * @param $activityId
+     * @param $joinRecord
+     * @return array
+     */
+    private static function formatSharePosterAwardStatus($activityId, $joinRecord)
+    {
+        $data = [
+            'award_amount' => empty($joinRecord['award_amount']) ? '--' : $joinRecord['award_amount'],
+            'award_status' => ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED,
+            'award_status_zh' => ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED],
+        ];
+//        //临时指定的多次分享任务的活动
+//        $activityDictData = RealDictConstants::getTypesMap([RealDictConstants::REAL_XYZOP_1321_CONFIG['type'], RealDictConstants::REAL_ACTIVITY_CONFIG['type']]);
+//        $specialDictActivityIds1321 = explode(',', $activityDictData[RealDictConstants::REAL_XYZOP_1321_CONFIG['type']]['real_xyzop_1321_activity_ids']['value']);
+//        $specialDictActivityIds2000 = explode(',', $activityDictData[RealDictConstants::REAL_ACTIVITY_CONFIG['type']]['2000_send_award_activity_id']['value']);
+//        if (in_array($activityId, $specialDictActivityIds1321) && ($joinRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED)) {
+//            $data['award_amount'] = "--";
+//            $data['award_status'] = RealUserAwardMagicStoneModel::STATUS_GIVE;
+//            $data['award_status_zh'] = "人工发放";
+//        } elseif (in_array($activityId, $specialDictActivityIds2000)) {
+//            $data['award_amount'] = "--";
+//            $data['award_status'] = RealUserAwardMagicStoneModel::STATUS_GIVE;
+//            $data['award_status_zh'] = "人工发放";
+//        } elseif (!is_null($joinRecord['award_status'])) {
+//            $data['award_status'] = $joinRecord['award_status'];
+//            $data['award_status_zh'] = RealUserAwardMagicStoneModel::STATUS_ZH[$data['award_status']];
+//        } elseif (is_null($joinRecord['award_status']) && ($joinRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED)) {
+//            $data['award_status'] = RealUserAwardMagicStoneModel::STATUS_WAITING;
+//            $data['award_status_zh'] = RealUserAwardMagicStoneModel::STATUS_ZH[RealUserAwardMagicStoneModel::STATUS_WAITING];
+//        }
+        return $data;
+    }
+
+    /**
+     * 过滤活动的任务列表数据
+     * @param $taskListData
+     * @param $activityId
+     * @param $taskNumCount
+     * @return mixed
+     */
+    private static function filterSpecialActivityTaskData($taskListData, $activityId, $taskNumCount)
+    {
+        //活动设置为1.多次分享任务 2.奖励延时发放,但是手动提前发放奖励的活动ID,分享任务使用第一个任务
+//        $specialDictActivityIds = explode(',', RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, '2000_send_award_activity_id'));
+//        if (in_array($activityId, $specialDictActivityIds)) {
+//            return [[$taskListData[0]], 1];
+//        }
+        return [$taskListData, $taskNumCount];
+    }
+
+    /**
+     * 获取活动审核记录列表
+     * @param $studentId
+     * @param $activityId
+     * @param $page
+     * @param $limit
+     * @return array
+     */
+    public static function getWeekActivityVerifyList($studentId, $activityId, $page, $limit)
+    {
+        // 获取列表
+        $sharePosterData = SharePosterModel::getSharePosterHistory(['student_id' => $studentId, 'activity_id' => $activityId], $page, $limit);
+        // 格式化信息
+        if (empty($sharePosterData['list'])) {
+            return $sharePosterData;
+        }
+        $returnData['total_count'] = $sharePosterData['total_count'];
+        // 获取活动分享任务列表
+        $activityData = WeekActivityModel::getActivityAndTaskData($activityId)[0];
+        // 组合数据
+        $time = time();
+        foreach ($sharePosterData['list'] as $item) {
+            $tmpList = [];
+            $tmpList['task_name'] = SharePosterService::formatWeekActivityName(array_merge($activityData, $item));
+            $tmpList['create_time'] = date("Y.m.d H:i", $item['create_time']);
+            $tmpList['verify_status'] = $item['verify_status'];
+            $tmpList['id'] = $item['id'];
+            $tmpList['task_num'] = $item['task_num'];
+            $tmpList['can_upload'] = (int)self::checkWeekActivityAllowUpload($activityData, $time);
+            $returnData['list'][] = $tmpList;
+        }
+        return $returnData;
     }
 }

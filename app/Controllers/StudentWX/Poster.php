@@ -141,6 +141,7 @@ class Poster extends ControllerBase
 
     /**
      * 截图上传历史记录
+     * 周周领奖用户参与记录
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -157,11 +158,11 @@ class Poster extends ControllerBase
             $params['type'] = SharePosterModel::TYPE_WEEK_UPLOAD;
             $params['user_id'] = $student['id'];
             list($params['page'], $params['count']) = Util::formatPageCount($params);
-            list($posters, $total) = SharePosterService::sharePosterList($params);
+            $data = SharePosterService::weekActivityStudentUploadHistory($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
-        return HttpHelper::buildResponse($response, ['list' => $posters, 'total' => $total]);
+        return HttpHelper::buildResponse($response, ['list' => $data['list'], 'total' => $data['total_count']]);
     }
 
     /**

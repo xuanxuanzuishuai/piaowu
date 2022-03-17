@@ -25,11 +25,11 @@ class SharePosterPassAwardRuleModel extends Model
     public static function batchInsertPassAwardRule($activityId, $taskList, $createTime): bool
     {
         $realSharePosterTaskRuleData = [];
-        foreach ($taskList as $_taskNum => $_item) {
+        foreach ($taskList as $_taskNum => $taskAward) {
             $info = [
                 'activity_id' => $activityId,
                 'success_pass_num' => $_taskNum + 1,
-                'award_amount' => $_item['task_award'],
+                'award_amount' => $taskAward,
                 'award_type' => Constants::ERP_ACCOUNT_NAME_GOLD_LEFT,
                 'create_time' => $createTime,
             ];
@@ -59,7 +59,7 @@ class SharePosterPassAwardRuleModel extends Model
     }
 
     /**
-     * 获取活动分享任务活动数据
+     * 获取活动分享任务列表
      * @param $activityIds
      * @return array
      */

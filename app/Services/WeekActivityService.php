@@ -336,25 +336,12 @@ class WeekActivityService
         }
         $activityInfo['poster'] = $poster;
         $activityInfo['personality_poster'] = $personality_poster;
-        // 获取活动对应的任务
-        $activityInfo['task_list'] = SharePosterTaskListModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['task_num' => 'ASC']]);
         // 获取奖励
         $activityInfo['pass_award_rule_list'] = SharePosterPassAwardRuleModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['success_pass_num' => 'ASC']]);
-        foreach ($activityInfo['task_list'] as $index => &$item) {
-            $passAwardRuleInfo = $activityInfo['pass_award_rule_list'][$index] ?? [];
-            if (empty($passAwardRuleInfo)) {
-                continue;
-            }
-            // 前端展示 - 兼容字段
-            $passAwardRuleInfo['task_award'] = $passAwardRuleInfo['award_amount'];
-            $item = array_merge($item, $passAwardRuleInfo);
-        }
-        unset($index, $item);
-
+        // 获取活动奖励数组
+        $activityInfo['task_list'] = array_column($activityInfo['pass_award_rule_list'] ,'award_amount');
         // 获取uuid
         $activityInfo['designate_uuid'] = SharePosterDesignateUuidModel::getUUIDByActivityId($activityId);
-        //分享任务总数
-        $activityInfo['task_num_count'] = count($activityInfo['pass_award_rule_list']);
         return $activityInfo;
     }
 
@@ -1151,7 +1138,7 @@ class WeekActivityService
         if ($isNormalStudent) {
             /** 如果是付费有效用户， 获取5天内结束的活动列表，允许补卡*/
             $allowRetryUploadTime = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'activity_over_allow_upload_second');
-            // 结束时间必须在用户首次付费时间之后
+            // 因为是补卡所有用户首次付费时间之前活动都不能参与 结束时间必须在用户首次付费时间之后
             $timeOutTime = $studentIdAttribute['first_pay_time'] > ($time - $allowRetryUploadTime) ? $studentIdAttribute['first_pay_time'] : ($time - $allowRetryUploadTime);
             $where = [
                 'end_time[>]' => $timeOutTime,   // 没有超过5天
