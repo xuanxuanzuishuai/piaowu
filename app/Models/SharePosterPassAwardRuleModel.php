@@ -84,4 +84,30 @@ class SharePosterPassAwardRuleModel extends Model
             ]);
         return empty($list) ? [] : $list;
     }
+
+    /**
+     * 获取活动奖励规则 - 取最大的通过次数的奖励
+     * @param $activityIds
+     * @return array|false
+     */
+    public static function getPassAwardRuleList($activityIds)
+    {
+        if (empty($activityIds)) {
+            return [];
+        }
+        $sql = "select tmp.*, w.start_time, w.end_time, w.name activity_name from (
+            SELECT
+                id,
+                activity_id,
+                success_pass_num,
+                dense_rank() over ( PARTITION BY activity_id ORDER BY success_pass_num DESC ) AS upload_order,
+                concat_ws('_',activity_id, success_pass_num) activity_max_num
+            FROM
+                ". self::$table ."
+        ) tmp 
+        left join ". WeekActivityModel::$table . " w on w.activity_id=tmp.activity_id
+        WHERE tmp.upload_order=1 and tmp.activity_id IN (" . implode(',', $activityIds) . ')';
+        $list = MysqlDB::getDB()->queryall($sql);
+        return is_array($list) ? $list : [];
+    }
 }

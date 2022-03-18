@@ -62,7 +62,8 @@ class StudentWXRouter extends RouterBase
         '/student_wx/share_poster/detail'  => ['method' => ['get'], 'call' => Poster::class . ':shareDetail'],
         '/student_wx/referral/invite_list' => ['method' => ['get'], 'call' => Student::class . ':inviteList'],
         '/student_wx/activity/share_poster_award_list' => ['method' => ['get'], 'call' => Activity::class . ':sharePosterSendAwardHistoryList'],
-        '/student_wx/activity/verify_list' => ['method' => ['post'], 'call' => Activity::class . ':getWeekActivityVerifyList'],
+        '/student_wx/activity/verify_list' => ['method' => ['get'], 'call' => Activity::class . ':getWeekActivityVerifyList'],
+        '/student_wx/activity/week_award_rule' => ['method' => ['get'], 'call' => Activity::class . ':getWeekActivityAwardRule'],
 
 
         //端午节活动

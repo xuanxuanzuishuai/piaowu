@@ -162,7 +162,7 @@ class Poster extends ControllerBase
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
-        return HttpHelper::buildResponse($response, ['list' => $data['list'], 'total' => $data['total_count']]);
+        return HttpHelper::buildResponse($response, $data);
     }
 
     /**

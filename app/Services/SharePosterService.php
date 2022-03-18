@@ -145,7 +145,7 @@ class SharePosterService
         }
         // 获取活动基础数据
         $activityBaseInfo = array_column(WeekActivityModel::getActivityAndTaskData($activityIdOffset), null, 'activity_id');
-        $dictData = DictConstants::getTypesMap([DictConstants::ACTIVITY_ENABLE_STATUS['type']]);
+        $dictData = DictConstants::getSet(DictConstants::ACTIVITY_ENABLE_STATUS);
         $weekActivityConfig = DictConstants::getSet(DictConstants::DSS_WEEK_ACTIVITY_CONFIG);
         $activityEnableStatusConfig = DictConstants::getSet(DictConstants::ACTIVITY_ENABLE_STATUS);
         // 统计一个活动中用户参与次数， 成功，失败、等待审核
@@ -162,9 +162,9 @@ class SharePosterService
                 'activity_id' => $info['activity_id'],
                 'task_num_count' => $taskNumCount,
                 'award_prize_type' => $info['award_prize_type'],
-                'delay_second' => empty($info['delay_second']) ? 0 : ($weekActivityConfig['send_award_base_delay_second'] + $info['delay_second']) / Util::TIMESTAMP_ONEDAY,
+                'delay_day' => empty($info['delay_second']) ? 0 : ($weekActivityConfig['send_award_base_delay_second'] + $info['delay_second']) / Util::TIMESTAMP_ONEDAY,
                 'activity_name' => self::formatWeekActivityName($info),
-                'activity_status_zh' => ($info['enable_status'] == OperationActivityModel::ENABLE_STATUS_DISABLE) ? $weekActivityConfig[OperationActivityModel::ENABLE_STATUS_DISABLE] : WeekActivityService::formatActivityTimeStatus($info)['activity_status_zh'],
+                'activity_status_zh' => ($info['enable_status'] == OperationActivityModel::ENABLE_STATUS_DISABLE) ? $dictData[OperationActivityModel::ENABLE_STATUS_DISABLE] : WeekActivityService::formatActivityTimeStatus($info)['activity_status_zh'],
                 'success' => intval($joinVerifyData[$info['activity_id']][SharePosterModel::VERIFY_STATUS_QUALIFIED] ?? 0),
                 'fail' => intval($joinVerifyData[$info['activity_id']][SharePosterModel::VERIFY_STATUS_UNQUALIFIED] ?? 0),
                 'wait' => intval($joinVerifyData[$info['activity_id']][SharePosterModel::VERIFY_STATUS_WAIT] ?? 0),
@@ -742,15 +742,17 @@ class SharePosterService
             'remark' => $params['remark'] ?? '',
             'update_time' => $now,
         ];
-        $redis = RedisDB::getConn();
         $msgId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'approval_poster_wx_msg_id');
-        $msgUrl = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'dss_week_activity_detail');
+        $msgUrl = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'dss_gold_left_shop_url');
         $sendAwardBaseDelaySecond = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'send_award_base_delay_second');
         $replaceParams = [
             'delay_send_award_day' => intval((intval($sendAwardBaseDelaySecond) + intval($activityInfo['delay_second'])) / Util::TIMESTAMP_ONEDAY),
             'url' => $msgUrl,
         ];
         $operationStudentActivity = [];
+        // 获取活动奖励信息列表
+        $passAwardList = array_column(SharePosterPassAwardRuleModel::getRecord(['activity_id' => $activityInfo['activity_id']]), 'award_amount', 'success_pass_num');
+        krsort($passAwardList); // 排序 - 目的是后面能直接方便的取出最大次数的奖励
         //开始处理数据
         foreach ($posters as $key => $poster) {
             // 审核数据操作锁，解决并发导致的重复审核和发奖
@@ -772,7 +774,24 @@ class SharePosterService
                 }
                 //智能产品激活
                 QueueService::autoActivate(['student_uuid' => $poster['uuid'], 'passed_time' => time(), 'app_id' => Constants::SMART_APP_ID]);
-
+                // 计算审核通过的次数
+                $passNum = SharePosterModel::getCount([
+                    'student_id' => $poster['student_id'],
+                    'activity_id' => $poster['activity_id'],
+                    'type' => SharePosterModel::TYPE_WEEK_UPLOAD,
+                    'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
+                ]);
+                // 组装微信消息需要的参数
+                $replaceParams = [
+                    'activity_name' => SharePosterService::formatWeekActivityName([
+                        'task_num_count' => $passAwardList[0]['success_pass_num'],
+                        'start_time' => $activityInfo['start_time'],
+                        'end_time' => $activityInfo['end_time'],
+                    ]),
+                    'url' => $msgUrl,
+                    'passes_num' => $passNum,
+                    'award_num' => $passAwardList[$passNum] ?? 0,
+                ];
                 // 区分发奖规则 - 保存即时发奖的数据
                 if (self::checkIsNewRule($poster['activity_id'])) {
                     if (!isset($operationStudentActivity[$poster['student_id'] . '_' . $poster['activity_id']])) {
@@ -786,20 +805,8 @@ class SharePosterService
                         ]);
                         $operationStudentActivity[$poster['student_id'] . '_' . $poster['activity_id']] = $now;
                     }
+                    // 即时发奖消息模板id
                     $msgId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'approval_poster_forthwith_wx_msg_id');
-                    // 计算奖励
-                    $awardNum = SharePosterModel::getCount([
-                        'student_id' => $poster['student_id'],
-                        'activity_id' => $poster['activity_id'],
-                        'type' => SharePosterModel::TYPE_WEEK_UPLOAD,
-                        'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
-                    ]);
-                    $replaceParams = [
-                        'activity_name' => $poster['activity_id'],
-                        'url' => $msgUrl,
-                        'passes_num' => $poster['task_num'],
-                        'award_num' => $awardNum,
-                    ];
                 }
                 // 发送消息
                 QueueService::sendUserWxMsg(Constants::SMART_APP_ID, $poster['student_id'], $msgId, [
@@ -936,25 +943,13 @@ class SharePosterService
             );
         }
         // 审核不通过, 发送模版消息
-        if ($update > 0) {
-            $oldRuleLastActivityId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
-            if ($poster['activity_id'] <= $oldRuleLastActivityId) {
-                $vars = [
-                    'activity_name' => $poster['activity_name'],
-                    'status' => $status
-                ];
-                MessageService::sendPosterVerifyMessage($poster['open_id'], $vars);
-            } else {
-                // 新活动推送新规则
-                if ($status == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
-                    $wechatConfigId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'refused_poster_wx_msg_id');
-                    QueueService::sendUserWxMsg(Constants::SMART_APP_ID, $poster['student_id'], $wechatConfigId, [
-                        'replace_params' => [
-                            'url' => DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'dss_share_poster_history_list')
-                        ],
-                    ]);
-                }
-            }
+        if ($update > 0 && $status == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
+            $wechatConfigId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'refused_poster_wx_msg_id');
+            QueueService::sendUserWxMsg(Constants::SMART_APP_ID, $poster['student_id'], $wechatConfigId, [
+                'replace_params' => [
+                    'url' => DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'dss_share_poster_history_list')
+                ],
+            ]);
         }
 
         return $update > 0;
@@ -1076,6 +1071,19 @@ class SharePosterService
         $taskNumCount = empty($activityData['task_num_count']) ? '1' : $activityData['task_num_count'];
         $timeFormat = '(' . date("m.d", $activityData['start_time']) . '-' . date("m.d", $activityData['end_time']) . ')';
         return $taskNumCount . '次分享截图活动' . $timeFormat;
+    }
+
+    /**
+     * 格式化处理活动分享任务名称
+     * @param $activityTaskData
+     * @return string
+     */
+    public static function formatWeekActivityTaskName($activityTaskData)
+    {
+        $taskNumCount = empty($activityTaskData['task_num_count']) ? '1' : $activityTaskData['task_num_count'];
+        $timeFormat = '(' . date("m.d", $activityTaskData['start_time']) . '-' . date("m.d", $activityTaskData['end_time']) . ')';
+        $taskNum = empty($activityTaskData['task_num']) ? 1 : $activityTaskData['task_num'];
+        return $taskNumCount . '次分享截图活动-'.$taskNum .$timeFormat;
     }
 
     /**

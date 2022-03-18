@@ -927,55 +927,51 @@ class WeekActivityService
             return [];
         }
         // 获取用户可参与的活动
-        $activityList = WeekActivityService::getDssStudentCanPartakeWeekActivityList($studentInfo['id'], $studentInfo['uuid'], $studentInfo['country_code']);
-        $activityInfo = $activityList[0] ?? [];
-        $canPartakeActivityId = $activityInfo['activity_id'] ?? 0;
-        if (!empty($activityInfo)) {
-            list($studentIsNormal, $activityTaskList, $diffActivityTaskNum) = self::getStudentWeekActivityCanUpload($studentInfo['id'], $canPartakeActivityId);
-            // 拼接可参与活动的列表
-            foreach ($activityTaskList as $_taskInfo) {
-                if (!in_array($_taskInfo['task_num'], $diffActivityTaskNum)) {
-                    continue;
-                }
-                $result[] = [
-                    'activity_id'         => $_taskInfo['activity_id'],
-                    'task_num'            => $_taskInfo['task_num'],
-                    'name'                => $_taskInfo['task_name'],
-                ];
-            }
-            unset($_taskInfo);
-        }
+        $activityInfo = WeekActivityService::getDssStudentCanPartakeWeekActivityList($studentInfo['id'], $studentInfo['uuid'], $studentInfo['country_code'])[0] ?? 0;
         // 获取补卡的活动列表
         $retryUploadActivityList = self::getRetryUploadActivityList($studentInfo['id'], $studentInfo['uuid'], $studentInfo['country_code']);
-        if (!empty($activityInfo)) {
-            $retryTaskList = [];
-            foreach ($retryUploadActivityList as $item) {
+        // 排序 - 当前活动未超过24小时  当期-往期(活动开始时间倒序)，  当期活动超过24小时 往期(活动开始时间倒序)-当期
+        $newActivityList = [];
+        if (!empty($retryUploadActivityList) && !empty($activityList)) {
+            if (time() - $activityInfo['activity_id'] > Util::TIMESTAMP_ONEDAY) {
+                $newActivityList = array_merge([$activityInfo], $retryUploadActivityList);
+            } else {
+                $newActivityList = array_merge($retryUploadActivityList, [$activityInfo]);
+            }
+        } elseif (!empty($retryTaskList) && empty($activityInfo)) {
+            // 只有补卡，没有命中
+            $newActivityList = $retryTaskList;
+        } else {
+            // 只有命中活动，没有补卡
+            $newActivityList = [$activityInfo];
+        }
+        $result = [];
+        if (!empty($newActivityList)) {
+            // 获取活动奖励信息
+            $passAwardList = SharePosterPassAwardRuleModel::getPassAwardRuleList(array_column($newActivityList, 'activity_id'));
+            $passAwardList = array_column($passAwardList, null, "activity_id");
+            foreach($newActivityList as $item) {
                 list($studentIsNormal, $activityTaskList, $diffActivityTaskNum) = self::getStudentWeekActivityCanUpload($studentInfo['id'], $item['activity_id']);
+                if (!$studentIsNormal) {
+                    continue;
+                }
                 // 拼接可参与活动的列表
                 foreach ($activityTaskList as $_taskInfo) {
-                    if (!in_array($_taskInfo['task_num'], $diffActivityTaskNum)) {
-                        continue;
-                    }
-                    $retryTaskList[] = [
-                        'activity_id'         => $_taskInfo['activity_id'],
-                        'task_num'            => $_taskInfo['task_num'],
-                        'name'                => $_taskInfo['task_name'],
+                    $tmpInfo = $passAwardList[$_taskInfo['activity_id']];
+                    $result[] = [
+                        'activity_id' => $_taskInfo['activity_id'],
+                        'task_num' => $_taskInfo['task_num'],
+                        'name' => SharePosterService::formatWeekActivityTaskName([
+                            'task_num_count' => $tmpInfo['success_pass_num'],
+                            'task_num' => $_taskInfo['task_num'],
+                            'start_time' => $tmpInfo['start_time'],
+                            'end_time' => $tmpInfo['end_time'],
+                        ]),
                     ];
                 }
                 unset($_taskInfo);
-           }
-        }
-        // 排序 - 当前活动未超过24小时  当期-往期(活动开始时间倒序)，  当期活动超过24小时 往期(活动开始时间倒序)-当期
-        if (!empty($result) && !empty($retryTaskList)) {
-            // 有补卡，有命中活动，排序
-            if (time() - $activityList[0]['activity_id'] > Util::TIMESTAMP_ONEDAY) {
-                $result = array_merge($result, $retryTaskList);
-            } else {
-                $result = array_merge($retryTaskList, $result);
             }
-        } elseif (!empty($retryTaskList) && empty($result)) {
-            // 只有补卡，没有命中
-            $result = $retryTaskList;
+            unset($item);
         }
         return $result ?? [];
     }
@@ -995,8 +991,8 @@ class WeekActivityService
         }
         // 查看学生可参与的活动中已经审核通过的分享任务
         $haveQualifiedActivityIds = SharePosterModel::getRecords([
-            'student_id'    => $studentId,
-            'activity_id'   => $activityId,
+            'student_id' => $studentId,
+            'activity_id' => $activityId,
             'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
         ], 'task_num');
         // 查看学生相对可参与活动的状态 - 计算差集
@@ -1004,6 +1000,13 @@ class WeekActivityService
         if (empty($diffActivityTaskNum)) {
             return [false, $activityTaskList, $diffActivityTaskNum];
         }
+        // 返回未参与的活动任务
+        foreach ($activityTaskList as $key => $item) {
+            if (!in_array($item['task_num'], $diffActivityTaskNum)) {
+                unset($activityTaskList[$key]);
+            }
+        }
+        unset($key, $item);
         return [true, $activityTaskList, $diffActivityTaskNum];
     }
 
@@ -1034,7 +1037,7 @@ class WeekActivityService
     }
 
     /**
-     * 检查活动是否可以启用
+     * 检查周周领奖活动是否可以启用
      * @param $activityInfo
      * @return void
      * @throws RunTimeException
@@ -1047,7 +1050,7 @@ class WeekActivityService
             'enable_status'  => OperationActivityModel::ENABLE_STATUS_ON,
         ];
         // 如果活动指定了投放地区，搜索时需要区分投放地区
-        $activityInfo['activity_country_code'] && $conflictWhere['activity_country_code'] = [OperationActivityModel::ACTIVITY_COUNTRY_ALL, $activityInfo['activity_country_code']];
+        $activityInfo['activity_country_code'] && $conflictWhere['activity_country_code'] = OperationActivityModel::getWeekActivityCountryCode($activityInfo['activity_country_code']);
         if ($activityInfo['target_user_type'] == WeekActivityModel::TARGET_USER_PART) {
             //启用的活动目标用户是部分
             $conflictWhere['OR'] =  [
@@ -1063,6 +1066,7 @@ class WeekActivityService
         }
         $conflictData = WeekActivityModel::getCount($conflictWhere);
         if ($conflictData > 0) {
+            SimpleLogger::info("checkActivityIsAllowEnable_has_conflict", [$conflictWhere, $conflictData]);
             throw new RunTimeException(['activity_conflict']);
         }
     }

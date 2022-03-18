@@ -14,6 +14,7 @@ use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\ActivityExtModel;
 use App\Services\ActivityService;
 use App\Services\ErpUserEventTaskAwardGoldLeafService;
 use App\Services\SharePosterService;
@@ -275,6 +276,36 @@ class Activity extends ControllerBase
         }
         list($page, $limit) = Util::formatPageCount($params);
         $data = SharePosterService::getWeekActivityVerifyList( $this->ci['user_info']['user_id'], (int)$params['activity_id'], $page, $limit);
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 周周领奖活动奖励细则
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getWeekActivityAwardRule(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'activity_id',
+                'type' => 'required',
+                'error_code' => 'activity_id_is_required'
+            ],
+            [
+                'key' => 'activity_id',
+                'type' => 'integer',
+                'error_code' => 'activity_id_is_integer'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $data = ActivityExtModel::getRecord(['activity_id'=>(int)$params['activity_id']],['award_rule']);
+        $data['award_rule'] = Util::textDecode($data['award_rule']);
         return HttpHelper::buildResponse($response, $data);
     }
 }
