@@ -106,8 +106,8 @@ class StudentAppRouter extends RouterBase
             'call' => WXPoster::class . ':shareDetail',
             'middles' => [AppAuthMiddleWare::class]
         ],
-        '/student_app/activity/verify_list' => ['method' => ['post'], 'call' => Activity::class . ':getWeekActivityVerifyList'],
-        '/student_wx/activity/week_award_rule' => ['method' => ['post'], 'call' => Activity::class . ':getWeekActivityAwardRule'],
+        '/student_app/activity/verify_list' => ['method' => ['get'], 'call' => Activity::class . ':getWeekActivityVerifyList', 'middles' => [AppAuthMiddleWare::class]],
+        '/student_app/activity/week_award_rule' => ['method' => ['get'], 'call' => Activity::class . ':getWeekActivityAwardRule', 'middles' => [AppAuthMiddleWare::class]],
         //端午节活动
         '/student_app/duanwu_activity/activity_info' => [
             'method' => ['get'],

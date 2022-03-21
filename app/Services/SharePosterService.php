@@ -21,6 +21,7 @@ use App\Models\Dss\DssSharePosterModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpEventTaskModel;
+use App\Models\Erp\ErpStudentAccountDetail;
 use App\Models\Erp\ErpStudentAccountModel;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
@@ -31,14 +32,12 @@ use App\Models\SharePosterModel;
 use App\Libs\Erp;
 use App\Models\SharePosterPassAwardRuleModel;
 use App\Models\SharePosterTaskListModel;
-use App\Models\TemplatePosterModel;
 use App\Models\TemplatePosterWordModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Models\WeekActivityModel;
 use App\Models\WeekWhiteListModel;
 use App\Services\Queue\QueueService;
 use App\Services\TraitService\TraitSharePosterService;
-use I18N\Lang;
 
 class SharePosterService
 {
@@ -170,21 +169,21 @@ class SharePosterService
                 'wait' => intval($joinVerifyData[$info['activity_id']][SharePosterModel::VERIFY_STATUS_WAIT] ?? 0),
                 'task_list' => []
             ];
-            // 单次分享任务
+            // 早期活动不支持多次分享
             if (empty($info['task_data'])) {
                 $tmpJoinRecordFormatKey = $info['activity_id'] . '_' . $taskNumCount;
                 $tmpFormatAwardData = self::formatSharePosterAwardStatus($info['activity_id'], $joinRecordFormat[$tmpJoinRecordFormatKey]);
                 $tmpFormatData['task_list'][] = [
                     'task_num' => $taskNumCount,
-                    'award_type' => empty($joinRecordFormat[$tmpJoinRecordFormatKey]['award_type']) ? '' : $joinRecordFormat[$tmpJoinRecordFormatKey]['award_type'],
-                    'verify_status' => (int)$joinRecordFormat[$tmpJoinRecordFormatKey]['verify_status'],
+                    'award_type' => $tmpFormatAwardData['award_type'],
+                    'verify_status' => $tmpFormatAwardData['verify_status'],
                     'award_amount' => $tmpFormatAwardData['award_amount'],
                     'award_status' => $tmpFormatAwardData['award_status'],
                     'award_status_zh' => $tmpFormatAwardData['award_status_zh'],
                 ];
             } else {
                 //多次分享任务
-                list($tmpTask, $tmpTaskNumCount) = self::filterSpecialActivityTaskData(explode(',', $info['task_data']), $info['activity_id'], $taskNumCount);
+                list($tmpTask, $tmpTaskNumCount) = self::filterSpecialActivityTaskData($info['activity_id'], explode(',', $info['task_data']));
                 $tmpFormatData['task_list'] = array_map(function ($tmv) use ($joinRecordFormat, $info) {
                     list($tmpTaskNode['task_num'],
                         $tmpTaskNode['award_amount'],
@@ -752,7 +751,7 @@ class SharePosterService
         $operationStudentActivity = [];
         // 获取活动奖励信息列表
         $passAwardList = array_column(SharePosterPassAwardRuleModel::getRecord(['activity_id' => $activityInfo['activity_id']]), 'award_amount', 'success_pass_num');
-        krsort($passAwardList); // 排序 - 目的是后面能直接方便的取出最大次数的奖励
+        krsort($passAwardList); // 排序 - 目的是后面能直接方便地取出最大次数的奖励
         //开始处理数据
         foreach ($posters as $key => $poster) {
             // 审核数据操作锁，解决并发导致的重复审核和发奖
@@ -1088,54 +1087,66 @@ class SharePosterService
 
     /**
      * 格式化处理截图上传奖励发放状态
-     * @param $activityId
-     * @param $joinRecord
+     * @param int $activityId   活动id
+     * @param array $joinRecord   上传记录信息share_poster表信息
      * @return array
      */
     private static function formatSharePosterAwardStatus($activityId, $joinRecord)
     {
-        $data = [
+        $returnData = [
             'award_amount' => empty($joinRecord['award_amount']) ? '--' : $joinRecord['award_amount'],
-            'award_status' => ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED,
-            'award_status_zh' => ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED],
+            'award_type' =>  Constants::ERP_ACCOUNT_NAME_GOLD_LEFT,
+            'verify_status' => (int)$joinRecord['verify_status'],
         ];
-//        //临时指定的多次分享任务的活动
-//        $activityDictData = RealDictConstants::getTypesMap([RealDictConstants::REAL_XYZOP_1321_CONFIG['type'], RealDictConstants::REAL_ACTIVITY_CONFIG['type']]);
-//        $specialDictActivityIds1321 = explode(',', $activityDictData[RealDictConstants::REAL_XYZOP_1321_CONFIG['type']]['real_xyzop_1321_activity_ids']['value']);
-//        $specialDictActivityIds2000 = explode(',', $activityDictData[RealDictConstants::REAL_ACTIVITY_CONFIG['type']]['2000_send_award_activity_id']['value']);
-//        if (in_array($activityId, $specialDictActivityIds1321) && ($joinRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED)) {
-//            $data['award_amount'] = "--";
-//            $data['award_status'] = RealUserAwardMagicStoneModel::STATUS_GIVE;
-//            $data['award_status_zh'] = "人工发放";
-//        } elseif (in_array($activityId, $specialDictActivityIds2000)) {
-//            $data['award_amount'] = "--";
-//            $data['award_status'] = RealUserAwardMagicStoneModel::STATUS_GIVE;
-//            $data['award_status_zh'] = "人工发放";
-//        } elseif (!is_null($joinRecord['award_status'])) {
-//            $data['award_status'] = $joinRecord['award_status'];
-//            $data['award_status_zh'] = RealUserAwardMagicStoneModel::STATUS_ZH[$data['award_status']];
-//        } elseif (is_null($joinRecord['award_status']) && ($joinRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_QUALIFIED)) {
-//            $data['award_status'] = RealUserAwardMagicStoneModel::STATUS_WAITING;
-//            $data['award_status_zh'] = RealUserAwardMagicStoneModel::STATUS_ZH[RealUserAwardMagicStoneModel::STATUS_WAITING];
-//        }
-        return $data;
+        //临时指定的多次分享任务的活动
+        $activityIds2005 = explode(',', DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'activity_id_is_2005day'));
+        $approvalPosterForthwithId = explode(',', DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'tmp_rule_last_activity_id'));
+        $oldRuleLastActivityId = explode(',', DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'old_rule_last_activity_id'));
+        if (in_array($activityId, $activityIds2005) && $joinRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_QUALIFIED) {
+            // 2005天发放奖励的活动，审核成功的 显示人工发放
+            $returnData['award_amount'] = "--";
+            $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE;
+            $returnData['award_status_zh'] = "人工发放";
+        } elseif (!empty($joinRecord['award_id']) || !empty($joinRecord['points_award_id']))  {
+            // 发奖记录id不为空，说明奖励已经发放
+            $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE;
+            $returnData['award_status_zh'] = ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE];
+            // 如果发的是红包 - 查询红包金额
+            !empty($joinRecord['award_id']) && $returnData['award_type'] = Constants::ERP_ACCOUNT_NAME_CASH_CODE;
+            // TODO qingfeng.lian  红包金额查询的问题
+        } elseif ($activityId <= $approvalPosterForthwithId && $activityId > $oldRuleLastActivityId && $joinRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_QUALIFIED) {
+            // 发奖记录id为空，改为统一发放之后到临时支持即时发放时中间可能存在没有记录奖励id的数据，这部分数据有是已发放的
+            $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE;
+            $returnData['award_status_zh'] = ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE];
+            // 这中间都是统一发放的 所以直接查询奖励即可
+            $returnData['award_amount'] = ErpUserEventTaskAwardGoldLeafModel::getRecord(['activity_id' => $activityId, 'student_id' => $joinRecord['student_id']])['award_num'] ?? 0;
+        } elseif ($joinRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_WAIT) {
+            // 待审核 - 待发放
+            $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING;
+            $returnData['award_status_zh'] = ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING];
+        } else {
+            // 审核未通过
+            $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED;
+            $returnData['award_status_zh'] = ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED];
+        }
+        return $returnData;
     }
 
     /**
-     * 过滤活动的任务列表数据
-     * @param $taskListData
+     * 过滤活动的分享任务列表数据 - 如果是特殊活动只返回第一个分享任务信息
+     * 活动设置: 1.多次分享任务 2.奖励延时发放,但是手动提前发放奖励的活动ID,分享任务使用第一个任务
      * @param $activityId
-     * @param $taskNumCount
-     * @return mixed
+     * @param $taskListData
+     * @return array
      */
-    private static function filterSpecialActivityTaskData($taskListData, $activityId, $taskNumCount)
+    private static function filterSpecialActivityTaskData($activityId, $taskListData)
     {
         //活动设置为1.多次分享任务 2.奖励延时发放,但是手动提前发放奖励的活动ID,分享任务使用第一个任务
-//        $specialDictActivityIds = explode(',', RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, '2000_send_award_activity_id'));
-//        if (in_array($activityId, $specialDictActivityIds)) {
-//            return [[$taskListData[0]], 1];
-//        }
-        return [$taskListData, $taskNumCount];
+        $specialDictActivityIds = explode(',', DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'activity_id_is_2005day'));
+        if (in_array($activityId, $specialDictActivityIds)) {
+            return [[$taskListData[0]], 1];
+        }
+        return [$taskListData, count($taskListData)];
     }
 
     /**

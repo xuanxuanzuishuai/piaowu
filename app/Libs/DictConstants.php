@@ -1129,7 +1129,7 @@ class DictConstants {
             'week_activity_send_award_task_id',  // 周周领奖发放奖励时对应的task_id
             'white_list_last_first_pay_time',   // 周周领奖白名单最后的首次付费时间
             'tmp_rule_last_activity_id',  // 临时规则最后的活动id
-            'activity_id_is_2005day',   // 2005天发放的活动id
+            'activity_id_is_2005day',   // 2005天发放奖励的特殊活动id-这些活动手动发放
         ],
     ];
 
