@@ -17,6 +17,7 @@ use App\Libs\MysqlDB;
 use App\Libs\PhpMail;
 use App\Libs\RealDictConstants;
 use App\Libs\SimpleLogger;
+use App\Models\OperationActivityModel;
 
 abstract class CheckDataBaseService
 {
@@ -27,18 +28,20 @@ abstract class CheckDataBaseService
     const LOG_TITLE             = 'check_data'; // 日志输出标记
 
     // 错误码
-    const ERR_CODE_ACTIVITY_STUDENT_REPEAT = 1001;
-    const ERR_CODE_STUDENT_AWARD_UNEQUAL   = 1002;
-    const ERR_CODE_STUDENT_NOT_FOUND       = 1003;
-    const ERR_CODE_ACTIVITY_NOT_FOUND      = 1004;
-    const ERR_CODE_ACTIVITY_NOT_START      = 1005;
+    const ERR_CODE_ACTIVITY_STUDENT_REPEAT   = 1001;
+    const ERR_CODE_STUDENT_AWARD_UNEQUAL     = 1002;
+    const ERR_CODE_STUDENT_NOT_FOUND         = 1003;
+    const ERR_CODE_ACTIVITY_NOT_FOUND        = 1004;
+    const ERR_CODE_ACTIVITY_NOT_START        = 1005;
+    const ERR_CODE_ACTIVITY_AWARD_PRIZE_TYPE = 1006;
     // 错误码对应的文字
     const ERR_CODE_MSG = [
-        self::ERR_CODE_ACTIVITY_STUDENT_REPEAT => '同一个用户同一个活动奖励出现重复',
-        self::ERR_CODE_STUDENT_AWARD_UNEQUAL   => '用户同一个活动奖励和用户实际应得奖励不符',
-        self::ERR_CODE_STUDENT_NOT_FOUND       => '用户不存在',
-        self::ERR_CODE_ACTIVITY_NOT_FOUND      => '活动不存在',
-        self::ERR_CODE_ACTIVITY_NOT_START      => '活动未到发放奖励时间但是奖励已发放',
+        self::ERR_CODE_ACTIVITY_STUDENT_REPEAT   => '同一个用户同一个活动奖励出现重复',
+        self::ERR_CODE_STUDENT_AWARD_UNEQUAL     => '用户同一个活动奖励和用户实际应得奖励不符',
+        self::ERR_CODE_STUDENT_NOT_FOUND         => '用户不存在',
+        self::ERR_CODE_ACTIVITY_NOT_FOUND        => '活动不存在',
+        self::ERR_CODE_ACTIVITY_NOT_START        => '活动未到发放奖励时间但是奖励已发放',
+        self::ERR_CODE_ACTIVITY_AWARD_PRIZE_TYPE => '活动奖励发放类型错误',
     ];
     protected static $checkStartTime           = 0;     // 获取活动的时间范围 - 开始时间
     protected static $checkEntTime             = 0;     // 获取活动的时间范围 - 截止时间
@@ -61,8 +64,8 @@ abstract class CheckDataBaseService
             throw new RunTimeException(['app_id_is_error'], [static::DB_TYPE]);
         }
         self::$checkStartTime = strtotime(date("Y-m-d H:i:s", strtotime("-" . static::START_DAY . " day")));
-        self::$checkEntTime   = time();
-        self::$db             = MysqlDB::getDB(static::DB_TYPE);
+        self::$checkEntTime = time();
+        self::$db = MysqlDB::getDB(static::DB_TYPE);
         self::setOldRuleLastActivityId();
     }
 
@@ -101,20 +104,27 @@ abstract class CheckDataBaseService
                 $tmp['err_code'] = self::ERR_CODE_STUDENT_NOT_FOUND;
             } elseif (empty($activityList[$item['activity_id']])) {
                 $tmp['err_code'] = self::ERR_CODE_ACTIVITY_NOT_FOUND;
+            } elseif (!in_array($activityList[$item['activity_id']]['award_prize_type'], [OperationActivityModel::AWARD_PRIZE_TYPE_IN_TIME, OperationActivityModel::AWARD_PRIZE_TYPE_DELAY])) {
+                $tmp['err_code'] = self::ERR_CODE_ACTIVITY_AWARD_PRIZE_TYPE;
+            } elseif ($activityList[$item['activity_id']]['award_prize_type'] == OperationActivityModel::AWARD_PRIZE_TYPE_IN_TIME) {
+                /** 立即发放奖励的活动，检查逻辑在这里处理 */
+                $sharePosterInfo = static::getStudentActivitySharePosterInfo($item);
+                $errCode = self::checkForthwithSendActivityData($item, $sharePosterInfo);
+                !empty($errCode) && $tmp['err_code'] = $errCode;
             } elseif ($item['total'] > 1) {
                 $tmp['err_code'] = self::ERR_CODE_ACTIVITY_STUDENT_REPEAT;
             } elseif ($item['create_time'] - $activityList[$item['activity_id']]['send_award_time'] > self::SEND_AWARD_TIME_DELAY) {
                 // 由于活动奖励发放时间都是系统自动生成发放当天的0点，但是发放脚本时间一般是当天12点开始跑，所以发放时间计算到当天晚上
-                $tmp['err_code']                 = self::ERR_CODE_ACTIVITY_NOT_START;
+                $tmp['err_code'] = self::ERR_CODE_ACTIVITY_NOT_START;
                 $tmp['activity_send_award_time'] = date("Y-m-d H:i:s", $activityList[$item['activity_id']]['send_award_time']);
             } else {
                 $studentDeservedRewards = static::getStudentDeservedRewards($studentList[$item['uuid']]['id'], $item['activity_id'], $item['create_time']);
                 if ($item['award_amount'] != $studentDeservedRewards) {
-                    $tmp['err_code']                 = self::ERR_CODE_STUDENT_AWARD_UNEQUAL;
-                    $tmp['send_award_status']        = $item['award_status'];
-                    $tmp['award_num']                = $item['award_amount'];
+                    $tmp['err_code'] = self::ERR_CODE_STUDENT_AWARD_UNEQUAL;
+                    $tmp['send_award_status'] = $item['award_status'];
+                    $tmp['award_num'] = $item['award_amount'];
                     $tmp['student_deserved_rewards'] = $studentDeservedRewards;
-                    $tmp['student_id']               = $studentList[$item['uuid']]['id'];
+                    $tmp['student_id'] = $studentList[$item['uuid']]['id'];
                 }
             }
             if (!empty($tmp['err_code'])) {
@@ -181,6 +191,28 @@ abstract class CheckDataBaseService
             $mail = !empty($mail) ? explode(',', $mail) : [];
         }
         return $mail;
+    }
+
+    /**
+     * 检查活动类型是立即发放的所有奖励数据
+     * 检查规则， 同一个活动，同一个用户 通过次数已经获得到的总的奖励额度
+     * 为了减少查询 同一个用户同一个活动只处理一次，第二次进入跳过
+     * @return int
+     */
+    private static function checkForthwithSendActivityData($sendUserAwardInfo, $sharePosterInfo = [])
+    {
+        $passNum = $sharePosterInfo['task_num'] ?? 0;
+        $activityId = $sharePosterInfo['activity_id'] ?? 0;
+        $awareRuleList = static::$sharePosterPassAwardRule[$activityId] ?? [];
+        $awareRuleInfo = $awareRuleList[$passNum] ?? [];
+        $userAwardNum = $sendUserAwardInfo['award_num'] ?? 0;
+        if (empty($passNum) || empty($userAwardNum) || empty($awareRuleInfo['award_amount'])) {
+            return self::ERR_CODE_STUDENT_AWARD_UNEQUAL;
+        }
+        if ($awareRuleInfo['award_amount'] != $userAwardNum) {
+            return  self::ERR_CODE_STUDENT_AWARD_UNEQUAL;
+        }
+        return '';
     }
 
     // 获取检查数据

@@ -74,13 +74,13 @@ class SharePosterPassAwardRuleModel extends Model
                 WeekActivityModel::$table . '.name',
                 WeekActivityModel::$table . '.start_time',
                 WeekActivityModel::$table . '.end_time',
-                self::$table . '.task_num',
+                self::$table . '.success_pass_num',
                 self::$table . '.activity_id',
-                "activity_task" => Medoo::raw('concat_ws(:separator,'.self::$table . '.activity_id'.','.self::$table . '.task_num'.')',[":separator"=>'-']),
+                "activity_task" => Medoo::raw('concat_ws(:separator,'.self::$table . '.activity_id'.','.self::$table . '.success_pass_num'.')',[":separator"=>'-']),
             ],
             [
                 self::$table . '.activity_id' => $activityIds,
-                'GROUP' => [self::$table . '.activity_id', self::$table . '.task_num',],
+                'GROUP' => [self::$table . '.activity_id', self::$table . '.success_pass_num',],
             ]);
         return empty($list) ? [] : $list;
     }

@@ -1100,7 +1100,7 @@ class WeekActivityService
             'student_id' => $studentInfo['student_id'],
             'activity_id' => $activityIds,
             'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
-            'task_num' => array_unique(array_column($activityTaskList, 'task_num')),
+            'task_num' => array_unique(array_column($activityTaskList, 'success_pass_num')),
         ], ["activity_task" => Medoo::raw('concat_ws(:separator,activity_id,task_num)', [":separator" => '-'])]);
         // 差集
         $diffActivityTaskNum = array_diff(array_column($activityTaskList, 'activity_task'), array_column($haveQualifiedActivityIds, 'activity_task'));
@@ -1109,7 +1109,7 @@ class WeekActivityService
         } else {
             // 交集
             $canPartakeActivity = array_intersect_key($activityTaskList, array_flip($diffActivityTaskNum));
-            array_multisort(array_column($canPartakeActivity, 'start_time'), SORT_DESC, array_column($canPartakeActivity, 'task_num'), SORT_ASC, $canPartakeActivity);
+            array_multisort(array_column($canPartakeActivity, 'start_time'), SORT_DESC, array_column($canPartakeActivity, 'success_pass_num'), SORT_ASC, $canPartakeActivity);
             $reCardActivity['no_re_activity_reason'] = self::ACTIVITY_RETRY_YES;
             $reCardActivity['list'] = $canPartakeActivity;
         }
