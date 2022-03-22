@@ -22,6 +22,7 @@ use App\Models\Dss\DssWechatOpenIdListModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpEventModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
+use App\Models\SharePosterModel;
 use App\Models\UserPointsExchangeOrderModel;
 use App\Models\UserPointsExchangeOrderWxModel;
 use App\Models\WeChatAwardCashDealModel;
@@ -155,14 +156,23 @@ class CashGrantService
             //如果pre环境需要特定的user_id才可以接收
             if (($_ENV['ENV_NAME'] == 'pre' && in_array($userWxInfo['open_id'], explode(',', RedisDB::getConn()->get('red_pack_white_open_id')))) || $_ENV['ENV_NAME'] == 'prod') {
                 //已绑定微信推送红包
-                $weChatPackage = new WeChatPackage($userWxInfo['app_id'], $userWxInfo['busi_type']);
-                $openId = $userWxInfo['open_id'];
-                list($actName, $sendName, $wishing) = self::getRedPackConfigWord($keyCode);
-                //请求微信发红包
-                $resultData = $weChatPackage->sendPackage($mchBillNo, $actName, $sendName, $openId, $awardBaseInfo['award_amount'], $wishing, 'redPack');
-                SimpleLogger::info('we chat send red pack result data:', $resultData);
-                $status = trim($resultData['result_code']) == WeChatAwardCashDealModel::RESULT_SUCCESS_CODE ? ErpUserEventTaskAwardModel::STATUS_GIVE_ING : ErpUserEventTaskAwardModel::STATUS_GIVE_FAIL;
-                $resultCode = trim($resultData['err_code']);
+
+                $redis = RedisDB::getConn(); //走一次open_id白名单校验
+                $openIdBlackInfo = $redis->hget('black_198_open_id_list', $userWxInfo['open_id']);
+                if (!empty($openIdBlackInfo) && SharePosterModel::getRecord(['award_id' => $awardId, 'type' => SharePosterModel::TYPE_CHECKIN_UPLOAD]) ) {
+                    $status = ErpUserEventTaskAwardModel::STATUS_DISABLED;
+                    $resultCode = WeChatAwardCashDealModel::RESULT_FAIL_CODE;
+                } else {
+                    $weChatPackage = new WeChatPackage($userWxInfo['app_id'], $userWxInfo['busi_type']);
+                    $openId = $userWxInfo['open_id'];
+                    list($actName, $sendName, $wishing) = self::getRedPackConfigWord($keyCode);
+                    //请求微信发红包
+                    $resultData = $weChatPackage->sendPackage($mchBillNo, $actName, $sendName, $openId, $awardBaseInfo['award_amount'], $wishing, 'redPack');
+                    SimpleLogger::info('we chat send red pack result data:', $resultData);
+                    $status = trim($resultData['result_code']) == WeChatAwardCashDealModel::RESULT_SUCCESS_CODE ? ErpUserEventTaskAwardModel::STATUS_GIVE_ING : ErpUserEventTaskAwardModel::STATUS_GIVE_FAIL;
+                    $resultCode = trim($resultData['err_code']);
+                }
+
             } else {
                 SimpleLogger::info('now env not satisfy', ['award_id' => $awardId]);
                 $status = ErpUserEventTaskAwardModel::STATUS_GIVE_FAIL;
