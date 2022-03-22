@@ -30,6 +30,11 @@ class BillMapService
             $openId = $sceneData['open_id'];
             unset($sceneData['open_id']);
         }
+        $isSuccess = 0;
+        if (!empty($sceneData['is_success'])) {
+            $isSuccess = $sceneData['is_success'];
+            unset($sceneData['is_success']);
+        }
 
         //检测票据是否存在param_map中
         if (!empty($sceneData['qr_id'])) {
@@ -76,6 +81,7 @@ class BillMapService
             'create_time' => time(),
             'type' => $paramInfo['type'],
             'buy_channel'=>$paramInfo['c'] ?? 0,
+            'is_success' => $isSuccess
         ];
         if (!empty($openId)) {
             $insertData['open_id'] = $openId;
