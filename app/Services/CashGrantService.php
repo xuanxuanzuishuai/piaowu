@@ -106,6 +106,13 @@ class CashGrantService
 
         if ($awardDetailInfo['app_id'] == Constants::SMART_APP_ID) {
             $studentInfo = DssStudentModel::getRecord(['uuid' => $awardDetailInfo['uuid']]);
+            //黑名单校验
+            $redis = RedisDB::getConn();
+            $info = $redis->hget('black_198_uuid_list', $awardDetailInfo['uuid']);
+            if (!empty($info) && SharePosterModel::getRecord(['award_id' => $awardDetailInfo['award_id'], 'type' => SharePosterModel::TYPE_CHECKIN_UPLOAD]) ) {
+                return false;
+            }
+
             //完成的体验任务
             if (in_array($awardDetailInfo['event_task_id'], explode(',', DictConstants::get(DictConstants::NODE_RELATE_TASK, '2')))) {
                 $giftCodeInfo = DssGiftCodeModel::hadPurchasePackageByType($studentInfo['id']);
