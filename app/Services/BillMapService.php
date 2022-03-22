@@ -24,6 +24,13 @@ class BillMapService
      */
     public static function mapDataRecord($sceneData, $parentBillId, $studentId)
     {
+        //bill_map增加参数，避免对以往造成影响
+        $openId = NULL;
+        if (!empty($sceneData['open_id'])) {
+            $openId = $sceneData['open_id'];
+            unset($sceneData['open_id']);
+        }
+
         //检测票据是否存在param_map中
         if (!empty($sceneData['qr_id'])) {
             $paramInfo = MiniAppQrService::getQrInfoById($sceneData['qr_id']);
@@ -70,6 +77,9 @@ class BillMapService
             'type' => $paramInfo['type'],
             'buy_channel'=>$paramInfo['c'] ?? 0,
         ];
+        if (!empty($openId)) {
+            $insertData['open_id'] = $openId;
+        }
         $id = BillMapModel::insertRecord($insertData);
         if (empty($id)) {
             SimpleLogger::error('insert bill map data error', $insertData);
