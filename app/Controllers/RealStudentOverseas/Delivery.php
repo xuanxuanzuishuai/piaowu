@@ -41,11 +41,6 @@ class Delivery extends ControllerBase
                 'error_code' => 'mobile_is_required'
             ],
             [
-                'key' => 'sms_code',
-                'type' => 'required',
-                'error_code' => 'sms_code_is_required'
-            ],
-            [
                 'key' => 'country_code',
                 'type' => 'required',
                 'error_code' => 'country_code_is_required'

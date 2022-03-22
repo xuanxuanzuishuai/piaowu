@@ -52,10 +52,7 @@ class DeliveryService
         if (empty($phoneNumberValid)) {
             throw new RunTimeException(['invalid_mobile']);
         }
-        //验证手机验证码
-        if (!CommonServiceForApp::checkValidateCode($params['mobile'], $params['sms_code'], $params['country_code'])) {
-            throw new RunTimeException(['validate_code_error']);
-        }
+
         //校验社交联系账号参数
         $extData = [];
         if (!empty($params['social_account'])) {
