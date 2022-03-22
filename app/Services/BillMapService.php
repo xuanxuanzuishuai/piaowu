@@ -10,6 +10,7 @@ namespace App\Services;
 
 
 use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use App\Models\BillMapModel;
 use App\Models\ParamMapModel;
 
@@ -58,7 +59,7 @@ class BillMapService
             if ($identityData['type'] == ParamMapModel::TYPE_STUDENT) {
                 $paramInfo = MiniAppQrService::getSmartQRAliOss($studentId, $identityData['type'], $sceneData);
             }
-        }elseif(!empty($sceneData['c'])){
+        }elseif(!Util::emptyExceptZero($sceneData['c'])){
             $paramInfo = [
                 'id'        => 0,
                 'user_id'   => 0,
