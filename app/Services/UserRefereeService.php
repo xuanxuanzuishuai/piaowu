@@ -11,6 +11,7 @@ use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\AgentAwardDetailModel;
+use App\Models\BillMapModel;
 use App\Models\DictModel;
 use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssErpPackageV1Model;
@@ -186,6 +187,8 @@ class UserRefereeService
     public static function buyDeal($buyPreStudentInfo, $packageInfo, $appId, $parentBillId)
     {
         if ($appId == Constants::SMART_APP_ID) {
+            //更新一下订单记录的状态
+            BillMapModel::batchUpdateRecord(['is_success' => 1], ['bill_id' => $parentBillId]);
             //代理奖励
             AgentService::agentAwardLogic($buyPreStudentInfo, $parentBillId, $packageInfo);
             // 更新用户微信标签
