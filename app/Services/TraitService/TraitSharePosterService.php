@@ -31,7 +31,9 @@ trait TraitSharePosterService
     public static function checkIsNewRule($activityId)
     {
         $tmpRuleLastActivityId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'tmp_rule_last_activity_id');
-        if ($activityId > $tmpRuleLastActivityId) {
+        $activityId2005day = explode(',', DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'activity_id_is_2005day'));
+        // 2005天发放的哪些特定活动算新规则
+        if ($activityId > $tmpRuleLastActivityId && in_array($activityId, $activityId2005day)) {
             return true;
         }
         // 如果活动类型是即时发奖，那么也属于新规格

@@ -1150,6 +1150,7 @@ class DictConstants {
             'dss_week_activity_detail',         // 周周领奖详情页连接
             'dss_gold_left_shop_url',           // 金叶子商城链接
             'dss_gold_left_goods_detail',       // 金叶子商城产品包详情页
+            'dss_activity_check_list',          // 用户参与周周领奖活动审核详情页
         ],
     ];
 

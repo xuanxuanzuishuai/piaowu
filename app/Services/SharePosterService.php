@@ -946,12 +946,23 @@ class SharePosterService
             $wechatConfigId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'refused_poster_wx_msg_id');
             QueueService::sendUserWxMsg(Constants::SMART_APP_ID, $poster['student_id'], $wechatConfigId, [
                 'replace_params' => [
-                    'url' => DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'dss_share_poster_history_list')
+                    'url' => self::getActivityCheckListUrl($poster['activity_id'], $poster['id']),
                 ],
             ]);
         }
 
         return $update > 0;
+    }
+
+    /**
+     * 返回用户周周领奖活动参与记录审核详情页链接
+     * @param $activityId
+     * @param $sharePosterId
+     * @return array|mixed|string|string[]|null
+     */
+    public static function getActivityCheckListUrl($activityId, $sharePosterId) {
+        $url = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'dss_activity_check_list');
+        return str_replace(['{{activityId}}', '{{sharePosterId}}'], [$activityId, $sharePosterId], $url);
     }
 
     /**
