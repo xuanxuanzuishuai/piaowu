@@ -1120,6 +1120,10 @@ class SharePosterService
             $returnData['award_status_zh'] = ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE];
             // 这中间都是统一发放的 所以直接查询奖励即可
             $returnData['award_amount'] = ErpUserEventTaskAwardGoldLeafModel::getRecord(['activity_id' => $activityId, 'student_id' => $joinRecord['student_id']])['award_num'] ?? 0;
+        } elseif ($joinRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_QUALIFIED) {
+            // 审核通过 - 已发放
+            $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE;
+            $returnData['award_status_zh'] = ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE];
         } elseif ($joinRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_WAIT) {
             // 待审核 - 待发放
             $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING;
