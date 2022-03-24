@@ -266,6 +266,13 @@ class SharePosterService
                 continue;
             }
 
+            $userInfo = UserService::getUserWeiXinInfoByUserId(
+                Constants::SMART_APP_ID,
+                $poster['student_id'],
+                DssUserWeiXinModel::USER_TYPE_STUDENT,
+                DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER
+            );
+
             $awardId = $poster['award_id'];
             if (empty($awardId)) {
                 $taskId = 0;
@@ -290,7 +297,9 @@ class SharePosterService
                     $redis = RedisDB::getConn();
                     $info = $redis->hget('black_198_uuid_list', $poster['uuid']);
 
-                    if (empty($info)) {
+                    $openIdBlackInfo = $redis->hget('black_198_open_id_list', $userInfo['open_id']);
+
+                    if (empty($info) && empty($openIdBlackInfo)) {
                         $taskRes = self::completeTask($poster['uuid'], $taskId, ErpUserEventTaskModel::EVENT_TASK_STATUS_COMPLETE);
                         if (empty($taskRes['user_award_ids'])) {
                             throw new RuntimeException(['empty erp award ids']);
@@ -323,12 +332,7 @@ class SharePosterService
             if (empty($updateRecord)) {
                 throw new RunTimeException(['update_failure']);
             }
-            $userInfo = UserService::getUserWeiXinInfoByUserId(
-                Constants::SMART_APP_ID,
-                $poster['student_id'],
-                DssUserWeiXinModel::USER_TYPE_STUDENT,
-                DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER
-            );
+
             // 发送审核消息队列
             QueueService::checkinPosterMessage($poster['day'], $status, $userInfo['open_id'], Constants::SMART_APP_ID);
         }
