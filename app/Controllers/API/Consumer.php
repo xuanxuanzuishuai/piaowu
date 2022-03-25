@@ -1156,7 +1156,7 @@ class Consumer extends ControllerBase
         $appId = $paramMapInfo['package']['app_id'] ?? 0;
         $packageType = $paramMapInfo['package_contain_category_group'] ?? [];
         // 获取用户是否存在
-        $studentInfo = DssStudentModel::getRecord(['uuid' => $paramMapInfo['student']['uuid']], ['id']);
+        $studentInfo = StudentService::getStudentInfo($paramMapInfo['student']['uuid']);
         if (empty($studentInfo)) {
             SimpleLogger::info('student_not_found', ['topic' => $topicName, 'params' => $params, 'student' => $studentInfo]);
             return HttpHelper::buildResponse($response, []);

@@ -13,6 +13,7 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Dss;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\PhpMail;
 use App\Libs\RedisDB;
@@ -491,5 +492,20 @@ class StudentService
             return false;
         }
         return StudentService::studentLoginActivePushQueue($appId, $studentInfo['id'], $activeType, $channelId);
+    }
+
+    /**
+     * 获取学生信息
+     * @param $studentUUID
+     * @return array
+     */
+    public static function getStudentInfo($studentUUID)
+    {
+        $studentInfo = DssStudentModel::getRecord(['uuid' => $studentUUID], ['id']);
+        if (empty($studentInfo)) {
+            SimpleLogger::info('getStudentInfo_db_not_found', ['uuid' => $studentUUID,'student' => $studentInfo]);
+            $studentInfo = (new Dss())->getStudentBaseInfo($studentUUID);
+        }
+        return is_array($studentInfo) ? $studentInfo : [];
     }
 }

@@ -29,6 +29,7 @@ class Dss
     const GET_USER_EXCHANGE_NUM = '/op/user/get_user_can_exchange'; //智能有效用户
     const GET_STUDENT_REPEAT_INFO = '/api/operation/check_student_repeat'; //检测用户是否为被标记为重复用户(是否是薅羊毛用户)
     const GET_USER_FIRST_PAY_TIME = '/op/user/get_user_first_pay_time'; //获取用户首次付费时间
+    const GET_USER_BASE_INFO = '/op/user/get_info'; //获取用户基本信息
 
     private $host;
 
@@ -301,6 +302,25 @@ class Dss
             return [];
         }
         SimpleLogger::info('getStudentIsRepeatInfo', [$studentIds, $res]);
+        return !empty($res['data']) ? $res['data'] : [];
+    }
+
+    /**
+     * 获取用户基本信息
+     * @param $studentUUID
+     * @return array|mixed
+     */
+    public function getStudentBaseInfo($studentUUID)
+    {
+        $params = [
+            'uuid' => $studentUUID,
+        ];
+        $res    = self::commonAPI(self::GET_USER_BASE_INFO, $params, 'POST');
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            SimpleLogger::error('getStudentBaseInfo_error', [$res, $params]);
+            return [];
+        }
+        SimpleLogger::info('getStudentBaseInfo', [$studentUUID, $res]);
         return !empty($res['data']) ? $res['data'] : [];
     }
 }
