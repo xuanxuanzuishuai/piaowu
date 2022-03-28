@@ -932,8 +932,8 @@ class WeekActivityService
         $retryUploadActivityList = self::getRetryUploadActivityList($studentInfo['id'], $studentInfo['uuid'], $studentInfo['country_code']);
         // 排序 - 当前活动未超过24小时  当期-往期(活动开始时间倒序)，  当期活动超过24小时 往期(活动开始时间倒序)-当期
         $newActivityList = [];
-        if (!empty($retryUploadActivityList) && !empty($activityList)) {
-            if (time() - $activityInfo['activity_id'] > Util::TIMESTAMP_ONEDAY) {
+        if (!empty($retryUploadActivityList) && !empty($activityInfo)) {
+            if (time() - $activityInfo['end_time'] > Util::TIMESTAMP_ONEDAY) {
                 $newActivityList = array_merge([$activityInfo], $retryUploadActivityList);
             } else {
                 $newActivityList = array_merge($retryUploadActivityList, [$activityInfo]);
