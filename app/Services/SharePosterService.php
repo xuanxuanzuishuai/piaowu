@@ -750,7 +750,7 @@ class SharePosterService
         ];
         $operationStudentActivity = [];
         // 获取活动奖励信息列表
-        $passAwardList = array_column(SharePosterPassAwardRuleModel::getRecord(['activity_id' => $activityInfo['activity_id']]), 'award_amount', 'success_pass_num');
+        $passAwardList = array_column(SharePosterPassAwardRuleModel::getRecords(['activity_id' => $activityInfo['activity_id']]), null, 'success_pass_num');
         krsort($passAwardList); // 排序 - 目的是后面能直接方便地取出最大次数的奖励
         //开始处理数据
         foreach ($posters as $key => $poster) {
@@ -781,15 +781,16 @@ class SharePosterService
                     'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
                 ]);
                 // 组装微信消息需要的参数
+                $awardNum = $passAwardList[$passNum]['award_amount'] ?? 0;
                 $replaceParams = [
                     'activity_name' => SharePosterService::formatWeekActivityName([
-                        'task_num_count' => $passAwardList[0]['success_pass_num'],
+                        'task_num_count' => reset($passAwardList)['success_pass_num'],
                         'start_time' => $activityInfo['start_time'],
                         'end_time' => $activityInfo['end_time'],
                     ]),
                     'url' => $msgUrl,
                     'passes_num' => $passNum,
-                    'award_num' => $passAwardList[$passNum] ?? 0,
+                    'award_num' => $awardNum . '金叶子',
                 ];
                 // 区分发奖规则 - 保存即时发奖的数据
                 if (self::checkIsNewRule($poster['activity_id'])) {
