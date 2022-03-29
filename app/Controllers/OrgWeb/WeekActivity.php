@@ -176,6 +176,12 @@ class WeekActivity extends ControllerBase
                 'value'=>[OperationActivityModel::AWARD_PRIZE_TYPE_IN_TIME, OperationActivityModel::AWARD_PRIZE_TYPE_DELAY],
                 'error_code' => 'award_prize_type_value_error'
             ],
+            [
+                'key' => 'delay_day',
+                'type' => 'max',
+                'value' => 10,
+                'error_code' => 'delay_day_max_is_ten'
+            ],
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);

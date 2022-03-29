@@ -1137,13 +1137,13 @@ class SharePosterService
             $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE;
             $returnData['award_status_zh'] = ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE];
         } elseif ($joinRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_WAIT) {
-            // 待审核 - 待发放
-            $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING;
-            $returnData['award_status_zh'] = ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING];
+            // 待审核 - 待发放  - 归属未获取
+            $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_NOT_OWN;
+            $returnData['award_status_zh'] = ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_NOT_OWN];
         } else {
-            // 审核未通过
-            $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED;
-            $returnData['award_status_zh'] = ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED];
+            // 审核未通过   - 归属未获取
+            $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_NOT_OWN;
+            $returnData['award_status_zh'] = ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_NOT_OWN];
         }
         return $returnData;
     }

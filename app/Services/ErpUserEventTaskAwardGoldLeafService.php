@@ -15,6 +15,7 @@ class ErpUserEventTaskAwardGoldLeafService
 {
     // 奖励发放状态对应的文字
     const STATUS_DICT = [
+        ErpUserEventTaskAwardGoldLeafModel::STATUS_NOT_OWN  => '未获取',
         ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED => '不发放',
         ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING => '待发放',
         ErpUserEventTaskAwardGoldLeafModel::STATUS_REVIEWING => '审核中',
