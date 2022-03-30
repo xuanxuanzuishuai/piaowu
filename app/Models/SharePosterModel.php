@@ -512,6 +512,7 @@ class SharePosterModel extends Model
     {
         $where = [
             'student_id' => $studentId,
+            'type' => self::TYPE_WEEK_UPLOAD,
             'GROUP' => ['activity_id'],
             'ORDER' => ['activity_id' => 'DESC'],
         ];
@@ -538,6 +539,9 @@ class SharePosterModel extends Model
                         student_id,
                         task_num,
                         verify_status,
+                        verify_time,
+                        award_id,
+                        points_award_id,
                         dense_rank() over ( PARTITION BY activity_id, task_num ORDER BY id DESC ) AS upload_order 
                     FROM
                         " . self::$table . " 
