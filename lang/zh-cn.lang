@@ -494,3 +494,6 @@ user_have_register_stop_exchange='您已是小叶子智能陪练用户，暂不�
 clean_is_join_is_required='清退用户是否可参与必填'
 clean_is_join_value_error='清退用户是否可参与参数错误'
 week_activity_student_cannot_upload='用户不能参与该活动'
+allocation_error='分配比例不是100'
+week_activity_ab_poster_test_empty='实验海报不能为空'
+week_activity_standard_poster='标准海报不能为空'

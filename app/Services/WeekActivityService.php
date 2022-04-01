@@ -28,12 +28,13 @@ use App\Models\SharePosterTaskListModel;
 use App\Models\TemplatePosterModel;
 use App\Models\WeekActivityModel;
 use App\Services\Queue\QueueService;
+use App\Services\TraitService\TraitWeekActivityTestAbService;
 use I18N\Lang;
 use Medoo\Medoo;
 
 class WeekActivityService
 {
-
+    use TraitWeekActivityTestAbService;
     const WEEK_ACTIVITY_TYPE = 1; //周周活动类型
     const MONTH_ACTIVITY_TYPE = 2; //月月活动类型
 
@@ -119,6 +120,8 @@ class WeekActivityService
             SimpleLogger::info("WeekActivityService:add insert operation_activity fail", ['data' => $activityData]);
             throw new RunTimeException(["add week activity fail"]);
         }
+        // 保存实验组数据
+        list($weekActivityData['has_ab_test']) = self::saveAllocationData($activityId, $data);
         // 保存周周领奖配置信息
         $weekActivityData['activity_id'] = $activityId;
         $weekActivityId = WeekActivityModel::insertRecord($weekActivityData);
@@ -127,6 +130,7 @@ class WeekActivityService
             SimpleLogger::info("WeekActivityService:add insert week_activity fail", ['data' => $weekActivityData]);
             throw new RunTimeException(["add week activity fail"]);
         }
+
         // 保存周周领奖扩展信息
         $activityExtData['activity_id'] = $activityId;
         $activityExtId = ActivityExtModel::insertRecord($activityExtData);
@@ -137,7 +141,7 @@ class WeekActivityService
         }
         // 保存海报关联关系
         $posterArray = array_merge($data['personality_poster'] ?? [], $data['poster'] ?? []);
-        $activityPosterRes = ActivityPosterModel::batchAddActivityPoster($activityId, $posterArray);
+        $activityPosterRes = ActivityPosterModel::batchInsertStudentActivityPoster($activityId, $posterArray);
         if (empty($activityPosterRes)) {
             $db->rollBack();
             SimpleLogger::info("WeekActivityService:add batch insert activity_poster fail", ['data' => $data]);
@@ -165,7 +169,8 @@ class WeekActivityService
     /**
      * 检查是否允许添加 - 检查添加必要的参数
      * @param $data
-     * @return bool
+     * @param int $type
+     * @return string
      */
     public static function checkAllowAdd($data, $type = self::MONTH_ACTIVITY_TYPE)
     {
@@ -202,6 +207,16 @@ class WeekActivityService
             }
             if (count($data['task_list']) > WeekActivityModel::MAX_TASK_NUM) {
                 return 'task_list_max_ten';
+            }
+
+            // 开启实验海报，则实验海报和标准海报都不能为空
+            if ($data['has_ab_test'] > 0) {
+                if (empty($data['ab_poster_list'])) {
+                    return 'week_activity_ab_poster_test_empty';
+                }
+                if (empty($data['poster'])) {
+                    return 'week_activity_standard_poster';
+                }
             }
         }
         return '';
@@ -342,6 +357,8 @@ class WeekActivityService
         $activityInfo['task_list'] = array_column($activityInfo['pass_award_rule_list'] ,'award_amount');
         // 获取uuid
         $activityInfo['designate_uuid'] = SharePosterDesignateUuidModel::getUUIDByActivityId($activityId);
+        // 获取测试海报数据
+        $activityInfo['ab_poster_list'] = self::getTestAbList($activityId);
         return $activityInfo;
     }
 
@@ -431,6 +448,8 @@ class WeekActivityService
             SimpleLogger::info("WeekActivityService:add update operation_activity fail", ['data' => $activityData, 'activity_id' => $activityId]);
             throw new RunTimeException(["update week activity fail"]);
         }
+        // 更新实验组数据
+        list($weekActivityData['has_ab_test']) = self::updateAllocationData($activityId, $data);
         // 更新周周领奖扩展信息
         $activityExtData['activity_id'] = $activityId;
         $res = ActivityExtModel::batchUpdateRecord($activityExtData, ['activity_id' => $activityId]);
