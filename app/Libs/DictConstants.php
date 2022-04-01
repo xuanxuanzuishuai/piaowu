@@ -1121,14 +1121,16 @@ class DictConstants {
         'type' => 'DSS_WEEK_ACTIVITY_CONFIG',
         'keys' => [
             'send_award_base_delay_second',  // 发放奖励基本延时时间 - 单位秒
-            'old_rule_last_activity_id',  // 旧规则最后的活动id
+            'old_rule_last_activity_id',  // 旧规则最后的活动id  - 之前的活动不支持多次分享
             'activity_over_allow_upload_second',  // 活动结束后允许上传时间，单位秒
             'send_award_gold_left_wx_msg_id',  // 发放奖励的消息id
             'refused_poster_wx_msg_id',  // 分享截图未通过消息id
             'approval_poster_wx_msg_id',  // 分享截图通过消息id
+            'approval_poster_forthwith_wx_msg_id',  // 即时发放奖励类型的活动分享截图通过消息id
             'week_activity_send_award_task_id',  // 周周领奖发放奖励时对应的task_id
             'white_list_last_first_pay_time',   // 周周领奖白名单最后的首次付费时间
             'tmp_rule_last_activity_id',  // 临时规则最后的活动id
+            'activity_id_is_2005day',   // 2005天发放奖励的特殊活动id-这些活动手动发放
         ],
     ];
 
@@ -1149,6 +1151,7 @@ class DictConstants {
             'dss_week_activity_detail',         // 周周领奖详情页连接
             'dss_gold_left_shop_url',           // 金叶子商城链接
             'dss_gold_left_goods_detail',       // 金叶子商城产品包详情页
+            'dss_activity_check_list',          // 用户参与周周领奖活动审核详情页
         ],
     ];
 

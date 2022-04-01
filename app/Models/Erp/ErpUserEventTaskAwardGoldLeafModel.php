@@ -14,6 +14,7 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
     public static $table = 'erp_user_event_task_award_gold_leaf';
 
     //奖励发放状态
+    const STATUS_NOT_OWN = -1;  // 未获取
     const STATUS_DISABLED = 0; // 不发放
     const STATUS_WAITING = 1; // 待发放
     const STATUS_REVIEWING = 2; // 审核中

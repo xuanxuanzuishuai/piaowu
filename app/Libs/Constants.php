@@ -79,6 +79,7 @@ class Constants
     const ERP_DICT_ACCOUNT_NAME_TYPE = 'student_account_app_type';
     // 积分账户类型  - 现金
     const ERP_ACCOUNT_NAME_CASH = '8_1001';
+    const ERP_ACCOUNT_NAME_CASH_CODE = '1001';  // 学生现金账户；配合app_id:  8_1001现金
     const ERP_ACCOUNT_NAME_MAGIC = '3001';  // 魔法石；配合app_id:  1_3001=魔法石
     const ERP_ACCOUNT_NAME_GOLD_LEFT = '3002';  // 金叶子；配合app_id:  8_3001=金叶子
 

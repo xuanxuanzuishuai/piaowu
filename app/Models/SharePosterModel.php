@@ -502,4 +502,90 @@ class SharePosterModel extends Model
 
         return $activityList;
     }
+
+    /**
+     * 获取学生参与过的周周领奖活动ID
+     * @param $studentId
+     * @return array
+     */
+    public static function getStudentJoinActivityList($studentId): array
+    {
+        $where = [
+            'student_id' => $studentId,
+            'type' => self::TYPE_WEEK_UPLOAD,
+            'GROUP' => ['activity_id'],
+            'ORDER' => ['activity_id' => 'DESC'],
+        ];
+        $data = self::getRecords($where, ['activity_id']);
+        return empty($data) ? [] : array_column($data, 'activity_id');
+    }
+
+    /**
+     * 查询用户参与记录：活动和分享任务次数分组
+     * 统计一个活动中用户参与次数， 成功，失败、等待审核
+     * @param $studentId
+     * @param $activityIds
+     * @return array
+     */
+    public static function getSharePosterHistoryGroupActivityIdAndTaskNum($studentId, $activityIds): array
+    {
+        $sql = "SELECT
+                    	tmp.*
+                FROM
+                    (
+                    SELECT
+                        id,
+                        activity_id,
+                        student_id,
+                        task_num,
+                        verify_status,
+                        verify_time,
+                        award_id,
+                        points_award_id,
+                        dense_rank() over ( PARTITION BY activity_id, task_num ORDER BY id DESC ) AS upload_order 
+                    FROM
+                        " . self::$table . " 
+                    WHERE
+                        student_id = " . $studentId . " 
+                        AND
+                        activity_id in (".implode(',', $activityIds).")
+                    ) AS tmp 
+                WHERE
+                    tmp.upload_order = 1";
+        $db = MysqlDB::getDB();
+        $data = $db->queryall($sql);
+        return is_array($data) ? $data : [];
+    }
+
+    /**
+     * 获取上传截图历史记录
+     * @param $data
+     * @param $page
+     * @param $count
+     * @return array
+     */
+    public static function getSharePosterHistory($data, $page, $count)
+    {
+        $returnData = ['total_count' => 0, 'list' => []];
+        $where = [
+        ];
+        if (!empty($data['student_id'])) {
+            $where['student_id'] = $data['student_id'];
+        }
+
+        if (!empty($data['activity_id'])) {
+            $where['activity_id'] = $data['activity_id'];
+        }
+
+        $returnData['total_count'] = self::getCount($where);
+        if (empty($returnData['total_count'])) {
+            return $returnData;
+        }
+
+        // 读取具体信息
+        $where['LIMIT'] = [($page-1)*$count, $count];
+        $where['ORDER'] = ['id' => 'DESC'];
+        $returnData['list'] = self::getRecords($where);
+        return $returnData;
+    }
 }

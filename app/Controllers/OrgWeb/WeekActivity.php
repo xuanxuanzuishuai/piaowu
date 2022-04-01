@@ -12,6 +12,7 @@ use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\Erp\ErpEventModel;
+use App\Models\OperationActivityModel;
 use App\Services\SharePosterDesignateUuidService;
 use App\Services\UserService;
 use App\Services\WeekActivityService;
@@ -163,6 +164,23 @@ class WeekActivity extends ControllerBase
                 'key' => 'priority_level',
                 'type' => 'integer',
                 'error_code' => 'priority_level_is_integer'
+            ],
+            [
+                'key' => 'award_prize_type',
+                'type' => 'required',
+                'error_code' => 'award_prize_type_is_required'
+            ],
+            [
+                'key' => 'award_prize_type',
+                'type' => 'in',
+                'value'=>[OperationActivityModel::AWARD_PRIZE_TYPE_IN_TIME, OperationActivityModel::AWARD_PRIZE_TYPE_DELAY],
+                'error_code' => 'award_prize_type_value_error'
+            ],
+            [
+                'key' => 'delay_day',
+                'type' => 'max',
+                'value' => 10,
+                'error_code' => 'delay_day_max_is_ten'
             ],
         ];
         $params = $request->getParams();

@@ -51,12 +51,36 @@ class DssCheckDataWeekAward extends CheckDataBaseService
             'student_id'      => $studentId,
             'activity_id'     => $activityId,
             'verify_status'   => SharePosterModel::VERIFY_STATUS_QUALIFIED,
-            'verify_time[<=]' => $createAwardTime
+            'verify_time[<=]' => $createAwardTime,
         ]);
         // var_dump($studentId, $activityId,$sharePosterCount, $createAwardTime);
         $activityPassAwardRule = self::getSharePosterPassAwardRule($activityId);
-        $deservedRewards       = $activityPassAwardRule[$sharePosterCount] ?? [];
+        $deservedRewards = $activityPassAwardRule[$sharePosterCount] ?? [];
         return $deservedRewards['award_amount'] ?? 0;
+    }
+
+    /**
+     * 获取学生某个活动中指定的分享任务审核通过的上传截图信息
+     * @param $studentId
+     * @param $activityId
+     * @param $taskNum
+     * @return int|mixed
+     */
+    public static function getStudentActivitySharePosterInfo($sendUserAwardInfo)
+    {
+        $studentUUID = $sendUserAwardInfo['uuid'] ?? '';
+        $activityId = $sendUserAwardInfo['activity_id'] ?? 0;
+        if (empty($studentUUID) || empty($activityId)) {
+            return [];
+        }
+        $studentInfo = DssStudentModel::getRecord(['uuid' => $studentUUID], ['id']);
+        $sharePosterInfo = SharePosterModel::getRecord([
+            'student_id'    => $studentInfo['id'],
+            'activity_id'   => $activityId,
+            'task_num'      => $sendUserAwardInfo['passes_num'],
+            'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
+        ]);
+        return is_array($sharePosterInfo) ? $sharePosterInfo : [];
     }
 
     /**
@@ -84,7 +108,7 @@ class DssCheckDataWeekAward extends CheckDataBaseService
     public static function getCheckData()
     {
         $awardTable = ErpUserEventTaskAwardGoldLeafModel::getTableNameWithDb();
-        $sql        = 'select award.activity_id,award.uuid,award.create_time,award.status as award_status,award.award_num as award_amount,count(*) as total from ' . $awardTable . ' as award' .
+        $sql = 'select award.activity_id,award.uuid,award.create_time,award.status as award_status,award.award_num as award_amount,count(*) as total from ' . $awardTable . ' as award' .
             ' where award.activity_id>' . self::$oldRuleLastActivityId .
             " and award_node='" . Constants::WEEK_SHARE_POSTER_AWARD_NODE . "'" .
             ' and create_time>=' . self::$checkStartTime . ' and create_time<=' . self::$checkEntTime .
@@ -109,7 +133,7 @@ class DssCheckDataWeekAward extends CheckDataBaseService
      */
     public static function getActivityList($activityIds)
     {
-        return array_column(WeekActivityModel::getRecords(['activity_id' => array_unique($activityIds)], ['activity_id', 'send_award_time']), null, 'activity_id');
+        return array_column(WeekActivityModel::getRecords(['activity_id' => array_unique($activityIds)], ['activity_id', 'send_award_time', 'award_prize_type']), null, 'activity_id');
     }
 
     public static function formatSendMail($abnormalData)
@@ -118,7 +142,7 @@ class DssCheckDataWeekAward extends CheckDataBaseService
         $content = '';
         foreach ($abnormalData as &$item) {
             $item['err_msg'] = self::ERR_CODE_MSG[$item['err_code']] ?? '';
-            $content         .= '活动id：' . $item['activity_id'] . '; 用户uuid：' . $item['uuid'] . '; 错误原因：' . $item['err_msg'] . '</br>';
+            $content .= '活动id：' . $item['activity_id'] . '; 用户uuid：' . $item['uuid'] . '; 错误原因：' . $item['err_msg'] . '</br>';
         }
         unset($item);
         return [$subject, $content];
