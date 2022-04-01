@@ -1192,8 +1192,8 @@ class SharePosterService
             /** 老数据 */
             if ($joinRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
                 /** 审核未通过 */
-                $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED;
-                $returnData['award_status_zh'] = ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED];
+                $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_NOT_OWN;
+                $returnData['award_status_zh'] = ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_NOT_OWN];
             } elseif ($joinRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_WAIT) {
                 /** 审核 - 未审核 - 未获取 */
                 $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_NOT_OWN;
