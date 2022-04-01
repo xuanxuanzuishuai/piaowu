@@ -1192,8 +1192,8 @@ class SharePosterService
             /** 老数据 */
             if ($joinRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
                 /** 审核未通过 */
-                $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED;
-                $returnData['award_status_zh'] = ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED];
+                $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_NOT_OWN;
+                $returnData['award_status_zh'] = ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_NOT_OWN];
             } elseif ($joinRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_WAIT) {
                 /** 审核 - 未审核 - 未获取 */
                 $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_NOT_OWN;
@@ -1269,8 +1269,8 @@ class SharePosterService
     private static function filterSpecialActivityTaskData($activityId, $taskListData)
     {
         //活动设置为1.多次分享任务 2.奖励延时发放,但是手动提前发放奖励的活动ID,分享任务使用第一个任务
-        $specialDictActivityIds = explode(',', DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'activity_id_is_2005day'));
-        if (in_array($activityId, $specialDictActivityIds)) {
+        $specialDictActivityIds = explode(',', DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'old_rule_last_activity_id'));
+        if ($activityId <= $specialDictActivityIds) {
             return [[$taskListData[0]], 1];
         }
         return [$taskListData, count($taskListData)];
