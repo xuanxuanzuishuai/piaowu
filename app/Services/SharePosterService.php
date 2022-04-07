@@ -190,6 +190,8 @@ class SharePosterService
                     list($tmpTaskNode['task_num'], $tmpTaskNode['award_amount'], $tmpTaskNode['award_type'],) = explode('-', $tmv);
                     $tmpTaskNode['verify_status'] = (int)$joinRecordFormat[$info['activity_id'] . '_' . $tmpTaskNode['task_num']]['verify_status'];
                     $tmpTaskNode['award_status'] = $joinRecordFormat[$info['activity_id'] . '_' . $tmpTaskNode['task_num']]['award_status'];
+                    $tmpTaskNode['points_award_id'] = $joinRecordFormat[$info['activity_id'] . '_' . $tmpTaskNode['task_num']]['points_award_id'];
+                    $tmpTaskNode['verify_time'] = $joinRecordFormat[$info['activity_id'] . '_' . $tmpTaskNode['task_num']]['verify_time'];
                     $tmpFormatAwardData = self::formatSharePosterAwardStatus($studentId, $info, $tmpTaskNode);
                     $tmpTaskNode['award_amount'] = $tmpFormatAwardData['award_amount'];
                     $tmpTaskNode['award_status'] = $tmpFormatAwardData['award_status'];
@@ -1144,8 +1146,6 @@ class SharePosterService
             'xyzop_1262_week_activity_two'
         ]);
         $wkIds = array_merge(explode(',', $wkIds), [$oneActivityId], explode(',', $twoActivityId));
-        // 是否是白名单用户
-        $whiteUUID = self::getWhiteUUIDList($studentId);
         $statusGiveZh = '已发放';
         // 逻辑处理
         if ($activityId > $approvalPosterForthwithId) {
@@ -1160,29 +1160,18 @@ class SharePosterService
                 $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_NOT_OWN;
                 $returnData['award_status_zh'] = ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_NOT_OWN];
             } elseif ($joinRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_QUALIFIED) {
-                if (!empty($whiteUUID)) {
-                    /** 白名单用户 - 审核通过 */
-                    if (date("m", $joinRecord['verify_time']) < date("m", time())) {
-                        /** 次月5日发放后变成已发放 */
-                        $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE;
-                        $returnData['award_status_zh'] = $statusGiveZh;
-                    } else {
-                        /** 次月5日前是待发放状态 */
-                        $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING;
-                        $returnData['award_status_zh'] = ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING];
-                    }
-                } elseif ($activityInfo['award_prize_type'] == OperationActivityModel::AWARD_PRIZE_TYPE_IN_TIME) {
-                    /** 非白名单用户 - 即时发奖 - 审核通过*/
+                if ($activityInfo['award_prize_type'] == OperationActivityModel::AWARD_PRIZE_TYPE_IN_TIME) {
+                    /** 即时发奖 - 审核通过*/
                     $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE;
                     $returnData['award_status_zh'] = $statusGiveZh;
                 } elseif ($activityInfo['award_prize_type'] == OperationActivityModel::AWARD_PRIZE_TYPE_DELAY) {
-                    /** 非白名单用户 - 统一发奖 - 审核通过 */
+                    /** 统一发奖 - 审核通过 */
                     if (!empty($joinRecord['points_award_id'])) {
-                        /** 非白名单用户 - 统一发奖 - 审核通过 - 已发奖励*/
+                        /** 统一发奖 - 审核通过 - 已发奖励*/
                         $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_GIVE;
                         $returnData['award_status_zh'] = $statusGiveZh;
                     } else {
-                        /** 非白名单用户 - 统一发奖 - 审核通过 - 未奖励*/
+                        /** 统一发奖 - 审核通过 - 未奖励*/
                         $returnData['award_status'] = ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING;
                         $returnData['award_status_zh'] = ErpUserEventTaskAwardGoldLeafService::STATUS_DICT[ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING];
                     }
