@@ -1269,8 +1269,9 @@ class SharePosterService
     private static function filterSpecialActivityTaskData($activityId, $taskListData)
     {
         //活动设置为1.多次分享任务 2.奖励延时发放,但是手动提前发放奖励的活动ID,分享任务使用第一个任务
-        $specialDictActivityIds = explode(',', DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'old_rule_last_activity_id'));
-        if ($activityId <= $specialDictActivityIds) {
+        $oldRuleLastActivityId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'old_rule_last_activity_id');
+        // 单次分享的活动： 最早一批不支持多次分享活动； 特殊活动
+        if ($activityId <= $oldRuleLastActivityId) {
             return [[$taskListData[0]], 1];
         }
         return [$taskListData, count($taskListData)];
