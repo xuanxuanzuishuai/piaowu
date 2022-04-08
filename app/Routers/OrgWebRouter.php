@@ -22,6 +22,7 @@ use App\Controllers\OrgWeb\AppPush;
 use App\Controllers\OrgWeb\Area;
 use App\Controllers\OrgWeb\Bill;
 use App\Controllers\OrgWeb\Channel;
+use App\Controllers\OrgWeb\ChannelLeads;
 use App\Controllers\OrgWeb\CopyManage;
 use App\Controllers\OrgWeb\CountingActivity;
 use App\Controllers\OrgWeb\Dept;
@@ -393,5 +394,10 @@ class OrgWebRouter extends RouterBase
         '/op_web/copy/list' => ['method' => ['get'], 'call' => CopyManage::class . ':list'],
         '/op_web/copy/update' => ['method' => ['post'], 'call' => CopyManage::class . ':update'],
 
+        /** 渠道线索管理 */
+        // 真人渠道线索列表
+        '/op_web/channel_leads/list' => ['method' =>['get'], 'call' => ChannelLeads::class . ':list'],
+        // 真人渠道线索录入
+        '/op_web/channel_leads/add' => ['method' =>['post'], 'call' => ChannelLeads::class . ':add'],
     ];
 }

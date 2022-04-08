@@ -41,7 +41,7 @@ class DeliveryService
      * @return array|bool|mixed
      * @throws RunTimeException
      */
-    private static function do(...$args)
+    public static function do(...$args)
     {
         if (empty($args) || empty($args[0]['params'])) {
             throw new RunTimeException(['params_empty']);
@@ -57,6 +57,14 @@ class DeliveryService
         $extData = [];
         if (!empty($params['social_account'])) {
             self::formatSocialAccount($params['social_account'], $params['social_account_type'], $extData);
+        } else {
+            !empty($params['wechat']) && $extData['wechat'] = trim($params['wechat']);
+            if (!empty($params['email'])) {
+                if (filter_var($params['email'], FILTER_VALIDATE_EMAIL) != true) {
+                    throw new RunTimeException(['email_address_error']);
+                }
+                $extData['email'] = trim($params['email']);
+            }
         }
         $studentData = RealStudentService::register($params['mobile'], $params['country_code'], $params['channel_id'], [], [], $params['login_type'], $extData);
         unset($studentData['student_id']);
