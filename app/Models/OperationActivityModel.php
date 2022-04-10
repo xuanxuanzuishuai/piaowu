@@ -207,10 +207,20 @@ WHERE
         } else {
             $studentCountryCode = $studentInfo['country_code'] ?? DssStudentModel::getRecord(['id' => $studentId], ['country_code'])['country_code'];
         }
-        if ($studentCountryCode == self::ACTIVITY_COUNTRY_CN) {
+        return self::getWeekActivityCountryCode($studentCountryCode);
+    }
+
+    /**
+     * 获取周周领奖活动投放区域
+     * @param $activityCountryCode
+     * @return array
+     */
+    public static function getWeekActivityCountryCode($activityCountryCode): array
+    {
+        if ($activityCountryCode == self::ACTIVITY_COUNTRY_CN) {
             // 国内+全球的标识
             $studentAllowJoinActivityCountryCode = [self::ACTIVITY_COUNTRY_ALL, self::ACTIVITY_COUNTRY_CN];
-        } elseif (!empty($studentCountryCode)) {
+        } elseif (!empty($activityCountryCode)) {
             // 国外+全球的标识
             $studentAllowJoinActivityCountryCode = [self::ACTIVITY_COUNTRY_ALL, self::ACTIVITY_COUNTRY_EN];
         } else {

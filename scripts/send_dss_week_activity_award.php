@@ -20,13 +20,11 @@ require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\Constants;
 use App\Libs\DictConstants;
-use App\Libs\RealDictConstants;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
+use App\Models\OperationActivityModel;
 use App\Models\RealSharePosterModel;
-use App\Models\RealUserAwardMagicStoneModel;
-use App\Models\RealWeekActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\WeekActivityModel;
 use App\Services\Queue\QueueService;
@@ -66,6 +64,11 @@ class ScriptSendDssWeekActivityAward
         }
         // 获取活动参与用户
         foreach ($activityList as $item) {
+            // 特殊活动不做处理
+            if (in_array($item['activity_id'], explode(",", DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'activity_id_is_2005day')))) {
+                SimpleLogger::info(self::$logTitle, ['msg' =>'activity_id_is_2005day', $item]);
+                continue;
+            }
             // 检查活动奖励是否已经发放
             $awardRecord = ErpUserEventTaskAwardGoldLeafModel::getRecord(['activity_id' => $item['activity_id']]);
             if (!empty($awardRecord)) {
@@ -112,7 +115,6 @@ class ScriptSendDssWeekActivityAward
 
     /**
      * 清理学生发放奖励延时时间
-     * @param $studentId
      * @return int
      */
     public static function clearWeekActivitySendAwardDeferSecond(): int
@@ -123,7 +125,7 @@ class ScriptSendDssWeekActivityAward
 
     /**
      * 获取所有当天到当天脚本运行脚本时间内应该结算的活动
-     * 只查新规则的活动
+     * 只查统一发放奖励的活动
      * @return array
      */
     public static function getSendAwardActivityList(): array
@@ -132,7 +134,8 @@ class ScriptSendDssWeekActivityAward
         return WeekActivityModel::getRecords([
             'send_award_time[>=]' => self::$todayFirstTime,
             'send_award_time[<=]' => self::$time,
-            'activity_id[>]'      => $oldRuleLastActivityId
+            'activity_id[>]'      => $oldRuleLastActivityId,
+            'award_prize_type'    => OperationActivityModel::AWARD_PRIZE_TYPE_DELAY,
         ]);
     }
 
@@ -169,6 +172,7 @@ class ScriptSendDssWeekActivityAward
 
     public static function returnResponse($isUnlock, $data)
     {
+        SimpleLogger::info(self::$time, ['msg'=>'returnResponse', $isUnlock, $data]);
         if ($isUnlock) {
             self::unlock();
         }
