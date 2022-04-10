@@ -1289,7 +1289,7 @@ class SharePosterService
         $time = time();
         foreach ($sharePosterData['list'] as $item) {
             $tmpList = [];
-            $tmpList['task_name'] = SharePosterService::formatWeekActivityName(array_merge($activityData, $item));
+            $tmpList['task_name'] = SharePosterService::formatWeekActivityTaskName(array_merge($activityData, $item));
             $tmpList['create_time'] = date("Y.m.d H:i", $item['create_time']);
             $tmpList['verify_status'] = $item['verify_status'];
             $tmpList['id'] = $item['id'];
