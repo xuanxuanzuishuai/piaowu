@@ -118,6 +118,7 @@ class RealWeekActivityModel extends Model
                 'w.clean_is_join',
                 'w.activity_country_code',
                 'w.has_ab_test',
+                'w.allocation_mode',
                 'a.award_rule',
                 'a.remark',
             ],

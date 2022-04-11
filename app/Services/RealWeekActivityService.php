@@ -100,7 +100,7 @@ class RealWeekActivityService
             throw new RunTimeException(["add_week_operation_activity_fail"]);
         }
         // 保存实验组数据
-        list($weekActivityData['has_ab_test']) = self::saveAllocationData($activityId, $data);
+        list($weekActivityData['has_ab_test'], $weekActivityData['allocation_mode']) = self::saveAllocationData($activityId, $data);
         // 保存周周领奖配置信息
         $weekActivityData['activity_id'] = $activityId;
         $weekActivityId = RealWeekActivityModel::insertRecord($weekActivityData);
@@ -187,13 +187,9 @@ class RealWeekActivityService
         }
 
         // 开启实验海报，则实验海报和标准海报都不能为空
-        if ($data['has_ab_test'] > 0) {
-            if (empty($data['ab_poster_list'])) {
-                return 'week_activity_ab_poster_test_empty';
-            }
-            if (empty($data['poster'])) {
-                return 'week_activity_standard_poster';
-            }
+        $checkAbData = self::checkAbPoster($data);
+        if (!empty($checkAbData)) {
+            return $checkAbData;
         }
         return '';
     }
@@ -333,7 +329,13 @@ class RealWeekActivityService
         // 获取uuid
         $activityInfo['designate_uuid'] = RealSharePosterDesignateUuidModel::getUUIDByActivityId($activityId);
         // 获取测试海报数据
-        $activityInfo['ab_poster_list'] = self::getTestAbList($activityId);
+        // 获取测试海报数据
+        $activityInfo['ab_test'] = [
+            'has_ab_test' => $activityInfo['has_ab_test'],
+            'allocation_mode' => $activityInfo['allocation_mode'],
+            'distribution_type' => $activityInfo['allocation_mode'],
+        ];
+        list($activityInfo['ab_test']['control_group'], $activityInfo['ab_test']['ab_poster_list']) = self::getTestAbList($activityId);
         return $activityInfo;
     }
 
@@ -424,7 +426,7 @@ class RealWeekActivityService
             throw new RunTimeException(["update week activity fail"]);
         }
         // 保存实验组数据
-        list($weekActivityData['has_ab_test']) = self::updateAllocationData($activityId, $data);
+        list($weekActivityData['has_ab_test'], $weekActivityData['allocation_mode']) = self::updateAllocationData($activityId, $data);
         // 当海报有变化时删除原有的海报
         if ($isDelPoster) {
             // 删除海报关联关系

@@ -120,6 +120,8 @@ class WeekActivityModel extends Model
                 'w.priority_level',
                 'w.activity_country_code',
                 'w.award_prize_type',
+                'w.has_ab_test',
+                'w.allocation_mode',
                 'a.award_rule',
                 'a.remark',
             ],

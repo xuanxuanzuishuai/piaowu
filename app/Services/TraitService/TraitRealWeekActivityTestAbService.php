@@ -12,7 +12,6 @@ use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
-use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\OperationActivityModel;
 use App\Models\RealWeekActivityPosterAbModel;
@@ -32,29 +31,26 @@ trait TraitRealWeekActivityTestAbService
     public static function saveAllocationData($activityId, $params)
     {
         SimpleLogger::info('saveAllocationData', [$activityId, $params]);
-        $hasTestAb = $params['has_ab_test'] ?? OperationActivityModel::HAS_AB_TEST_NO;
-        $hasTestAbList = [];
-        if (!empty($params['has_ab_test']) && !empty($params['ab_poster_list']) && !empty($params['poster'])) {
-            if ($hasTestAb == OperationActivityModel::HAS_AB_TEST_ALLOCATION) {
-                list($contrastAllocation, $allocation) = self::calculateAllocation(count($params['ab_poster_list']));
-            } else {
-                $contrastAllocation = $allocation = $params['ab_poster_list'][0]['allocation'];
-            }
-            $createTime = time();
+        $abTestInfo     = $params['ab_test'] ?? [];
+        $hasTestAb      = $abTestInfo['has_ab_test'] ?? OperationActivityModel::HAS_AB_TEST_NO;
+        $allocationMode = $abTestInfo['allocation_mode'] ?? $abTestInfo['distribution_type'];
+        $hasTestAbList  = [];
+        if (!empty($abTestInfo['has_ab_test']) && !empty($abTestInfo['ab_poster_list'])) {
+            $createTime      = time();
             $hasTestAbList[] = [
                 'activity_id' => $activityId,
-                'poster_id'   => $params['poster'][0],
-                'allocation'  => $contrastAllocation,
-                'ab_name'     => $params['contrast_name'] ?? '对照组',
+                'poster_id'   => $abTestInfo['control_group']['id'],
+                'allocation'  => $abTestInfo['control_group']['allocation'] ?? 0,
+                'ab_name'     => $abTestInfo['control_group']['ab_name'] ?? '对照组',
                 'is_contrast' => RealWeekActivityPosterAbModel::IS_CONTRAST_YES,
                 'create_time' => $createTime,
                 'poster_type' => TemplatePosterModel::STANDARD_POSTER,
             ];
-            foreach ($params['ab_poster_list'] as $info) {
+            foreach ($abTestInfo['ab_poster_list'] as $info) {
                 $hasTestAbList[] = [
                     'activity_id' => $activityId,
-                    'poster_id'   => $info['poster_id'],
-                    'allocation'  => $allocation,
+                    'poster_id'   => $info['id'],
+                    'allocation'  => $info['allocation'],
                     'ab_name'     => $info['ab_name'],
                     'is_contrast' => RealWeekActivityPosterAbModel::IS_CONTRAST_NO,
                     'create_time' => $createTime,
@@ -67,10 +63,11 @@ trait TraitRealWeekActivityTestAbService
             // 保存数据
             $res = RealWeekActivityPosterAbModel::batchInsert($hasTestAbList);
             if (empty($res)) {
-                throw new RunTimeException(['saveAllocationData'], [$activityId, $params]);
+                SimpleLogger::info('saveAllocationData_WeekActivityPosterAbModel_batchInsert', [$activityId, $params]);
+                throw new RunTimeException(['saveAllocationData']);
             }
         }
-        return [$hasTestAb, $hasTestAbList];
+        return [$hasTestAb, $allocationMode, $hasTestAbList];
     }
 
     /**
@@ -106,6 +103,7 @@ trait TraitRealWeekActivityTestAbService
      */
     public static function getTestAbList($activityId)
     {
+        $contrastInfo = $abPosterList = [];
         $list = RealWeekActivityPosterAbModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['is_contrast' => 'DESC']]);
         if (empty($list)) {
             return [];
@@ -122,9 +120,10 @@ trait TraitRealWeekActivityTestAbService
             if (empty($templatePosterInfo)) {
                 continue;
             }
-            $res[] = [
+            $_abTestPosterInfo = [
                 'activity_id'        => $p['activity_id'],
                 'poster_id'          => $p['poster_id'],
+                'id'                 => $p['poster_id'],        // 兼容前端后台添加、修改、详情时使用，下次需求需要修改掉
                 'poster_type'        => $p['poster_type'],
                 'allocation'         => intval($p['allocation']),
                 'ab_name'            => $p['ab_name'],
@@ -136,8 +135,10 @@ trait TraitRealWeekActivityTestAbService
                 'poster_url'         => AliOSS::replaceCdnDomainForDss($templatePosterInfo['poster_path']),
                 'practise_zh'        => TemplatePosterModel::$practiseArray[$templatePosterInfo['practise']] ?? '否',
             ];
+            // 区分是对照组还是实验组
+            $p['is_contrast'] == RealWeekActivityPosterAbModel::IS_CONTRAST_YES ? $contrastInfo = $_abTestPosterInfo : $abPosterList[] = $_abTestPosterInfo;
         }
-        return $res;
+        return [$contrastInfo, $abPosterList];
     }
 
     // 获取学生命中的AB测海报
@@ -196,5 +197,29 @@ trait TraitRealWeekActivityTestAbService
     {
         // TODO qingfeng.lian 格式化海报数据
         return $testAbPosterInfo;
+    }
+
+    /**
+     * 检查AB测海报信息
+     * @param $params
+     * @return string
+     */
+    public static function checkAbPoster($params)
+    {
+        // 开启实验海报，则实验海报和标准海报都不能为空
+        $abTestInfo = $params['ab_test'] ?? [];
+        if ($abTestInfo['has_ab_test'] > 0) {
+            if (empty($abTestInfo['ab_poster_list'])) {
+                return 'week_activity_ab_poster_test_empty';
+            }
+            if (empty($abTestInfo['control_group'])) {
+                return 'week_activity_standard_poster';
+            }
+            $allocationMode = $abTestInfo['allocation_mode'] ?? $abTestInfo['distribution_type'];
+            if (!in_array($allocationMode, [OperationActivityModel::ALLOCATION_MODE_HAND, OperationActivityModel::ALLOCATION_MODE_AUTO])) {
+                return 'allocation_mode_error';
+            }
+        }
+        return '';
     }
 }

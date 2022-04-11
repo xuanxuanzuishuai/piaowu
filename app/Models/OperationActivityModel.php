@@ -52,10 +52,12 @@ class OperationActivityModel extends Model
     const ACTIVITY_COUNTRY_CN = 86; // 中国
     const ACTIVITY_COUNTRY_EN = 1;  // 所有非中国地区
 
-    // 是否支持海报AB测 0：没有 1：有-平均分配，2：有-手动分配
+    // 是否支持海报AB测 0：没有 1：支持
     const HAS_AB_TEST_NO         = 0; // 不支持
-    const HAS_AB_TEST_ALLOCATION = 1; // 平均分配
-    const HAS_AB_TEST_HAND       = 2; // 手动分配
+    const HAS_AB_TEST_YES        = 1; // 支持
+
+    const ALLOCATION_MODE_AUTO = 1; // 平均分配
+    const ALLOCATION_MODE_HAND = 2; // 手动分配
 
     /**
      * 当前阶段为付费正式课且未参加当前活动的学员手微信open_id
