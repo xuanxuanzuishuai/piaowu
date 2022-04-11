@@ -57,11 +57,11 @@ class ChannelLeads extends ControllerBase
         try {
             $employeeId = $this->getEmployeeId();
             $appId = $params['app_id'] ?? Constants::REAL_APP_ID;
-            AbroadLaunchService::ChannelSaveLeads($appId, $employeeId, $params);
+            $data = AbroadLaunchService::ChannelSaveLeads($appId, $employeeId, $params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
-        return HttpHelper::buildResponse($response, []);
+        return HttpHelper::buildResponse($response, $data);
     }
 
     /**

@@ -30,21 +30,22 @@ class AbroadLaunchService
      * @param $appId
      * @param $employeeId
      * @param $params
-     * @return bool
+     * @return array
      * @throws RunTimeException
      */
     public static function ChannelSaveLeads($appId, $employeeId, $params)
     {
+        $returnData = ['code' => ''];
         SimpleLogger::info("ChannelSaveLeads", [$appId, $employeeId, $params]);
         if ($appId == Constants::REAL_APP_ID) {
             $params['channel_id'] = RealDictConstants::get(RealDictConstants::REAL_CHANNEL_LEADS_CONFIG, 'leads_channel_id');
-            (new self())->RealChannelSaveLeads($employeeId, $params);
+            $returnData['code'] = (new self())->RealChannelSaveLeads($employeeId, $params)['code'] ?? '';
         } elseif ($appId == Constants::SMART_APP_ID) {
             (new self())->DssChannelSaveLeads($employeeId, $params);
         } else {
             throw new RunTimeException(["app_id_is_required"]);
         }
-        return true;
+        return $returnData;
     }
 
     /**

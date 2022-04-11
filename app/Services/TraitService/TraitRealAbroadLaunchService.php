@@ -20,10 +20,11 @@ trait TraitRealAbroadLaunchService
      * 真人业务线 渠道线索录入 - 不会走登录激活
      * @param $employeeId
      * @param $params
-     * @return int|mixed|string
+     * @return array
      * @throws RunTimeException
      */
     private function RealChannelSaveLeads($employeeId, $params) {
+        $returnData = ['record_id' => 0, 'code' => 0];
         // erp注册账号
         $studentInfo = DeliveryService::do(['params' => $params]);
         SimpleLogger::info('RealChannelSaveLeads', [$employeeId, $params, $studentInfo]);
@@ -45,6 +46,8 @@ trait TraitRealAbroadLaunchService
             'create_time' => time(),
         ]);
         // 返回结果
-        return !empty($recordId) ? $recordId : 0;
+        $returnData['record_id'] = !empty($recordId) ? $recordId : 0;
+        $returnData['code'] = $studentInfo['is_new'] ? 'success' : 'repeat';
+        return $returnData;
     }
 }
