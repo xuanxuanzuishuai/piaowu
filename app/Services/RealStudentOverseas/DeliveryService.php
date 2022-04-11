@@ -58,6 +58,7 @@ class DeliveryService
         if (!empty($params['social_account'])) {
             self::formatSocialAccount($params['social_account'], $params['social_account_type'], $extData);
         } else {
+            !empty($params['user_name']) && $extData['name'] = $params['user_name'];
             !empty($params['wechat']) && $extData['wechat'] = trim($params['wechat']);
             if (!empty($params['email'])) {
                 if (filter_var($params['email'], FILTER_VALIDATE_EMAIL) != true) {
