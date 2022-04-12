@@ -90,4 +90,12 @@ class RealDictConstants extends DictConstants
             2,  // 有效付费用户范围 - 部分
         ],
     ];
+
+    // 渠道线索管理
+    const REAL_CHANNEL_LEADS_CONFIG = [
+        'type' => 'channel_leads',
+        'keys' => [
+            'leads_channel_id',     // 渠道线索录入的渠道id
+        ],
+    ];
 }
