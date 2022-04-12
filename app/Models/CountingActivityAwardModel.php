@@ -58,7 +58,6 @@ class CountingActivityAwardModel extends Model
         self::SHIPPING_STATUS_SPECIAL => '待发货',
     ];
 
-    const UNIQUE_ID_PREFIX = 1001;
     const SALE_SHOP = 6;
 
     const REDIS_EXPRESS_KEY = 'express_details_%s';
