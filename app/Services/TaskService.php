@@ -9,6 +9,7 @@
 namespace App\Services;
 
 use App\Libs\AliOSS;
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
@@ -648,7 +649,7 @@ class TaskService
                     'student_id'      => $studentId,
                     'shipping_status' => $mark ? CountingActivityAwardModel::SHIPPING_STATUS_BEFORE : CountingActivityAwardModel::SHIPPING_STATUS_SPECIAL,
                     'type'            => $item['type'],
-                    'unique_id'       => CountingActivityAwardModel::UNIQUE_ID_PREFIX . sprintf("%08d",
+                    'unique_id'       => Constants::UNIQUE_ID_PREFIX . sprintf("%08d",
                             $sign['id']) . sprintf("%02d", $key),
                     'goods_id'        => $item['goods_id'],
                     'goods_code'      => $item['goods_code'],

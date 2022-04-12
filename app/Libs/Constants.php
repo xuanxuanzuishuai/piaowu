@@ -98,6 +98,8 @@ class Constants
     // 客户端类型，区分请求来源
     const FROM_TYPE_REAL_STUDENT_APP = 'real_student_app'; //真人app
     const FROM_TYPE_REAL_STUDENT_WX = 'real_student_wx'; //真人学生微信
+    // op运营平台发货单前缀：格式共14位=》10010000000000
+    const UNIQUE_ID_PREFIX = 1001;
 
     //奖励类型
     const AWARD_TYPE_TIME=1;//时长

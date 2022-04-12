@@ -148,7 +148,7 @@ class CountingActivityAwardService
 
         $params = [
             'order_id'     => $data['unique_id'],
-            'plat_id'      => CountingActivityAwardModel::UNIQUE_ID_PREFIX,
+            'plat_id'      => Constants::UNIQUE_ID_PREFIX,
             'app_id'       => Constants::SMART_APP_ID,
             'sale_shop'    => CountingActivityAwardModel::SALE_SHOP,
             'goods_id'     => $data['goods_id'],
