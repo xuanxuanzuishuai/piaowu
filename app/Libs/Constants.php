@@ -102,9 +102,13 @@ class Constants
     const UNIQUE_ID_PREFIX = 1001;
 
     //奖励类型
-    const AWARD_TYPE_TIME=1;//时长
-    const AWARD_TYPE_GOLD_LEAF=2;//金叶子
-    const AWARD_TYPE_MAGIC_STONE=3;//魔法石
+    const AWARD_TYPE_EMPTY=0;//0空奖品
+    const AWARD_TYPE_TIME=1;//0空奖品1智能业务线：时长
+    const AWARD_TYPE_GOLD_LEAF=2;//0空奖品1智能业务线：时长2智能业务线：金叶子3真人业务线：魔法石4智能业务线：实物5真人业务线：课程6智能业务线：音符
+    const AWARD_TYPE_MAGIC_STONE=3;//真人业务线：魔法石
+    const AWARD_TYPE_TYPE_ENTITY=4;//智能业务线：实物
+    const AWARD_TYPE_TYPE_LESSON=5;//真人业务线：课程
+    const AWARD_TYPE_TYPE_NOTE=6;//智能业务线：音符
     // 转介绍奖励规则配置身份
     const REFERRAL_INVITER_ROOT                 = 1;    // 身份状态跟节点
     const REFERRAL_INVITER_STATUS_REGISTER      = self::REFERRAL_INVITER_ROOT; // 注册

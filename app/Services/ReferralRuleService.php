@@ -453,7 +453,7 @@ class ReferralRuleService
             $lv['rule_type_name'] = $dictConfig[DictConstants::REFERRAL_RULE_TYPE['type']][$lv['type']]['value'];
             $lv['enable_status_name'] = $dictConfig[DictConstants::ACTIVITY_ENABLE_STATUS['type']][$lv['status']]['value'];
             $lv['create_time'] = date('Y-m-d H:i:s', $lv['create_time']);
-            $lv['time_status_name'] = $dictConfig[DictConstants::ACTIVITY_TIME_STATUS['type']][OperationActivityModel::sqlDataMapToTimeStatus($lv['start_time'], $lv['end_time'])]['value'];
+            $lv['time_status_name'] = $dictConfig[DictConstants::ACTIVITY_TIME_STATUS['type']][OperationActivityModel::dataMapToTimeStatus($lv['start_time'], $lv['end_time'])]['value'];
             $lv['start_time'] = date('Y-m-d H:i:s', $lv['start_time']);
             $lv['end_time'] = date('Y-m-d H:i:s', $lv['end_time']);
             $lv['remark'] = Util::textDecode($lv['remark']);

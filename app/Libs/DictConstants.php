@@ -12,6 +12,11 @@ use App\Models\Erp\ErpDictModel;
 use App\Services\DictService;
 
 class DictConstants {
+    //业务线相关配置
+    const APP_ID = [
+        'type' => 'app_id',
+        'keys' => ['1', '8']
+    ];
 
     //邀请学生渠道配置
     const STUDENT_INVITE_CHANNEL = [
@@ -1186,6 +1191,31 @@ class DictConstants {
 
 
     //========================真人海外投放配置end========================
+
+    //奖品类型
+    const AWARD_TYPE = [
+        'type' => 'award_type',
+        'keys' => [0, 1, 2, 3, 4, 5, 6],
+    ];
+    //课程id
+    const LESSON_ID = [
+        'type' => 'lesson_id',
+        'keys' => [25, 50],
+    ];
+    //用户筛选规则类型
+    const USER_SOURCE = [
+        'type' => 'user_source',
+        'keys' => [1, 2],
+    ];
+    //活动前端展示状态
+    const ACTIVITY_SHOW_STATUS = [
+        'type' => 'show_status',
+        'keys' => [1, 3, 4, 5, 6],
+    ];
+
+
+
+
 
     /**
      * 单个获取op系统dict配置数据

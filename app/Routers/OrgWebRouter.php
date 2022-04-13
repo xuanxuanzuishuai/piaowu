@@ -13,6 +13,7 @@ use App\Controllers\API\UICtl;
 use App\Controllers\Employee\Auth;
 use App\Controllers\Employee\Employee;
 use App\Controllers\OrgWeb\ActivityCenter;
+use App\Controllers\OrgWeb\ActivityLottery;
 use App\Controllers\OrgWeb\ActivitySign;
 use App\Controllers\OrgWeb\Admin;
 use App\Controllers\OrgWeb\Agent;
@@ -393,6 +394,13 @@ class OrgWebRouter extends RouterBase
         //通用文案管理
         '/op_web/copy/list' => ['method' => ['get'], 'call' => CopyManage::class . ':list'],
         '/op_web/copy/update' => ['method' => ['post'], 'call' => CopyManage::class . ':update'],
+
+        //转盘抽奖
+        '/op_web/lottery_activity/add_update' => ['method' => ['post'], 'call' => ActivityLottery::class . ':addOrUpdate'],
+        '/op_web/lottery_activity/append_import_user' => ['method' => ['post'], 'call' => ActivityLottery::class . ':appendImportUser'],
+        '/op_web/lottery_activity/list' => ['method' => ['get'], 'call' => ActivityLottery::class . ':list'],
+        '/op_web/lottery_activity/detail' => ['method' => ['get'], 'call' => ActivityLottery::class . ':detail'],
+        '/op_web/lottery_activity/join_records' => ['method' => ['get'], 'call' => ActivityLottery::class . ':joinRecords'],
 
         /** 渠道线索管理 */
         // 真人渠道线索列表
