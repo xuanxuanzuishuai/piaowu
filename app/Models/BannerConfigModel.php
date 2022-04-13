@@ -18,6 +18,7 @@ class BannerConfigModel extends Model
     const IS_ALLOW_JUMP = 2; //跳转
     const JUMP_PACKAGE = 3; // 跳转到金叶子商城产品包详情
     const JUMP_POSTER  = 4; // 海报
+    const JUMP_MINI_PRO = 5; // 小程序
 
     const NOT_STARTED = '未开始';
     const IN_PROGRESS = '进行中';

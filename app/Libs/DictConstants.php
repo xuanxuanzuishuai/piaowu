@@ -1006,6 +1006,14 @@ class DictConstants {
     ];
 
     /**
+     * 新氧合作配置
+     */
+    const XIN_YANG_CONFIG = [
+        'type' => 'xin_yang_he_zuo',
+        'keys' => ['is_open']
+    ];
+
+    /**
      * wechat小程序原始id
      */
     const WECHAT_INITIAL_ID = [
