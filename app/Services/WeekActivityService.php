@@ -906,7 +906,13 @@ class WeekActivityService
             'user_status'     => $userDetail['student_status'],
             'is_create_qr_id' => true,
         ]);
+        $firstStandardPoster = true;
         foreach ($posterList as $key => &$item) {
+            // 如果是对照组标准海报，不用重新生成海报二维码
+            if (!empty($abTestPosterInfo) && $item['type'] == TemplatePosterModel::STANDARD_POSTER && $firstStandardPoster) {
+                $item = $abTestPosterInfo;
+                $firstStandardPoster = false;
+            }
             $extParams['poster_id'] = $item['poster_id'];
             $item = PosterTemplateService::formatPosterInfo($item);
             if ($item['type'] == TemplatePosterModel::INDIVIDUALITY_POSTER) {

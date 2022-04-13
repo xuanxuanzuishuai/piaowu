@@ -649,10 +649,9 @@ class RealActivityService
         $firstStandardPoster = true;
         foreach ($posterList as $key => &$item) {
             // 如果是对照组标准海报，不用重新生成海报二维码
-            if ($item['type'] == TemplatePosterModel::STANDARD_POSTER && $firstStandardPoster) {
-                $posterList[$key] = $abTestPosterInfo;
+            if (!empty($abTestPosterInfo) && $item['type'] == TemplatePosterModel::STANDARD_POSTER && $firstStandardPoster) {
+                $item = $abTestPosterInfo;
                 $firstStandardPoster = false;
-                continue;
             }
             $extParams = [
                 'user_status' => $studentDetail['status'],

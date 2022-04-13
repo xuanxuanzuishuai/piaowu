@@ -18,6 +18,7 @@ use App\Libs\Util;
 use App\Models\ActivityPosterModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\OperationActivityModel;
+use App\Models\RealWeekActivityModel;
 use App\Models\RealWeekActivityPosterAbModel;
 use App\Models\RealWeekActivityUserAllocationABModel;
 use App\Models\TemplatePosterModel;
@@ -79,11 +80,11 @@ trait TraitRealWeekActivityTestAbService
             // 保存日志
             $employeeInfo = EmployeeModel::getRecord(['id' => $employeeId]);
             (new Meta())->saveLog([
-                'table_name' => RealWeekActivityPosterAbModel::$table,
-                'data_id' => $activityId,
-                'new_value' => $hasTestAbList,
-                'menu_name' => '真人保存周周领奖实验海报',
-                'event_type' => 6001,
+                'table_name'    => RealWeekActivityPosterAbModel::$table,
+                'data_id'       => $activityId,
+                'new_value'     => $hasTestAbList,
+                'menu_name'     => '真人保存周周领奖实验海报',
+                'event_type'    => 6001,
                 'operator_uuid' => $employeeInfo['uuid'],
                 'operator_name' => $employeeInfo['name'],
                 'operator_time' => time(),
@@ -164,28 +165,31 @@ trait TraitRealWeekActivityTestAbService
         // 查询是否已经有命中的海报，如果有直接返回命中的海报
         $info = RealWeekActivityUserAllocationABModel::getRecord(['activity_id' => $activityId, 'student_id' => $studentId]);
         if (empty($info)) {
-            // 计算命中海报
-            list($hitPosterId) = self::calculateHitNode($activityId);
-            // 生成小程序码
-            if (!empty($extData) && !empty($extData['is_create_qr_id'])) {
-                $studentType = $extData['user_type'] ?? DssUserQrTicketModel::STUDENT_TYPE;
-                $channelId   = $extData['channel_id'] ?? 0;
-                $landingType = $extData['landing_type'] ?? 0;
-                $qrInfo      = MiniAppQrService::getUserMiniAppQr(Constants::REAL_APP_ID, Constants::REAL_MINI_BUSI_TYPE, $studentId, $studentType, $channelId, $landingType,
-                    [
-                        'activity_id' => $activityId,
-                        'poster_id'   => $hitPosterId,
-                        'user_status' => $extData['user_status'],
-                    ],
-                    false
-                );
-                $qrId        = $qrInfo['qr_id'] ?? '';
-            } else {
-                $qrId = '';
+            $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $activityId]);
+            if ($activityInfo['has_ab_test']) {
+                // 计算命中海报
+                list($hitPosterId) = self::calculateHitNode($activityId);
+                // 生成小程序码
+                if (!empty($extData) && !empty($extData['is_create_qr_id'])) {
+                    $studentType = $extData['user_type'] ?? DssUserQrTicketModel::STUDENT_TYPE;
+                    $channelId   = $extData['channel_id'] ?? 0;
+                    $landingType = $extData['landing_type'] ?? 0;
+                    $qrInfo      = MiniAppQrService::getUserMiniAppQr(Constants::REAL_APP_ID, Constants::REAL_MINI_BUSI_TYPE, $studentId, $studentType, $channelId, $landingType,
+                        [
+                            'activity_id' => $activityId,
+                            'poster_id'   => $hitPosterId,
+                            'user_status' => $extData['user_status'],
+                        ],
+                        false
+                    );
+                    $qrId        = $qrInfo['qr_id'] ?? '';
+                } else {
+                    $qrId = '';
+                }
+                // 保存学生命中海报信息
+                self::saveStudentTestAbPosterQrId($studentId, $activityId, $hitPosterId, $qrId);
+                $info['ab_poster_id'] = $hitPosterId;
             }
-            // 保存学生命中海报信息
-            self::saveStudentTestAbPosterQrId($studentId, $activityId, $hitPosterId, $qrId);
-            $info['ab_poster_id'] = $hitPosterId;
         }
         // 返回命中的海报
         return self::formatTestAbPoster($info);
@@ -206,6 +210,7 @@ trait TraitRealWeekActivityTestAbService
             'student_id'   => $studentId,
             'ab_poster_id' => $abPosterId,
             'qr_id'        => $qrId,
+            'create_time'  => $qrId,
         ]);
     }
 
@@ -230,7 +235,7 @@ trait TraitRealWeekActivityTestAbService
         SimpleLogger::info('calculateHitNode_start', [$activityId]);
         $redis = RedisDB::getConn();
         list($redisKey, $redisKeyLockKey) = self::getRedisKey($activityId);
-        $hitNode        = $assignedCount = $hitPosterId = 0;
+        $hitNode        = $assignedCount = $hitPosterId = $saturation = 0;
         $sortAllocation = [];
         try {
             Util::setLock($redisKeyLockKey, 3);
@@ -259,9 +264,13 @@ trait TraitRealWeekActivityTestAbService
                     if ($_ratio >= $_node['allocation']) {
                         continue;
                     }
-                    $hitNode     = $_node['allocation'];
-                    $hitPosterId = $_node['poster_id'];
-                    break;
+                    $_saturation = $_node['allocation'] - $_ratio;
+                    if ($_saturation > $saturation) {
+                        // 饱和度差距最大的值
+                        $saturation = $_saturation;
+                        $hitNode = $_node['allocation'];
+                        $hitPosterId = $_node['poster_id'];
+                    }
                 }
             }
             $nodeList[$hitPosterId]['node_assigned_num'] += 1;
@@ -311,6 +320,9 @@ trait TraitRealWeekActivityTestAbService
     // 格式化测试海报数据让其保持和普通海报一样的数据格式和字段
     public static function formatTestAbPoster($testAbPosterInfo)
     {
+        if (empty($testAbPosterInfo)) {
+            return [];
+        }
         $field                           = ['id', 'name', 'poster_id', 'poster_path', 'example_id', 'example_path', 'order_num', 'practise', 'type'];
         $where                           = [
             'id' => $testAbPosterInfo['ab_poster_id'],
@@ -318,7 +330,7 @@ trait TraitRealWeekActivityTestAbService
         $posterInfo                      = TemplatePosterModel::getRecord($where, $field);
         $posterInfo['practise_zh']       = TemplatePosterModel::$practiseArray[$posterInfo['practise']] ?? '否';
         $posterInfo['poster_ascription'] = ActivityPosterModel::POSTER_ASCRIPTION_STUDENT;
-        $posterInfo['poster_url'] = AliOSS::replaceCdnDomainForDss($posterInfo['poster_path']);
+        $posterInfo['poster_url']        = AliOSS::replaceCdnDomainForDss($posterInfo['poster_path']);
         return $posterInfo;
     }
 
