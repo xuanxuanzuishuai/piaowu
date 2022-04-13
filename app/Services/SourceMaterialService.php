@@ -625,11 +625,12 @@ class SourceMaterialService
         $open = DictConstants::get(DictConstants::XIN_YANG_CONFIG, 'is_open');
         if (!empty($open)) {
             if ($request['from'] == 'wx') {
-                $bannerLists[0] = [
+                $arr = [
                     'image_path' => AliOSS::replaceCdnDomainForDss('prod/img//banner/ad8964079dde4ba8fdbc3d56bea28b9d.png'),
                     'jump_url' => 'weixin://dl/business/?t=B7T8HhfxQqb',
                     'jump_rule' => BannerConfigModel::IS_ALLOW_JUMP
                 ];
+                array_unshift($bannerLists, $arr);
             } elseif ($request['from'] == 'app') {
                 $bannerLists[0] = [
                     $image = AliOSS::replaceCdnDomainForDss('prod/img//banner/ad8964079dde4ba8fdbc3d56bea28b9d.png'),
