@@ -22,7 +22,7 @@ class EmployeeAuthCheckMiddleWare extends MiddlewareBase
         /** @var array $token */
         $token = $request->getCookieParam('token');
         if (empty($token)) {
-            $token = $request->getHeader('token');
+            $token = $request->getHeader('token')[0];
             if (empty($token) && $request->getMethod() == 'GET'){
                 $params = $request->getParams();
                 $token = $params['token'] ?? '';
