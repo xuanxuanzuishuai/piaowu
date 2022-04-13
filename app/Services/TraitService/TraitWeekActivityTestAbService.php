@@ -9,11 +9,21 @@
 namespace App\Services\TraitService;
 
 use App\Libs\AliOSS;
+use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\Meta;
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
+use App\Libs\Util;
+use App\Models\ActivityPosterModel;
+use App\Models\Dss\DssUserQrTicketModel;
+use App\Models\EmployeeModel;
 use App\Models\OperationActivityModel;
+use App\Models\RealWeekActivityUserAllocationABModel;
 use App\Models\TemplatePosterModel;
 use App\Models\WeekActivityPosterAbModel;
+use App\Models\WeekActivityUserAllocationABModel;
+use App\Services\MiniAppQrService;
 
 trait TraitWeekActivityTestAbService
 {
@@ -21,10 +31,11 @@ trait TraitWeekActivityTestAbService
      * 保存到数据的实验数据信息
      * @param $activityId
      * @param $params
+     * @param $employeeId
      * @return array
      * @throws RunTimeException
      */
-    public static function saveAllocationData($activityId, $params)
+    public static function saveAllocationData($activityId, $params, $employeeId)
     {
         SimpleLogger::info('saveAllocationData', [$activityId, $params]);
         $abTestInfo     = $params['ab_test'] ?? [];
@@ -62,6 +73,23 @@ trait TraitWeekActivityTestAbService
                 SimpleLogger::info('saveAllocationData_WeekActivityPosterAbModel_batchInsert', [$activityId, $params]);
                 throw new RunTimeException(['saveAllocationData']);
             }
+
+            // 初始化分配比例
+            self::initNodeAllocation($activityId, $hasTestAbList);
+
+            // 保存日志
+            $employeeInfo = EmployeeModel::getRecord(['id' => $employeeId]);
+            (new Meta())->saveLog([
+                'table_name' => WeekActivityPosterAbModel::$table,
+                'data_id' => $activityId,
+                'new_value' => $hasTestAbList,
+                'menu_name' => '智能保存周周领奖实验海报',
+                'event_type' => 6003,
+                'operator_uuid' => $employeeInfo['uuid'],
+                'operator_name' => $employeeInfo['name'],
+                'operator_time' => time(),
+                'source_app_id' => Constants::SELF_APP_ID,
+            ]);
         }
         return [$hasTestAb, $allocationMode, $hasTestAbList];
     }
@@ -70,13 +98,14 @@ trait TraitWeekActivityTestAbService
      * 更新实验组数据
      * @param $activityId
      * @param $params
+     * @param $employeeId
      * @return array
      * @throws RunTimeException
      */
-    public static function updateAllocationData($activityId, $params)
+    public static function updateAllocationData($activityId, $params, $employeeId)
     {
         WeekActivityPosterAbModel::batchDelByActivity($activityId);
-        return self::saveAllocationData($activityId, $params);
+        return self::saveAllocationData($activityId, $params, $employeeId);
     }
 
     /**
@@ -146,5 +175,176 @@ trait TraitWeekActivityTestAbService
             }
         }
         return '';
+    }
+
+    /**
+     * 获取学生命中的AB测海报
+     * @param $studentId
+     * @param $activityId
+     * @param $extData
+     * @return array|mixed
+     * @throws RunTimeException
+     */
+    public static function getStudentTestAbPoster($studentId, $activityId, $extData = [])
+    {
+        // 查询是否已经有命中的海报，如果有直接返回命中的海报
+        $info = RealWeekActivityUserAllocationABModel::getRecord(['activity_id' => $activityId, 'student_id' => $studentId]);
+        if (empty($info)) {
+            // 计算命中海报
+            list($hitPosterId) = self::calculateHitNode($activityId);
+            // 生成小程序码
+            if (!empty($extData) && !empty($extData['is_create_qr_id'])) {
+                $studentType = $extData['user_type'] ?? DssUserQrTicketModel::STUDENT_TYPE;
+                $channelId   = $extData['channel_id'] ?? 0;
+                $landingType = $extData['landing_type'] ?? 0;
+                $qrInfo      = MiniAppQrService::getUserMiniAppQr(Constants::REAL_APP_ID, Constants::REAL_MINI_BUSI_TYPE, $studentId, $studentType, $channelId, $landingType,
+                    [
+                        'activity_id' => $activityId,
+                        'poster_id'   => $hitPosterId,
+                        'user_status' => $extData['user_status'],
+                    ],
+                    false
+                );
+                $qrId        = $qrInfo['qr_id'] ?? '';
+            } else {
+                $qrId = '';
+            }
+            // 保存学生命中海报信息
+            self::saveStudentTestAbPosterQrId($studentId, $activityId, $hitPosterId, $qrId);
+            $info['ab_poster_id'] = $hitPosterId;
+        }
+        // 返回命中的海报
+        return self::formatTestAbPoster($info);
+    }
+
+    /**
+     * 计算命中节点
+     * @param $activityId
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function calculateHitNode($activityId)
+    {
+        SimpleLogger::info('calculateHitNode_start', [$activityId]);
+        $redis = RedisDB::getConn();
+        list($redisKey, $redisKeyLockKey) = self::getRedisKey($activityId);
+        $hitNode        = $assignedCount = $hitPosterId = 0;
+        $sortAllocation = [];
+        try {
+            Util::setLock($redisKeyLockKey, 3);
+            $nodeList = json_decode($redis->get($redisKey), true);
+            if (empty($nodeList)) {
+                SimpleLogger::info('calculateHitNode_node_empty', [$activityId, $nodeList]);
+                $nodeList = self::initNodeAllocation($activityId);
+            }
+            // 初始化部分默认值
+            foreach ($nodeList as $_posterId => $_item) {
+                $assignedCount    += $_item['node_assigned_num'];
+                $sortAllocation[] = $_item['allocation'];
+                if ($_item['allocation'] > $hitNode) {
+                    $hitNode     = $_item['allocation'];
+                    $hitPosterId = $_posterId;
+                }
+            }
+            unset($_posterId, $_item);
+            if ($assignedCount > 0) {
+                // 排序
+                $sortNodeList = $nodeList;
+                array_multisort($sortAllocation, SORT_DESC, $sortNodeList);
+                // 计算命中
+                foreach ($sortNodeList as $_node) {
+                    $_ratio = ($_node['node_assigned_num'] / $assignedCount) * 100;
+                    if ($_ratio >= $_node['allocation']) {
+                        continue;
+                    }
+                    $hitNode     = $_node['allocation'];
+                    $hitPosterId = $_node['poster_id'];
+                    break;
+                }
+            }
+            $nodeList[$hitPosterId]['node_assigned_num'] += 1;
+            $redis->set($redisKey, json_encode($nodeList));
+        } finally {
+            Util::unLock($redisKeyLockKey);
+        }
+        SimpleLogger::info('calculateHitNode_end', [$activityId, $hitPosterId, $hitNode, $nodeList]);
+        return [$hitPosterId, $hitNode];
+    }
+
+    /**
+     * 获取redis key
+     * @param $activityId
+     * @return string[]
+     */
+    public static function getRedisKey($activityId)
+    {
+        return ['week_activity_ab_node_num-' . $activityId, 'week_activity_ab_node_lock-' . $activityId];
+    }
+
+    /**
+     * 初始化每个分配比例节点
+     * @param $activityId
+     * @param $nodeAllocation
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function initNodeAllocation($activityId, $nodeAllocation = [])
+    {
+        if (empty($activityId)) {
+            SimpleLogger::info('initNodeAllocation_activity_id_empty', [$activityId, $nodeAllocation]);
+            throw new RunTimeException(['initNodeAllocation_activity_id_empty']);
+        }
+        $redis   = RedisDB::getConn();
+        $tmpData = [];
+        list($redisKey, $redisKeyLockKey) = self::getRedisKey($activityId);
+        Util::setLock($redisKeyLockKey, 3);
+        try {
+            if (empty($nodeAllocation)) {
+                $nodeAllocation = WeekActivityPosterAbModel::getRecords(['activity_id' => $activityId]);
+            }
+            if (empty($nodeAllocation)) {
+                SimpleLogger::info('initNodeAllocation_node_allocation_empty', [$activityId, $nodeAllocation]);
+                throw new RunTimeException(['initNodeAllocation_node_allocation_empty']);
+            }
+            foreach ($nodeAllocation as $item) {
+                $tmpData[$item['poster_id']] = ['allocation' => $item['allocation'], 'node_assigned_num' => 0, 'poster_id' => $item['poster_id']];
+            }
+            $redis->set($redisKey, json_encode($tmpData));
+        } finally {
+            Util::unLock($redisKeyLockKey);
+        }
+        return $tmpData;
+    }
+
+    /**
+     * 保存用户命中的测试海报数据QrId
+     * @param $studentId
+     * @param $activityId
+     * @param $abPosterId
+     * @param $qrId
+     * @return int|mixed|string|null
+     */
+    public static function saveStudentTestAbPosterQrId($studentId, $activityId, $abPosterId, $qrId)
+    {
+        return WeekActivityUserAllocationABModel::insertRecord([
+            'activity_id'  => $activityId,
+            'student_id'   => $studentId,
+            'ab_poster_id' => $abPosterId,
+            'qr_id'        => $qrId,
+        ]);
+    }
+
+    // 格式化测试海报数据让其保持和普通海报一样的数据格式和字段
+    public static function formatTestAbPoster($testAbPosterInfo)
+    {
+        $field                           = ['id', 'name', 'poster_id', 'poster_path', 'example_id', 'example_path', 'order_num', 'practise', 'type'];
+        $where                           = [
+            'id' => $testAbPosterInfo['ab_poster_id'],
+        ];
+        $posterInfo                      = TemplatePosterModel::getRecord($where, $field);
+        $posterInfo['practise_zh']       = TemplatePosterModel::$practiseArray[$posterInfo['practise']] ?? '否';
+        $posterInfo['poster_ascription'] = ActivityPosterModel::POSTER_ASCRIPTION_STUDENT;
+        $posterInfo['poster_url'] = AliOSS::replaceCdnDomainForDss($posterInfo['poster_path']);
+        return $posterInfo;
     }
 }

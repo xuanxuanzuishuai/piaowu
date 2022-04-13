@@ -121,7 +121,7 @@ class WeekActivityService
             throw new RunTimeException(["add week activity fail"]);
         }
         // 保存实验组数据
-        list($weekActivityData['has_ab_test'], $weekActivityData['allocation_mode']) = self::saveAllocationData($activityId, $data);
+        list($weekActivityData['has_ab_test'], $weekActivityData['allocation_mode']) = self::saveAllocationData($activityId, $data, $employeeId);
         // 保存周周领奖配置信息
         $weekActivityData['activity_id'] = $activityId;
         $weekActivityId = WeekActivityModel::insertRecord($weekActivityData);
@@ -354,12 +354,17 @@ class WeekActivityService
         // 获取uuid
         $activityInfo['designate_uuid'] = SharePosterDesignateUuidModel::getUUIDByActivityId($activityId);
         // 获取测试海报数据
-        $activityInfo['ab_test'] = [
-            'has_ab_test' => $activityInfo['has_ab_test'],
-            'allocation_mode' => $activityInfo['allocation_mode'],
-            'distribution_type' => $activityInfo['allocation_mode'],
+        $ab_test = [
+            'has_ab_test' => (int)$activityInfo['has_ab_test'],
+            'allocation_mode' => (int)$activityInfo['allocation_mode'],
+            'distribution_type' => (int)$activityInfo['allocation_mode'],
         ];
-        list($activityInfo['ab_test']['control_group'], $activityInfo['ab_test']['ab_poster_list']) = self::getTestAbList($activityId);
+        list($ab_test['control_group'], $ab_test['ab_poster_list']) = self::getTestAbList($activityId);
+        // 有实验组数据则返回实验组海报列表
+        if ($ab_test['ab_poster_list']) {
+            $activityInfo['ab_test'] = $ab_test;
+
+        }
         return $activityInfo;
     }
 
@@ -450,7 +455,7 @@ class WeekActivityService
             throw new RunTimeException(["update week activity fail"]);
         }
         // 更新实验组数据
-        list($weekActivityData['has_ab_test'], $weekActivityData['allocation_mode']) = self::updateAllocationData($activityId, $data);
+        list($weekActivityData['has_ab_test'], $weekActivityData['allocation_mode']) = self::updateAllocationData($activityId, $data, $employeeId);
         // 更新周周领奖扩展信息
         $activityExtData['activity_id'] = $activityId;
         $res = ActivityExtModel::batchUpdateRecord($activityExtData, ['activity_id' => $activityId]);
@@ -893,7 +898,14 @@ class WeekActivityService
         // 获取小程序码
         $userQrArr = MiniAppQrService::batchCreateUserMiniAppQr(Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP, $userQrParams);
 
-
+        // 获取AB测海报，和对照组海报id
+        $abTestPosterInfo = WeekActivityService::getStudentTestAbPoster($studentId, $activityInfo['activity_id'], [
+            'channel_id'      => $channel,
+            'user_type'       => DssUserQrTicketModel::STUDENT_TYPE,
+            'landing_type'    => DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
+            'user_status'     => $userDetail['student_status'],
+            'is_create_qr_id' => true,
+        ]);
         foreach ($posterList as $key => &$item) {
             $extParams['poster_id'] = $item['poster_id'];
             $item = PosterTemplateService::formatPosterInfo($item);

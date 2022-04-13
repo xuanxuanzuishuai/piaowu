@@ -153,6 +153,7 @@ class DictConstants {
             'secret_key_android',
             'access_id_ios',
             'secret_key_ios',
+            'meta_host',
         ]
     ];
 

@@ -638,7 +638,7 @@ class RealActivityService
         unset($item);
 
         // 获取AB测海报，和对照组海报id
-        list($contrastPosterId, $abTestPosterInfo) = RealWeekActivityService::getStudentTestAbPoster($studentDetail['id'], $activityData['activity_id'], [
+        $abTestPosterInfo = RealWeekActivityService::getStudentTestAbPoster($studentDetail['id'], $activityData['activity_id'], [
             'channel_id'      => $channel,
             'user_type'       => DssUserQrTicketModel::STUDENT_TYPE,
             'landing_type'    => DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
@@ -646,10 +646,12 @@ class RealActivityService
             'is_create_qr_id' => true,
         ]);
         // 获取海报， 标准海报：后台生成带有二维码的海报地址， 个性海报：后台只打防伪码
+        $firstStandardPoster = true;
         foreach ($posterList as $key => &$item) {
             // 如果是对照组标准海报，不用重新生成海报二维码
-            if ($item['type'] == TemplatePosterModel::STANDARD_POSTER && $item['poster_id'] == $contrastPosterId) {
+            if ($item['type'] == TemplatePosterModel::STANDARD_POSTER && $firstStandardPoster) {
                 $posterList[$key] = $abTestPosterInfo;
+                $firstStandardPoster = false;
                 continue;
             }
             $extParams = [
