@@ -635,7 +635,7 @@ class SourceMaterialService
                 $bannerLists[0] = [
                     $image = AliOSS::replaceCdnDomainForDss('prod/img//banner/ad8964079dde4ba8fdbc3d56bea28b9d.png'),
                     'image_path' => $image,
-                    'jump_rule' => BannerConfigModel::IS_ALLOW_JUMP,
+                    'jump_rule' => BannerConfigModel::JUMP_MINI_PRO,
                     'path' => 'pages/index/webview?scene=S2*26827329*48038*2*20329',
                     'original_id' => 'gh_d7d4b8059967',
                     'no_wx_text' => '小叶子&新氧专享',
