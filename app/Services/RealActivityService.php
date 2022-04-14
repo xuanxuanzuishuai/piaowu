@@ -638,7 +638,7 @@ class RealActivityService
         unset($item);
 
         // 获取AB测海报，和对照组海报id
-        $abTestPosterInfo = RealWeekActivityService::getStudentTestAbPoster($studentDetail['id'], $activityData['activity_id'], [
+        list($abPosterIsNormal, $abTestPosterInfo) = RealWeekActivityService::getStudentTestAbPoster($studentDetail['id'], $activityData['activity_id'], [
             'channel_id'      => $channel,
             'user_type'       => DssUserQrTicketModel::STUDENT_TYPE,
             'landing_type'    => DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
@@ -650,8 +650,12 @@ class RealActivityService
         foreach ($posterList as $key => &$item) {
             // 如果是对照组标准海报，不用重新生成海报二维码
             if (!empty($abTestPosterInfo) && $item['type'] == TemplatePosterModel::STANDARD_POSTER && $firstStandardPoster) {
+                if (!$abPosterIsNormal) {
+                    unset($posterList[$key]);
+                }
                 $item = $abTestPosterInfo;
                 $firstStandardPoster = false;
+                continue;
             }
             $extParams = [
                 'user_status' => $studentDetail['status'],

@@ -24,6 +24,7 @@ use App\Models\RealWeekActivityUserAllocationABModel;
 use App\Models\TemplatePosterModel;
 use App\Services\MiniAppQrService;
 use App\Models\EmployeeModel;
+use App\Services\PosterService;
 
 trait TraitRealWeekActivityTestAbService
 {
@@ -38,12 +39,12 @@ trait TraitRealWeekActivityTestAbService
     public static function saveAllocationData($activityId, $params, $employeeId)
     {
         SimpleLogger::info('saveAllocationData', [$activityId, $params]);
-        $abTestInfo     = $params['ab_test'] ?? [];
-        $hasTestAb      = $abTestInfo['has_ab_test'] ?? OperationActivityModel::HAS_AB_TEST_NO;
+        $abTestInfo = $params['ab_test'] ?? [];
+        $hasTestAb = $abTestInfo['has_ab_test'] ?? OperationActivityModel::HAS_AB_TEST_NO;
         $allocationMode = $abTestInfo['allocation_mode'] ?? $abTestInfo['distribution_type'];
-        $hasTestAbList  = [];
+        $hasTestAbList = [];
         if (!empty($abTestInfo['has_ab_test']) && !empty($abTestInfo['ab_poster_list'])) {
-            $createTime      = time();
+            $createTime = time();
             $hasTestAbList[] = [
                 'activity_id' => $activityId,
                 'poster_id'   => $abTestInfo['control_group']['id'],
@@ -88,8 +89,8 @@ trait TraitRealWeekActivityTestAbService
                 (new Meta())->saveLog([
                     'table_name'    => RealWeekActivityPosterAbModel::$table,
                     'data_id'       => $activityId,
-                    'old_value'     => $allChangePosterList,
-                    'new_value'     => $hasTestAbList,
+                    'old_value'     => $allChangePosterList['old'],
+                    'new_value'     => $allChangePosterList['new'],
                     'menu_name'     => '真人保存周周领奖实验海报',
                     'event_type'    => 6001,
                     'operator_uuid' => $employeeInfo['uuid'],
@@ -116,34 +117,43 @@ trait TraitRealWeekActivityTestAbService
      */
     public static function checkAbPosterIsChange($activityId, $abPosterList)
     {
-        $isChange            = false;      // 是否有变动
-        $changePosterList    = []; // 影响计算分配比例的关键数据变动
+        $isChange = false;      // 是否有变动
+        $changePosterList = []; // 影响计算分配比例的关键数据变动
         $allChangePosterList = []; // 任何数据有变动
-        $orglist             = RealWeekActivityUserAllocationABModel::getRecords(['activity_id' => $activityId]);
+        $orglist = RealWeekActivityPosterAbModel::getRecords(['activity_id' => $activityId]);
         if (empty($orglist)) {
-            return [false, []];
+            return [true, []];
         }
         $orglist = array_column($orglist, null, 'poster_id');
         // 检查数据
         foreach ($abPosterList as $item) {
-            // 检查是否被删除
+            // 检查是否是新增
             $_dbInfo = $orglist[$item['poster_id']] ?? [];
             if (empty($_dbInfo)) {
-                $isChange              = true;
-                $allChangePosterList[] = $changePosterList[] = $item;
+                $isChange = true;
+                $allChangePosterList['new'][] = $changePosterList['new'][] = $item;
                 continue;
             }
+            unset($orglist[$item['poster_id']]);    // 移除本次提交已经有的海报
             // 检查是否修改了比例
             if ($_dbInfo['allocation'] != $item['allocation']) {
-                $isChange              = true;
-                $allChangePosterList[] = $changePosterList[] = $item;
+                $isChange = true;
+                $allChangePosterList['old'][] = $changePosterList['old'][] = $_dbInfo;
+                $allChangePosterList['new'][] = $changePosterList['new'][] = $item;
                 continue;
             }
             // 检查名称是否有改动
-            if ($_dbInfo['ab_name'] == $item['ab_name']) {
-                $isChange              = true;
-                $allChangePosterList[] = $item;
+            if ($_dbInfo['ab_name'] != $item['ab_name']) {
+                $isChange = true;
+                $allChangePosterList['old'][] = $_dbInfo;
+                $allChangePosterList['new'][] = $item;
+                continue;
             }
+        }
+        if (!empty($orglist)) {
+            // 剩下的就是被删除的
+            $allChangePosterList['old'] = array_merge($allChangePosterList['old'], $orglist);
+            $changePosterList['old'] = array_merge($allChangePosterList['old'], $orglist);
         }
         return [$isChange, $changePosterList, $allChangePosterList];
     }
@@ -156,12 +166,12 @@ trait TraitRealWeekActivityTestAbService
     public static function getTestAbList($activityId)
     {
         $contrastInfo = $abPosterList = [];
-        $list         = RealWeekActivityPosterAbModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['is_contrast' => 'DESC']]);
+        $list = RealWeekActivityPosterAbModel::getRecords(['activity_id' => $activityId, 'ORDER' => ['is_contrast' => 'DESC']]);
         if (empty($list)) {
             return [];
         }
-        $field      = ['id', 'name', 'poster_id', 'poster_path', 'example_id', 'example_path', 'order_num', 'practise', 'type'];
-        $where      = [
+        $field = ['id', 'name', 'poster_id', 'poster_path', 'example_id', 'example_path', 'order_num', 'practise', 'type'];
+        $where = [
             'id' => array_column($list, 'poster_id'),
         ];
         $posterList = TemplatePosterModel::getRecords($where, $field);
@@ -185,6 +195,7 @@ trait TraitRealWeekActivityTestAbService
                 'poster_name'        => $templatePosterInfo['name'],
                 'poster_url'         => AliOSS::replaceCdnDomainForDss($templatePosterInfo['poster_path']),
                 'practise_zh'        => TemplatePosterModel::$practiseArray[$templatePosterInfo['practise']] ?? '否',
+                'practise'           => $templatePosterInfo['practise'],
             ];
             // 区分是对照组还是实验组
             $p['is_contrast'] == RealWeekActivityPosterAbModel::IS_CONTRAST_YES ? $contrastInfo = $_abTestPosterInfo : $abPosterList[] = $_abTestPosterInfo;
@@ -197,7 +208,7 @@ trait TraitRealWeekActivityTestAbService
      * @param $studentId
      * @param $activityId
      * @param $extData
-     * @return array|mixed
+     * @return array
      * @throws RunTimeException
      */
     public static function getStudentTestAbPoster($studentId, $activityId, $extData = [])
@@ -209,26 +220,41 @@ trait TraitRealWeekActivityTestAbService
             if ($activityInfo['has_ab_test']) {
                 // 计算命中海报
                 list($hitPosterId) = self::calculateHitNode($activityId);
-                // 生成小程序码
-                if (!empty($extData) && !empty($extData['is_create_qr_id'])) {
-                    $studentType = $extData['user_type'] ?? DssUserQrTicketModel::STUDENT_TYPE;
-                    $channelId   = $extData['channel_id'] ?? 0;
-                    $landingType = $extData['landing_type'] ?? 0;
-                    $qrInfo      = MiniAppQrService::getUserMiniAppQr(Constants::REAL_APP_ID, Constants::REAL_MINI_BUSI_TYPE, $studentId, $studentType, $channelId, $landingType,
-                        [
-                            'activity_id' => $activityId,
-                            'poster_id'   => $hitPosterId,
-                            'user_status' => $extData['user_status'],
-                        ],
-                        false
-                    );
-                    $qrId        = $qrInfo['qr_id'] ?? '';
-                } else {
-                    $qrId = '';
-                }
-                // 保存学生命中海报信息
-                self::saveStudentTestAbPosterQrId($studentId, $activityId, $hitPosterId, $qrId);
                 $info['ab_poster_id'] = $hitPosterId;
+            }
+        }
+        // 是否生成小程序码
+        if (!empty($extData) && !empty($extData['is_create_qr_id'])) {
+            $hitPosterInfo = TemplatePosterModel::getPosterInfo($info['ab_poster_id']);
+            if (!empty($hitPosterInfo)) {
+                // 海报图：
+                $posterConfig = PosterService::getPosterConfig();
+                $studentType = $extData['user_type'] ?? DssUserQrTicketModel::STUDENT_TYPE;
+                $channelId = $extData['channel_id'] ?? 0;
+                $landingType = $extData['landing_type'] ?? 0;
+                $qrInfo = MiniAppQrService::getUserMiniAppQr(Constants::REAL_APP_ID, Constants::REAL_MINI_BUSI_TYPE, $studentId, $studentType, $channelId, $landingType,
+                    [
+                        'activity_id' => $activityId,
+                        'poster_id'   => $info['ab_poster_id'],
+                        'user_status' => $extData['user_status'],
+                    ],
+                    false
+                );
+                $poster = PosterService::generateQRPoster(
+                    $hitPosterInfo['poster_path'],
+                    $posterConfig,
+                    $studentId,
+                    DssUserQrTicketModel::STUDENT_TYPE,
+                    $extData['channel_id'],
+                    ['user_current_status' => $extData['user_status'], 'poster_id' => $info['ab_poster_id']],
+                    [
+                        'qr_id'   => $qrInfo['qr_id'],
+                        'qr_path' => $qrInfo['qr_path'],
+                    ]
+                );
+                $info['poster_url'] = $poster['poster_save_full_path'];
+                // 保存学生命中海报信息
+                self::saveStudentTestAbPosterQrId($studentId, $activityId, $info['ab_poster_id']);
             }
         }
         // 返回命中的海报
@@ -243,14 +269,13 @@ trait TraitRealWeekActivityTestAbService
      * @param $qrId
      * @return int|mixed|string|null
      */
-    public static function saveStudentTestAbPosterQrId($studentId, $activityId, $abPosterId, $qrId)
+    public static function saveStudentTestAbPosterQrId($studentId, $activityId, $abPosterId)
     {
         return RealWeekActivityUserAllocationABModel::insertRecord([
             'activity_id'  => $activityId,
             'student_id'   => $studentId,
             'ab_poster_id' => $abPosterId,
-            'qr_id'        => $qrId,
-            'create_time'  => $qrId,
+            'create_time'  => time(),
         ]);
     }
 
@@ -275,7 +300,7 @@ trait TraitRealWeekActivityTestAbService
         SimpleLogger::info('calculateHitNode_start', [$activityId]);
         $redis = RedisDB::getConn();
         list($redisKey, $redisKeyLockKey) = self::getRedisKey($activityId);
-        $hitNode        = $assignedCount = $hitPosterId = $saturation = 0;
+        $hitNode = $assignedCount = $hitPosterId = $saturation = 0;
         $sortAllocation = [];
         try {
             Util::setLock($redisKeyLockKey, 3);
@@ -286,10 +311,10 @@ trait TraitRealWeekActivityTestAbService
             }
             // 初始化部分默认值
             foreach ($nodeList as $_posterId => $_item) {
-                $assignedCount    += $_item['node_assigned_num'];
+                $assignedCount += $_item['node_assigned_num'];
                 $sortAllocation[] = $_item['allocation'];
                 if ($_item['allocation'] > $hitNode) {
-                    $hitNode     = $_item['allocation'];
+                    $hitNode = $_item['allocation'];
                     $hitPosterId = $_posterId;
                 }
             }
@@ -307,8 +332,8 @@ trait TraitRealWeekActivityTestAbService
                     $_saturation = $_node['allocation'] - $_ratio;
                     if ($_saturation > $saturation) {
                         // 饱和度差距最大的值
-                        $saturation  = $_saturation;
-                        $hitNode     = $_node['allocation'];
+                        $saturation = $_saturation;
+                        $hitNode = $_node['allocation'];
                         $hitPosterId = $_node['poster_id'];
                     }
                 }
@@ -336,7 +361,7 @@ trait TraitRealWeekActivityTestAbService
             SimpleLogger::info('initNodeAllocation_activity_id_empty', [$activityId, $nodeAllocation]);
             throw new RunTimeException(['initNodeAllocation_activity_id_empty']);
         }
-        $redis   = RedisDB::getConn();
+        $redis = RedisDB::getConn();
         $tmpData = [];
         list($redisKey, $redisKeyLockKey) = self::getRedisKey($activityId);
         $isLock == true && Util::setLock($redisKeyLockKey, 3);
@@ -358,21 +383,29 @@ trait TraitRealWeekActivityTestAbService
         return $tmpData;
     }
 
-    // 格式化测试海报数据让其保持和普通海报一样的数据格式和字段
+    /**
+     * 格式化测试海报数据让其保持和普通海报一样的数据格式和字段
+     * @param $testAbPosterInfo
+     * @return array
+     */
     public static function formatTestAbPoster($testAbPosterInfo)
     {
         if (empty($testAbPosterInfo)) {
-            return [];
+            return [false, []];
         }
-        $field                           = ['id', 'name', 'poster_id', 'poster_path', 'example_id', 'example_path', 'order_num', 'practise', 'type'];
-        $where                           = [
-            'id' => $testAbPosterInfo['ab_poster_id'],
-        ];
-        $posterInfo                      = TemplatePosterModel::getRecord($where, $field);
-        $posterInfo['practise_zh']       = TemplatePosterModel::$practiseArray[$posterInfo['practise']] ?? '否';
+        $posterInfo = TemplatePosterModel::getRecord(['id' => $testAbPosterInfo['ab_poster_id']]);
+        if (empty($posterInfo)) {
+            // 没找到海报
+            return [false, []];
+        }
+        if ($posterInfo['status'] != TemplatePosterModel::STANDARD_POSTER) {
+            // 找到海报但海报已下线
+            return [false, $posterInfo];
+        }
+        $posterInfo['practise_zh'] = TemplatePosterModel::$practiseArray[$posterInfo['practise']] ?? '否';
         $posterInfo['poster_ascription'] = ActivityPosterModel::POSTER_ASCRIPTION_STUDENT;
-        $posterInfo['poster_url']        = AliOSS::replaceCdnDomainForDss($posterInfo['poster_path']);
-        return $posterInfo;
+        $posterInfo['poster_url'] = $testAbPosterInfo['poster_url'] ?? '';
+        return [true, $posterInfo];
     }
 
     /**
@@ -396,8 +429,8 @@ trait TraitRealWeekActivityTestAbService
                 return 'allocation_mode_error';
             }
             // 检查是否有重复的海报
-            $abPosterIds       = array_column($abTestInfo['ab_poster_list'], 'id');
-            $abPosterIds[]     = $abTestInfo['control_group']['id'];
+            $abPosterIds = array_column($abTestInfo['ab_poster_list'], 'id');
+            $abPosterIds[] = $abTestInfo['control_group']['id'];
             $uniqueAbPosterIds = array_unique($abPosterIds);
             if (count($uniqueAbPosterIds) != count($abPosterIds)) {
                 return 'week_activity_ab_poster_repeat';

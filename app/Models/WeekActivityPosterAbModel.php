@@ -36,4 +36,35 @@ class WeekActivityPosterAbModel extends Model
         }
         return true;
     }
+
+    /**
+     * 获取使用海报的周周领奖 - 活动未结束未禁用的
+     * @param $posterId
+     * @return array
+     */
+    public static function getAbPosterActivityIds($posterId)
+    {
+        $time = time();
+        $table1 = self::$table;
+        $table2 = WeekActivityModel::$table;
+        if (empty($table2)) {
+            return [];
+        }
+        $status21 = OperationActivityModel::ENABLE_STATUS_OFF;
+        $status22 = OperationActivityModel::ENABLE_STATUS_ON;
+        $sql = "
+            SELECT
+                {$table1}.id,{$table1}.activity_id
+            FROM
+                {$table1}
+                INNER JOIN {$table2} ON {$table2}.activity_id = {$table1}.activity_id
+            WHERE
+                {$table1}.poster_id = {$posterId}
+                AND {$table2}.enable_status IN ({$status21},{$status22})
+                AND {$table2}.end_time > {$time}
+        ";
+        $db = MysqlDB::getDB();
+        $res = $db->queryAll($sql);
+        return is_array($res) ? $res : [];
+    }
 }

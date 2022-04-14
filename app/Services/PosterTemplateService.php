@@ -16,9 +16,11 @@ use App\Models\Dss\DssTemplatePosterModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\PosterModel;
+use App\Models\RealWeekActivityPosterAbModel;
 use App\Models\ShareMaterialConfig;
 use App\Models\TemplatePosterModel;
 use App\Models\TemplatePosterWordModel;
+use App\Models\WeekActivityPosterAbModel;
 use I18N\Lang;
 
 class PosterTemplateService
@@ -343,6 +345,9 @@ class PosterTemplateService
             $resMonth = ActivityPosterModel::getActivityByPidAndType($id, 'real_month');
             $arrWeekId = array_values(array_unique(array_column($resWeek, 'activity_id')));
             $arrMonthId = array_values(array_unique(array_column($resMonth, 'activity_id')));
+            // 校验周周领奖实验海报
+            $abWeekId = array_column(RealWeekActivityPosterAbModel::getAbPosterActivityIds($id), 'activity_id');
+            $arrWeekId = array_unique(array_merge($arrWeekId, $abWeekId));
         } elseif ($appId == Constants::SMART_APP_ID) {   //智能
             $resWeek = ActivityPosterModel::getActivityByPidAndType($id, 'week');
             $resMonth = ActivityPosterModel::getActivityByPidAndType($id, 'month');
@@ -363,7 +368,10 @@ class PosterTemplateService
                 'type'        => ShareMaterialConfig::POSTER_TYPE,
                 'status'      => ShareMaterialConfig::NORMAL_STATUS
             ];
-            $shareConfigId = ShareMaterialConfig::getRecord($conds, ['share_config_id']);
+            $shareConfigId = ShareMaterialConfig::getRecord($conds, ['share_config_id']) ?? [];
+            // 校验周周领奖实验海报
+            $abWeekId = array_column(WeekActivityPosterAbModel::getAbPosterActivityIds($id), 'activity_id');
+            $arrWeekId = array_unique(array_merge($arrWeekId, $abWeekId));
         }
         $arrErrorMsg = [];
         $arrWeekId = array_map(function ($v) {

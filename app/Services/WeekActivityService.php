@@ -899,7 +899,7 @@ class WeekActivityService
         $userQrArr = MiniAppQrService::batchCreateUserMiniAppQr(Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP, $userQrParams);
 
         // 获取AB测海报，和对照组海报id
-        $abTestPosterInfo = WeekActivityService::getStudentTestAbPoster($studentId, $activityInfo['activity_id'], [
+        list($abPosterIsNormal, $abTestPosterInfo) = WeekActivityService::getStudentTestAbPoster($studentId, $activityInfo['activity_id'], [
             'channel_id'      => $channel,
             'user_type'       => DssUserQrTicketModel::STUDENT_TYPE,
             'landing_type'    => DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
@@ -910,8 +910,12 @@ class WeekActivityService
         foreach ($posterList as $key => &$item) {
             // 如果是对照组标准海报，不用重新生成海报二维码
             if (!empty($abTestPosterInfo) && $item['type'] == TemplatePosterModel::STANDARD_POSTER && $firstStandardPoster) {
+                if (!$abPosterIsNormal) {
+                    unset($posterList[$key]);
+                }
                 $item = $abTestPosterInfo;
                 $firstStandardPoster = false;
+                continue;
             }
             $extParams['poster_id'] = $item['poster_id'];
             $item = PosterTemplateService::formatPosterInfo($item);
@@ -940,7 +944,7 @@ class WeekActivityService
         // 学生能否可上传
         list($isCanUpload) = WeekActivityService::getStudentWeekActivityCanUpload($studentId, $activityInfo['activity_id']);
 
-        $data['list'] = $posterList;
+        $data['list'] = array_values($posterList);
         $data['activity'] = $activityInfo;
         $data['student_info'] = $userInfo;
         $data['student_status'] = $userDetail['student_status'];

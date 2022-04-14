@@ -89,4 +89,15 @@ class TemplatePosterModel extends Model
         );
         return [$res, $totalCount];
     }
+
+    /**
+     * 获取海报模板详情
+     * @param $id
+     * @param int $status
+     * @return mixed
+     */
+    public static function getPosterInfo($id, $status = self::NORMAL_STATUS)
+    {
+        return self::getRecord(['id' => $id, 'status' => $status]);
+    }
 }
