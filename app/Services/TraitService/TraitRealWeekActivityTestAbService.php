@@ -67,45 +67,85 @@ trait TraitRealWeekActivityTestAbService
             if (array_sum(array_column($hasTestAbList, 'allocation')) != 100) {
                 throw new RunTimeException(['allocation_error']);
             }
-            // 保存数据
-            $res = RealWeekActivityPosterAbModel::batchInsert($hasTestAbList);
-            if (empty($res)) {
-                SimpleLogger::info('saveAllocationData_WeekActivityPosterAbModel_batchInsert', [$activityId, $params]);
-                throw new RunTimeException(['saveAllocationData']);
+            // 检查是否有修改
+            list($isChange, $changePosterList, $allChangePosterList) = self::checkAbPosterIsChange($activityId, $hasTestAbList);
+            // 有变动
+            if ($isChange) {
+                // 删除原数据
+                $res = RealWeekActivityPosterAbModel::batchDelByActivity($activityId);
+                if (empty($res)) {
+                    SimpleLogger::info('saveAllocationData_WeekActivityPosterAbModel_del', [$activityId, $params]);
+                    throw new RunTimeException(['saveAllocationData']);
+                }
+                // 保存数据
+                $res = RealWeekActivityPosterAbModel::batchInsert($hasTestAbList);
+                if (empty($res)) {
+                    SimpleLogger::info('saveAllocationData_WeekActivityPosterAbModel_batchInsert', [$activityId, $params]);
+                    throw new RunTimeException(['saveAllocationData']);
+                }
+                // 保存日志
+                $employeeInfo = EmployeeModel::getRecord(['id' => $employeeId]);
+                (new Meta())->saveLog([
+                    'table_name'    => RealWeekActivityPosterAbModel::$table,
+                    'data_id'       => $activityId,
+                    'old_value'     => $allChangePosterList,
+                    'new_value'     => $hasTestAbList,
+                    'menu_name'     => '真人保存周周领奖实验海报',
+                    'event_type'    => 6001,
+                    'operator_uuid' => $employeeInfo['uuid'],
+                    'operator_name' => $employeeInfo['name'],
+                    'operator_time' => time(),
+                    'source_app_id' => Constants::SELF_APP_ID,
+                ]);
             }
-
-            // 初始化分配比例
-            self::initNodeAllocation($activityId, $hasTestAbList);
-
-            // 保存日志
-            $employeeInfo = EmployeeModel::getRecord(['id' => $employeeId]);
-            (new Meta())->saveLog([
-                'table_name'    => RealWeekActivityPosterAbModel::$table,
-                'data_id'       => $activityId,
-                'new_value'     => $hasTestAbList,
-                'menu_name'     => '真人保存周周领奖实验海报',
-                'event_type'    => 6001,
-                'operator_uuid' => $employeeInfo['uuid'],
-                'operator_name' => $employeeInfo['name'],
-                'operator_time' => time(),
-                'source_app_id' => Constants::SELF_APP_ID,
-            ]);
+            // 计算分配比例的关键数据有变动
+            if ($isChange && !empty($changePosterList)) {
+                SimpleLogger::info("saveAllocationData_WeekActivityPosterAbModel_change", [$activityId, $params, $isChange, $changePosterList]);
+                // 初始化分配比例
+                self::initNodeAllocation($activityId, $hasTestAbList);
+            }
         }
         return [$hasTestAb, $allocationMode, $hasTestAbList];
     }
 
     /**
-     * 更新实验组数据
+     * 检查海报是否有变化
      * @param $activityId
-     * @param $params
-     * @param $employeeId
+     * @param $abPosterList
      * @return array
-     * @throws RunTimeException
      */
-    public static function updateAllocationData($activityId, $params, $employeeId)
+    public static function checkAbPosterIsChange($activityId, $abPosterList)
     {
-        RealWeekActivityPosterAbModel::batchDelByActivity($activityId);
-        return self::saveAllocationData($activityId, $params, $employeeId);
+        $isChange            = false;      // 是否有变动
+        $changePosterList    = []; // 影响计算分配比例的关键数据变动
+        $allChangePosterList = []; // 任何数据有变动
+        $orglist             = RealWeekActivityUserAllocationABModel::getRecords(['activity_id' => $activityId]);
+        if (empty($orglist)) {
+            return [false, []];
+        }
+        $orglist = array_column($orglist, null, 'poster_id');
+        // 检查数据
+        foreach ($abPosterList as $item) {
+            // 检查是否被删除
+            $_dbInfo = $orglist[$item['poster_id']] ?? [];
+            if (empty($_dbInfo)) {
+                $isChange              = true;
+                $allChangePosterList[] = $changePosterList[] = $item;
+                continue;
+            }
+            // 检查是否修改了比例
+            if ($_dbInfo['allocation'] != $item['allocation']) {
+                $isChange              = true;
+                $allChangePosterList[] = $changePosterList[] = $item;
+                continue;
+            }
+            // 检查名称是否有改动
+            if ($_dbInfo['ab_name'] == $item['ab_name']) {
+                $isChange              = true;
+                $allChangePosterList[] = $item;
+            }
+        }
+        return [$isChange, $changePosterList, $allChangePosterList];
     }
 
     /**
@@ -242,7 +282,7 @@ trait TraitRealWeekActivityTestAbService
             $nodeList = json_decode($redis->get($redisKey), true);
             if (empty($nodeList)) {
                 SimpleLogger::info('calculateHitNode_node_empty', [$activityId, $nodeList]);
-                $nodeList = self::initNodeAllocation($activityId);
+                $nodeList = self::initNodeAllocation($activityId, [], false);
             }
             // 初始化部分默认值
             foreach ($nodeList as $_posterId => $_item) {
@@ -267,8 +307,8 @@ trait TraitRealWeekActivityTestAbService
                     $_saturation = $_node['allocation'] - $_ratio;
                     if ($_saturation > $saturation) {
                         // 饱和度差距最大的值
-                        $saturation = $_saturation;
-                        $hitNode = $_node['allocation'];
+                        $saturation  = $_saturation;
+                        $hitNode     = $_node['allocation'];
                         $hitPosterId = $_node['poster_id'];
                     }
                 }
@@ -286,10 +326,11 @@ trait TraitRealWeekActivityTestAbService
      * 初始化每个分配比例节点
      * @param $activityId
      * @param $nodeAllocation
+     * @param bool $isLock 是否加上锁， 如果已经加锁了这里就不能再加锁也加不上锁
      * @return array
      * @throws RunTimeException
      */
-    public static function initNodeAllocation($activityId, $nodeAllocation = [])
+    public static function initNodeAllocation($activityId, $nodeAllocation = [], $isLock = true)
     {
         if (empty($activityId)) {
             SimpleLogger::info('initNodeAllocation_activity_id_empty', [$activityId, $nodeAllocation]);
@@ -298,7 +339,7 @@ trait TraitRealWeekActivityTestAbService
         $redis   = RedisDB::getConn();
         $tmpData = [];
         list($redisKey, $redisKeyLockKey) = self::getRedisKey($activityId);
-        Util::setLock($redisKeyLockKey, 3);
+        $isLock == true && Util::setLock($redisKeyLockKey, 3);
         try {
             if (empty($nodeAllocation)) {
                 $nodeAllocation = RealWeekActivityPosterAbModel::getRecords(['activity_id' => $activityId]);
@@ -312,7 +353,7 @@ trait TraitRealWeekActivityTestAbService
             }
             $redis->set($redisKey, json_encode($tmpData));
         } finally {
-            Util::unLock($redisKeyLockKey);
+            $isLock == true && Util::unLock($redisKeyLockKey);
         }
         return $tmpData;
     }
@@ -353,6 +394,13 @@ trait TraitRealWeekActivityTestAbService
             $allocationMode = $abTestInfo['allocation_mode'] ?? $abTestInfo['distribution_type'];
             if (!in_array($allocationMode, [OperationActivityModel::ALLOCATION_MODE_HAND, OperationActivityModel::ALLOCATION_MODE_AUTO])) {
                 return 'allocation_mode_error';
+            }
+            // 检查是否有重复的海报
+            $abPosterIds       = array_column($abTestInfo['ab_poster_list'], 'id');
+            $abPosterIds[]     = $abTestInfo['control_group']['id'];
+            $uniqueAbPosterIds = array_unique($abPosterIds);
+            if (count($uniqueAbPosterIds) != count($abPosterIds)) {
+                return 'week_activity_ab_poster_repeat';
             }
         }
         return '';

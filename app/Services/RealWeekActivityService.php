@@ -430,7 +430,7 @@ class RealWeekActivityService
             throw new RunTimeException(["update week activity fail"]);
         }
         // 保存实验组数据
-        list($weekActivityData['has_ab_test'], $weekActivityData['allocation_mode']) = self::updateAllocationData($activityId, $data, $employeeId);
+        list($weekActivityData['has_ab_test'], $weekActivityData['allocation_mode']) = self::saveAllocationData($activityId, $data, $employeeId);
         // 当海报有变化时删除原有的海报
         if ($isDelPoster) {
             // 删除海报关联关系

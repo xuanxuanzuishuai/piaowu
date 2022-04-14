@@ -455,7 +455,7 @@ class WeekActivityService
             throw new RunTimeException(["update week activity fail"]);
         }
         // 更新实验组数据
-        list($weekActivityData['has_ab_test'], $weekActivityData['allocation_mode']) = self::updateAllocationData($activityId, $data, $employeeId);
+        list($weekActivityData['has_ab_test'], $weekActivityData['allocation_mode']) = self::saveAllocationData($activityId, $data, $employeeId);
         // 更新周周领奖扩展信息
         $activityExtData['activity_id'] = $activityId;
         $res = ActivityExtModel::batchUpdateRecord($activityExtData, ['activity_id' => $activityId]);
