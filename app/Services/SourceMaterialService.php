@@ -628,7 +628,7 @@ class SourceMaterialService
             if ($request['from'] == 'wx') {
                 $arr = [
                     'image_path' => $xinYangPath,
-                    'jump_url' => 'weixin://dl/business/?t=B7T8HhfxQqb',
+                    'jump_url' => 'weixin://dl/business/?t=Cict2kp78vf',
                     'jump_rule' => BannerConfigModel::IS_ALLOW_JUMP
                 ];
                 array_unshift($bannerLists, $arr);
