@@ -2,7 +2,9 @@
 
 namespace App\Services\Activity\Lottery\LotteryServices;
 
+use App\Libs\Exceptions\RunTimeException;
 use App\Models\LotteryActivityModel;
+use App\Models\LotteryAwardRecordModel;
 use App\Models\LotteryAwardInfoModel;
 use App\Models\LotteryAwardRuleModel;
 use App\Models\LotteryFilterUserModel;
@@ -10,6 +12,168 @@ use App\Models\OperationActivityModel;
 
 class LotteryActivityService
 {
+    /**
+     * 获取活动基本信息
+     * @param $opActivityId
+     * @return array|mixed
+     */
+    public static function getActivityConfigInfo($opActivityId)
+    {
+        $activityInfo = LotteryActivityModel::getRecord($opActivityId);
+        return $activityInfo ?: [];
+    }
+
+    /**
+     * 获取剩余抽奖次数
+     * @param $params
+     * @param $activityInfo
+     * @return array
+     */
+    public static function getRestLotteryTimes($params,$activityInfo)
+    {
+        if (!empty($params['uuid'])) {
+            //查询规则获得抽奖次数
+            $filterTimes = 0;
+            if (!empty($activityInfo['user_source']) && $activityInfo['user_source'] == LotteryActivityModel::USER_SOURCE_FILTER) {
+                $filterTimes = LotteryActivityService::filterUserTimes(
+                    $params['op_activity_id'],
+                    $activityInfo['app_id'],
+                    $params['uuid'],
+                    $activityInfo['start_pay_time'],
+                    $activityInfo['end_pay_time']
+                );
+            }
+
+            //查询用户导入抽奖机会
+            $importTimes = LotteryImportUserService::importUserTimes($params['op_activity_id'], $params['uuid']);
+            //用户消耗的抽奖次数
+            $useTime = LotteryAwardRecordService::useLotteryTimes($params['op_activity_id'], $params['uuid']);
+            $restTimes =  $filterTimes + $importTimes - $useTime;
+        } else {
+            $restTimes = 0;
+        }
+        return [
+            'filter_times' => $filterTimes ?? 0,
+            'import_times' => $importTimes ?? 0,
+            'use_times'    => $useTime ?? 0,
+            'rest_times'   => $restTimes ?? 0,
+        ];
+    }
+
+    /**
+     * 根据规则计算用户可获得的抽奖次数
+     * @param $opActivityId
+     * @param $appId
+     * @param $uuid
+     * @param $startPayTime
+     * @param $endPayTime
+     * @return int
+     */
+    public static function filterUserTimes($opActivityId,$appId, $uuid, $startPayTime, $endPayTime)
+    {
+        $orderInfo = self::getOrderInfo($appId, $uuid, $startPayTime, $endPayTime);
+        $orderToTimes = self::orderToTimes($opActivityId,$orderInfo);
+        return array_sum($orderToTimes);
+    }
+
+    /**
+     * 请求订单系统，获取满足条件的订单信息
+     * @param $appId
+     * @param $uuid
+     * @param $startPayTime
+     * @param $endPayTime
+     * @return array
+     */
+    public static function getOrderInfo($appId, $uuid, $startPayTime, $endPayTime)
+    {
+        //请求支付系统接口，并处理
+        return [];
+    }
+
+    /**
+     * 获取订单获得抽奖机会列表
+     * @param $opActivityId
+     * @param $orderInfo
+     * @return array
+     */
+    public static function orderToTimes($opActivityId,$orderInfo)
+    {
+        $payTimesRule = LotteryFilterUserService::filterUserTimesRule($opActivityId);
+        if (empty($orderInfo) || empty($payTimesRule)){
+            return [];
+        }
+
+        foreach ($orderInfo as $value) {
+            foreach ($payTimesRule as $rule) {
+                if (($value['ammount'] >= $rule['low_pay_amount']) && ($value['ammount'] < $rule['high_pay_amount'])) {
+                    for ($i = 0; $i < $rule['times']; $i++) {
+                        $res[] = $value['ammount'];
+                    }
+                }
+            }
+        }
+        return $res ?? [];
+    }
+
+    /**
+     * 活动时间校验
+     * @param $activityInfo
+     * @param $time
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function checkActivityTime($activityInfo,$time)
+    {
+        if (empty($activityInfo)){
+            throw new RunTimeException(['record_not_found']);
+        }
+
+        if ($time < $activityInfo['start_time']){
+            throw new RunTimeException(['activity_not_started']);
+        }
+
+        if ($time > $activityInfo['end_time']){
+            throw new RunTimeException(['activity_is_end']);
+        }
+        return true;
+    }
+
+    /**
+     * 整理抽奖需要的参数信息
+     * @param $params
+     * @param $activityInfo
+     * @return mixed
+     * @throws RunTimeException
+     */
+    public static function getAwardParams($params,$activityInfo)
+    {
+        $filerTimes = 0;
+        if ($activityInfo['user_source'] == LotteryActivityModel::USER_SOURCE_FILTER) {
+            $orderInfo = self::getOrderInfo($activityInfo['app_id'], $params['uuid'], $activityInfo['start_pay_time'], $activityInfo['end_pay_time']);
+            $orderToTimes = self::orderToTimes($activityInfo['op_activity_id'],$orderInfo);
+            $filerTimes = array_sum($orderToTimes);
+        }
+        $importTimes = LotteryImportUserService::importUserTimes($params['op_activity_id'], $params['uuid']);
+        $totalTimes = $filerTimes+$importTimes;
+
+        //用户消耗的抽奖次数
+        $useTimes = LotteryAwardRecordService::useLotteryTimes($params['op_activity_id'], $params['uuid']);
+
+        if ($totalTimes <= $useTimes){
+            throw new RunTimeException(['lottery_times_empty']);
+        }
+
+        if ($filerTimes > $useTimes){
+            $params['use_type'] = LotteryAwardRecordModel::USE_TYPE_FILTER;
+            $params['pay_amount'] = $orderToTimes[$useTimes] ?? -1;
+        }else{
+            $params['use_type'] = LotteryAwardRecordModel::USE_TYPE_IMPORT;
+        }
+
+        $params['award_info'] = LotteryAwardInfoService::getAwardInfo($params['op_activity_id']);
+        return $params;
+    }
+
     /**
      * 增加
      * @param $addParamsData

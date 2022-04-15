@@ -5,9 +5,25 @@ namespace App\Services\Activity\Lottery\LotteryServices;
 use App\Models\LotteryActivityModel;
 use App\Models\LotteryImportUserModel;
 use App\Models\OperationActivityModel;
+use App\Models\LotteryAwardRecordModel;
 
 class LotteryImportUserService
 {
+    /**
+     * 获取用户导入的抽奖机会
+     * @param $opActivityId
+     * @param $uuid
+     * @return int|number
+     */
+    public static function importUserTimes($opActivityId,$uuid)
+    {
+        $where = [
+            'op_activity_id'=>$opActivityId,
+            'uuid'=>$uuid,
+        ];
+        return LotteryAwardRecordModel::getCount($where);
+    }
+
     /**
      * 追加导流用户
      * @param $opActivityId
