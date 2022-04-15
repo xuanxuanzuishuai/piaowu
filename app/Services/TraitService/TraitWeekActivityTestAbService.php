@@ -122,11 +122,7 @@ trait TraitWeekActivityTestAbService
         $isChange = false;      // 是否有变动
         $changePosterList = []; // 影响计算分配比例的关键数据变动
         $allChangePosterList = []; // 任何数据有变动
-        $orglist = WeekActivityPosterAbModel::getRecords(['activity_id' => $activityId]);
-        if (empty($orglist)) {
-            return [true, []];
-        }
-        $orglist = array_column($orglist, null, 'poster_id');
+        $orglist = array_column(WeekActivityPosterAbModel::getRecords(['activity_id' => $activityId]) ?? [] , null, 'poster_id');
         // 检查数据
         foreach ($abPosterList as $item) {
             // 检查是否是新增
@@ -154,8 +150,8 @@ trait TraitWeekActivityTestAbService
         }
         if (!empty($orglist)) {
             // 剩下的就是被删除的
-            $allChangePosterList['old'] = array_merge($allChangePosterList['old'], $orglist);
-            $changePosterList['old'] = array_merge($allChangePosterList['old'], $orglist);
+            $allChangePosterList['old'] = array_merge($allChangePosterList['old'] ?? [], $orglist);
+            $changePosterList['old'] = array_merge($changePosterList['old'] ?? [], $orglist);
         }
         return [$isChange, $changePosterList, $allChangePosterList];
     }
