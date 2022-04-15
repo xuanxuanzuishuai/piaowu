@@ -11,10 +11,12 @@ namespace App\Routers;
 use App\Controllers\Agent\Agent;
 use App\Controllers\OrgWeb\LandingRecall;
 use App\Controllers\StudentWeb\Landing;
+use App\Controllers\StudentWeb\Lottery;
 use App\Controllers\StudentWeb\Order;
 use App\Controllers\StudentWeb\Recall;
 use App\Controllers\StudentWeb\Student;
 use App\Controllers\StudentWeb\Area;
+use App\Controllers\StudentWeb\StudentWebCommon;
 use App\Middleware\RecallAuthCheckMiddleware;
 use App\Middleware\WebAuthCheckMiddleware;
 
@@ -72,5 +74,22 @@ class StudentWebRouter extends RouterBase
         '/student_web/student/whale_data_record' => ['method' => ['get'], 'call'   => Student::class . ':whaleDataRecord', 'middles' => []],
         //  获取学生是否是系统判定的重复用户，如果是购买指定课包时会返回其他课包
         '/student_web/student/check_student_is_repeat' => ['method' => ['get'], 'call' => Student::class . ':checkStudentIsRepeat', 'middles' => []],
+
+
+        /********************抽奖活动接口**********************/
+        //发送手机验证码
+        '/student_web/common/send_code' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':sendCode','middles' => []],
+        //用户登录接口
+        '/student_web/common/login' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':login'],
+        //获取收货收货地址列表
+        '/student_web/common/address_list' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':addressList'],
+        //新增或修改收货地址
+        '/student_web/common/modify_address' => ['method' => ['post'], 'call' => StudentWebCommon::class . ':modifyAddress'],
+        //活动信息获取
+        '/student_web/lottery/activity_info' => ['method' => ['get'], 'call' => Lottery::class . ':activityInfo'],
+        //开始抽奖
+        '/student_web/lottery/start_lottery' => ['method' => ['get'], 'call' => Lottery::class . ':startLottery'],
+
+
     ];
 }
