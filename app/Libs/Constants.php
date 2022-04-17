@@ -19,6 +19,16 @@ class Constants
     //真人转介绍小程序的busi_type
     const REAL_MINI_BUSI_TYPE = 13;
 
+    //操作人身份类型
+    const OPERATOR_TYPE_SYSTEM = 1;//系统
+    const OPERATOR_TYPE_CLIENT = 2;//客户
+
+    //店铺定义
+    const SALE_SHOP = 6;//智能店铺
+    const SALE_SHOP_VIDEO_PLAY_SERVICE = 9;//真人课管服务店铺
+    const SALE_SHOP_AI_REFERRAL_SERVICE = 10;//智能课管服务店铺
+
+
     //用户类型定义
     const USER_TYPE_STUDENT = 1; //学生
 
@@ -98,8 +108,26 @@ class Constants
     // 客户端类型，区分请求来源
     const FROM_TYPE_REAL_STUDENT_APP = 'real_student_app'; //真人app
     const FROM_TYPE_REAL_STUDENT_WX = 'real_student_wx'; //真人学生微信
-    // op运营平台发货单前缀：格式共14位=》10010000000000
+
+    // op运营平台发货单前缀：格式共14位,前4位的1001是平台标识,后10位是系统统一生成=》10010000000000
     const UNIQUE_ID_PREFIX = 1001;
+
+    // 发货单状态:0废除 1待发货 2已发货 3发货中 4无需发货 -1发货失败 -2取消发货 -10 因库存不足导致待发货且不发货
+    const SHIPPING_STATUS_DEL = 0;
+    const SHIPPING_STATUS_BEFORE = 1;
+    const SHIPPING_STATUS_DELIVERED = 2;
+    const SHIPPING_STATUS_CENTRE = 3;
+    const SHIPPING_STATUS_NO_NEED = 4;
+    const SHIPPING_STATUS_FAIL = -1;
+    const SHIPPING_STATUS_CANCEL = -2;
+    const SHIPPING_STATUS_SPECIAL = -10;
+
+    //物流状态：1已揽收 2运输中 3派件中 4已签收
+    const LOGISTICS_STATUS_COLLECT = 1;
+    const LOGISTICS_STATUS_IN_TRANSIT = 2;
+    const LOGISTICS_STATUS_IN_DISPATCH = 3;
+    const LOGISTICS_STATUS_SIGN = 4;
+
 
     //奖励类型
     const AWARD_TYPE_EMPTY=0;//0空奖品

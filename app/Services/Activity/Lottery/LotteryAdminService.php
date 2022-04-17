@@ -7,9 +7,12 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Excel\ExcelImportFormat;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\Util;
+use App\Models\Erp\ErpStudentModel;
 use App\Models\LotteryActivityModel;
 use App\Models\OperationActivityModel;
 use App\Services\Activity\Lottery\LotteryServices\LotteryActivityService;
+use App\Services\Activity\Lottery\LotteryServices\LotteryAwardRecordService;
 use App\Services\Activity\Lottery\LotteryServices\LotteryImportUserService;
 use App\Services\EmployeeService;
 
@@ -98,8 +101,8 @@ class LotteryAdminService
                 }
                 $checkTimesAmount = $pv['high_pay_amount'];
                 $formatParams['lottery_times_rule'][] = [
-                    'low_pay_amount'  => $pv['low_pay_amount'],
-                    'high_pay_amount' => $pv['high_pay_amount'],
+                    'low_pay_amount'  => $pv['low_pay_amount'] * 100,
+                    'high_pay_amount' => $pv['high_pay_amount'] * 100,
                     'times'           => $pv['times'],
                     'status'          => Constants::STATUS_TRUE,
                 ];
@@ -128,8 +131,8 @@ class LotteryAdminService
                 }
                 $checkAmount = $wpv['high_pay_amount'];
                 array_push($formatParams['win_prize_rule'], [
-                    'low_pay_amount'  => $wpv['low_pay_amount'],
-                    'high_pay_amount' => $wpv['high_pay_amount'],
+                    'low_pay_amount'  => $wpv['low_pay_amount'] * 100,
+                    'high_pay_amount' => $wpv['high_pay_amount'] * 100,
                     'award_level'     => $wpv['award_level'],
                     'status'          => Constants::STATUS_TRUE,
                 ]);
@@ -150,16 +153,22 @@ class LotteryAdminService
         $formatParams['base_data']['day_max_hit'] = $paramsData['day_max_hit'];
         $formatParams['base_data']['max_hit_type'] = $paramsData['max_hit_type'];
         $formatParams['base_data']['max_hit'] = $paramsData['max_hit'];
-        //奖品设置
+        //奖品设置:最后一个奖品默认设置为兜底奖品（1.库存=-1，中奖时间段=活动开始结束时间 2.奖品类型不能是实物
         if (!is_array($paramsData['awards']) || empty($paramsData['awards'])) {
             throw new RuntimeException(["award_params_error"]);
         }
-        if (count($paramsData['awards']) > 8 || count($paramsData['awards']) < 5) {
+        $awardCount = count($paramsData['awards']);
+        if ($awardCount > 8 || $awardCount < 5) {
             throw new RuntimeException(["award_counts_error"]);
+        }
+        //兜底奖品
+        if ($paramsData['awards'][$awardCount - 1]['type'] == Constants::AWARD_TYPE_TYPE_ENTITY) {
+            throw new RuntimeException(["default_award_not_entity"]);
         }
         foreach ($paramsData['awards'] as $awk => &$awv) {
             //批量验证参数格式
             $formatParams['awards'][$awk] = self::checkAwardsParams($awv);
+            $formatParams['awards'][$awk]['rest_num'] = $formatParams['awards'][$awk]['num'];
             //区分不同奖励，校验不同参数
             switch ($awv['type']) {
                 case Constants::AWARD_TYPE_GOLD_LEAF:
@@ -169,7 +178,7 @@ class LotteryAdminService
                 case Constants::AWARD_TYPE_EMPTY:
                     $awv['common_award_id'] = 0;
                     $awv['common_award_amount'] = 1;
-                    $formatParams['awards'][$awk]['num'] = -1;
+                    $formatParams['awards'][$awk]['num'] = $formatParams['awards'][$awk]['rest_num'] = -1;
                     break;
                 case Constants::AWARD_TYPE_TYPE_LESSON:
                 case Constants::AWARD_TYPE_TYPE_ENTITY:
@@ -181,7 +190,9 @@ class LotteryAdminService
                 default:
                     throw new RuntimeException(["award_type_is_error"]);
             }
-
+            if ($awk == $awardCount - 1) {
+                $formatParams['awards'][$awk]['num'] = $formatParams['awards'][$awk]['rest_num'] = -1;
+            }
             //中奖时间段，分组数量
             if (!is_array($awv['hit_times']) || empty($awv['hit_times']) || count($awv['hit_times']) > 3) {
                 throw new RuntimeException(["hit_times_value_error"]);
@@ -368,16 +379,163 @@ class LotteryAdminService
     {
         $detailData = LotteryActivityService::detail($opActivityId);
         $detailData['base_data']['title_url_oss'] = AliOSS::replaceCdnDomainForDss($detailData['base_data']['title_url']);
+
+        $dictData = DictConstants::getTypesMap([
+            DictConstants::AWARD_LEVEL['type'],
+            DictConstants::AWARD_TYPE['type'],
+        ]);
         foreach ($detailData['awards'] as &$avl) {
             $avl['img_url_oss'] = AliOSS::replaceCdnDomainForDss($avl['img_url']);
             $avl['hit_times'] = json_decode($avl['hit_times'], true);
             $avl += json_decode($avl['award_detail'], true);
+            $avl['award_level_zh'] = $dictData[DictConstants::AWARD_LEVEL['type']][$avl['level']]['value'];
+            $avl['award_type_zh'] = $dictData[DictConstants::AWARD_TYPE['type']][$avl['type']]['value'];
+
+        }
+        foreach ($detailData['lottery_times_rule'] as &$lr) {
+            $lr['low_pay_amount'] /= 100;
+            $lr['high_pay_amount'] /= 100;
+        }
+        foreach ($detailData['win_prize_rule'] as &$wr) {
+            $wr['low_pay_amount'] /= 100;
+            $wr['high_pay_amount'] /= 100;
         }
         return $detailData;
     }
 
-    public static function joinRecords($opActivityId)
+    /**
+     * 活动参与记录数据
+     * @param $searchParams
+     * @param $page
+     * @param $pageSize
+     * @return array
+     */
+    public static function joinRecords($searchParams, $page, $pageSize): array
     {
-        //todo
+        $recordData = LotteryAwardRecordService::search($searchParams, $page, $pageSize);
+        if (empty($recordData['list'])) {
+            return $recordData;
+        }
+        $recordData['list'] = self::formatJoinRecordsData($recordData['list']);
+        return $recordData;
     }
+
+    /**
+     * 格式化活动参与记录数据
+     * @param $recordsData
+     * @return array
+     */
+    private static function formatJoinRecordsData($recordsData): array
+    {
+        $dictData = DictConstants::getTypesMap([
+            DictConstants::AWARD_TYPE['type'],
+            DictConstants::SHIPPING_STATUS['type'],
+            DictConstants::AWARD_LEVEL['type'],
+        ]);
+        $studentData = array_column(ErpStudentModel::getRecords(['uuid' => array_column($recordsData, 'uuid')],
+            ['uuid', 'mobile', 'name']), null, 'uuid');
+        //收货地址信息
+        $awardAddressData = [];
+        foreach (array_column($recordsData, 'address_detail') as $ad) {
+            $tmpAddressObj = json_decode($ad);
+            if (!empty($tmpAddressObj)) {
+                $awardAddressData[$tmpAddressObj->id] = json_decode($ad);
+            }
+        }
+        foreach ($recordsData as &$rv) {
+            $rv['mobile'] = Util::hideUserMobile($studentData[$rv['uuid']]['mobile']);
+            $rv['student_name'] = $studentData[$rv['uuid']]['name'];
+            $rv['award_type_zh'] = $dictData[DictConstants::AWARD_TYPE['type']][$rv['award_type']]['value'];
+            $rv['award_level_zh'] = $dictData[DictConstants::AWARD_LEVEL['type']][$rv['level']]['value'];
+            $rv['shipping_status_zh'] = $dictData[DictConstants::SHIPPING_STATUS['type']][$rv['shipping_status']]['value'];
+            $rv['shipping_address'] = $awardAddressData[$rv['erp_address_id']]->address;
+            $rv['shipping_mobile'] = $awardAddressData[$rv['erp_address_id']]->mobile;
+            $rv['shipping_receiver'] = $awardAddressData[$rv['erp_address_id']]->name;
+            $rv['create_time'] = date("Y-m-d H:i:s", $rv['create_time']);
+            unset($rv['address_detail']);
+        }
+        return $recordsData;
+    }
+
+    /**
+     * 编辑收货地址
+     * @param $params
+     * @param $employeeUuid
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function updateShippingAddress($params, $employeeUuid): bool
+    {
+        $recordId = $params['record_id'];
+        unset($params['record_id']);
+        $updateRes = LotteryAwardRecordService::updateAwardShippingAddress($recordId, $params);
+        if (empty($updateRes)) {
+            throw new RuntimeException(["update_failure"]);
+        }
+        return true;
+    }
+
+    /**
+     * 取消发货
+     * @param $params
+     * @param $employeeUuid
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function cancelDeliver($params, $employeeUuid): bool
+    {
+        //校验奖励数据
+        $recordData = LotteryAwardRecordService::search([
+            'op_activity_id' => $params['op_activity_id'],
+            'uuid'           => $params['student_uuid'],
+            'id'             => $params['record_id'],
+        ]);
+
+        if (empty($recordData['list'])) {
+            throw new RuntimeException(["record_not_found"]);
+        }
+        if ($recordData['list'][0]['shipping_status'] == Constants::SHIPPING_STATUS_CANCEL) {
+            throw new RuntimeException(["stop_repeat_operate"]);
+        }
+        $res = LotteryAwardRecordService::updateAwardShippingStatus($params['record_id'],
+            $recordData['list'][0]['award_type'], [
+                'shipping_status'      => Constants::SHIPPING_STATUS_CANCEL,
+                'cancel_shipping_time' => time(),
+                'cancel_shipping_uuid' => $employeeUuid,
+            ]);
+        if (empty($res)) {
+            throw new RuntimeException(["update_failure"]);
+        }
+        return true;
+    }
+
+    /**
+     * 获取物流详情
+     * @param $opActivityId
+     * @param $uniqueId
+     * @return array
+     */
+    public static function expressDetail($opActivityId, $uniqueId): array
+    {
+        return LotteryAwardRecordService::expressDetail($opActivityId, $uniqueId, Constants::OPERATOR_TYPE_SYSTEM);
+    }
+
+    /**
+     * 编辑状态
+     * @param $opActivityId
+     * @param $status
+     * @param $employeeUuid
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function updateEnableStatus($opActivityId, $status, $employeeUuid): bool
+    {
+        $res = LotteryActivityService::updateEnableStatus($opActivityId,
+            ['status' => $status, 'update_uuid' => $employeeUuid, 'update_time' => time()]);
+        if (empty($res)) {
+            throw new RuntimeException(["update_failure"]);
+        }
+        return true;
+    }
+
 }

@@ -10,6 +10,7 @@
 namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
@@ -178,11 +179,6 @@ class ActivityLottery extends ControllerBase
             ],
             [
                 'key'        => 'op_activity_id',
-                'type'       => 'integer',
-                'error_code' => 'op_activity_id_is_integer'
-            ],
-            [
-                'key'        => 'op_activity_id',
                 'type'       => 'min',
                 'value'      => 1,
                 'error_code' => 'op_activity_id_is_integer'
@@ -198,7 +194,7 @@ class ActivityLottery extends ControllerBase
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
-        return HttpHelper::buildResponse($response, [$res]);
+        return HttpHelper::buildResponse($response, []);
     }
 
     /**
@@ -259,11 +255,6 @@ class ActivityLottery extends ControllerBase
             ],
             [
                 'key'        => 'op_activity_id',
-                'type'       => 'integer',
-                'error_code' => 'op_activity_id_is_integer'
-            ],
-            [
-                'key'        => 'op_activity_id',
                 'type'       => 'min',
                 'value'      => 1,
                 'error_code' => 'op_activity_id_is_integer'
@@ -298,11 +289,6 @@ class ActivityLottery extends ControllerBase
             ],
             [
                 'key'        => 'op_activity_id',
-                'type'       => 'integer',
-                'error_code' => 'op_activity_id_is_integer'
-            ],
-            [
-                'key'        => 'op_activity_id',
                 'type'       => 'min',
                 'value'      => 1,
                 'error_code' => 'op_activity_id_is_integer'
@@ -313,12 +299,238 @@ class ActivityLottery extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
+        list($page, $pageSize) = Util::formatPageCount($params);
         try {
-            $res = LotteryAdminService::joinRecords($params['op_activity_id']);
+            $res = LotteryAdminService::joinRecords($params, $page, $pageSize);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, [$res]);
     }
 
+    /**
+     * 修改奖品的收获地址
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function updateShippingAddress(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key'        => 'record_id',
+                'type'       => 'required',
+                'error_code' => 'record_id_is_required'
+            ],
+            [
+                'key'        => 'record_id',
+                'type'       => 'min',
+                'value'      => 1,
+                'error_code' => 'record_id_id_is_integer'
+            ],
+            [
+                'key'        => 'name',
+                'type'       => 'required',
+                'error_code' => 'student_name_is_required',
+            ],
+            [
+                'key'        => 'mobile',
+                'type'       => 'required',
+                'error_code' => 'mobile_is_required',
+            ],
+            [
+                'key'        => 'mobile',
+                'type'       => 'regex',
+                'value'      => Constants::MOBILE_REGEX,
+                'error_code' => 'student_mobile_format_is_error'
+            ],
+            [
+                'key'        => 'country_code',
+                'type'       => 'required',
+                'error_code' => 'country_code_is_required',
+            ],
+            [
+                'key'        => 'province_code',
+                'type'       => 'required',
+                'error_code' => 'province_code_is_required'
+            ],
+            [
+                'key'        => 'city_code',
+                'type'       => 'required',
+                'error_code' => 'city_code_is_required'
+            ],
+            [
+                'key'        => 'district_code',
+                'type'       => 'required',
+                'error_code' => 'district_code_is_required'
+            ],
+            [
+                'key'        => 'address',
+                'type'       => 'required',
+                'error_code' => 'student_address_is_required',
+            ],
+            [
+                'key'        => 'default',
+                'type'       => 'required',
+                'error_code' => 'address_default_is_required',
+            ],
+            [
+                'key'        => 'uuid',
+                'type'       => 'required',
+                'error_code' => 'uuid_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $res = LotteryAdminService::updateShippingAddress($params, $this->ci['employee']['uuid']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 取消发货
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function cancelDeliver(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key'        => 'op_activity_id',
+                'type'       => 'required',
+                'error_code' => 'op_activity_id_is_required'
+            ],
+            [
+                'key'        => 'op_activity_id',
+                'type'       => 'min',
+                'value'      => 1,
+                'error_code' => 'op_activity_id_is_integer'
+            ],
+            [
+                'key'        => 'student_uuid',
+                'type'       => 'required',
+                'error_code' => 'student_uuid_is_required'
+            ],
+            [
+                'key'        => 'record_id',
+                'type'       => 'required',
+                'error_code' => 'record_id_is_required'
+            ],
+            [
+                'key'        => 'record_id',
+                'type'       => 'min',
+                'value'      => 1,
+                'error_code' => 'record_id_id_is_integer'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $res = LotteryAdminService::cancelDeliver($params, $this->ci['employee']['uuid']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 获取物流详情
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function expressDetail(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key'        => 'op_activity_id',
+                'type'       => 'required',
+                'error_code' => 'op_activity_id_is_required'
+            ],
+            [
+                'key'        => 'op_activity_id',
+                'type'       => 'min',
+                'value'      => 1,
+                'error_code' => 'op_activity_id_is_integer'
+            ],
+            [
+                'key'        => 'unique_id',
+                'type'       => 'required',
+                'error_code' => 'unique_id_is_required'
+            ],
+            [
+                'key'        => 'unique_id',
+                'type'       => 'length',
+                'value'      => '14',
+                'error_code' => 'unique_id_length_error'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $res = LotteryAdminService::expressDetail($params['op_activity_id'], $params['unique_id']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $res);
+    }
+
+    /**
+     * 修改活动启用状态
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function updateEnableStatus(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key'        => 'op_activity_id',
+                'type'       => 'required',
+                'error_code' => 'op_activity_id_is_required'
+            ],
+            [
+                'key'        => 'op_activity_id',
+                'type'       => 'min',
+                'value'      => 1,
+                'error_code' => 'op_activity_id_is_integer'
+            ],
+            [
+                'key'        => 'status',
+                'type'       => 'required',
+                'error_code' => 'status_is_required'
+            ],
+            [
+                'key'        => 'status',
+                'type'       => 'in',
+                'value'      => [1, 2, 3],
+                'error_code' => 'status_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $res = LotteryAdminService::updateEnableStatus($params['op_activity_id'], $params['status'],
+                $this->ci['employee']['uuid']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
 }

@@ -25,7 +25,9 @@ use App\Models\CountingActivityMutexModel;
 use App\Models\CountingActivitySignModel;
 use App\Models\CountingAwardConfigModel;
 use App\Models\Dss\DssStudentModel;
+use App\Services\LogisticsService\ExpressDetailService;
 use App\Services\Queue\QueueService;
+use App\Services\UniqueIdGeneratorService\DeliverIdGeneratorService;
 
 class TaskService
 {
@@ -441,49 +443,8 @@ class TaskService
         ],['goods_id','unique_id','amount','erp_address_id','address_detail','logistics_status','create_time']);
 
         if (empty($award)) return [];
-
-        $expressInfo = [];
-
-        if (!empty($award['unique_id'])) {
-            $expressInfo = (new Erp())->getExpressDetails($award['unique_id']);
-        }
-
-        $ret['logistics_no'] = $expressInfo['logistics_no'] ?? '';
-        $ret['company'] = $expressInfo['company'] ?? '';
-        $ret['address_detail'] = $award['address_detail'] ?? '{}';
-
-        $deliver[] = [
-            'node' => '已发货',
-            'acceptTime' => Util::formatTimeToChinese($award['create_time']),
-            'acceptStation' => '小叶子已为您发货，包裹待揽收'
-        ];
-
-        $ret['express_record'] = array_merge_recursive(self::formatExpressRecord($expressInfo['logistics_detail'] ?? []),$deliver);
-
-        return $ret;
+        return ExpressDetailService::getExpressDetails($award);
     }
-
-    /**
-     * 格式化物流信息
-     *
-     * @param array $record
-     * @return array
-     */
-    private static function formatExpressRecord(array $record = []) :array
-    {
-        $nodeArr = [];
-        foreach ($record as &$value){
-            if (in_array($value['node'], $nodeArr)) {
-                $value['node'] = '';
-            } else {
-                $nodeArr[] = $value['node'];
-            }
-            $value['acceptTime'] = Util::formatTimeToChinese(strtotime($value['acceptTime']));
-
-        }
-        return $record;
-    }
-
 
     /**
      * 获取活动实物信息
@@ -624,7 +585,8 @@ class TaskService
         }
 
         $time = time();
-
+        //获取全局唯一发货单ID生成器对象
+        $idGenerator = new DeliverIdGeneratorService();
         $activityAward = [];
         foreach ($awardConfig as $key => $item){
             if ($item['type'] == CountingAwardConfigModel::GOLD_LEAF_TYPE) {
@@ -644,13 +606,14 @@ class TaskService
                 ];
             } else {
                 if (empty($erpAddressId)) throw new RunTimeException(['address_id_must_be_integer']);
+                $tmpUniqueId = $idGenerator->getDeliverId();
+                if (empty($tmpUniqueId)) throw new RunTimeException(['unique_deliver_id_generator_error']);
                 $activityAward[] = [
                     'sign_id'         => $sign['id'],
                     'student_id'      => $studentId,
                     'shipping_status' => $mark ? CountingActivityAwardModel::SHIPPING_STATUS_BEFORE : CountingActivityAwardModel::SHIPPING_STATUS_SPECIAL,
                     'type'            => $item['type'],
-                    'unique_id'       => Constants::UNIQUE_ID_PREFIX . sprintf("%08d",
-                            $sign['id']) . sprintf("%02d", $key),
+                    'unique_id'       => $idGenerator->getDeliverId(),
                     'goods_id'        => $item['goods_id'],
                     'goods_code'      => $item['goods_code'],
                     'create_time'     => $time,

@@ -45,12 +45,14 @@ class ExcelImportFormat
                 foreach ($sheetData as $sv) {
                     $fillData[] = array_combine($titleKeys, $sv);
                 }
-                return self::filterSheetData($fillData,$targetKeysList);
+                return self::filterSheetData($fillData, $targetKeysList);
             } else {
                 return $sheetData;
             }
         } catch (Exception $e) {
             throw new RunTimeException([$e->getMessage()]);
+        } finally {
+            unlink($filename);
         }
     }
 

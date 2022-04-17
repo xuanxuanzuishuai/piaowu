@@ -57,9 +57,6 @@ class CountingActivityAwardModel extends Model
         self::SHIPPING_STATUS_FAIL => '发货中',
         self::SHIPPING_STATUS_SPECIAL => '待发货',
     ];
-
-    const SALE_SHOP = 6;
-
     const REDIS_EXPRESS_KEY = 'express_details_%s';
 
     /**

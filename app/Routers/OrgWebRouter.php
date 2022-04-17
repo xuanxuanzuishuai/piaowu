@@ -401,6 +401,10 @@ class OrgWebRouter extends RouterBase
         '/op_web/lottery_activity/list' => ['method' => ['get'], 'call' => ActivityLottery::class . ':list'],
         '/op_web/lottery_activity/detail' => ['method' => ['get'], 'call' => ActivityLottery::class . ':detail'],
         '/op_web/lottery_activity/join_records' => ['method' => ['get'], 'call' => ActivityLottery::class . ':joinRecords'],
+        '/op_web/lottery_activity/update_shipping_address' => ['method' => ['post'], 'call' => ActivityLottery::class . ':updateShippingAddress'],
+        '/op_web/lottery_activity/cancel_deliver' => ['method' => ['post'], 'call' => ActivityLottery::class . ':cancelDeliver'],
+        '/op_web/lottery_activity/express_detail' => ['method' => ['get'], 'call' => ActivityLottery::class . ':expressDetail'],
+        '/op_web/lottery_activity/update_status' => ['method' => ['post'], 'call' => ActivityLottery::class . ':updateEnableStatus'],
 
         /** 渠道线索管理 */
         // 真人渠道线索列表

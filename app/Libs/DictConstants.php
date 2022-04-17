@@ -1197,6 +1197,11 @@ class DictConstants {
         'type' => 'award_type',
         'keys' => [0, 1, 2, 3, 4, 5, 6],
     ];
+    //奖品等级
+    const AWARD_LEVEL = [
+        'type' => 'award_level',
+        'keys' => [1, 2, 3, 4, 5, 6, 7, 8],
+    ];
     //课程id
     const LESSON_ID = [
         'type' => 'lesson_id',
@@ -1212,6 +1217,14 @@ class DictConstants {
         'type' => 'show_status',
         'keys' => [1, 3, 4, 5, 6],
     ];
+    //发货单状态
+    const SHIPPING_STATUS = [
+        'type' => 'shipping_status',
+        'keys' => [0, 1, 2, 3, -1, -2],
+    ];
+
+
+
 
 
 
