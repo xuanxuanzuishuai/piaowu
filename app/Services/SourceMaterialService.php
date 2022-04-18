@@ -627,6 +627,7 @@ class SourceMaterialService
         if (!empty($open)) {
             if ($request['from'] == 'wx') {
                 $arr = [
+                    'id' => '29',
                     'image_path' => $xinYangPath,
                     'jump_url' => 'weixin://dl/business/?t=B7T8HhfxQqb',
                     'jump_rule' => BannerConfigModel::IS_ALLOW_JUMP
@@ -634,6 +635,7 @@ class SourceMaterialService
                 array_unshift($bannerLists, $arr);
             } elseif ($request['from'] == 'app') {
                 $arr = [
+                    'id' => '29',
                     'image_path' => $xinYangPath,
                     'jump_rule' => BannerConfigModel::JUMP_MINI_PRO,
                     'path' => 'pages/index/webview?scene=S2*26827329*48038*2*20329',
