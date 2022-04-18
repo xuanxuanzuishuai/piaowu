@@ -148,8 +148,8 @@ trait TraitRealWeekActivityTestAbService
         }
         if (!empty($orglist)) {
             // 剩下的就是被删除的
-            $allChangePosterList['old'] = array_merge($allChangePosterList['old'], $orglist);
-            $changePosterList['old'] = array_merge($changePosterList['old'], $orglist);
+            $allChangePosterList['old'] = array_merge($allChangePosterList['old'] ?? [], $orglist);
+            $changePosterList['old'] = array_merge($changePosterList['old'] ?? [], $orglist);
         }
         return [$isChange, $changePosterList, $allChangePosterList];
     }
@@ -210,7 +210,7 @@ trait TraitRealWeekActivityTestAbService
     public static function getStudentTestAbPoster($studentId, $activityId, $extData = [])
     {
         // 查询是否已经有命中的海报，如果有直接返回命中的海报
-        $info = RealWeekActivityUserAllocationABModel::getRecord(['activity_id' => $activityId, 'student_id' => $studentId]);
+        $info = $hasHitPoster = RealWeekActivityUserAllocationABModel::getRecord(['activity_id' => $activityId, 'student_id' => $studentId]);
         if (empty($info)) {
             $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $activityId]);
             if ($activityInfo['has_ab_test']) {
@@ -249,8 +249,8 @@ trait TraitRealWeekActivityTestAbService
                     ]
                 );
                 $info['poster_url'] = $poster['poster_save_full_path'];
-                // 保存学生命中海报信息
-                self::saveStudentTestAbPosterQrId($studentId, $activityId, $info['ab_poster_id']);
+                // 首次命中海报 - 保存学生命中海报信息
+                empty($hasHitPoster) && self::saveStudentTestAbPosterQrId($studentId, $activityId, $info['ab_poster_id']);
             }
         }
         // 返回命中的海报

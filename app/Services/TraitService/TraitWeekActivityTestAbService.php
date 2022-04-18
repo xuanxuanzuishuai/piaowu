@@ -17,16 +17,15 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\ActivityPosterModel;
 use App\Models\Dss\DssUserQrTicketModel;
+use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\EmployeeModel;
 use App\Models\OperationActivityModel;
-use App\Models\RealWeekActivityUserAllocationABModel;
 use App\Models\TemplatePosterModel;
 use App\Models\WeekActivityModel;
 use App\Models\WeekActivityPosterAbModel;
 use App\Models\WeekActivityUserAllocationABModel;
 use App\Services\MiniAppQrService;
 use App\Services\PosterService;
-use App\Services\QrInfoService;
 
 trait TraitWeekActivityTestAbService
 {
@@ -174,7 +173,6 @@ trait TraitWeekActivityTestAbService
         ];
         $posterList = TemplatePosterModel::getRecords($where, $field);
         $posterList = array_column($posterList, null, 'id');
-        $res = [];
         foreach ($list as $p) {
             $templatePosterInfo = $posterList[$p['poster_id']] ?? [];
             if (empty($templatePosterInfo)) {
@@ -244,7 +242,7 @@ trait TraitWeekActivityTestAbService
     public static function getStudentTestAbPoster($studentId, $activityId, $extData = [])
     {
         // 查询是否已经有命中的海报，如果有直接返回命中的海报
-        $info = WeekActivityUserAllocationABModel::getRecord(['activity_id' => $activityId, 'student_id' => $studentId]);
+        $info = $hasHitPoster = WeekActivityUserAllocationABModel::getRecord(['activity_id' => $activityId, 'student_id' => $studentId]);
         if (empty($info)) {
             $activityInfo = WeekActivityModel::getRecord(['activity_id' => $activityId]);
             if ($activityInfo['has_ab_test']) {
@@ -262,7 +260,7 @@ trait TraitWeekActivityTestAbService
                 $studentType = $extData['user_type'] ?? DssUserQrTicketModel::STUDENT_TYPE;
                 $channelId = $extData['channel_id'] ?? 0;
                 $landingType = $extData['landing_type'] ?? 0;
-                $qrInfo = MiniAppQrService::getUserMiniAppQr(Constants::REAL_APP_ID, Constants::REAL_MINI_BUSI_TYPE, $studentId, $studentType, $channelId, $landingType,
+                $qrInfo = MiniAppQrService::getUserMiniAppQr(Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP, $studentId, $studentType, $channelId, $landingType,
                     [
                         'activity_id' => $activityId,
                         'poster_id'   => $info['ab_poster_id'],
@@ -283,8 +281,8 @@ trait TraitWeekActivityTestAbService
                     ]
                 );
                 $info['poster_url'] = $poster['poster_save_full_path'];
-                // 保存学生命中海报信息
-                self::saveStudentTestAbPosterQrId($studentId, $activityId, $info['ab_poster_id']);
+                // 首次命中海报 - 保存学生命中海报信息
+                empty($hasHitPoster) && self::saveStudentTestAbPosterQrId($studentId, $activityId, $info['ab_poster_id']);
             }
         }
         // 返回命中的海报
@@ -400,7 +398,6 @@ trait TraitWeekActivityTestAbService
      * @param $studentId
      * @param $activityId
      * @param $abPosterId
-     * @param $qrId
      * @return int|mixed|string|null
      */
     public static function saveStudentTestAbPosterQrId($studentId, $activityId, $abPosterId)

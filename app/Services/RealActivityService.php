@@ -688,6 +688,6 @@ class RealActivityService
         unset($key, $item);
         // 获取活动规则
         $activityData['award_rule'] = ActivityExtModel::getActivityExt($activityData['activity_id'])['award_rule'] ?? '';
-        return [$posterList, ActivityService::formatData($activityData)];
+        return [array_values($posterList), ActivityService::formatData($activityData)];
     }
 }
