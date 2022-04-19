@@ -108,6 +108,8 @@ class Constants
     // 客户端类型，区分请求来源
     const FROM_TYPE_REAL_STUDENT_APP = 'real_student_app'; //真人app
     const FROM_TYPE_REAL_STUDENT_WX = 'real_student_wx'; //真人学生微信
+    // op运营平台发货单前缀：格式共14位=》10010000000000
+    const UNIQUE_ID_PREFIX = 1001;
 
     // op运营平台发货单前缀：格式共14位,前4位的1001是平台标识,后10位是系统统一生成=》10010000000000
     const UNIQUE_ID_PREFIX = 1001;

@@ -1223,13 +1223,6 @@ class DictConstants {
         'keys' => [0, 1, 2, 3, -1, -2],
     ];
 
-
-
-
-
-
-
-
     /**
      * 单个获取op系统dict配置数据
      * @param $type

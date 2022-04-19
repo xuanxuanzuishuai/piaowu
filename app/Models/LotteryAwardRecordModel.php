@@ -13,29 +13,23 @@ class LotteryAwardRecordModel extends Model
     const USE_TYPE_FILTER = 1;
     const USE_TYPE_IMPORT = 2;
 
-    /**
-     * @param $opActivityId
-     * @param $startTime
-     * @param $endTime
-     * @return array
-     */
-    public static function getHitAwardByTime($opActivityId, $startTime, $endTime): array
+    public static function getHitAwardByTime($opActivityId, $startTime, $endTime)
     {
-        $db = MysqlDB::getDB();
-        $hitList = $db->select(self::getTableNameWithDb() . '(ar)', [
-            "[><]" . ErpStudentModel::getTableNameWithDb() . '(s)'        => ['ar.uuid' => 's.uuid'],
-            "[><]" . LotteryAwardInfoModel::getTableNameWithDb() . '(ai)' => ['ar.award_id' => 'ai.id'],
-        ], [
+        $db  = MysqlDB::getDB();
+        $hitList = $db->select(self::$table.'(ar)',[
+            "[><]".ErpStudentModel::$table.'(s)'=>['ar.uuid'=>'s.uuid'],
+            "[><]".LotteryAwardInfoModel::$table.'(ai)'=>['ar.award_id'=>'ai.id'],
+        ],[
             's.mobile',
             'ar.award_id',
             'ai.name',
             'ar.create_time'
-        ], [
+        ],[
             'ar.op_activity_id' => $opActivityId,
             'ar.award_type[!]'  => Constants::AWARD_TYPE_EMPTY,
             'ar.create_time[>]' => $startTime,
             'ar.create_time[<]' => $endTime,
-            'ORDER'             => [
+            'ORDER'          => [
                 'ar.id' => 'DESC'
             ]
         ]);
