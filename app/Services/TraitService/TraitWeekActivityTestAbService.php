@@ -243,16 +243,20 @@ trait TraitWeekActivityTestAbService
     {
         // 查询是否已经有命中的海报，如果有直接返回命中的海报
         $info = $hasHitPoster = WeekActivityUserAllocationABModel::getRecord(['activity_id' => $activityId, 'student_id' => $studentId]);
+        $activityInfo = WeekActivityModel::getRecord(['activity_id' => $activityId]);
+        SimpleLogger::info("qingfeng-test-getStudentTestAbPoster", ['msg' => 'start', 'student_id' => $studentId, 'activity_id' => $activityId, 'has_ab_test' => $activityInfo['has_ab_test']]);
+        // 是否开启了ab测， 没有开启直接返回已经命中的海拔或者空
+        if (empty($activityInfo['has_ab_test'])) {
+            return self::formatTestAbPoster($info);
+        }
         if (empty($info)) {
-            $activityInfo = WeekActivityModel::getRecord(['activity_id' => $activityId]);
-            if ($activityInfo['has_ab_test']) {
-                // 计算命中海报 - 计算命中海报一直有锁最终会返回空
-                list($hitPosterId) = self::calculateHitNode($activityId);
-                if ($hitPosterId <= 0) {
-                    return self::formatTestAbPoster([]);
-                }
-                $info['ab_poster_id'] = $hitPosterId;
+            // 计算命中海报 - 计算命中海报一直有锁最终会返回空
+            list($hitPosterId) = self::calculateHitNode($activityId);
+            SimpleLogger::info("qingfeng-test-getStudentTestAbPoster", ['msg' => 'hit_poster', 'student_id' => $studentId, 'activity_id' => $activityId, 'has_ab_test' => $activityInfo['has_ab_test'], 'hit_poster_id' => $hitPosterId]);
+            if ($hitPosterId <= 0) {
+                return self::formatTestAbPoster([]);
             }
+            $info['ab_poster_id'] = $hitPosterId;
         }
         // 是否生成小程序码
         if (!empty($extData) && !empty($extData['is_create_qr_id'])) {
@@ -266,7 +270,7 @@ trait TraitWeekActivityTestAbService
                 $qrInfo = MiniAppQrService::getUserMiniAppQr(Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP, $studentId, $studentType, $channelId, $landingType,
                     [
                         'activity_id' => $activityId,
-                        'poster_id'   => $info['ab_poster_id'],
+                        'poster_id'   => $hitPosterInfo['poster_id'],
                         'user_status' => $extData['user_status'],
                     ],
                     false
@@ -277,7 +281,7 @@ trait TraitWeekActivityTestAbService
                     $studentId,
                     DssUserQrTicketModel::STUDENT_TYPE,
                     $extData['channel_id'],
-                    ['user_current_status' => $extData['user_status'], 'poster_id' => $info['ab_poster_id']],
+                    ['user_current_status' => $extData['user_status'], 'poster_id' => $hitPosterInfo['poster_id']],
                     [
                         'qr_id'   => $qrInfo['qr_id'],
                         'qr_path' => $qrInfo['qr_path'],
@@ -285,6 +289,14 @@ trait TraitWeekActivityTestAbService
                 );
                 $info['poster_url'] = $poster['poster_save_full_path'];
                 // 首次命中海报 - 保存学生命中海报信息
+                SimpleLogger::info("qingfeng-test-getStudentTestAbPoster", [
+                    'msg' => 'save_user_hit_poster',
+                    'student_id' => $studentId,
+                    'activity_id' => $activityId,
+                    'has_ab_test' => $activityInfo['has_ab_test'],
+                    'has_hit_poster' => empty($hasHitPoster),
+                    'hit_poster_id' => $info['ab_poster_id']
+                ]);
                 empty($hasHitPoster) && self::saveStudentTestAbPosterQrId($studentId, $activityId, $info['ab_poster_id']);
             }
         }

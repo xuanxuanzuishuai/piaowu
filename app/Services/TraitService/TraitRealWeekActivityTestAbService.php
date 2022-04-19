@@ -234,7 +234,7 @@ trait TraitRealWeekActivityTestAbService
                 $qrInfo = MiniAppQrService::getUserMiniAppQr(Constants::REAL_APP_ID, Constants::REAL_MINI_BUSI_TYPE, $studentId, $studentType, $channelId, $landingType,
                     [
                         'activity_id' => $activityId,
-                        'poster_id'   => $info['ab_poster_id'],
+                        'poster_id'   => $hitPosterInfo['poster_id'],
                         'user_status' => $extData['user_status'],
                     ],
                     false
@@ -245,7 +245,7 @@ trait TraitRealWeekActivityTestAbService
                     $studentId,
                     DssUserQrTicketModel::STUDENT_TYPE,
                     $extData['channel_id'],
-                    ['user_current_status' => $extData['user_status'], 'poster_id' => $info['ab_poster_id']],
+                    ['user_current_status' => $extData['user_status'], 'poster_id' => $hitPosterInfo['poster_id']],
                     [
                         'qr_id'   => $qrInfo['qr_id'],
                         'qr_path' => $qrInfo['qr_path'],

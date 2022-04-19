@@ -261,6 +261,7 @@ class RealWeekActivityService
         $info['format_target_use_first_pay_time_start'] = !empty($activityInfo['target_use_first_pay_time_start']) ? date("Y-m-d H:i:s", $activityInfo['target_use_first_pay_time_start']) : '';
         $info['format_target_use_first_pay_time_end'] = !empty($activityInfo['target_use_first_pay_time_end']) ? date("Y-m-d H:i:s", $activityInfo['target_use_first_pay_time_end']) : '';
         $info['target_user_type'] = !empty($activityInfo['target_user_type']) ? $activityInfo['target_user_type'] : '';
+        $info['has_ab_test_zh'] = !empty($info['has_ab_test']) ? '有' : '无';
         if (empty($info['remark'])) {
             $info['remark'] = $extInfo['remark'] ?? '';
         }
