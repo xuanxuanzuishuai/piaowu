@@ -398,6 +398,7 @@ class OrgWebRouter extends RouterBase
         //转盘抽奖
         '/op_web/lottery_activity/add_update' => ['method' => ['post'], 'call' => ActivityLottery::class . ':addOrUpdate'],
         '/op_web/lottery_activity/append_import_user' => ['method' => ['post'], 'call' => ActivityLottery::class . ':appendImportUser'],
+        '/op_web/lottery_activity/temp_download_url' => ['method' => ['get'], 'call' => ActivityLottery::class . ':templateDownloadUrl'],
         '/op_web/lottery_activity/list' => ['method' => ['get'], 'call' => ActivityLottery::class . ':list'],
         '/op_web/lottery_activity/detail' => ['method' => ['get'], 'call' => ActivityLottery::class . ':detail'],
         '/op_web/lottery_activity/join_records' => ['method' => ['get'], 'call' => ActivityLottery::class . ':joinRecords'],
@@ -405,6 +406,7 @@ class OrgWebRouter extends RouterBase
         '/op_web/lottery_activity/cancel_deliver' => ['method' => ['post'], 'call' => ActivityLottery::class . ':cancelDeliver'],
         '/op_web/lottery_activity/express_detail' => ['method' => ['get'], 'call' => ActivityLottery::class . ':expressDetail'],
         '/op_web/lottery_activity/update_status' => ['method' => ['post'], 'call' => ActivityLottery::class . ':updateEnableStatus'],
+        '/op_web/lottery_activity/export_records' => ['method' => ['get'], 'call' => ActivityLottery::class . ':exportRecords'],
 
         /** 渠道线索管理 */
         // 真人渠道线索列表

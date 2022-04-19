@@ -104,7 +104,7 @@ class Student extends ControllerBase
                 'error_code' => 'student_address_is_required',
             ],
             [
-                'key' => 'default',
+                'key' => 'is_default',
                 'type' => 'required',
                 'error_code' => 'address_default_is_required',
             ]
@@ -117,6 +117,8 @@ class Student extends ControllerBase
         }
 
         $params['uuid'] = $params['uuid'] ?? '';
+        $params['default'] = $params['is_default'];
+        unset($params['is_default']);
         $student = $this->ci['user_info'];
         if (empty($params['uuid']) && !empty($student['user_id'])) {
             $studentInfo = DssStudentModel::getById($student['user_id']);

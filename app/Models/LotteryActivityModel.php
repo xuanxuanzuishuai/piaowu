@@ -16,6 +16,10 @@ class LotteryActivityModel extends Model
     const TYPE_UNLIMITED = 2;
     const TYPE_CUSTOM = 1;
 
+    // 中奖时间段规则类型:1同活动时间 2自定义
+    const HIT_TIMES_TYPE_KEEP_ACTIVITY = 1;
+    const HIT_TIMES_TYPE_CUSTOM = 2;
+
     /**
      * 增加抽奖活动
      * @param $addParamsData

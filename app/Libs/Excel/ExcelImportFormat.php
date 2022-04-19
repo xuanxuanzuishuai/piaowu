@@ -3,11 +3,17 @@
 namespace App\Libs\Excel;
 
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\SimpleLogger;
 use Exception;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 class ExcelImportFormat
 {
+    //表格输出方式类型：1保存到服务器 2输出到浏览器
+    const OUTPUT_TYPE_SAVE_FILE = 1;
+    const OUTPUT_TYPE_BROWSER_EXPORT = 2;
+
     /**
      * 格式化处理excel表格导入数据，返回数组
      * @param bool $firstRowAsKey 第一行的列值是否作为数组key使用：true是 false不是
@@ -42,6 +48,12 @@ class ExcelImportFormat
                 if (empty($sheetData)) {
                     return [];
                 }
+                //表格第一列和目标key做交集检测
+                $keyDiff = array_diff($targetKeysList, $titleKeys);
+                if (!empty($keyDiff)) {
+                    SimpleLogger::info("targetKeys and titleKeys diff", [$keyDiff]);
+                    return [];
+                }
                 foreach ($sheetData as $sv) {
                     $fillData[] = array_combine($titleKeys, $sv);
                 }
@@ -57,6 +69,7 @@ class ExcelImportFormat
     }
 
     /**
+     * 过滤表格数据
      * @param $sheetData
      * @param $filterKeys
      * @return array|array[]
@@ -71,7 +84,106 @@ class ExcelImportFormat
 
             return $res;
         }, $sheetData);
+    }
+
+    /**
+     * 生成表格
+     * @param $dataResult
+     * @param $title
+     * @param $fileName
+     * @param $outputType
+     * @param string $fileType
+     * @return false|string|void
+     */
+    public static function createExcelTable($dataResult, $title, $fileName, $outputType, string $fileType = 'Xlsx')
+    {
+        try {
 
 
+            if (empty($dataResult)) {
+                return false;
+            }
+            // 实例化 Spreadsheet 对象
+            $spreadsheet = new Spreadsheet();
+            // 获取工作薄
+            $worksheet = $spreadsheet->getActiveSheet();
+            //设置单元格内容 遍历表头的数组设置到单元格上
+            foreach ($title as $key => $value) {
+                $worksheet->setCellValueByColumnAndRow($key + 1, 1, $value);
+            }
+            //设置工作表标题名称
+            $worksheet->setTitle('工作表格1');
+            //遍历数据填充到对应的单元格
+            $row = 2; //从第二行开始
+            foreach ($dataResult as $item) {
+                $column = 1; //列从第一格开始
+                foreach ($item as $value) {
+                    $worksheet->setCellValueByColumnAndRow($column, $row, $value);
+                    $column++;
+                }
+                $row++;  //每一列填充完，+1
+            }
+            if ($outputType == self::OUTPUT_TYPE_SAVE_FILE) {
+                $tmpSavePath = '/tmp/' . $fileName . '.' . $fileType;
+                self::outputSaveTmpFile($spreadsheet, $tmpSavePath, $fileType);
+                return $tmpSavePath;
+            } else {
+                self::outputClientBrowser($spreadsheet, $fileName, $fileType);
+            }
+        } catch (Exception $e) {
+            SimpleLogger::error("create excel table error", ['err_msg' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * 下载到服务器
+     * @param $spreadsheet
+     * @param $savePath
+     * @param $fileType
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     */
+    private static function outputSaveTmpFile($spreadsheet, $savePath, $fileType)
+    {
+        $writer = IOFactory::createWriter($spreadsheet, $fileType);
+        $writer->save($savePath);
+    }
+
+    /**
+     * 输出到浏览器
+     * @param $spreadsheet
+     * @param $fileName
+     * @param $fileType
+     * @throws RunTimeException
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     */
+    private static function outputClientBrowser($spreadsheet, $fileName, $fileType)
+    {
+        $writer = IOFactory::createWriter($spreadsheet, $fileType); //按照指定格式生成Excel文件
+        self::excelBrowserExport($fileName, $fileType);
+        $writer->save('php://output');
+    }
+
+    /**
+     * 输出到浏览器(需要设置header头)
+     * @param $fileName
+     * @param $fileType
+     * @throws RunTimeException
+     */
+    private static function excelBrowserExport($fileName, $fileType)
+    {
+        //文件名称校验
+        if (!$fileName) {
+            throw new RuntimeException(["file_name_empty"]);
+        }
+        //Excel文件类型校验
+        $type = ['Csv'];
+        if (!in_array($fileType, $type)) {
+            throw new RuntimeException(["file_type_error"]);
+        }
+        if ($fileType == 'Csv') {
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $fileName . '.csv"');
+        }
+        header('Cache-Control: max-age=0');
     }
 }

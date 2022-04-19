@@ -10,7 +10,9 @@
 namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
+use App\Libs\AliOSS;
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
@@ -370,7 +372,7 @@ class ActivityLottery extends ControllerBase
                 'error_code' => 'student_address_is_required',
             ],
             [
-                'key'        => 'default',
+                'key'        => 'is_default',
                 'type'       => 'required',
                 'error_code' => 'address_default_is_required',
             ],
@@ -386,7 +388,7 @@ class ActivityLottery extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            $res = LotteryAdminService::updateShippingAddress($params, $this->ci['employee']['uuid']);
+            $res = LotteryAdminService::updateShippingAddress($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
@@ -414,21 +416,10 @@ class ActivityLottery extends ControllerBase
                 'error_code' => 'op_activity_id_is_integer'
             ],
             [
-                'key'        => 'student_uuid',
-                'type'       => 'required',
-                'error_code' => 'student_uuid_is_required'
-            ],
-            [
                 'key'        => 'record_id',
                 'type'       => 'required',
                 'error_code' => 'record_id_is_required'
-            ],
-            [
-                'key'        => 'record_id',
-                'type'       => 'min',
-                'value'      => 1,
-                'error_code' => 'record_id_id_is_integer'
-            ],
+            ]
         ];
         $params = $request->getParams();
         $result = Valid::appValidate($params, $rules);
@@ -532,5 +523,58 @@ class ActivityLottery extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, []);
+    }
+
+
+    /**
+     * 导出中奖信息记录
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function exportRecords(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key'        => 'op_activity_id',
+                'type'       => 'required',
+                'error_code' => 'op_activity_id_is_required'
+            ],
+            [
+                'key'        => 'op_activity_id',
+                'type'       => 'min',
+                'value'      => 1,
+                'error_code' => 'op_activity_id_is_integer'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $res = LotteryAdminService::exportRecords($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return $response;
+    }
+
+    /**
+     * 获取模板下载地址
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function templateDownloadUrl(
+        /** @noinspection PhpUnusedParameterInspection */ Request $request,
+        Response $response
+    ) {
+        $url = DictConstants::get(DictConstants::ORG_WEB_CONFIG, 'lottery_import_user_template');
+        $ossUrl = AliOSS::replaceCdnDomainForDss($url);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => ['url' => $ossUrl]
+        ]);
     }
 }

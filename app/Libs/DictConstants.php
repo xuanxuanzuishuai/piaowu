@@ -184,6 +184,7 @@ class DictConstants {
             'batch_import_reward_points_template',
             'export_amount',
             'export_total',
+            'lottery_import_user_template',
         ]
     ];
 
@@ -1202,7 +1203,7 @@ class DictConstants {
         'type' => 'award_level',
         'keys' => [1, 2, 3, 4, 5, 6, 7, 8],
     ];
-    //课程id
+    //抽奖奖品课程id
     const LESSON_ID = [
         'type' => 'lesson_id',
         'keys' => [25, 50],
@@ -1221,6 +1222,11 @@ class DictConstants {
     const SHIPPING_STATUS = [
         'type' => 'shipping_status',
         'keys' => [0, 1, 2, 3, -1, -2],
+    ];
+    //中奖时间段规则类型
+    const HIT_TIMES_TYPE = [
+        'type' => 'hit_times_type',
+        'keys' => [1, 2],
     ];
 
     /**

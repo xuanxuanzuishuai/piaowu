@@ -4,12 +4,14 @@ namespace App\Services\Activity\Lottery\LotteryServices;
 
 use App\Libs\Constants;
 use App\Libs\MysqlDB;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\CountingActivityAwardModel;
 use App\Models\LotteryAwardRecordModel;
+use App\Services\ErpService\ErpGoodsV1Service;
 use App\Services\UniqueIdGeneratorService\DeliverIdGeneratorService;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
-use App\Models\CountingActivityAwardModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\LotteryActivityModel;
 use App\Services\LogisticsService\ExpressDetailService;
@@ -137,7 +139,7 @@ class LotteryAwardRecordService
         ];
         //获取活动数据
         $activityData = LotteryActivityModel::getRecord(['op_activity_id' => $searchParams['op_activity_id']],
-            ['app_id']);
+            ['app_id', 'name']);
         if (empty($activityData)) {
             return $recordsData;
         }
@@ -178,7 +180,7 @@ class LotteryAwardRecordService
         if (!empty($searchParams['award_type'])) {
             $where['ai.type'] = (int)$searchParams['award_type'];
         }
-        return LotteryAwardRecordModel::search($where, [
+        $recordData = LotteryAwardRecordModel::search($where, [
             'ar.id',
             'ar.create_time',
             'ar.address_detail',
@@ -193,22 +195,40 @@ class LotteryAwardRecordService
             'ai.name',
             'ai.type',
         ], $page, $pageSize);
+        $recordData['activity_name'] = $activityData['name'];
+        return $recordData;
     }
 
     /**
-     * 修改发货状态
-     * @param $id
-     * @param $awardType
-     * @param $updateData
+     * 取消发货
+     * @param $ids
+     * @param $opActivityId
+     * @param $employeeUuid
      * @return bool
      */
-    public static function updateAwardShippingStatus($id, $awardType, $updateData): bool
+    public static function cancelDeliver($ids, $opActivityId, $employeeUuid): bool
     {
-        //目前实物支持取消发货/禁止重复取消
-        if ($awardType != Constants::AWARD_TYPE_TYPE_ENTITY) {
+        $recordList = LotteryAwardRecordModel::getRecords(['id' => $ids, 'op_activity_id' => $opActivityId],
+            ['shipping_status', 'award_type']);
+        if (empty($recordList)) {
             return false;
         }
-        $res = LotteryAwardRecordModel::updateRecord($id, $updateData);
+        //目前实物支持取消发货/禁止重复取消
+        $updateData = [];
+        foreach ($recordList as $rv) {
+            if ($rv['shipping_status'] == Constants::SHIPPING_STATUS_CANCEL || $rv['award_type'] != Constants::AWARD_TYPE_TYPE_ENTITY) {
+                continue;
+            }
+            $updateData = [
+                'shipping_status'      => Constants::SHIPPING_STATUS_CANCEL,
+                'cancel_shipping_time' => time(),
+                'cancel_shipping_uuid' => $employeeUuid,
+            ];
+        }
+        if (empty($updateData)) {
+            return true;
+        }
+        $res = LotteryAwardRecordModel::batchUpdateRecord($updateData, ['id' => $ids]);
         return !empty($res);
     }
 
@@ -250,6 +270,7 @@ class LotteryAwardRecordService
      */
     private static function updateAwardLogisticsData($awardRecordData, $erpExpressDetail): bool
     {
+        SimpleLogger::info('lottery award record data', $awardRecordData);
         if (empty($erpExpressDetail['logistics_no'])) {
             return false;
         }
@@ -308,4 +329,47 @@ class LotteryAwardRecordService
         return !empty($res);
     }
 
+    /**
+     * 获取未签收的实物获奖记录
+     * @return array
+     */
+    public static function getUnreceivedAwardRecord(): array
+    {
+        return LotteryAwardRecordModel::getRecords([
+            'create_time[>=]'     => strtotime('-1 month'),
+            'create_time[<=]'     => strtotime('-24 hour'),
+            'award_type'          => Constants::AWARD_TYPE_TYPE_ENTITY,
+            'logistics_status[<]' => CountingActivityAwardModel::LOGISTICS_STATUS_SIGN,
+        ], ['unique_id']);
+    }
+
+    /**
+     * 同步实物发货的物流信息
+     * @param $uniqueId
+     * @return array|bool
+     */
+    public static function lotterySyncAwardLogistics($uniqueId)
+    {
+        //奖励记录数据
+        $awardRecordData = LotteryAwardRecordModel::getRecord(['unique_id' => $uniqueId],
+            ['id', 'logistics_status', 'address_detail', 'create_time', 'unique_id']);
+        if (empty($awardRecordData)) {
+            return [];
+        }
+        $erpExpressDetail = ExpressDetailService::getExpressDetails($awardRecordData);
+        //更新物流信息
+        return self::updateAwardLogisticsData($awardRecordData, $erpExpressDetail);
+    }
+
+
+    /**
+     * 获取未发货的实物获奖记录:领奖时间在当前时间24小时之前
+     * @return array
+     */
+    public static function getUnshippedAwardRecord(): array
+    {
+        return LotteryAwardRecordModel::getUnshippedAwardRecord(strtotime('-24 hour'),
+            Constants::SHIPPING_STATUS_BEFORE, Constants::AWARD_TYPE_TYPE_ENTITY);
+
+    }
 }

@@ -15,21 +15,21 @@ class LotteryAwardRecordModel extends Model
 
     public static function getHitAwardByTime($opActivityId, $startTime, $endTime)
     {
-        $db  = MysqlDB::getDB();
-        $hitList = $db->select(self::$table.'(ar)',[
-            "[><]".ErpStudentModel::$table.'(s)'=>['ar.uuid'=>'s.uuid'],
-            "[><]".LotteryAwardInfoModel::$table.'(ai)'=>['ar.award_id'=>'ai.id'],
-        ],[
+        $db = MysqlDB::getDB();
+        $hitList = $db->select(self::$table . '(ar)', [
+            "[><]" . ErpStudentModel::$table . '(s)'        => ['ar.uuid' => 's.uuid'],
+            "[><]" . LotteryAwardInfoModel::$table . '(ai)' => ['ar.award_id' => 'ai.id'],
+        ], [
             's.mobile',
             'ar.award_id',
             'ai.name',
             'ar.create_time'
-        ],[
+        ], [
             'ar.op_activity_id' => $opActivityId,
             'ar.award_type[!]'  => Constants::AWARD_TYPE_EMPTY,
             'ar.create_time[>]' => $startTime,
             'ar.create_time[<]' => $endTime,
-            'ORDER'          => [
+            'ORDER'             => [
                 'ar.id' => 'DESC'
             ]
         ]);
@@ -60,8 +60,34 @@ class LotteryAwardRecordModel extends Model
         }
         $recordsData['total'] = $count;
         $whereParams['ORDER'] = ['ar.id' => 'DESC'];
-        $whereParams['LIMIT'] = [($page - 1) * $limit, $limit];
+        //limit=0查询全部
+        if ($limit != 0) {
+            $whereParams['LIMIT'] = [($page - 1) * $limit, $limit];
+        }
         $recordsData['list'] = $db->select(self::$table . '(ar)', $joinData, $fields, $whereParams);
         return $recordsData;
+    }
+
+    /**
+     * 获取未发货的奖励记录
+     * @param $drawTime
+     * @param $shippingStatus
+     * @param $awardType
+     * @return array
+     */
+    public static function getUnshippedAwardRecord($drawTime, $shippingStatus, $awardType): array
+    {
+        $db = MysqlDB::getDB();
+        return $db->select(self::$table, ["[>]" . LotteryAwardInfoModel::$table => ["award_id" => "id"]],
+            [
+                self::$table . ".unique_id",
+                self::$table . ".id",
+                LotteryAwardInfoModel::$table . ".award_detail",
+            ],
+            [
+                self::$table . ".draw_time[<=]"   => $drawTime,
+                self::$table . ".shipping_status" => $shippingStatus,
+                self::$table . ".award_type"      => $awardType,
+            ]);
     }
 }

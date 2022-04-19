@@ -108,12 +108,8 @@ class Constants
     // 客户端类型，区分请求来源
     const FROM_TYPE_REAL_STUDENT_APP = 'real_student_app'; //真人app
     const FROM_TYPE_REAL_STUDENT_WX = 'real_student_wx'; //真人学生微信
-    // op运营平台发货单前缀：格式共14位=》10010000000000
-    const UNIQUE_ID_PREFIX = 1001;
-
     // op运营平台发货单前缀：格式共14位,前4位的1001是平台标识,后10位是系统统一生成=》10010000000000
     const UNIQUE_ID_PREFIX = 1001;
-
     // 发货单状态:0废除 1待发货 2已发货 3发货中 4无需发货 -1发货失败 -2取消发货 -10 因库存不足导致待发货且不发货
     const SHIPPING_STATUS_DEL = 0;
     const SHIPPING_STATUS_BEFORE = 1;
@@ -132,9 +128,9 @@ class Constants
 
 
     //奖励类型
-    const AWARD_TYPE_EMPTY=0;//0空奖品
-    const AWARD_TYPE_TIME=1;//0空奖品1智能业务线：时长
-    const AWARD_TYPE_GOLD_LEAF=2;//0空奖品1智能业务线：时长2智能业务线：金叶子3真人业务线：魔法石4智能业务线：实物5真人业务线：课程6智能业务线：音符
+    const AWARD_TYPE_EMPTY=0;//空奖品
+    const AWARD_TYPE_TIME=1;//智能业务线：时长
+    const AWARD_TYPE_GOLD_LEAF=2;//智能业务线：金叶子
     const AWARD_TYPE_MAGIC_STONE=3;//真人业务线：魔法石
     const AWARD_TYPE_TYPE_ENTITY=4;//智能业务线：实物
     const AWARD_TYPE_TYPE_LESSON=5;//真人业务线：课程

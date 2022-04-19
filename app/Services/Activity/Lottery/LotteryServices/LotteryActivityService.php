@@ -322,6 +322,7 @@ class LotteryActivityService
             "weight",
             "num",
             "hit_times",
+            "hit_times_type",
         ]);
         return $detailData;
     }
