@@ -19,7 +19,10 @@ class LotteryActivityService
      */
     public static function getActivityConfigInfo($opActivityId)
     {
-        $activityInfo = LotteryActivityModel::getRecord($opActivityId);
+        $where = [
+            'op_activity_id' => $opActivityId
+        ];
+        $activityInfo = LotteryActivityModel::getRecord($where);
         return $activityInfo ?: [];
     }
 
@@ -73,7 +76,7 @@ class LotteryActivityService
     {
         $orderInfo = self::getOrderInfo($appId, $uuid, $startPayTime, $endPayTime);
         $orderToTimes = self::orderToTimes($opActivityId,$orderInfo);
-        return array_sum($orderToTimes);
+        return count($orderToTimes);
     }
 
     /**
@@ -96,18 +99,18 @@ class LotteryActivityService
      * @param $orderInfo
      * @return array
      */
-    public static function orderToTimes($opActivityId,$orderInfo)
+    public static function orderToTimes($opActivityId, $orderInfo)
     {
         $payTimesRule = LotteryFilterUserService::filterUserTimesRule($opActivityId);
-        if (empty($orderInfo) || empty($payTimesRule)){
+        if (empty($orderInfo) || empty($payTimesRule)) {
             return [];
         }
 
         foreach ($orderInfo as $value) {
             foreach ($payTimesRule as $rule) {
-                if (($value['ammount'] >= $rule['low_pay_amount']) && ($value['ammount'] < $rule['high_pay_amount'])) {
+                if (($value['amount'] >= $rule['low_pay_amount']) && ($value['amount'] < $rule['high_pay_amount'])) {
                     for ($i = 0; $i < $rule['times']; $i++) {
-                        $res[] = $value['ammount'];
+                        $res[] = $value['amount'];
                     }
                 }
             }
@@ -122,7 +125,7 @@ class LotteryActivityService
      * @return bool
      * @throws RunTimeException
      */
-    public static function checkActivityTime($activityInfo,$time)
+    public static function checkActivityInfo($activityInfo,$time)
     {
         if (empty($activityInfo)){
             throw new RunTimeException(['record_not_found']);
@@ -151,7 +154,7 @@ class LotteryActivityService
         if ($activityInfo['user_source'] == LotteryActivityModel::USER_SOURCE_FILTER) {
             $orderInfo = self::getOrderInfo($activityInfo['app_id'], $params['uuid'], $activityInfo['start_pay_time'], $activityInfo['end_pay_time']);
             $orderToTimes = self::orderToTimes($activityInfo['op_activity_id'],$orderInfo);
-            $filerTimes = array_sum($orderToTimes);
+            $filerTimes = count($orderToTimes);
         }
         $importTimes = LotteryImportUserService::importUserTimes($params['op_activity_id'], $params['uuid']);
         $totalTimes = $filerTimes+$importTimes;
@@ -170,9 +173,35 @@ class LotteryActivityService
             $params['use_type'] = LotteryAwardRecordModel::USE_TYPE_IMPORT;
         }
 
-        $params['award_info'] = LotteryAwardInfoService::getAwardInfo($params['op_activity_id']);
+        $params['max_hit'] = $activityInfo['max_hit'];
+        $params['day_max_hit'] = $activityInfo['day_max_hit'];
         return $params;
     }
+
+    /**
+     * @param $opActivityId
+     * @param $fields
+     * @return int|null
+     */
+    public static function updateAfterHitInfo($opActivityId, $fields)
+    {
+        if (!empty($fields['rest_award_num'])) {
+            $update['rest_award_num[-]'] = 1;
+        }
+
+        if (!empty($fields['hit_times'])) {
+            $update['hit_times[+]'] = 1;
+        }
+
+        if (!empty($fields['join_num'])) {
+            $update['join_num[+]'] = 1;
+        }
+        if (!empty($update)) {
+            return LotteryActivityModel::batchUpdateRecord(['op_activity_id' => $opActivityId], $update);
+        }
+        return 0;
+    }
+
 
     /**
      * 增加

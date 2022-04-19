@@ -45,12 +45,19 @@ class Lottery extends ControllerBase
         return HttpHelper::buildResponse($response,$activeInfo);
     }
 
+    /**
+     * 开始抽奖
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
     public function startLottery(Request $request, Response $response)
     {
         $rules = [
             [
-                'key' => 'op_activity_id',
-                'type' => 'required',
+                'key'        => 'op_activity_id',
+                'type'       => 'required',
                 'error_code' => 'op_activity_id_is_required',
             ]
         ];
@@ -62,6 +69,11 @@ class Lottery extends ControllerBase
         $params['uuid'] = $this->ci['user_info']['uuid'];
 
         $hitAwardInfo = LotteryClientService::hitAwardInfo($params);
-        return HttpHelper::buildResponse($response,$hitAwardInfo);
+        $data = [
+            'award_info_id'   => $hitAwardInfo['id'],
+            'award_info_type' => $hitAwardInfo['type'],
+            'img_url'         => $hitAwardInfo['img_url'],
+        ];
+        return HttpHelper::buildResponse($response, $data);
     }
 }

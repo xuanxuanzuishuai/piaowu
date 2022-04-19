@@ -5,7 +5,6 @@ namespace App\Services\Activity\Lottery\LotteryServices;
 use App\Models\LotteryActivityModel;
 use App\Models\LotteryImportUserModel;
 use App\Models\OperationActivityModel;
-use App\Models\LotteryAwardRecordModel;
 
 class LotteryImportUserService
 {
@@ -15,13 +14,13 @@ class LotteryImportUserService
      * @param $uuid
      * @return int|number
      */
-    public static function importUserTimes($opActivityId,$uuid)
+    public static function importUserTimes($opActivityId, $uuid)
     {
         $where = [
-            'op_activity_id'=>$opActivityId,
-            'uuid'=>$uuid,
+            'op_activity_id' => $opActivityId,
+            'uuid'           => $uuid,
         ];
-        return LotteryAwardRecordModel::getCount($where);
+        return LotteryImportUserModel::getCount($where);
     }
 
     /**

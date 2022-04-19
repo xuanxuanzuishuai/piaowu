@@ -70,6 +70,9 @@ class Erp
     const API_CHECK_PACKAGE_HAVE_KIND_V1 = '/ai_dss/billV1/check_package_have_kind';
     const API_UPDATE_ORDER_ADDRESS_V1 = '/ai_dss/billV1/update_order_address';
 
+    //支付中心接口
+    const API_ORDER_SEARCH = '/pri/v1/order/search';
+
     // 账户
     const API_STUDENT_ACCOUNTS = '/ai_dss/account/detail';
     const API_STUDENT_ACCOUNT_DETAIL = '/ai_dss/account/logs';
@@ -984,6 +987,25 @@ class Erp
         $response = HttpHelper::requestJson($this->host . self::STUDENT_IDENTIFY_ATTRIBUTE, [
             'student_uuid' => $studentUuid,
             'source' => self::REQUEST_ERP_OP_SOURCE
+        ], 'GET');
+        return $response['data'] ?? [];
+    }
+
+    /**
+     * 查询支付成功订单信息
+     * @param $params
+     * @return array|mixed
+     */
+    public function orderSearch($params)
+    {
+        $response = HttpHelper::requestJson($this->host . self::STUDENT_IDENTIFY_ATTRIBUTE, [
+            'sale_shop'      => $params['sale_shop'],
+            'student_uuid'   => $params['uuid'],
+            'order_status'   => $params['order_status'],
+            'start_pay_time' => $params['start_pay_time'],
+            'end_pay_time'   => $params['end_pay_time'],
+            'page'           => $params['page'],
+            'count'          => $params['count'],
         ], 'GET');
         return $response['data'] ?? [];
     }

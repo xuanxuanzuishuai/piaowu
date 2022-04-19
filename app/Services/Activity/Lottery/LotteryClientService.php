@@ -3,14 +3,10 @@
 namespace App\Services\Activity\Lottery;
 
 use App\Libs\Exceptions\RunTimeException;
-use App\Models\LotteryActivityModel;
-use App\Models\LotteryAwardRecordModel;
 use App\Services\Activity\Lottery\LotteryServices\LotteryActivityService;
 use App\Services\Activity\Lottery\LotteryServices\LotteryAwardInfoService;
 use App\Services\Activity\Lottery\LotteryServices\LotteryAwardRecordService;
-use App\Services\Activity\Lottery\LotteryServices\LotteryAwardRuleService;
 use App\Services\Activity\Lottery\LotteryServices\LotteryCoreService;
-use App\Services\Activity\Lottery\LotteryServices\LotteryImportUserService;
 
 /**
  * 转盘抽奖活动客户端服务文件
@@ -27,7 +23,7 @@ class LotteryClientService
         $activityInfo = LotteryActivityService::getActivityConfigInfo($params['op_activity_id']);
         $awardInfo = LotteryAwardInfoService::getAwardInfo($params['op_activity_id']);
         $hitAwardList = LotteryAwardRecordService::getHitAwardByTime($params['op_activity_id']);
-        $timesInfo = LotteryActivityService::getRestLotteryTimes($params,$activityInfo);
+        $timesInfo = LotteryActivityService::getRestLotteryTimes($params, $activityInfo);
         return [
             'op_activity_id' => $activityInfo['op_activity_id'],
             'name'           => $activityInfo['name'],
@@ -51,17 +47,26 @@ class LotteryClientService
      */
     public static function hitAwardInfo($params)
     {
-        $time = time();
+        $params['time'] = time();
         $activityInfo = LotteryActivityService::getActivityConfigInfo($params['op_activity_id']);
         //检查活动信息
-        LotteryActivityService::checkActivityTime($activityInfo,$time);
+        LotteryActivityService::checkActivityInfo($activityInfo, $params['time']);
 
-        //整理抽奖的基本信息
-        $awardParams = LotteryActivityService::getAwardParams($params,$activityInfo);
+        //整理抽奖所需的基本数据
+        $awardParams = LotteryActivityService::getAwardParams($params, $activityInfo);
 
-        LotteryCoreService::LotteryCore($awardParams);
-        return [];
+        $hitInfo = [];
+        for ($i = 0; $i < 3; $i++) {
+            $hitInfo = LotteryCoreService::LotteryCore($awardParams);
+            //扣除奖品库存
+            $updateRow = LotteryAwardInfoService::decreaseRestNum($hitInfo['id'], $hitInfo['rest_num']);
+            if (!empty($updateRow)) {
+                break;
+            }
+        }
+        //更新相关数据
+        LotteryAwardRecordService::updateHitAwardInfo($params, $hitInfo);
 
+        return $hitInfo;
     }
-
 }
