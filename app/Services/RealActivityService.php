@@ -652,8 +652,9 @@ class RealActivityService
             if (!empty($abTestPosterInfo) && $item['type'] == TemplatePosterModel::STANDARD_POSTER && $firstStandardPoster) {
                 if (!$abPosterIsNormal) {
                     unset($posterList[$key]);
+                } else {
+                    $item = $abTestPosterInfo;
                 }
-                $item = $abTestPosterInfo;
                 $firstStandardPoster = false;
                 continue;
             }

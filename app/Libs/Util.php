@@ -1207,15 +1207,23 @@ class Util
      * 设置锁
      * @param string $lockName redis key
      * @param int $ttl 过期时间默认5分钟
+     * @param int $tryNum 重试次数，每次重休眠1秒
      * @return bool
      */
-    public static function setLock(string $lockName, int $ttl = Util::TIMESTAMP_5M)
+    public static function setLock(string $lockName, int $ttl = Util::TIMESTAMP_5M, $tryNum = 1)
     {
         // 如果传入空， 则必定返回已锁定的状态
         if (empty($lockName)) {
             return false;
         }
-        return !empty(RedisDB::getConn()->set($lockName, 1, 'EX', $ttl, 'NX'));
+        $whileNum = 0;
+        $tryNum = $tryNum * 2;
+        do {
+            $lock = RedisDB::getConn()->set($lockName, 1, 'EX', $ttl, 'NX');
+            $whileNum += 1;
+            empty($lock) && usleep(500);
+        } while (empty($lock) && $whileNum < $tryNum);
+        return !empty($lock);
     }
 
     /**

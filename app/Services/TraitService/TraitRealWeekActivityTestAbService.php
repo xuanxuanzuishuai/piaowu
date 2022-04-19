@@ -216,6 +216,9 @@ trait TraitRealWeekActivityTestAbService
             if ($activityInfo['has_ab_test']) {
                 // 计算命中海报
                 list($hitPosterId) = self::calculateHitNode($activityId);
+                if ($hitPosterId <= 0) {
+                    return self::formatTestAbPoster([]);
+                }
                 $info['ab_poster_id'] = $hitPosterId;
             }
         }
@@ -299,7 +302,11 @@ trait TraitRealWeekActivityTestAbService
         $hitNode = $assignedCount = $hitPosterId = $saturation = 0;
         $sortAllocation = [];
         try {
-            Util::setLock($redisKeyLockKey, 3);
+            $lock = Util::setLock($redisKeyLockKey, 3, 5);
+            if (!$lock) {
+                SimpleLogger::info("calculateHitNode is lock", []);
+                return [0, []];
+            }
             $nodeList = json_decode($redis->get($redisKey), true);
             if (empty($nodeList)) {
                 SimpleLogger::info('calculateHitNode_node_empty', [$activityId, $nodeList]);
@@ -360,8 +367,14 @@ trait TraitRealWeekActivityTestAbService
         $redis = RedisDB::getConn();
         $tmpData = [];
         list($redisKey, $redisKeyLockKey) = self::getRedisKey($activityId);
-        $isLock == true && Util::setLock($redisKeyLockKey, 3);
         try {
+            if ($isLock) {
+                $lock = Util::setLock($redisKeyLockKey, 3,5);
+                if (!$lock) {
+                    SimpleLogger::info("calculateHitNode is lock", []);
+                    return [0, []];
+                }
+            }
             if (empty($nodeAllocation)) {
                 $nodeAllocation = RealWeekActivityPosterAbModel::getRecords(['activity_id' => $activityId]);
             }
