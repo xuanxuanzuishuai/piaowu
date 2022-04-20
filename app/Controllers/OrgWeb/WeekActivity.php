@@ -288,6 +288,9 @@ class WeekActivity extends ControllerBase
         }
         try {
             $data = WeekActivityService::getDetailById($params['activity_id']);
+            if (isset($data['ab_test']['allocation_mode'])) {
+                unset($data['ab_test']['allocation_mode']);
+            }
         } catch (RunTimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
         }

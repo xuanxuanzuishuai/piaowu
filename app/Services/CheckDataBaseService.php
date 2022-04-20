@@ -79,11 +79,17 @@ abstract class CheckDataBaseService
             SimpleLogger::info(self::LOG_TITLE, ['msg' => 'data_empty', 'check_data' => $checkData]);
             return false;
         }
+        $uuids = $activityIds = $activityUUIDs = [];
+        foreach ($checkData as $_item) {
+            $uuids[] = $_item['uuid'];
+            $activityIds[] = $_item['activity_id'];
+            $activityUUIDs[$_item['activity_id']][] = $_item['uuid'];
+        }
+        unset($_item);
         // 获取学生uuid和id
-        $studentList = static::getStudentList(array_column($checkData, 'uuid'));
+        $studentList = static::getStudentList($uuids);
         // 获取活动信息
-        $activityList = static::getActivityList(array_column($checkData, 'activity_id'));
-
+        $activityList = static::getActivityList($activityIds);
         foreach ($checkData as $item) {
             // if ($item['activity_id'] != 1272) {
             //     continue;
@@ -108,8 +114,8 @@ abstract class CheckDataBaseService
                 $tmp['err_code'] = self::ERR_CODE_ACTIVITY_AWARD_PRIZE_TYPE;
             } elseif ($activityList[$item['activity_id']]['award_prize_type'] == OperationActivityModel::AWARD_PRIZE_TYPE_IN_TIME) {
                 /** 立即发放奖励的活动，检查逻辑在这里处理 */
-                $sharePosterInfo = static::getStudentActivitySharePosterInfo($item);
-                $errCode = self::checkForthwithSendActivityData($item, $sharePosterInfo);
+                $sharePosterList = static::getStudentActivitySharePosterInfo($item, $studentList[$item['uuid']]);
+                $errCode = self::checkForthwithSendActivityData($item, $sharePosterList);
                 !empty($errCode) && $tmp['err_code'] = $errCode;
             } elseif ($item['total'] > 1) {
                 $tmp['err_code'] = self::ERR_CODE_ACTIVITY_STUDENT_REPEAT;
@@ -199,18 +205,22 @@ abstract class CheckDataBaseService
      * 为了减少查询 同一个用户同一个活动只处理一次，第二次进入跳过
      * @return int
      */
-    private static function checkForthwithSendActivityData($sendUserAwardInfo, $sharePosterInfo = [])
+    private static function checkForthwithSendActivityData($sendUserAwardInfo, $sharePosterList = [])
     {
-        $passNum = $sharePosterInfo['task_num'] ?? 0;
-        $activityId = $sharePosterInfo['activity_id'] ?? 0;
-        $awareRuleList = static::$sharePosterPassAwardRule[$activityId] ?? [];
-        $awareRuleInfo = $awareRuleList[$passNum] ?? [];
-        $userAwardNum = $sendUserAwardInfo['award_num'] ?? 0;
-        if (empty($passNum) || empty($userAwardNum) || empty($awareRuleInfo['award_amount'])) {
-            return self::ERR_CODE_STUDENT_AWARD_UNEQUAL;
-        }
-        if ($awareRuleInfo['award_amount'] != $userAwardNum) {
-            return  self::ERR_CODE_STUDENT_AWARD_UNEQUAL;
+        $passesAwardList = explode(',', $sendUserAwardInfo['passes_award']);
+        $activityId = $sendUserAwardInfo['activity_id'] ?? 0;
+        $awareRuleList = static::getSharePosterPassAwardRule($activityId);
+        $sharePosterList = array_column($sharePosterList, null, 'task_num');
+        foreach ($passesAwardList as $item) {
+            list($taskNum, $awardNum) = explode('-', $item);
+            // 奖励没有找到对应的上传记录
+            if (!isset($sharePosterList[$taskNum])) {
+                return self::ERR_CODE_STUDENT_AWARD_UNEQUAL;
+            }
+            // 奖励规则没找到 或者 奖励金额不等
+            if (!isset($awareRuleList[$taskNum]) || $awareRuleList[$taskNum]['award_amount'] != $awardNum) {
+                return self::ERR_CODE_STUDENT_AWARD_UNEQUAL;
+            }
         }
         return '';
     }

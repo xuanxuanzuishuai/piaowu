@@ -28,12 +28,13 @@ use App\Models\SharePosterTaskListModel;
 use App\Models\TemplatePosterModel;
 use App\Models\WeekActivityModel;
 use App\Services\Queue\QueueService;
+use App\Services\TraitService\TraitWeekActivityTestAbService;
 use I18N\Lang;
 use Medoo\Medoo;
 
 class WeekActivityService
 {
-
+    use TraitWeekActivityTestAbService;
     const WEEK_ACTIVITY_TYPE = 1; //周周活动类型
     const MONTH_ACTIVITY_TYPE = 2; //月月活动类型
 
@@ -119,6 +120,8 @@ class WeekActivityService
             SimpleLogger::info("WeekActivityService:add insert operation_activity fail", ['data' => $activityData]);
             throw new RunTimeException(["add week activity fail"]);
         }
+        // 保存实验组数据
+        list($weekActivityData['has_ab_test'], $weekActivityData['allocation_mode']) = self::saveAllocationData($activityId, $data, $employeeId);
         // 保存周周领奖配置信息
         $weekActivityData['activity_id'] = $activityId;
         $weekActivityId = WeekActivityModel::insertRecord($weekActivityData);
@@ -127,6 +130,7 @@ class WeekActivityService
             SimpleLogger::info("WeekActivityService:add insert week_activity fail", ['data' => $weekActivityData]);
             throw new RunTimeException(["add week activity fail"]);
         }
+
         // 保存周周领奖扩展信息
         $activityExtData['activity_id'] = $activityId;
         $activityExtId = ActivityExtModel::insertRecord($activityExtData);
@@ -137,7 +141,7 @@ class WeekActivityService
         }
         // 保存海报关联关系
         $posterArray = array_merge($data['personality_poster'] ?? [], $data['poster'] ?? []);
-        $activityPosterRes = ActivityPosterModel::batchAddActivityPoster($activityId, $posterArray);
+        $activityPosterRes = ActivityPosterModel::batchInsertStudentActivityPoster($activityId, $posterArray);
         if (empty($activityPosterRes)) {
             $db->rollBack();
             SimpleLogger::info("WeekActivityService:add batch insert activity_poster fail", ['data' => $data]);
@@ -165,7 +169,8 @@ class WeekActivityService
     /**
      * 检查是否允许添加 - 检查添加必要的参数
      * @param $data
-     * @return bool
+     * @param int $type
+     * @return string
      */
     public static function checkAllowAdd($data, $type = self::MONTH_ACTIVITY_TYPE)
     {
@@ -202,6 +207,12 @@ class WeekActivityService
             }
             if (count($data['task_list']) > WeekActivityModel::MAX_TASK_NUM) {
                 return 'task_list_max_ten';
+            }
+
+            // 开启实验海报，则实验海报和标准海报都不能为空
+            $checkAbData = self::checkAbPoster($data);
+            if (!empty($checkAbData)) {
+                return $checkAbData;
             }
         }
         return '';
@@ -276,6 +287,7 @@ class WeekActivityService
         $info['delay_day'] = $activityInfo['delay_second']/Util::TIMESTAMP_ONEDAY;
         $info['format_target_use_first_pay_time_start'] = !empty($activityInfo['target_use_first_pay_time_start']) ? date("Y-m-d H:i:s", $activityInfo['target_use_first_pay_time_start']) : '';
         $info['format_target_use_first_pay_time_end'] = !empty($activityInfo['target_use_first_pay_time_end']) ? date("Y-m-d H:i:s", $activityInfo['target_use_first_pay_time_end']) : '';
+        $info['has_ab_test_zh'] = !empty($info['has_ab_test']) ? '有' : '无';
         if (empty($info['remark'])) {
             $info['remark'] = $extInfo['remark'] ?? '';
         }
@@ -342,6 +354,18 @@ class WeekActivityService
         $activityInfo['task_list'] = array_column($activityInfo['pass_award_rule_list'] ,'award_amount');
         // 获取uuid
         $activityInfo['designate_uuid'] = SharePosterDesignateUuidModel::getUUIDByActivityId($activityId);
+        // 获取测试海报数据
+        $ab_test = [
+            'has_ab_test' => (int)$activityInfo['has_ab_test'],
+            'allocation_mode' => (int)$activityInfo['allocation_mode'],
+            'distribution_type' => (int)$activityInfo['allocation_mode'],
+        ];
+        list($ab_test['control_group'], $ab_test['ab_poster_list']) = self::getTestAbList($activityId);
+        // 有实验组数据则返回实验组海报列表
+        if ($ab_test['ab_poster_list']) {
+            $activityInfo['ab_test'] = $ab_test;
+
+        }
         return $activityInfo;
     }
 
@@ -431,6 +455,8 @@ class WeekActivityService
             SimpleLogger::info("WeekActivityService:add update operation_activity fail", ['data' => $activityData, 'activity_id' => $activityId]);
             throw new RunTimeException(["update week activity fail"]);
         }
+        // 更新实验组数据
+        list($weekActivityData['has_ab_test'], $weekActivityData['allocation_mode']) = self::saveAllocationData($activityId, $data, $employeeId);
         // 更新周周领奖扩展信息
         $activityExtData['activity_id'] = $activityId;
         $res = ActivityExtModel::batchUpdateRecord($activityExtData, ['activity_id' => $activityId]);
@@ -873,8 +899,26 @@ class WeekActivityService
         // 获取小程序码
         $userQrArr = MiniAppQrService::batchCreateUserMiniAppQr(Constants::SMART_APP_ID, DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP, $userQrParams);
 
-
+        // 获取AB测海报，和对照组海报id
+        list($abPosterIsNormal, $abTestPosterInfo) = WeekActivityService::getStudentTestAbPoster($studentId, $activityInfo['activity_id'], [
+            'channel_id'      => $channel,
+            'user_type'       => DssUserQrTicketModel::STUDENT_TYPE,
+            'landing_type'    => DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
+            'user_status'     => $userDetail['student_status'],
+            'is_create_qr_id' => true,
+        ]);
+        $firstStandardPoster = true;
         foreach ($posterList as $key => &$item) {
+            // 如果是对照组标准海报，不用重新生成海报二维码
+            if (!empty($abTestPosterInfo) && $item['type'] == TemplatePosterModel::STANDARD_POSTER && $firstStandardPoster) {
+                if (!$abPosterIsNormal) {
+                    unset($posterList[$key]);
+                } else {
+                    $item = $abTestPosterInfo;
+                }
+                $firstStandardPoster = false;
+                continue;
+            }
             $extParams['poster_id'] = $item['poster_id'];
             $item = PosterTemplateService::formatPosterInfo($item);
             if ($item['type'] == TemplatePosterModel::INDIVIDUALITY_POSTER) {
@@ -902,7 +946,7 @@ class WeekActivityService
         // 学生能否可上传
         list($isCanUpload) = WeekActivityService::getStudentWeekActivityCanUpload($studentId, $activityInfo['activity_id']);
 
-        $data['list'] = $posterList;
+        $data['list'] = array_values($posterList);
         $data['activity'] = $activityInfo;
         $data['student_info'] = $userInfo;
         $data['student_status'] = $userDetail['student_status'];

@@ -637,8 +637,27 @@ class RealActivityService
         $userQrArr = MiniAppQrService::batchCreateUserMiniAppQr(Constants::REAL_APP_ID, Constants::REAL_MINI_BUSI_TYPE, $userQrArr, true);
         unset($item);
 
+        // 获取AB测海报，和对照组海报id
+        list($abPosterIsNormal, $abTestPosterInfo) = RealWeekActivityService::getStudentTestAbPoster($studentDetail['id'], $activityData['activity_id'], [
+            'channel_id'      => $channel,
+            'user_type'       => DssUserQrTicketModel::STUDENT_TYPE,
+            'landing_type'    => DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
+            'user_status'     => $studentDetail['status'],
+            'is_create_qr_id' => true,
+        ]);
         // 获取海报， 标准海报：后台生成带有二维码的海报地址， 个性海报：后台只打防伪码
+        $firstStandardPoster = true;
         foreach ($posterList as $key => &$item) {
+            // 如果是对照组标准海报，不用重新生成海报二维码
+            if (!empty($abTestPosterInfo) && $item['type'] == TemplatePosterModel::STANDARD_POSTER && $firstStandardPoster) {
+                if (!$abPosterIsNormal) {
+                    unset($posterList[$key]);
+                } else {
+                    $item = $abTestPosterInfo;
+                }
+                $firstStandardPoster = false;
+                continue;
+            }
             $extParams = [
                 'user_status' => $studentDetail['status'],
                 'activity_id' => $activityData['activity_id'],
@@ -670,6 +689,6 @@ class RealActivityService
         unset($key, $item);
         // 获取活动规则
         $activityData['award_rule'] = ActivityExtModel::getActivityExt($activityData['activity_id'])['award_rule'] ?? '';
-        return [$posterList, ActivityService::formatData($activityData)];
+        return [array_values($posterList), ActivityService::formatData($activityData)];
     }
 }

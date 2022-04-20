@@ -61,26 +61,22 @@ class DssCheckDataWeekAward extends CheckDataBaseService
 
     /**
      * 获取学生某个活动中指定的分享任务审核通过的上传截图信息
-     * @param $studentId
-     * @param $activityId
-     * @param $taskNum
-     * @return int|mixed
+     * @param $sendUserAwardInfo
+     * @return array
      */
-    public static function getStudentActivitySharePosterInfo($sendUserAwardInfo)
+    public static function getStudentActivitySharePosterInfo($sendUserAwardInfo, $studentInfo)
     {
         $studentUUID = $sendUserAwardInfo['uuid'] ?? '';
         $activityId = $sendUserAwardInfo['activity_id'] ?? 0;
         if (empty($studentUUID) || empty($activityId)) {
             return [];
         }
-        $studentInfo = DssStudentModel::getRecord(['uuid' => $studentUUID], ['id']);
-        $sharePosterInfo = SharePosterModel::getRecord([
+        $sharePosterList = SharePosterModel::getRecords([
             'student_id'    => $studentInfo['id'],
             'activity_id'   => $activityId,
-            'task_num'      => $sendUserAwardInfo['passes_num'],
             'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
-        ]);
-        return is_array($sharePosterInfo) ? $sharePosterInfo : [];
+        ], ['task_num']);
+        return is_array($sharePosterList) ? $sharePosterList : [];
     }
 
     /**
@@ -108,7 +104,9 @@ class DssCheckDataWeekAward extends CheckDataBaseService
     public static function getCheckData()
     {
         $awardTable = ErpUserEventTaskAwardGoldLeafModel::getTableNameWithDb();
-        $sql = 'select award.activity_id,award.uuid,award.create_time,award.status as award_status,award.award_num as award_amount,count(*) as total from ' . $awardTable . ' as award' .
+        $sql = 'select award.activity_id,award.uuid,award.create_time,award.status as award_status,award.award_num as award_amount,count(*) as total,' .
+            " group_concat(concat_ws('-',passes_num,award_num)) as passes_award" .
+            ' from ' . $awardTable . ' as award' .
             ' where award.activity_id>' . self::$oldRuleLastActivityId .
             " and award_node='" . Constants::WEEK_SHARE_POSTER_AWARD_NODE . "'" .
             ' and create_time>=' . self::$checkStartTime . ' and create_time<=' . self::$checkEntTime .

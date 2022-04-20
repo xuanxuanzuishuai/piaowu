@@ -22,12 +22,16 @@ use App\Models\RealSharePosterDesignateUuidModel;
 use App\Models\RealSharePosterModel;
 use App\Models\RealSharePosterPassAwardRuleModel;
 use App\Models\RealSharePosterTaskListModel;
+use App\Models\RealWeekActivityPosterAbModel;
 use App\Models\TemplatePosterModel;
 use App\Models\RealWeekActivityModel;
 use App\Services\Queue\QueueService;
+use App\Services\TraitService\TraitRealWeekActivityTestAbService;
 
 class RealWeekActivityService
 {
+    use TraitRealWeekActivityTestAbService;
+
     /**
      * @param $data
      * @param $employeeId
@@ -51,6 +55,7 @@ class RealWeekActivityService
         ];
         $activityEndTime = Util::getDayLastSecondUnix($data['end_time']);
         $delaySendAwardTimeData = self::getActivityDelaySendAwardTime($activityEndTime, $data['award_prize_type'], $data['delay_day']);
+        // 获取测试海报数据
         $weekActivityData = [
             'name' => $activityData['name'],
             'activity_id' => 0,
@@ -94,6 +99,8 @@ class RealWeekActivityService
             SimpleLogger::info("WeekActivityService:add insert operation_activity fail", ['data' => $activityData]);
             throw new RunTimeException(["add_week_operation_activity_fail"]);
         }
+        // 保存实验组数据
+        list($weekActivityData['has_ab_test'], $weekActivityData['allocation_mode']) = self::saveAllocationData($activityId, $data, $employeeId);
         // 保存周周领奖配置信息
         $weekActivityData['activity_id'] = $activityId;
         $weekActivityId = RealWeekActivityModel::insertRecord($weekActivityData);
@@ -178,6 +185,12 @@ class RealWeekActivityService
         if (count($data['task_list']) > 10) {
             return 'task_list_max_ten';
         }
+
+        // 开启实验海报，则实验海报和标准海报都不能为空
+        $checkAbData = self::checkAbPoster($data);
+        if (!empty($checkAbData)) {
+            return $checkAbData;
+        }
         return '';
     }
 
@@ -248,6 +261,7 @@ class RealWeekActivityService
         $info['format_target_use_first_pay_time_start'] = !empty($activityInfo['target_use_first_pay_time_start']) ? date("Y-m-d H:i:s", $activityInfo['target_use_first_pay_time_start']) : '';
         $info['format_target_use_first_pay_time_end'] = !empty($activityInfo['target_use_first_pay_time_end']) ? date("Y-m-d H:i:s", $activityInfo['target_use_first_pay_time_end']) : '';
         $info['target_user_type'] = !empty($activityInfo['target_user_type']) ? $activityInfo['target_user_type'] : '';
+        $info['has_ab_test_zh'] = !empty($info['has_ab_test']) ? '有' : '无';
         if (empty($info['remark'])) {
             $info['remark'] = $extInfo['remark'] ?? '';
         }
@@ -315,6 +329,18 @@ class RealWeekActivityService
         $activityInfo['task_num_count'] = count($activityInfo['task_list']);
         // 获取uuid
         $activityInfo['designate_uuid'] = RealSharePosterDesignateUuidModel::getUUIDByActivityId($activityId);
+        // 获取测试海报数据
+        $ab_test = [
+            'has_ab_test' => (int)$activityInfo['has_ab_test'],
+            'allocation_mode' => (int)$activityInfo['allocation_mode'],
+            'distribution_type' => (int)$activityInfo['allocation_mode'],
+        ];
+        list($ab_test['control_group'], $ab_test['ab_poster_list']) = self::getTestAbList($activityId);
+        // 有实验组数据则返回实验组海报列表
+        if ($ab_test['ab_poster_list']) {
+            $activityInfo['ab_test'] = $ab_test;
+
+        }
         return $activityInfo;
     }
 
@@ -404,6 +430,8 @@ class RealWeekActivityService
             SimpleLogger::info("WeekActivityService:add update activity_ext fail", ['data' => $weekActivityData, 'activity_id' => $activityId]);
             throw new RunTimeException(["update week activity fail"]);
         }
+        // 保存实验组数据
+        list($weekActivityData['has_ab_test'], $weekActivityData['allocation_mode']) = self::saveAllocationData($activityId, $data, $employeeId);
         // 当海报有变化时删除原有的海报
         if ($isDelPoster) {
             // 删除海报关联关系
