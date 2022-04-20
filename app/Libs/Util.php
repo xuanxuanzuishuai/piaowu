@@ -1221,7 +1221,7 @@ class Util
         do {
             $lock = RedisDB::getConn()->set($lockName, 1, 'EX', $ttl, 'NX');
             $whileNum += 1;
-            empty($lock) && usleep(500);
+            empty($lock) && usleep(500000);
         } while (empty($lock) && $whileNum < $tryNum);
         return !empty($lock);
     }
