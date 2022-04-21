@@ -11,23 +11,30 @@ class LotteryAwardInfoService
     /**
      * 获取奖品信息
      * @param $opActivityId
+     * @param $fields
      * @return array|mixed
      */
-    public static function getAwardInfo($opActivityId)
+    public static function getAwardInfo($opActivityId,$fields = [])
     {
         $where = [
             'op_activity_id' => $opActivityId,
             'status'         => Constants::STATUS_TRUE
         ];
-        $activityInfo = LotteryAwardInfoModel::getRecords($where);
+        $activityInfo = LotteryAwardInfoModel::getRecords($where,$fields);
         if (empty($activityInfo)) {
             return [];
         }
 
         foreach ($activityInfo as $key => $value) {
-            $activityInfo[$key]['award_detail'] = json_decode($value['award_detail'], true);
-            $activityInfo[$key]['hit_times'] = json_decode($value['hit_times'], true);
-            $activityInfo[$key]['img_url'] = AliOSS::replaceCdnDomainForDss($value['img_url']);
+            if (!empty($value['award_detail'])){
+                $activityInfo[$key]['award_detail'] = json_decode($value['award_detail'], true);
+            }
+            if (!empty($value['hit_times'])){
+                $activityInfo[$key]['hit_times'] = json_decode($value['hit_times'], true);
+            }
+            if (!empty($value['img_url'])){
+                $activityInfo[$key]['img_url'] = AliOSS::replaceCdnDomainForDss($value['img_url']);
+            }
         }
         return $activityInfo;
     }
@@ -40,6 +47,9 @@ class LotteryAwardInfoService
      */
     public static function decreaseRestNum($awardId, $restNum)
     {
+        if ($restNum < 0) {
+            return 1;
+        }
         $date = [
             'rest_num[-]' => 1
         ];

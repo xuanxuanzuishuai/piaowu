@@ -10,10 +10,12 @@ namespace App\Controllers\StudentWeb;
 
 
 use App\Controllers\ControllerBase;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Services\Activity\Lottery\LotteryClientService;
-use App\Services\Activity\Lottery\LotteryServices\LotteryActivityService;
+use App\Services\Activity\Lottery\LotteryServices\LotteryAwardRecordService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -28,12 +30,7 @@ class Lottery extends ControllerBase
                 'key' => 'op_activity_id',
                 'type' => 'required',
                 'error_code' => 'op_activity_id_is_required',
-            ],
-            [
-                'key' => 'uuid',
-                'type' => 'required',
-                'error_code' => 'uuid_is_required',
-            ],
+            ]
         ];
         $params = $request->getParams();
         $result = Valid::appValidate($params, $rules);
@@ -50,7 +47,6 @@ class Lottery extends ControllerBase
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws \App\Libs\Exceptions\RunTimeException
      */
     public function startLottery(Request $request, Response $response)
     {
@@ -66,14 +62,134 @@ class Lottery extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $params['uuid'] = $this->ci['user_info']['uuid'];
+        $tokenInfo = $this->ci['user_info'];
+        $params['student_id'] = $tokenInfo['user_id'];
+        $params['uuid'] = (LotteryClientService::getUuid($tokenInfo))['uuid'];
 
-        $hitAwardInfo = LotteryClientService::hitAwardInfo($params);
+        try {
+            $hitAwardInfo = LotteryClientService::hitAwardInfo($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
         $data = [
-            'award_info_id'   => $hitAwardInfo['id'],
-            'award_info_type' => $hitAwardInfo['type'],
-            'img_url'         => $hitAwardInfo['img_url'],
+            'award_id'   => $hitAwardInfo['id'],
+            'award_type' => $hitAwardInfo['type'],
+            'img_url'    => $hitAwardInfo['img_url'],
+            'rest_times' => $hitAwardInfo['rest_times'],
         ];
         return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 获取指定用户的中奖记录
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function hitRecord(Request $request, Response $response)
+    {
+        $params = $request->getParams();
+        $tokenInfo = $this->ci['user_info'];
+        $userInfo = LotteryClientService::getUuid($tokenInfo);
+        $mobile = $userInfo['mobile'];
+        list($page, $pageSize) = Util::formatPageCount($params);
+        $hitRecord = LotteryAwardRecordService::getHitRecord($userInfo['uuid'],$page,$pageSize);
+        $data = [
+            'mobile'=>Util::hideUserMobile($mobile),
+            'list'=>$hitRecord,
+        ];
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 获取收货地址信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public static function getAddress(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'record_id',
+                'type'       => 'required',
+                'error_code' => 'record_id_is_required',
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $detailAddress = LotteryClientService::getAddress($params['record_id']);
+        $detailAddress['record_id'] = $params['record_id'];
+        return HttpHelper::buildResponse($response, $detailAddress);
+    }
+
+    /**
+     * 更新奖品收货地址
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public static function modifyAddress(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'record_id',
+                'type'       => 'required',
+                'error_code' => 'record_id_is_required',
+            ],
+            [
+                'key'        => 'erp_address_id',
+                'type'       => 'required',
+                'error_code' => 'erp_address_id_is_required',
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        try {
+            LotteryClientService::modifyAddress($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 查看物流信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public static function shippingInfo(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'op_activity_id',
+                'type'       => 'required',
+                'error_code' => 'op_activity_id_is_required',
+            ],
+            [
+                'key'        => 'record_id',
+                'type'       => 'required',
+                'error_code' => 'record_id_is_required',
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        $expressDetail = LotteryClientService::getExpressDetail($params);
+        return HttpHelper::buildResponse($response, $expressDetail);
     }
 }

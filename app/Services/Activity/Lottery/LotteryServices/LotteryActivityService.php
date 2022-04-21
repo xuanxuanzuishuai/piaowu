@@ -2,13 +2,18 @@
 
 namespace App\Services\Activity\Lottery\LotteryServices;
 
+use App\Libs\AliOSS;
+use App\Libs\Constants;
+use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\Util;
 use App\Models\LotteryActivityModel;
 use App\Models\LotteryAwardRecordModel;
 use App\Models\LotteryAwardInfoModel;
 use App\Models\LotteryAwardRuleModel;
 use App\Models\LotteryFilterUserModel;
 use App\Models\OperationActivityModel;
+use App\Services\Queue\QueueService;
 
 class LotteryActivityService
 {
@@ -23,7 +28,27 @@ class LotteryActivityService
             'op_activity_id' => $opActivityId
         ];
         $activityInfo = LotteryActivityModel::getRecord($where);
+        if (!empty($activityInfo['img_url'])){
+            $activityInfo['title_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['img_url']);
+        }
         return $activityInfo ?: [];
+    }
+
+    /**
+     * 获取用户注册渠道
+     * @param $appId
+     * @return int
+     */
+    public static function getRegisterChannelId($appId)
+    {
+        if ($appId == Constants::REAL_APP_ID){
+            $registerChannelId = 4571;
+        }elseif ($appId == Constants::SMART_APP_ID){
+            $registerChannelId = 4572;
+        }else{
+            $registerChannelId = 0;
+        }
+        return $registerChannelId;
     }
 
     /**
@@ -89,8 +114,47 @@ class LotteryActivityService
      */
     public static function getOrderInfo($appId, $uuid, $startPayTime, $endPayTime)
     {
+        if ($appId == Constants::REAL_APP_ID){
+            $saleShop = 5;
+        }elseif ($appId == Constants::SMART_APP_ID){
+            $saleShop = 3;
+        }else{
+            return [];
+        }
+
+        $res = [];
         //请求支付系统接口，并处理
-        return [];
+        $request = [
+            'sale_shop'      => $saleShop,
+            'student_uuid'   => $uuid,
+            'order_status'   => 4,
+            'start_pay_time' => $startPayTime,
+            'end_pay_time'   => $endPayTime,
+            'page'           => 1,
+            'count'          => 100,
+        ];
+        $response = (new Erp())->orderSearch($request);
+        if (!empty($response)) {
+            $res = $response['data'];
+        }
+        while (true) {
+            if ($response['total_count'] > ($request['page'] * $request['count'])) {
+                $request['page'] += 1;
+                $response = (new Erp())->orderSearch($request);
+                $res = array_merge($res, $response['data']);
+            }
+            break;
+        }
+
+        if (!empty($res)) {
+            foreach ($res as $value) {
+                if (empty($value['payment'])){
+                    continue;
+                }
+                $data[] = number_format($value['payment']['exchange_rate'] * $value['payment']['direct_num'] / 10000);
+            }
+        }
+        return $data ?? [];
     }
 
     /**
@@ -108,9 +172,9 @@ class LotteryActivityService
 
         foreach ($orderInfo as $value) {
             foreach ($payTimesRule as $rule) {
-                if (($value['amount'] >= $rule['low_pay_amount']) && ($value['amount'] < $rule['high_pay_amount'])) {
+                if (($value >= $rule['low_pay_amount']) && ($value < $rule['high_pay_amount'])) {
                     for ($i = 0; $i < $rule['times']; $i++) {
-                        $res[] = $value['amount'];
+                        $res[] = $value;
                     }
                 }
             }
@@ -161,7 +225,7 @@ class LotteryActivityService
 
         //用户消耗的抽奖次数
         $useTimes = LotteryAwardRecordService::useLotteryTimes($params['op_activity_id'], $params['uuid']);
-
+        $params['rest_times'] = $totalTimes - $useTimes;
         if ($totalTimes <= $useTimes){
             throw new RunTimeException(['lottery_times_empty']);
         }
@@ -179,27 +243,57 @@ class LotteryActivityService
     }
 
     /**
+     * 更新活动相关统计数据
      * @param $opActivityId
      * @param $fields
      * @return int|null
      */
     public static function updateAfterHitInfo($opActivityId, $fields)
     {
-        if (!empty($fields['rest_award_num'])) {
+        if (in_array('rest_award_num',$fields)) {
             $update['rest_award_num[-]'] = 1;
         }
 
-        if (!empty($fields['hit_times'])) {
+        if (in_array('hit_times',$fields)) {
             $update['hit_times[+]'] = 1;
         }
 
-        if (!empty($fields['join_num'])) {
+        if (in_array('join_num',$fields)) {
             $update['join_num[+]'] = 1;
         }
+
         if (!empty($update)) {
-            return LotteryActivityModel::batchUpdateRecord(['op_activity_id' => $opActivityId], $update);
+            return LotteryActivityModel::batchUpdateRecord($update, ['op_activity_id' => $opActivityId]);
         }
         return 0;
+    }
+
+    /**
+     * 投递奖品信息到发奖队列
+     * @param $params
+     * @param $hitInfo
+     */
+    public static function grantLotteryAward($params, $hitInfo)
+    {
+        if (!empty($hitInfo) && !in_array($hitInfo['type'],
+                [Constants::AWARD_TYPE_EMPTY, Constants::AWARD_TYPE_TYPE_ENTITY])) {
+            switch ($hitInfo['type']) {
+                case Constants::AWARD_TYPE_GOLD_LEAF:
+                case Constants::AWARD_TYPE_MAGIC_STONE:
+                case Constants::AWARD_TYPE_TYPE_NOTE:
+                    $batchId = Util::getBatchId();
+            }
+
+            $data = [
+                'uuid'                => $params['uuid'],
+                'student_id'          => $params['student_id'],
+                'common_award_id'     => $hitInfo['award_detail']['common_award_id'],
+                'common_award_amount' => $hitInfo['award_detail']['common_award_amount'],
+                'remark'              => '抽奖活动赠送',
+                'batch_id'            => $batchId ?? '',
+            ];
+            QueueService::lotteryGrantAward($data);
+        }
     }
 
 

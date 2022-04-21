@@ -517,7 +517,7 @@ class LotteryAdminService
      */
     public static function expressDetail($opActivityId, $uniqueId): array
     {
-        return LotteryAwardRecordService::expressDetail($opActivityId, $uniqueId, Constants::OPERATOR_TYPE_SYSTEM);
+        return LotteryAwardRecordService::expressDetail($opActivityId, $uniqueId);
     }
 
     /**

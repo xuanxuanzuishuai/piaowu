@@ -11,6 +11,7 @@ class GrantAwardTopic extends BaseTopic
     const COUNTING_AWARD_LOGISTICS_SYNC= 'counting_award_logistics_sync';
     const EDIT_QUALIFIED = 'edit_qualified'; //更新达标期数
     const SIGN_UP = 'sign_up'; //报名
+    const LOTTERY_GRANT_AWARD = 'lottery_grant_award'; //抽奖活动发放奖品
 
     /**
      * @param null $publishTime
@@ -65,6 +66,18 @@ class GrantAwardTopic extends BaseTopic
     public function signUp($data)
     {
         $this->setEventType(self::SIGN_UP);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
+    /**
+     * 抽奖活动发送商品
+     * @param $data
+     * @return $this
+     */
+    public function lotteryGrantAward($data)
+    {
+        $this->setEventType(self::LOTTERY_GRANT_AWARD);
         $this->setMsgBody($data);
         return $this;
     }
