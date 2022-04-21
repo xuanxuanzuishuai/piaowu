@@ -31,8 +31,10 @@ class LotteryActivityService
             'op_activity_id' => $opActivityId
         ];
         $activityInfo = LotteryActivityModel::getRecord($where);
-        if (!empty($activityInfo['img_url'])){
+        if (!empty($activityInfo['img_url'])) {
             $activityInfo['title_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['img_url']);
+            $activityInfo['name'] = Util::textDecode($activityInfo['name']);
+            $activityInfo['activity_desc'] = Util::textDecode($activityInfo['activity_desc']);
         }
         return $activityInfo ?: [];
     }
@@ -44,11 +46,13 @@ class LotteryActivityService
      */
     public static function getRegisterChannelId($appId)
     {
-        if ($appId == Constants::REAL_APP_ID){
-            $registerChannelId = DictService::getKeyValue(DictConstants::LOTTERY_CONFIG,'real_lottery_register_channel');
-        }elseif ($appId == Constants::SMART_APP_ID){
-            $registerChannelId = DictService::getKeyValue(DictConstants::LOTTERY_CONFIG,'smart_lottery_register_channel');
-        }else{
+        if ($appId == Constants::REAL_APP_ID) {
+            $registerChannelId = DictService::getKeyValue(DictConstants::LOTTERY_CONFIG,
+                'real_lottery_register_channel');
+        } elseif ($appId == Constants::SMART_APP_ID) {
+            $registerChannelId = DictService::getKeyValue(DictConstants::LOTTERY_CONFIG,
+                'smart_lottery_register_channel');
+        } else {
             $registerChannelId = 0;
         }
         return $registerChannelId;
@@ -60,7 +64,7 @@ class LotteryActivityService
      * @param $activityInfo
      * @return array
      */
-    public static function getRestLotteryTimes($params,$activityInfo)
+    public static function getRestLotteryTimes($params, $activityInfo)
     {
         if (!empty($params['uuid'])) {
             //查询规则获得抽奖次数
@@ -79,7 +83,7 @@ class LotteryActivityService
             $importTimes = LotteryImportUserService::importUserTimes($params['op_activity_id'], $params['uuid']);
             //用户消耗的抽奖次数
             $useTime = LotteryAwardRecordService::useLotteryTimes($params['op_activity_id'], $params['uuid']);
-            $restTimes =  $filterTimes + $importTimes - $useTime;
+            $restTimes = $filterTimes + $importTimes - $useTime;
         } else {
             $restTimes = 0;
         }
@@ -100,10 +104,10 @@ class LotteryActivityService
      * @param $endPayTime
      * @return int
      */
-    public static function filterUserTimes($opActivityId,$appId, $uuid, $startPayTime, $endPayTime)
+    public static function filterUserTimes($opActivityId, $appId, $uuid, $startPayTime, $endPayTime)
     {
         $orderInfo = self::getOrderInfo($appId, $uuid, $startPayTime, $endPayTime);
-        $orderToTimes = self::orderToTimes($opActivityId,$orderInfo);
+        $orderToTimes = self::orderToTimes($opActivityId, $orderInfo);
         return count($orderToTimes);
     }
 
@@ -117,11 +121,11 @@ class LotteryActivityService
      */
     public static function getOrderInfo($appId, $uuid, $startPayTime, $endPayTime)
     {
-        if ($appId == Constants::REAL_APP_ID){
+        if ($appId == Constants::REAL_APP_ID) {
             $saleShop = Constants::SALE_SHOP_VIDEO_PLAY;
-        }elseif ($appId == Constants::SMART_APP_ID){
+        } elseif ($appId == Constants::SMART_APP_ID) {
             $saleShop = Constants::SALE_SHOP_AI_PLAY;
-        }else{
+        } else {
             return [];
         }
 
@@ -151,7 +155,7 @@ class LotteryActivityService
 
         if (!empty($res)) {
             foreach ($res as $value) {
-                if (empty($value['payment'])){
+                if (empty($value['payment'])) {
                     continue;
                 }
                 $data[] = intval($value['payment']['exchange_rate'] * $value['payment']['direct_num'] / 10000);
@@ -192,17 +196,17 @@ class LotteryActivityService
      * @return bool
      * @throws RunTimeException
      */
-    public static function checkActivityInfo($activityInfo,$time)
+    public static function checkActivityInfo($activityInfo, $time)
     {
-        if (empty($activityInfo)){
+        if (empty($activityInfo)) {
             throw new RunTimeException(['record_not_found']);
         }
 
-        if ($time < $activityInfo['start_time']){
+        if ($time < $activityInfo['start_time']) {
             throw new RunTimeException(['activity_not_started']);
         }
 
-        if ($time > $activityInfo['end_time']){
+        if ($time > $activityInfo['end_time']) {
             throw new RunTimeException(['activity_is_end']);
         }
         return true;
@@ -215,28 +219,29 @@ class LotteryActivityService
      * @return mixed
      * @throws RunTimeException
      */
-    public static function getAwardParams($params,$activityInfo)
+    public static function getAwardParams($params, $activityInfo)
     {
         $filerTimes = 0;
         if ($activityInfo['user_source'] == LotteryActivityModel::USER_SOURCE_FILTER) {
-            $orderInfo = self::getOrderInfo($activityInfo['app_id'], $params['uuid'], $activityInfo['start_pay_time'], $activityInfo['end_pay_time']);
-            $orderToTimes = self::orderToTimes($activityInfo['op_activity_id'],$orderInfo);
+            $orderInfo = self::getOrderInfo($activityInfo['app_id'], $params['uuid'], $activityInfo['start_pay_time'],
+                $activityInfo['end_pay_time']);
+            $orderToTimes = self::orderToTimes($activityInfo['op_activity_id'], $orderInfo);
             $filerTimes = count($orderToTimes);
         }
         $importTimes = LotteryImportUserService::importUserTimes($params['op_activity_id'], $params['uuid']);
-        $totalTimes = $filerTimes+$importTimes;
+        $totalTimes = $filerTimes + $importTimes;
 
         //用户消耗的抽奖次数
         $useTimes = LotteryAwardRecordService::useLotteryTimes($params['op_activity_id'], $params['uuid']);
         $params['rest_times'] = $totalTimes - $useTimes;
-        if ($totalTimes <= $useTimes){
+        if ($totalTimes <= $useTimes) {
             throw new RunTimeException(['lottery_times_empty']);
         }
 
-        if ($filerTimes > $useTimes){
+        if ($filerTimes > $useTimes) {
             $params['use_type'] = LotteryAwardRecordModel::USE_TYPE_FILTER;
             $params['pay_amount'] = $orderToTimes[$useTimes] ?? -1;
-        }else{
+        } else {
             $params['use_type'] = LotteryAwardRecordModel::USE_TYPE_IMPORT;
         }
 
@@ -253,15 +258,15 @@ class LotteryActivityService
      */
     public static function updateAfterHitInfo($opActivityId, $fields)
     {
-        if (in_array('rest_award_num',$fields)) {
+        if (in_array('rest_award_num', $fields)) {
             $update['rest_award_num[-]'] = 1;
         }
 
-        if (in_array('hit_times',$fields)) {
+        if (in_array('hit_times', $fields)) {
             $update['hit_times[+]'] = 1;
         }
 
-        if (in_array('join_num',$fields)) {
+        if (in_array('join_num', $fields)) {
             $update['join_num[+]'] = 1;
         }
 

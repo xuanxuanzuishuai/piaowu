@@ -1002,9 +1002,7 @@ class Erp
      */
     public function orderSearch($params)
     {
-        $this->host = 'https://erp-pre.xiongmaopeilian.com';
-        $header['Service-Name'] = 'operation';
-        $response = HttpHelper::requestJson($this->host . self::API_ORDER_SEARCH, $params, 'GET', $header);
+        $response = HttpHelper::requestJson($this->host . self::API_ORDER_SEARCH, $params, 'GET');
         return $response ?? [];
     }
 

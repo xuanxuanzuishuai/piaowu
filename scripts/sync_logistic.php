@@ -59,7 +59,6 @@ try {
     SimpleLogger::error($e->getMessage(), []);
     return false;
 }
-//聚合那边的接口频率是60次/s,建议每秒不超过20次
 $totalCount = count($totalAwardRecordList);
 $batchTimes = ceil($totalCount / $batchLimit);
 for ($i = 1; $i <= $batchTimes; $i++) {

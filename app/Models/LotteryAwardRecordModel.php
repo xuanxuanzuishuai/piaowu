@@ -116,11 +116,19 @@ class LotteryAwardRecordModel extends Model
     public static function getUnshippedAwardRecord($drawTime, $shippingStatus, $awardType): array
     {
         $db = MysqlDB::getDB();
-        return $db->select(self::$table, ["[>]" . LotteryAwardInfoModel::$table => ["award_id" => "id"]],
+        return $db->select(self::$table,
+            [
+                "[>]" . LotteryAwardInfoModel::$table => ["award_id" => "id"],
+                "[>]" . LotteryActivityModel::$table => ["op_activity_id" => "op_activity_id"],
+                ],
             [
                 self::$table . ".unique_id",
+                self::$table . ".uuid",
                 self::$table . ".id",
+                self::$table . ".erp_address_id",
+                self::$table . ".award_type",
                 LotteryAwardInfoModel::$table . ".award_detail",
+                LotteryActivityModel::$table . ".app_id",
             ],
             [
                 self::$table . ".draw_time[<=]"   => $drawTime,

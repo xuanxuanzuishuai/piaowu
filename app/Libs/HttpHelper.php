@@ -83,7 +83,6 @@ class HttpHelper
     {
         try {
             $client = new Client(['debug' => false]);
-
             if ($method == 'GET') {
                 $data = empty($params) ? [] : ['query' => $params];
                 $data['headers'] = $headerParams;
@@ -94,7 +93,7 @@ class HttpHelper
             } else {
                 return false;
             }
-
+            $data['headers']['Service-Name'] = 'operation';
             SimpleLogger::info("[HttpHelper] send request", ['api' => $api, 'data' => $data]);
             $response = $client->request($method, $api, $data);
             $body = $response->getBody()->getContents();

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Libs\Constants;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 
@@ -19,6 +20,12 @@ class LotteryActivityModel extends Model
     // 中奖时间段规则类型:1同活动时间 2自定义
     const HIT_TIMES_TYPE_KEEP_ACTIVITY = 1;
     const HIT_TIMES_TYPE_CUSTOM = 2;
+
+    //业务线和店铺对应关系
+    const BUSINESS_MAP_SHOP = [
+        Constants::REAL_APP_ID  => Constants::SALE_SHOP_VIDEO_PLAY_SERVICE,
+        Constants::SMART_APP_ID => Constants::SALE_SHOP_AI_REFERRAL_SERVICE,
+    ];
 
     /**
      * 增加抽奖活动

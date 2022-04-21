@@ -59,7 +59,8 @@ class LotteryAdminService
         if ($paramsData['end_time'] < $nowTime) {
             throw new RuntimeException(["end_time_eq_time"]);
         }
-        $formatParams['base_data']['name'] = trim($paramsData['name']);
+        $formatParams['base_data']['name'] = Util::textEncode(trim($paramsData['name']));
+        $formatParams['base_data']['activity_desc'] = Util::textEncode(trim($paramsData['activity_desc']));
         $formatParams['base_data']['title_url'] = trim($paramsData['title_url']);
         $formatParams['base_data']['start_time'] = $paramsData['start_time'];
         $formatParams['base_data']['end_time'] = $paramsData['end_time'];
@@ -67,6 +68,7 @@ class LotteryAdminService
         $formatParams['base_data']['user_source'] = $paramsData['user_source'];
         $formatParams['base_data']['start_pay_time'] = 0;
         $formatParams['base_data']['end_pay_time'] = 0;
+        $formatParams['base_data']['rest_award_num'] = 0;
         //参与用户规则
         $formatParams['import_user'] = $formatParams['lottery_times_rule'] = $formatParams['win_prize_rule'] = [];
         if ($paramsData['user_source'] == LotteryActivityModel::USER_SOURCE_FILTER) {
@@ -174,17 +176,23 @@ class LotteryAdminService
             //批量验证参数格式
             $formatParams['awards'][$awk] = self::checkAwardsParams($awv);
             $formatParams['awards'][$awk]['rest_num'] = $formatParams['awards'][$awk]['num'];
+            if ($awv['weight'] > 100) {
+                throw new RuntimeException(['weight_is_error']);
+            }
             //区分不同奖励，校验不同参数
             switch ($awv['type']) {
                 case Constants::AWARD_TYPE_GOLD_LEAF:
                 case Constants::AWARD_TYPE_MAGIC_STONE:
-                case Constants::AWARD_TYPE_TIME:
-                    break;
                 case Constants::AWARD_TYPE_EMPTY:
                     $awv['common_award_id'] = 0;
-                    $awv['common_award_amount'] = 1;
-                    $formatParams['awards'][$awk]['num'] = $formatParams['awards'][$awk]['rest_num'] = -1;
                     break;
+                case Constants::AWARD_TYPE_TIME:
+                    $awv['common_award_id'] = 0;
+                    if ($awv['common_award_amount'] > 40000) {
+                        throw new RuntimeException(["free_time_award_counts_max_40000_error"]);
+                    }
+                    break;
+
                 case Constants::AWARD_TYPE_TYPE_LESSON:
                 case Constants::AWARD_TYPE_TYPE_ENTITY:
                     //课时&实物
@@ -197,6 +205,9 @@ class LotteryAdminService
             }
             if ($awk == $awardCount - 1) {
                 $formatParams['awards'][$awk]['num'] = $formatParams['awards'][$awk]['rest_num'] = -1;
+            } else {
+                $formatParams['base_data']['rest_award_num'] += $formatParams['awards'][$awk]['num'];
+
             }
             //中奖时间段，分组数量
             if (!is_array($awv['hit_times']) || count($awv['hit_times']) > 3) {
@@ -215,7 +226,7 @@ class LotteryAdminService
                     ]
                 ];
             }
-            $formatParams['awards'][$awk]['wight'] = substr(sprintf("%.3f", $awv['wight']), 0, -1) * 100;
+            $formatParams['awards'][$awk]['weight'] = substr(sprintf("%.3f", $awv['weight']), 0, -1) * 100;
             $formatParams['awards'][$awk]['hit_times_type'] = $awv['hit_times_type'];
             $formatParams['awards'][$awk]['hit_times'] = json_encode($awv['hit_times']);
             $formatParams['awards'][$awk]['award_detail'] = json_encode([
@@ -374,7 +385,7 @@ class LotteryAdminService
             }
             $formatList[] = [
                 'op_activity_id' => $lv['op_activity_id'],
-                'name'           => $lv['name'],
+                'name'           => Util::textDecode($lv['name']),
                 'start_time'     => date("Y-m-d H:i:s", $lv['start_time']),
                 'end_time'       => date("Y-m-d H:i:s", $lv['end_time']),
                 'rest_award_num' => $lv['rest_award_num'],
@@ -399,7 +410,8 @@ class LotteryAdminService
     {
         $detailData = LotteryActivityService::detail($opActivityId);
         $detailData['base_data']['title_url_oss'] = AliOSS::replaceCdnDomainForDss($detailData['base_data']['title_url']);
-
+        $detailData['base_data']['name'] = Util::textDecode($detailData['base_data']['name']);
+        $detailData['base_data']['activity_desc'] = Util::textDecode($detailData['base_data']['activity_desc']);
         $dictData = DictConstants::getTypesMap([
             DictConstants::AWARD_LEVEL['type'],
             DictConstants::AWARD_TYPE['type'],
