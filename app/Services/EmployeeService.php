@@ -454,4 +454,16 @@ class EmployeeService
         $list = EmployeeModel::getRecords($where, ['id', 'name']);
         return $list;
     }
+
+    /**
+     * 通过uuid查询员工
+     * @param $uuids
+     * @param $fields
+     * @return array
+     */
+    public static function getEmployeeByUuids($uuids, $fields):array
+    {
+        return EmployeeModel::getRecords(['uuid' => $uuids], $fields);
+
+    }
 }

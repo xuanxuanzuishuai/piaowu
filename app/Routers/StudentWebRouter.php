@@ -11,10 +11,12 @@ namespace App\Routers;
 use App\Controllers\Agent\Agent;
 use App\Controllers\OrgWeb\LandingRecall;
 use App\Controllers\StudentWeb\Landing;
+use App\Controllers\StudentWeb\Lottery;
 use App\Controllers\StudentWeb\Order;
 use App\Controllers\StudentWeb\Recall;
 use App\Controllers\StudentWeb\Student;
 use App\Controllers\StudentWeb\Area;
+use App\Controllers\StudentWeb\StudentWebCommon;
 use App\Middleware\RecallAuthCheckMiddleware;
 use App\Middleware\WebAuthCheckMiddleware;
 
@@ -72,5 +74,26 @@ class StudentWebRouter extends RouterBase
         '/student_web/student/whale_data_record' => ['method' => ['get'], 'call'   => Student::class . ':whaleDataRecord', 'middles' => []],
         //  获取学生是否是系统判定的重复用户，如果是购买指定课包时会返回其他课包
         '/student_web/student/check_student_is_repeat' => ['method' => ['get'], 'call' => Student::class . ':checkStudentIsRepeat', 'middles' => []],
+
+
+        /********************抽奖活动接口**********************/
+        //用户登录接口
+        '/student_web/common/login' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':login','middles' => []],
+        '/student_web/common/country' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':countryList'],
+        '/student_web/common/province' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':provinceList'],
+        '/student_web/common/city' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':cityList'],
+        '/student_web/common/district' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':districtList'],
+        //活动信息获取
+        '/student_web/lottery/activity_info' => ['method' => ['get'], 'call' => Lottery::class . ':activityInfo','middles'=>[]],
+        //开始抽奖
+        '/student_web/lottery/start_lottery' => ['method' => ['get'], 'call' => Lottery::class . ':startLottery'],
+        //获取中奖记录
+        '/student_web/lottery/hit_record' => ['method' => ['get'], 'call' => Lottery::class . ':hitRecord'],
+        //获取收货地址
+        '/student_web/lottery/get_address' => ['method' => ['get'], 'call' => Lottery::class . ':getAddress'],
+        //修改收货地址
+        '/student_web/lottery/modify_address' => ['method' => ['post'], 'call' => Lottery::class . ':modifyAddress'],
+        //查看物流信息
+        '/student_web/lottery/shipping_info' => ['method' => ['get'], 'call' => Lottery::class . ':shippingInfo'],
     ];
 }

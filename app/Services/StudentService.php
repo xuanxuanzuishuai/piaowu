@@ -508,4 +508,22 @@ class StudentService
         }
         return is_array($studentInfo) ? $studentInfo : [];
     }
+
+    /**
+     * 获取用户的UUID
+     * @param $appId
+     * @param $userId
+     * @return array|mixed
+     */
+    public static function getUuid($appId,$userId)
+    {
+        if ($appId == Constants::REAL_APP_ID) {
+            //注册真人用户信息
+            $studentInfo = ErpStudentModel::getRecord(['id' => $userId], ['uuid','mobile']);
+        } elseif ($appId == Constants::SMART_APP_ID) {
+            //注册智能用户信息
+            $studentInfo = DssStudentModel::getRecord(['id' => $userId], ['uuid','mobile']);
+        }
+        return $studentInfo ?? [];
+    }
 }

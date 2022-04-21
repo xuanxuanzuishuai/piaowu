@@ -261,4 +261,19 @@ class Model
     {
         return  $_ENV['DB_OP_S_NAME'] . '.' . static::$table;
     }
+
+    /**
+     * 批量删除
+     * @param $where
+     * @return bool
+     */
+    public static function batchDelete($where): bool
+    {
+        $db = MysqlDB::getDB();
+        $delRes = $db->delete(static::$table, $where);
+        if ($delRes->errorCode() != \PDO::ERR_NONE) {
+            return false;
+        }
+        return true;
+    }
 }

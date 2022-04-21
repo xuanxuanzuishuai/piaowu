@@ -16,6 +16,7 @@ use App\Models\CountingActivityModel;
 use App\Models\CountingAwardConfigModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpStudentAccountModel;
+use App\Services\LogisticsService\ExpressDetailService;
 use App\Services\Queue\QueueService;
 
 class CountingActivityAwardService
@@ -148,9 +149,9 @@ class CountingActivityAwardService
 
         $params = [
             'order_id'     => $data['unique_id'],
-            'plat_id'      => CountingActivityAwardModel::UNIQUE_ID_PREFIX,
+            'plat_id'      => Constants::UNIQUE_ID_PREFIX,
             'app_id'       => Constants::SMART_APP_ID,
-            'sale_shop'    => CountingActivityAwardModel::SALE_SHOP,
+            'sale_shop'    => Constants::SALE_SHOP,
             'goods_id'     => $data['goods_id'],
             'goods_code'   => $data['goods_code'],
             'mobile'       => $student['mobile'],
@@ -181,24 +182,7 @@ class CountingActivityAwardService
         if (empty($expressInfo['logistics_detail'])) {
             return false;
         }
-        $logisticsStatus = 0;
-        //解析物流信息，获取最新状态
-        switch ($expressInfo['logistics_detail'][0]['node']) {
-            case "已签收":
-                $logisticsStatus = CountingActivityAwardModel::LOGISTICS_STATUS_SIGN;
-                break;
-            case "派件中":
-                $logisticsStatus = CountingActivityAwardModel::LOGISTICS_STATUS_IN_DISPATCH;
-                break;
-            case "运输中":
-                $logisticsStatus = CountingActivityAwardModel::LOGISTICS_STATUS_IN_TRANSIT;
-                break;
-            case "已揽收":
-                $logisticsStatus = CountingActivityAwardModel::LOGISTICS_STATUS_COLLECT;
-                break;
-            default:
-                SimpleLogger::error('logistics node data error',[$expressInfo]);
-        }
+        $logisticsStatus = ExpressDetailService::formatLogisticsStatus($expressInfo['logistics_detail'][0]['node']);
         if (empty($logisticsStatus)) {
             return false;
         }

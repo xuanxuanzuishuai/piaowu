@@ -42,6 +42,16 @@ class OperationActivityModel extends Model
     const TIME_STATUS_PENDING = 1;//待开始
     const TIME_STATUS_ONGOING = 2;//进行中
     const TIME_STATUS_FINISHED = 3;//已结束
+    //活动前端展示状态于活动不同状态的映射关系
+    const ACTIVITY_SHOW_STATUS_MAP_ENABLE_AND_TIME_STATUS = [
+        1 => self::ENABLE_STATUS_OFF,
+        2 => self::ENABLE_STATUS_ON,
+        3 => self::ENABLE_STATUS_DISABLE,
+        4 => self::TIME_STATUS_PENDING,
+        5 => self::TIME_STATUS_ONGOING,
+        6 => self::TIME_STATUS_FINISHED,
+    ];
+
 
     // 活动奖品发奖方式类型:1立即发放 2延时发放
     const AWARD_PRIZE_TYPE_IN_TIME = 1;
@@ -115,7 +125,7 @@ WHERE
             $allActive = WeekActivityModel::getRecords([
                 'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
                 'start_time[<]' => $now,
-                'end_time[>]' => $now
+                'end_time[>]'   => $now
             ]);
         }
         if (empty($allActive)) {
@@ -185,7 +195,7 @@ WHERE
      * @param $endTime
      * @return int
      */
-    public static function sqlDataMapToTimeStatus($startTime, $endTime)
+    public static function dataMapToTimeStatus($startTime, $endTime)
     {
         $time = time();
         if ($startTime <= $time && $endTime >= $time) {
@@ -211,7 +221,8 @@ WHERE
         if ($appId == Constants::REAL_APP_ID) {
             $studentCountryCode = $studentInfo['country_code'] ?? ErpStudentModel::getStudentInfoById($studentId)['country_code'];
         } else {
-            $studentCountryCode = $studentInfo['country_code'] ?? DssStudentModel::getRecord(['id' => $studentId], ['country_code'])['country_code'];
+            $studentCountryCode = $studentInfo['country_code'] ?? DssStudentModel::getRecord(['id' => $studentId],
+                    ['country_code'])['country_code'];
         }
         return self::getWeekActivityCountryCode($studentCountryCode);
     }
@@ -244,8 +255,11 @@ WHERE
      * @return bool
      * @throws RunTimeException
      */
-    public static function checkWeekActivityCountryCode($studentInfo, $activityInfo, int $appId = Constants::SMART_APP_ID)
-    {
+    public static function checkWeekActivityCountryCode(
+        $studentInfo,
+        $activityInfo,
+        int $appId = Constants::SMART_APP_ID
+    ) {
         if (!isset($activityInfo['activity_country_code'])) {
             throw new RunTimeException(['week_activity_student_cannot_upload']);
         }
@@ -261,5 +275,31 @@ WHERE
             throw new RunTimeException(['week_activity_student_cannot_upload']);
         }
         return true;
+    }
+
+    /**
+     * 活动展示状态于查询条件where转换
+     * @param $showStatus
+     * @return array
+     */
+    public static function showStatusMapWhere($showStatus): array
+    {
+        //启用状态使用时间状态进行替换，放便后台管理人员使用
+        switch ($showStatus) {
+            case 1:
+            case 3:
+                //启用状态
+                $where['status'] = $showStatus;
+                break;
+            case 4:
+            case 5:
+            case 6:
+                //时间状态
+                $where = OperationActivityModel::timeStatusMapToSqlWhere(OperationActivityModel::ACTIVITY_SHOW_STATUS_MAP_ENABLE_AND_TIME_STATUS[$showStatus]);
+                break;
+            default:
+                return [];
+        }
+        return $where;
     }
 }
