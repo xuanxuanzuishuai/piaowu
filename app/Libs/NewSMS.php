@@ -230,4 +230,21 @@ class NewSMS
         ];
         return self::sendSMS($data);
     }
+
+    /**
+     * 抖店支付成功消息
+     * @param $mobile
+     * @return bool
+     */
+    public function douDianOrderSms($mobile)
+    {
+        $msg = '恭喜您已下单成功，点击链接，领取直播间专属福利107节钢琴资源 https://vve.h5.xeknow.com/s/2tex8c，回复TD退订';
+        $data = [
+            'sign_name' => CommonServiceForApp::SIGN_WX_STUDENT_APP,
+            'phone_number' => $mobile,
+            'content' => $msg,
+            'sms_type' => self::SMS_TYPE_NOTICE,
+        ];
+        return self::sendSMS($data);
+    }
 }
