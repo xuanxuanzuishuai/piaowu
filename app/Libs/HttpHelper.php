@@ -86,6 +86,7 @@ class HttpHelper
 
             if ($method == 'GET') {
                 $data = empty($params) ? [] : ['query' => $params];
+                $data['headers'] = $headerParams;
             } elseif ($method == 'POST') {
                 $data = ['json' => $params];
                 $baseHeader = ['Content-Type' => 'application/json'];

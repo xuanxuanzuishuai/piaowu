@@ -1487,4 +1487,13 @@ class Util
             return false;
         }
     }
+
+    /**
+     * 生成batch_id
+     * @return false|string
+     */
+    public static function getBatchId()
+    {
+        return substr(md5(uniqid()), 0, 6);
+    }
 }

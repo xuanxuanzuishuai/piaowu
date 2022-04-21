@@ -753,6 +753,21 @@ class QueueService
     }
 
     /**
+     * 抽奖活动发送奖品
+     * @param $data
+     * @return bool
+     */
+    public static function lotteryGrantAward($data){
+        try {
+            $topic = new GrantAwardTopic();
+            $topic->lotteryGrantAward($data)->publish();
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data ?? []);
+        }
+        return true;
+    }
+
+    /**
      * 赠送时长
      * @param $uuid
      * @param $applyType

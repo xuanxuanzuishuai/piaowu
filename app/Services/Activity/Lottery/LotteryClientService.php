@@ -2,7 +2,11 @@
 
 namespace App\Services\Activity\Lottery;
 
+use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Models\Dss\DssStudentModel;
+use App\Models\Erp\ErpStudentModel;
+use App\Models\LotteryAwardRecordModel;
 use App\Services\Activity\Lottery\LotteryServices\LotteryActivityService;
 use App\Services\Activity\Lottery\LotteryServices\LotteryAwardInfoService;
 use App\Services\Activity\Lottery\LotteryServices\LotteryAwardRecordService;
@@ -14,6 +18,23 @@ use App\Services\Activity\Lottery\LotteryServices\LotteryCoreService;
 class LotteryClientService
 {
     /**
+     * 获取用户的UUID
+     * @param $userInfo
+     * @return array|mixed
+     */
+    public static function getUuid($userInfo)
+    {
+        if ($userInfo['app_id'] == Constants::REAL_APP_ID) {
+            //注册真人用户信息
+            $studentInfo = ErpStudentModel::getRecord(['id' => $userInfo['user_id'], ['uuid','mobile']]);
+        } elseif ($userInfo['app_id'] == Constants::SMART_APP_ID) {
+            //注册智能用户信息
+            $studentInfo = DssStudentModel::getRecord(['id' => $userInfo['user_id']], ['uuid','mobile']);
+        }
+        return $studentInfo ?? [];
+    }
+
+    /**
      * 获取活动信息
      * @param $params
      * @return array
@@ -21,21 +42,26 @@ class LotteryClientService
     public static function activityInfo($params)
     {
         $activityInfo = LotteryActivityService::getActivityConfigInfo($params['op_activity_id']);
-        $awardInfo = LotteryAwardInfoService::getAwardInfo($params['op_activity_id']);
+        if (empty($activityInfo)){
+            return [];
+        }
+        $register = LotteryActivityService::getRegisterChannelId($activityInfo['app_id']);
+        $awardInfo = LotteryAwardInfoService::getAwardInfo($params['op_activity_id'],['id','type','name','img_url','level']);
         $hitAwardList = LotteryAwardRecordService::getHitAwardByTime($params['op_activity_id']);
         $timesInfo = LotteryActivityService::getRestLotteryTimes($params, $activityInfo);
         return [
-            'op_activity_id' => $activityInfo['op_activity_id'],
-            'name'           => $activityInfo['name'],
-            'title'          => $activityInfo['title'],
-            'start_time'     => $activityInfo['start_time'],
-            'end_time'       => $activityInfo['end_time'],
-            'status'         => $activityInfo['status'],
-            'app_id'         => $activityInfo['app_id'],
-            'activity_desc'  => $activityInfo['activity_desc'],
-            'rest_times'     => $timesInfo['rest_times'],
-            'award_info'     => $awardInfo,
-            'hit_award_list' => $hitAwardList,
+            'op_activity_id'   => $activityInfo['op_activity_id'],
+            'name'             => $activityInfo['name'],
+            'title_url'        => $activityInfo['title_url'],
+            'start_time'       => $activityInfo['start_time'],
+            'end_time'         => $activityInfo['end_time'],
+            'status'           => $activityInfo['status'],
+            'app_id'           => $activityInfo['app_id'],
+            'activity_desc'    => $activityInfo['activity_desc'],
+            'rest_times'       => $timesInfo['rest_times'],
+            'register_channel' => $register,
+            'award_info'       => $awardInfo,
+            'hit_award_list'   => $hitAwardList,
         ];
     }
 
@@ -65,8 +91,58 @@ class LotteryClientService
             }
         }
         //更新相关数据
-        LotteryAwardRecordService::updateHitAwardInfo($params, $hitInfo);
+        LotteryAwardRecordService::updateHitAwardInfo($awardParams, $hitInfo);
 
+        //投递到队列，发放奖品
+        LotteryActivityService::grantLotteryAward($params, $hitInfo);
+        $hitInfo['rest_times'] = $awardParams['rest_times'] - 1;
         return $hitInfo;
+    }
+
+    /**
+     * 获取收货地址信息
+     * @param $recordId
+     * @return array|false|string
+     */
+    public static function getAddress($recordId)
+    {
+        $awardRecordInfo =  LotteryAwardRecordModel::getRecord(['id' => $recordId]);
+
+        if (empty($awardRecordInfo['address_detail'])){
+            return [];
+        }
+        return json_decode($awardRecordInfo['address_detail'],true);
+    }
+
+    /**
+     * 更新收货地址
+     * @param $params
+     * @return int|null
+     * @throws RunTimeException
+     */
+    public static function modifyAddress($params)
+    {
+        //查询奖品的发货状态
+        $awardRecordInfo =  LotteryAwardRecordModel::getRecord(['id' => $params['record_id']]);
+        if ($awardRecordInfo['shipping_status'] != Constants::SHIPPING_STATUS_BEFORE){
+            throw new RunTimeException(['not_waiting_send_stop_update_shipping_address']);
+        }
+        return LotteryAwardRecordService::modifyAddress($params);
+    }
+
+    /**
+     * 查看物流信息
+     * @param $params
+     * @return array
+     */
+    public static function getExpressDetail($params)
+    {
+        //查询奖品的发货状态
+        $awardRecordInfo = LotteryAwardRecordModel::getRecord(['id' => $params['record_id']]);
+        if (empty($awardRecordInfo['unique_id'])) {
+            return [];
+        }
+
+        return LotteryAwardRecordService::expressDetail($params['op_activity_id'], $awardRecordInfo['unique_id']);
     }
 }

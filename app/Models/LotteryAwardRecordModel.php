@@ -15,25 +15,63 @@ class LotteryAwardRecordModel extends Model
 
     public static function getHitAwardByTime($opActivityId, $startTime, $endTime)
     {
-        $db = MysqlDB::getDB();
-        $hitList = $db->select(self::$table . '(ar)', [
-            "[><]" . ErpStudentModel::$table . '(s)'        => ['ar.uuid' => 's.uuid'],
-            "[><]" . LotteryAwardInfoModel::$table . '(ai)' => ['ar.award_id' => 'ai.id'],
-        ], [
-            's.mobile',
-            'ar.award_id',
+        $db  = MysqlDB::getDB();
+        $hitList = $db->select(self::$table.'(ar)',[
+            "[><]".LotteryAwardInfoModel::$table.'(ai)'=>['ar.award_id'=>'id'],
+        ],[
+            'ar.uuid',
             'ai.name',
             'ar.create_time'
-        ], [
+        ],[
             'ar.op_activity_id' => $opActivityId,
             'ar.award_type[!]'  => Constants::AWARD_TYPE_EMPTY,
             'ar.create_time[>]' => $startTime,
             'ar.create_time[<]' => $endTime,
-            'ORDER'             => [
+            'ORDER'          => [
                 'ar.id' => 'DESC'
-            ]
+            ],
+            'LIMIT'=>10
         ]);
         return $hitList ?: [];
+    }
+
+    /**
+     * 获取指定用户的中奖记录
+     * @param $uuid
+     * @param $page
+     * @param $pageSize
+     * @return array
+     */
+    public static function getHitRecord($uuid, $page, $pageSize)
+    {
+        $db = MysqlDB::getDB();
+        $join = [
+            "[><]" . LotteryAwardInfoModel::$table . '(ai)' => ['ar.award_id' => 'id'],
+        ];
+        $fields = [
+            'ar.id(record_id)',
+            'ai.name',
+            'ai.level',
+            'ai.img_url',
+            'ar.create_time',
+            'ar.shipping_status',
+        ];
+        $where = [
+            'ar.uuid' => $uuid,
+            'ORDER'   => ['ar.id' => 'DESC'],
+            'LIMIT'   => [($page - 1) * $pageSize, $pageSize],
+        ];
+        $count = $db->count(self::$table . '(ar)', $join, $fields, $where);
+        if (empty($count)) {
+            return [
+                'total' => 0,
+                'list'  => []
+            ];
+        }
+
+        $res['total'] = $count;
+        $res['list'] = $db->select(self::$table . '(ar)', $join, $fields, $where);
+        return $res;
     }
 
     /**

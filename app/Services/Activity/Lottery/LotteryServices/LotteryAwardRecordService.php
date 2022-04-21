@@ -2,6 +2,7 @@
 
 namespace App\Services\Activity\Lottery\LotteryServices;
 
+use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
@@ -27,15 +28,44 @@ class LotteryAwardRecordService
     {
         $endTime = time();
         $startTime = $endTime - Util::TIMESTAMP_ONEDAY;
-        $activityInfo = LotteryAwardRecordModel::getHitAwardByTime($opActivityId, $startTime, $endTime);
-        if (!empty($activityInfo)) {
-            //处理手机号
-
-            //处理中奖时间
+        $hitAwardInfo = LotteryAwardRecordModel::getHitAwardByTime($opActivityId, $startTime, $endTime);
+        if (empty($hitAwardInfo)){
+            return [];
         }
 
-        return $activityInfo ?: [];
+        $uuidList = array_unique(array_column($hitAwardInfo, 'uuid')) ?? [];
+        $uuidInfo = ErpStudentModel::getRecords(['uuid' => $uuidList], ['uuid', 'mobile']);
+        $mobileKeyUuid = array_column($uuidInfo, 'mobile', 'uuid');
+        foreach ($hitAwardInfo as $value) {
+            $single['mobile'] = Util::hideUserMobile($mobileKeyUuid[$value['uuid']]);
+            $single['award_name'] = $value['name'];
+            $single['hit_time'] = self::formatTime($endTime, $value['create_time']);
+            $res[] = $single;
+        }
+
+        return $res ?? [];
     }
+
+    /**
+     * 格式化时间
+     * @param $time
+     * @param $createTime
+     * @return false|string
+     */
+    public static function formatTime($time,$createTime)
+    {
+        $diff = $time - $createTime;
+        if ($diff < 60) {
+            return '刚刚';
+        } elseif ($diff < 3540) {
+            return (bcdiv($diff, 60) ?: 1) . " 分钟前";
+        } elseif ($diff < 86400) {
+            return (bcdiv($diff, 3600) ?: 1) . ' 小时前';
+        } elseif ($diff > 86400) {
+            return date('m-d', $createTime);
+        }
+    }
+
 
     /**
      * 获取用户在指定活动的抽奖次数
@@ -76,7 +106,12 @@ class LotteryAwardRecordService
      */
     public static function addAwardRecord($params, $hitInfo)
     {
-        $uniqueId = (new DeliverIdGeneratorService())->getDeliverId();
+        if ($hitInfo['type'] == Constants::AWARD_TYPE_TYPE_ENTITY) {
+            $uniqueId = (new DeliverIdGeneratorService())->getDeliverId();
+            $shippingStatus = Constants::SHIPPING_STATUS_BEFORE;
+        } else {
+            $shippingStatus = Constants::SHIPPING_STATUS_DELIVERED;
+        }
         $data = [
             'op_activity_id'  => $params['op_activity_id'],
             'uuid'            => $params['uuid'],
@@ -84,7 +119,8 @@ class LotteryAwardRecordService
             'award_id'        => $hitInfo['id'],
             'award_type'      => $hitInfo['type'],
             'unique_id'       => $uniqueId ?? 0,
-            'shipping_status' => Constants::SHIPPING_STATUS_BEFORE,
+            'shipping_status' => $shippingStatus,
+            'batch_id'        => $params['batch_id'] ?? '',
             'create_time'     => time(),
         ];
         return LotteryAwardRecordModel::insertRecord($data);
@@ -103,7 +139,7 @@ class LotteryAwardRecordService
             $fields[] = 'rest_award_num';
         }
 
-        if ($hitInfo['type'] != 1) {
+        if ($hitInfo['type'] != Constants::AWARD_TYPE_EMPTY) {
             $fields[] = 'hit_times';
         }
 
@@ -122,6 +158,42 @@ class LotteryAwardRecordService
             $db->rollBack();
         }
         return true;
+    }
+
+    /**
+     * 获取指定用户的中奖记录
+     * @param $uuid
+     * @param $page
+     * @param $pageSize
+     * @return array
+     */
+    public static function getHitRecord($uuid, $page, $pageSize)
+    {
+        $data = LotteryAwardRecordModel::getHitRecord($uuid, $page, $pageSize);
+        if (empty($data)) {
+            return $data;
+        }
+
+        foreach ($data['list'] as $key => $value) {
+            if (!empty($value['img_url'])) {
+                $data['list'][$key]['img_url'] = AliOSS::replaceCdnDomainForDss($value['img_url']);
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * 更新收货地址
+     * @param $params
+     * @return int|null
+     */
+    public static function modifyAddress($params)
+    {
+        $update = [
+            'erp_address_id' => $params['erp_address_id'],
+            'address_detail' => json_encode($params['address_detail'])
+        ];
+        return LotteryAwardRecordModel::updateRecord($params['record_id'], $update);
     }
 
     /**
@@ -236,15 +308,10 @@ class LotteryAwardRecordService
      * 物流详情
      * @param $opActivityId
      * @param $uniqueId
-     * @param $operatorType
-     * @param string $studentUuid
      * @return array
      */
-    public static function expressDetail($opActivityId, $uniqueId, $operatorType, string $studentUuid = ''): array
+    public static function expressDetail($opActivityId, $uniqueId): array
     {
-        if ($operatorType == Constants::OPERATOR_TYPE_CLIENT) {
-            $where['uuid'] = $studentUuid;
-        }
         $where = [
             'op_activity_id' => $opActivityId,
             'unique_id'      => $uniqueId,

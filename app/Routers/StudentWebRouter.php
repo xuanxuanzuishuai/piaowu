@@ -77,19 +77,23 @@ class StudentWebRouter extends RouterBase
 
 
         /********************抽奖活动接口**********************/
-        //发送手机验证码
-        '/student_web/common/send_code' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':sendCode','middles' => []],
         //用户登录接口
-        '/student_web/common/login' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':login'],
-        //获取收货收货地址列表
-        '/student_web/common/address_list' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':addressList'],
-        //新增或修改收货地址
-        '/student_web/common/modify_address' => ['method' => ['post'], 'call' => StudentWebCommon::class . ':modifyAddress'],
+        '/student_web/common/login' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':login','middles' => []],
+        '/student_web/common/country' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':countryList'],
+        '/student_web/common/province' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':provinceList'],
+        '/student_web/common/city' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':cityList'],
+        '/student_web/common/district' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':districtList'],
         //活动信息获取
-        '/student_web/lottery/activity_info' => ['method' => ['get'], 'call' => Lottery::class . ':activityInfo'],
+        '/student_web/lottery/activity_info' => ['method' => ['get'], 'call' => Lottery::class . ':activityInfo','middles'=>[]],
         //开始抽奖
         '/student_web/lottery/start_lottery' => ['method' => ['get'], 'call' => Lottery::class . ':startLottery'],
-
-
+        //获取中奖记录
+        '/student_web/lottery/hit_record' => ['method' => ['get'], 'call' => Lottery::class . ':hitRecord'],
+        //获取收货地址
+        '/student_web/lottery/get_address' => ['method' => ['get'], 'call' => Lottery::class . ':getAddress'],
+        //修改收货地址
+        '/student_web/lottery/modify_address' => ['method' => ['get'], 'call' => Lottery::class . ':modifyAddress'],
+        //查看物流信息
+        '/student_web/lottery/shipping_info' => ['method' => ['get'], 'call' => Lottery::class . ':shippingInfo'],
     ];
 }

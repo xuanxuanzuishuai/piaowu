@@ -2,6 +2,7 @@
 
 namespace App\Services\Activity\Lottery\LotteryServices;
 
+use App\Libs\Constants;
 use App\Models\LotteryActivityModel;
 use App\Models\LotteryImportUserModel;
 use App\Models\OperationActivityModel;
@@ -19,8 +20,9 @@ class LotteryImportUserService
         $where = [
             'op_activity_id' => $opActivityId,
             'uuid'           => $uuid,
+            'status'         => Constants::STATUS_TRUE,
         ];
-        return LotteryImportUserModel::getCount($where);
+        return LotteryImportUserModel::getImportUserTimes($where);
     }
 
     /**

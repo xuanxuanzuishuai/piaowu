@@ -38,16 +38,19 @@ class LotteryCoreService
      */
     public static function directReturnHitAward($params)
     {
+        if ($params['max_hit'] < 0 && $params['day_max_hit'] < 0) {
+            return [];
+        }
         //如果触发单个用户最大中奖次数，直接返回兜底奖品
         $userTotalHitNum = LotteryAwardRecordService::useLotteryTimes($params['op_activity_id'], $params['uuid']);
-        if ($userTotalHitNum >= $params['max_hit']) {
+        if ($params['max_hit'] > 0 && $userTotalHitNum >= $params['max_hit']) {
             $awardInfo = LotteryAwardInfoService::getAwardInfo($params['op_activity_id']);
             return array_pop($awardInfo);
         }
 
         //如果触发单个用户每日最大中奖次数，直接返回兜底奖品
         $userDayHitNum = LotteryAwardRecordService::getUserDayHitNum($params['op_activity_id'], $params['uuid']);
-        if ($userDayHitNum >= $params['max_hit']) {
+        if ($params['day_max_hit'] > 0 && $userDayHitNum >= $params['day_max_hit']) {
             $awardInfo = LotteryAwardInfoService::getAwardInfo($params['op_activity_id']);
             return array_pop($awardInfo);
         }
