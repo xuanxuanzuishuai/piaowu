@@ -4,8 +4,6 @@ namespace App\Services\Activity\Lottery;
 
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
-use App\Models\Dss\DssStudentModel;
-use App\Models\Erp\ErpStudentModel;
 use App\Models\LotteryAwardRecordModel;
 use App\Services\Activity\Lottery\LotteryServices\LotteryActivityService;
 use App\Services\Activity\Lottery\LotteryServices\LotteryAwardInfoService;
@@ -17,23 +15,6 @@ use App\Services\Activity\Lottery\LotteryServices\LotteryCoreService;
  */
 class LotteryClientService
 {
-    /**
-     * 获取用户的UUID
-     * @param $userInfo
-     * @return array|mixed
-     */
-    public static function getUuid($userInfo)
-    {
-        if ($userInfo['app_id'] == Constants::REAL_APP_ID) {
-            //注册真人用户信息
-            $studentInfo = ErpStudentModel::getRecord(['id' => $userInfo['user_id'], ['uuid','mobile']]);
-        } elseif ($userInfo['app_id'] == Constants::SMART_APP_ID) {
-            //注册智能用户信息
-            $studentInfo = DssStudentModel::getRecord(['id' => $userInfo['user_id']], ['uuid','mobile']);
-        }
-        return $studentInfo ?? [];
-    }
-
     /**
      * 获取活动信息
      * @param $params
@@ -85,13 +66,13 @@ class LotteryClientService
         for ($i = 0; $i < 3; $i++) {
             $hitInfo = LotteryCoreService::LotteryCore($awardParams);
             //扣除奖品库存
-            $updateRow = LotteryAwardInfoService::decreaseRestNum($hitInfo['id'], $hitInfo['rest_num']);
+            $updateRow = LotteryAwardInfoService::decreaseRestNum($hitInfo);
             if (!empty($updateRow)) {
                 break;
             }
         }
         //更新相关数据
-        LotteryAwardRecordService::updateHitAwardInfo($awardParams, $hitInfo);
+        $hitInfo['record_id'] = LotteryAwardRecordService::updateHitAwardInfo($awardParams, $hitInfo);
 
         //投递到队列，发放奖品
         LotteryActivityService::grantLotteryAward($params, $hitInfo);
@@ -143,6 +124,6 @@ class LotteryClientService
             return [];
         }
 
-        return LotteryAwardRecordService::expressDetail($params['op_activity_id'], $awardRecordInfo['unique_id']);
+        return LotteryAwardRecordService::expressDetail($awardRecordInfo['op_activity_id'], $awardRecordInfo['unique_id']);
     }
 }

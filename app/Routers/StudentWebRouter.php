@@ -92,7 +92,7 @@ class StudentWebRouter extends RouterBase
         //获取收货地址
         '/student_web/lottery/get_address' => ['method' => ['get'], 'call' => Lottery::class . ':getAddress'],
         //修改收货地址
-        '/student_web/lottery/modify_address' => ['method' => ['get'], 'call' => Lottery::class . ':modifyAddress'],
+        '/student_web/lottery/modify_address' => ['method' => ['post'], 'call' => Lottery::class . ':modifyAddress'],
         //查看物流信息
         '/student_web/lottery/shipping_info' => ['method' => ['get'], 'call' => Lottery::class . ':shippingInfo'],
     ];

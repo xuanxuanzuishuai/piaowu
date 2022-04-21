@@ -4,15 +4,18 @@ namespace App\Services\Activity\Lottery\LotteryServices;
 
 use App\Libs\AliOSS;
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
+use App\Models\Erp\ErpStudentOrderV1Model;
 use App\Models\LotteryActivityModel;
 use App\Models\LotteryAwardRecordModel;
 use App\Models\LotteryAwardInfoModel;
 use App\Models\LotteryAwardRuleModel;
 use App\Models\LotteryFilterUserModel;
 use App\Models\OperationActivityModel;
+use App\Services\DictService;
 use App\Services\Queue\QueueService;
 
 class LotteryActivityService
@@ -42,9 +45,9 @@ class LotteryActivityService
     public static function getRegisterChannelId($appId)
     {
         if ($appId == Constants::REAL_APP_ID){
-            $registerChannelId = 4571;
+            $registerChannelId = DictService::getKeyValue(DictConstants::LOTTERY_CONFIG,'real_lottery_register_channel');
         }elseif ($appId == Constants::SMART_APP_ID){
-            $registerChannelId = 4572;
+            $registerChannelId = DictService::getKeyValue(DictConstants::LOTTERY_CONFIG,'smart_lottery_register_channel');
         }else{
             $registerChannelId = 0;
         }
@@ -115,9 +118,9 @@ class LotteryActivityService
     public static function getOrderInfo($appId, $uuid, $startPayTime, $endPayTime)
     {
         if ($appId == Constants::REAL_APP_ID){
-            $saleShop = 5;
+            $saleShop = Constants::SALE_SHOP_VIDEO_PLAY;
         }elseif ($appId == Constants::SMART_APP_ID){
-            $saleShop = 3;
+            $saleShop = Constants::SALE_SHOP_AI_PLAY;
         }else{
             return [];
         }
@@ -127,7 +130,7 @@ class LotteryActivityService
         $request = [
             'sale_shop'      => $saleShop,
             'student_uuid'   => $uuid,
-            'order_status'   => 4,
+            'order_status'   => ErpStudentOrderV1Model::STATUS_PAID,
             'start_pay_time' => $startPayTime,
             'end_pay_time'   => $endPayTime,
             'page'           => 1,
@@ -151,7 +154,7 @@ class LotteryActivityService
                 if (empty($value['payment'])){
                     continue;
                 }
-                $data[] = number_format($value['payment']['exchange_rate'] * $value['payment']['direct_num'] / 10000);
+                $data[] = intval($value['payment']['exchange_rate'] * $value['payment']['direct_num'] / 10000);
             }
         }
         return $data ?? [];
@@ -283,8 +286,9 @@ class LotteryActivityService
                 case Constants::AWARD_TYPE_TYPE_NOTE:
                     $batchId = Util::getBatchId();
             }
-
             $data = [
+                'record_id'           => $hitInfo['record_id'],
+                'type'                => $hitInfo['type'],
                 'uuid'                => $params['uuid'],
                 'student_id'          => $params['student_id'],
                 'common_award_id'     => $hitInfo['award_detail']['common_award_id'],

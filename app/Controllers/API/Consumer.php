@@ -25,7 +25,6 @@ use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\BillMapModel;
 use App\Models\Dss\DssPackageExtModel;
-use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpStudentModel;
@@ -33,6 +32,7 @@ use App\Models\StudentAccountAwardPointsFileModel;
 use App\Models\StudentAccountAwardPointsLogModel;
 use App\Models\WhiteGrantRecordModel;
 use App\Services\Activity\Lottery\LotteryServices\LotteryAwardRecordService;
+use App\Services\Activity\Lottery\LotteryServices\LotteryGrantAwardService;
 use App\Services\AgentService;
 use App\Services\AutoCheckPicture;
 use App\Services\BillMapService;
@@ -910,6 +910,9 @@ class Consumer extends ControllerBase
             case GrantAwardTopic::SIGN_UP:
                 $id = $params['msg_body']['id'];
                 CountingActivitySignService::signAction($id);
+                break;
+            case GrantAwardTopic::LOTTERY_GRANT_AWARD:
+                LotteryGrantAwardService::grantAward($params['msg_body']);
                 break;
             default:
                 SimpleLogger::error('unknown event type', ['params' => $params]);

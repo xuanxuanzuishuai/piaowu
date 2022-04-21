@@ -61,7 +61,7 @@ class LotteryAwardRecordModel extends Model
             'ORDER'   => ['ar.id' => 'DESC'],
             'LIMIT'   => [($page - 1) * $pageSize, $pageSize],
         ];
-        $count = $db->count(self::$table . '(ar)', $join, $fields, $where);
+        $count = $db->count(self::$table . '(ar)', [],null, $where);
         if (empty($count)) {
             return [
                 'total' => 0,

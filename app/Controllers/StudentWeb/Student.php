@@ -19,6 +19,7 @@ use App\Models\Dss\DssUserWeiXinModel;
 use App\Services\CommonServiceForApp;
 use App\Services\RecallLandingService;
 use App\Services\RtActivityService;
+use App\Services\StudentService;
 use App\Services\UserService;
 use App\Services\WechatTokenService;
 use Slim\Http\Request;
@@ -35,11 +36,11 @@ class Student extends ControllerBase
      */
     public function addressList(Request $request, Response $response)
     {
-        $studentId = $this->ci['user_info']['user_id'];
-        $student = DssStudentModel::getById($studentId);
+        $tokenInfo = $this->ci['user_info'];
+        $userInfo = StudentService::getUuid($tokenInfo['app_id'], $tokenInfo['user_id']);
 
         $erp = new Erp();
-        $result = $erp->getStudentAddressList($student['uuid']);
+        $result = $erp->getStudentAddressList($userInfo['uuid']);
         if (empty($result) || $result['code'] != 0) {
             $errorCode = $result['errors'][0]['err_no'] ?? 'erp_request_error';
             return $response->withJson(Valid::addAppErrors([], $errorCode), StatusCode::HTTP_OK);

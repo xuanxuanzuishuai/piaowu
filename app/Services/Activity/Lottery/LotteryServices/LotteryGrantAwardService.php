@@ -7,6 +7,7 @@ use App\Libs\Constants;
 use App\Libs\SimpleLogger;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Erp\ErpStudentAccountModel;
+use App\Models\LotteryAwardRecordModel;
 use App\Services\Queue\ErpStudentAccountTopic;
 use App\Services\Queue\QueueService;
 
@@ -17,24 +18,38 @@ use App\Services\Queue\QueueService;
  */
 class LotteryGrantAwardService
 {
-    public static function grantAward($awardType, $params)
+    public static function grantAward($params)
     {
-        switch ($awardType) {
+        switch ($params['type']) {
             case Constants::AWARD_TYPE_TIME:
-                return self::grantTime($params);
+                $res = self::grantTime($params);
+                break;
             case Constants::AWARD_TYPE_GOLD_LEAF:
-                return self::grantGoldLeaf($params);
+                $res = self::grantGoldLeaf($params);
+                break;
             case Constants::AWARD_TYPE_MAGIC_STONE:
-                return self::grantMagicStone($params);
+                $res = self::grantMagicStone($params);
+                break;
             case Constants::AWARD_TYPE_TYPE_ENTITY:
-                return self::grantEntity($params);
+                $res = self::grantEntity($params);
+                break;
             case Constants::AWARD_TYPE_TYPE_LESSON:
-                return self::grantLesson($params);
+                $res = self::grantLesson($params);
+                break;
             case Constants::AWARD_TYPE_TYPE_NOTE:
-                return self::grantNote($params);
+                $res = self::grantNote($params);
+                break;
             default:
                 return false;
         }
+        if ($res) {
+            $update = [
+                'batch_id'    => $params['batch_id'] ?? '',
+                'grant_state' => Constants::STATUS_TRUE
+            ];
+            LotteryAwardRecordModel::updateRecord($params['record_id'], $update);
+        }
+        return true;
     }
 
     /**
@@ -72,7 +87,10 @@ class LotteryGrantAwardService
             'operator_type' => 0,
             'operator_id'   => 10000,
         ];
-        (new Erp())->grantGoldLeafNote($request);
+        $response = (new Erp())->grantGoldLeafNote($request);
+        if ($response['code'] != 0) {
+            return false;
+        }
         return true;
     }
 
@@ -123,7 +141,10 @@ class LotteryGrantAwardService
             'address_id' => $params['erp_address_id'],
         ];
 
-        (new Erp())->deliverGoods($params);
+        $response = (new Erp())->deliverGoods($params);
+        if ($response['code'] != 0) {
+            return false;
+        }
         return true;
 
     }
@@ -143,7 +164,10 @@ class LotteryGrantAwardService
             'course_type' => ErpStudentAccountModel::TYPE_LOTTERY_ACTIVE_HIS_AWARD_COURSE,
             'remark'      => $params['remark']
         ];
-        (new Erp())->grantCourse($request);
+        $response = (new Erp())->grantCourse($request);
+        if ($response['code'] != 0) {
+            return false;
+        }
         return true;
     }
 
@@ -165,7 +189,10 @@ class LotteryGrantAwardService
             'operator_type' => 0,
             'operator_id'   => 10000,
         ];
-        (new Erp())->grantGoldLeafNote($request);
+        $response = (new Erp())->grantGoldLeafNote($request);
+        if ($response['code'] != 0) {
+            return false;
+        }
         return true;
     }
 }

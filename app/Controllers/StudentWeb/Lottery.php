@@ -16,6 +16,7 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Services\Activity\Lottery\LotteryClientService;
 use App\Services\Activity\Lottery\LotteryServices\LotteryAwardRecordService;
+use App\Services\StudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -63,8 +64,9 @@ class Lottery extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $tokenInfo = $this->ci['user_info'];
+        $userInfo = StudentService::getUuid($tokenInfo['app_id'],$tokenInfo['user_id']);
         $params['student_id'] = $tokenInfo['user_id'];
-        $params['uuid'] = (LotteryClientService::getUuid($tokenInfo))['uuid'];
+        $params['uuid'] = $userInfo['uuid'];
 
         try {
             $hitAwardInfo = LotteryClientService::hitAwardInfo($params);
@@ -73,8 +75,10 @@ class Lottery extends ControllerBase
         }
 
         $data = [
+            'record_id'   => $hitAwardInfo['record_id'],
             'award_id'   => $hitAwardInfo['id'],
             'award_type' => $hitAwardInfo['type'],
+            'award_level' => $hitAwardInfo['level'],
             'img_url'    => $hitAwardInfo['img_url'],
             'rest_times' => $hitAwardInfo['rest_times'],
         ];
@@ -91,13 +95,12 @@ class Lottery extends ControllerBase
     {
         $params = $request->getParams();
         $tokenInfo = $this->ci['user_info'];
-        $userInfo = LotteryClientService::getUuid($tokenInfo);
-        $mobile = $userInfo['mobile'];
+        $userInfo = StudentService::getUuid($tokenInfo['app_id'],$tokenInfo['user_id']);
         list($page, $pageSize) = Util::formatPageCount($params);
         $hitRecord = LotteryAwardRecordService::getHitRecord($userInfo['uuid'],$page,$pageSize);
         $data = [
-            'mobile'=>Util::hideUserMobile($mobile),
-            'list'=>$hitRecord,
+            'mobile'=>Util::hideUserMobile($userInfo['mobile']),
+            'hit_list'=>$hitRecord,
         ];
         return HttpHelper::buildResponse($response, $data);
     }
@@ -147,6 +150,11 @@ class Lottery extends ControllerBase
                 'type'       => 'required',
                 'error_code' => 'erp_address_id_is_required',
             ],
+            [
+                'key'        => 'address_detail',
+                'type'       => 'required',
+                'error_code' => 'address_detail_is_required',
+            ],
         ];
         $params = $request->getParams();
         $result = Valid::appValidate($params, $rules);
@@ -172,11 +180,6 @@ class Lottery extends ControllerBase
     public static function shippingInfo(Request $request, Response $response)
     {
         $rules = [
-            [
-                'key'        => 'op_activity_id',
-                'type'       => 'required',
-                'error_code' => 'op_activity_id_is_required',
-            ],
             [
                 'key'        => 'record_id',
                 'type'       => 'required',

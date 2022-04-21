@@ -29,7 +29,6 @@ class StudentWebCommon extends ControllerBase
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws \App\Libs\Exceptions\RunTimeException
      */
     public function login(Request $request, Response $response)
     {

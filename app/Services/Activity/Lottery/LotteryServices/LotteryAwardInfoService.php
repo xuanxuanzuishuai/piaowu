@@ -41,21 +41,20 @@ class LotteryAwardInfoService
 
     /**
      * 扣减中奖商品的库存
-     * @param $awardId
-     * @param $restNum
+     * @param $hitInfo
      * @return int|null
      */
-    public static function decreaseRestNum($awardId, $restNum)
+    public static function decreaseRestNum($hitInfo)
     {
-        if ($restNum < 0) {
+        if ($hitInfo['num'] < 0) {
             return 1;
         }
         $date = [
             'rest_num[-]' => 1
         ];
         $where = [
-            'id'       => $awardId,
-            'rest_num' => $restNum,
+            'id'       => $hitInfo['id'],
+            'rest_num' => $hitInfo['rest_num'],
         ];
         return LotteryAwardInfoModel::batchUpdateRecord($date, $where);
     }

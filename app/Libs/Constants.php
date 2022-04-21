@@ -28,6 +28,13 @@ class Constants
     const SALE_SHOP_VIDEO_PLAY_SERVICE = 9;//真人课管服务店铺
     const SALE_SHOP_AI_REFERRAL_SERVICE = 10;//智能课管服务店铺
 
+    // 销售商城 1 音符商城 2 金叶子商城 3 智能陪练商城 4 魔法石商城 5 真人陪练商城
+    const SALE_SHOP_NOTE = 1;
+    const SALE_SHOP_LEAF = 2;
+    const SALE_SHOP_AI_PLAY = 3;
+    const SALE_SHOP_MAGIC_STONE = 4;
+    const SALE_SHOP_VIDEO_PLAY = 5;
+
 
     //用户类型定义
     const USER_TYPE_STUDENT = 1; //学生

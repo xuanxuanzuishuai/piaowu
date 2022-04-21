@@ -120,7 +120,6 @@ class LotteryAwardRecordService
             'award_type'      => $hitInfo['type'],
             'unique_id'       => $uniqueId ?? 0,
             'shipping_status' => $shippingStatus,
-            'batch_id'        => $params['batch_id'] ?? '',
             'create_time'     => time(),
         ];
         return LotteryAwardRecordModel::insertRecord($data);
@@ -135,7 +134,7 @@ class LotteryAwardRecordService
     public static function updateHitAwardInfo($params, $hitInfo)
     {
         $fields = [];
-        if ($hitInfo['rest_num'] > 0) {
+        if ($hitInfo['num'] > 0) {
             $fields[] = 'rest_award_num';
         }
 
@@ -151,13 +150,13 @@ class LotteryAwardRecordService
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         try {
-            self::addAwardRecord($params, $hitInfo);
+            $recordId = self::addAwardRecord($params, $hitInfo);
             LotteryActivityService::updateAfterHitInfo($params['op_activity_id'], $fields);
             $db->commit();
         } catch (\Exception $e) {
             $db->rollBack();
         }
-        return true;
+        return $recordId ?? 0;
     }
 
     /**
