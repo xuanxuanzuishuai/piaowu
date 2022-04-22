@@ -160,7 +160,10 @@ class LotteryAdminService
         $formatParams['base_data']['day_max_hit'] = $paramsData['day_max_hit'];
         $formatParams['base_data']['max_hit_type'] = $paramsData['max_hit_type'];
         $formatParams['base_data']['max_hit'] = $paramsData['max_hit'];
-        //奖品设置:最后一个奖品默认设置为兜底奖品（1.库存=-1，中奖时间段=活动开始结束时间 2.奖品类型不能是实物
+        if ($paramsData['day_max_hit'] > $paramsData['max_hit']) {
+            throw new RuntimeException(["max_hit_and_day_hit_relation_error"]);
+        }
+        //奖品设置:最后一个奖品默认设置为兜底奖品（1.库存=-1 2.中奖时间段=活动开始结束时间 3.奖品类型不能是实物
         if (!is_array($paramsData['awards']) || empty($paramsData['awards'])) {
             throw new RuntimeException(["award_params_error"]);
         }
@@ -172,13 +175,13 @@ class LotteryAdminService
         if ($paramsData['awards'][$awardCount - 1]['type'] == Constants::AWARD_TYPE_TYPE_ENTITY) {
             throw new RuntimeException(["default_award_not_entity"]);
         }
+        //奖品的权重总和
+        $weightTotal = 0;
         foreach ($paramsData['awards'] as $awk => &$awv) {
             //批量验证参数格式
             $formatParams['awards'][$awk] = self::checkAwardsParams($awv);
             $formatParams['awards'][$awk]['rest_num'] = $formatParams['awards'][$awk]['num'];
-            if ($awv['weight'] > 100) {
-                throw new RuntimeException(['weight_is_error']);
-            }
+            $weightTotal += $awv['weight'];
             //区分不同奖励，校验不同参数
             switch ($awv['type']) {
                 case Constants::AWARD_TYPE_GOLD_LEAF:
@@ -203,7 +206,11 @@ class LotteryAdminService
                 default:
                     throw new RuntimeException(["award_type_is_error"]);
             }
+            //兜底奖品：计算权重总和是否小于100
             if ($awk == $awardCount - 1) {
+                if (100 - $weightTotal < 0) {
+                    throw new RuntimeException(["total_weight_is_error"]);
+                }
                 $formatParams['awards'][$awk]['num'] = $formatParams['awards'][$awk]['rest_num'] = -1;
             } else {
                 $formatParams['base_data']['rest_award_num'] += $formatParams['awards'][$awk]['num'];
@@ -288,7 +295,7 @@ class LotteryAdminService
             "name"    => ['error' => "award_name_is_required", 'type' => 'string'],
             "img_url" => ['error' => "img_is_required", 'type' => 'string'],
             "weight"  => ['error' => "weight_is_error", 'type' => 'float', '0_relation' => ">"],
-            "num"     => ['error' => "award_storage_num_error", 'type' => 'int', '0_relation' => ">="],
+            "num"     => ['error' => "award_storage_num_error", 'type' => 'int', '0_relation' => ">"],
         ];
         $awardCheckParams = [];
         foreach ($checkParamsConfig as $ck => $cv) {
