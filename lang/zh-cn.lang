@@ -542,3 +542,4 @@ not_waiting_send_stop_update_shipping_address='非待发货状态奖品禁止修
 default_award_not_entity='兜底奖品类型不能是实物奖品'
 activity_desc_length_error='活动规则描述文案长度错误'
 max_hit_and_day_hit_relation_error='用户每天最多中奖次数不能大于用户最多中奖次数'
+title_url_is_required='标题图片是必填参数'

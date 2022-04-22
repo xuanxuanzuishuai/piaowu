@@ -56,15 +56,9 @@ class ActivityLottery extends ControllerBase
                 'error_code' => 'name_max_length_is_30'
             ],
             [
-                'key'        => 'title',
+                'key'        => 'title_url',
                 'type'       => 'required',
-                'error_code' => 'title_is_required'
-            ],
-            [
-                'key'        => 'title',
-                'type'       => 'lengthMax',
-                'value'      => 30,
-                'error_code' => 'title_max_length_is_30'
+                'error_code' => 'title_url_is_required'
             ],
             [
                 'key'        => 'start_time',
