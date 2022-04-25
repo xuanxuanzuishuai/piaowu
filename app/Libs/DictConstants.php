@@ -1177,6 +1177,13 @@ class DictConstants {
         'type' => 'award_prize_type',
         'keys' => [1, 2],
     ];
+    //爬虫目标店铺数据配置
+    const CRAWLER_TARGET_SHOP_CONFIG = [
+        'type' => 'crawler_target_shop_config',
+        'keys' => ['account_config_v1'],
+    ];
+
+
     //========================真人海外投放配置start========================
     const REAL_STUDENT_OVERSEAS_DELIVERY = [
         'type' => 'real_student_overseas_delivery',
