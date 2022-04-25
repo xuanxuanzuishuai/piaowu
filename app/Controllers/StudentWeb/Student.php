@@ -122,7 +122,8 @@ class Student extends ControllerBase
         unset($params['is_default']);
         $student = $this->ci['user_info'];
         if (empty($params['uuid']) && !empty($student['user_id'])) {
-            $studentInfo = DssStudentModel::getById($student['user_id']);
+            $tokenInfo = $this->ci['user_info'];
+            $studentInfo = StudentService::getUuid($tokenInfo['app_id'], $tokenInfo['user_id']);
             $params['uuid'] = $studentInfo['uuid'] ?? '';
         }
 
