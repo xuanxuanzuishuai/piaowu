@@ -195,15 +195,6 @@ class UserRefereeService
             WechatService::updateUserTagByUserId($buyPreStudentInfo['id'], true);
             //转介绍奖励
             self::dssBuyDeal($buyPreStudentInfo, $packageInfo, $parentBillId);
-
-            //抖店支付成功发消息（临时需求，先在这里写）
-            $douDianChannelId = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'doudian_order_channel_id');
-            $orderMapInfo = BillMapModel::getRecord(['bill_id' => $parentBillId]);
-            $studentInfo = DssStudentModel::getById($buyPreStudentInfo['id']);
-            if ($orderMapInfo['buy_channel'] == $douDianChannelId) {
-                (new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host')))->douDianOrderSms($studentInfo['mobile']);
-            }
-
         }
         return true;
     }
