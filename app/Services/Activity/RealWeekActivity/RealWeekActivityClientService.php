@@ -30,12 +30,12 @@ class RealWeekActivityClientService
     /**
      * 获取当前版本
      * @param $activityId
-     * @return array
+     * @return int
      */
     public static function getCurrentVersion($activityId)
     {
         $version = RealWeekActivityRuleVersionAbModel::getRecord(['activity_id' => $activityId, 'ORDER' => ['id' => 'DESC']]);
-        return is_array($version) ? $version : [];
+        return $version['id'] ?? 0;
     }
 
 }
