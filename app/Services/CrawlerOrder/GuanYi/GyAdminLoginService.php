@@ -57,6 +57,8 @@ class GyAdminLoginService
             $info = json_decode($body, true);
             SimpleLogger::info("gy login response", ['gy_login' => $body]);
             if ($info['message'] != 'success') {
+                Util::errorCapture("gy login error,account=" . $this->mobile . ' error_msg=' . $info['message'],
+                    [$info]);
                 return '';
             }
             //登陆成功，拿到跳转url,使用跳转加密url，请求有效JSESSIONID
@@ -118,7 +120,7 @@ class GyAdminLoginService
     private function setJsessionIdCache()
     {
         $rdb = RedisDB::getConn();
-        $rdb->setex($this->jsessionIdCacheKey . $this->mobile, Util::TIMESTAMP_12H, $this->jsessionId);
+        $rdb->setex($this->jsessionIdCacheKey . $this->mobile, Util::TIMESTAMP_1H, $this->jsessionId);
     }
 
     /**

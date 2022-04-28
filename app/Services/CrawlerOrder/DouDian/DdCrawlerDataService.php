@@ -5,6 +5,7 @@ namespace App\Services\CrawlerOrder\DouDian;
 use App\Libs\Constants;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use App\Models\CrawlerOrderModel;
 use App\Services\CrawlerOrder\CrawlerBaseService;
 use GuzzleHttp\Cookie\CookieJar;
@@ -19,6 +20,8 @@ class DdCrawlerDataService extends CrawlerBaseService
     private $listQueryData = [];//订单列表查询条件
     private $svWebId = '';
     private $phpSessid = '';
+    private $createTimeStart = 0;
+    private $createTimeEnd = 0;
 
     public function __construct($config)
     {
@@ -32,8 +35,10 @@ class DdCrawlerDataService extends CrawlerBaseService
             $this->phpSessid = $settingData['PHPSESSID'];
             $this->listQueryData = parse_query($settingData['list_query_params']);
             $this->accessToken = true;
+            list($this->createTimeStart, $this->createTimeEnd) = Util::getStartEndTimestamp($this->nowTime);
             $this->setCommonCookie();
             $this->setCommonHeaders();
+            $this->setMysqlDataCount();
         }
     }
 
@@ -51,15 +56,15 @@ class DdCrawlerDataService extends CrawlerBaseService
     /**
      * 开爬
      */
-    public function do()
+    public function do(): bool
     {
-        if (empty($this->accessToken)) {
-            SimpleLogger::error("dd login fail", []);
-            return false;
+        //检测订单数量，是否有新数据可爬取
+        if ($this->checkCrawlerOrderCount() === false) {
+            return false;;
         }
         while (true) {
             $this->searchOrderList();
-            if ($this->mysqlDataCount = $this->realTimeCount || $this->currentCrawlerIsFail === true) {
+            if ($this->remainingDealCount <= 0 || $this->currentCrawlerIsFail === true) {
                 break;
             }
             $this->listQueryData["page"] += 1;
@@ -96,7 +101,6 @@ class DdCrawlerDataService extends CrawlerBaseService
                             $dv['shop_order_id'])) {
                             continue;
                         }
-
                         $tmpAddressInfo = $this->decryptAddressInfo($dv['shop_order_id']);
                         $tmpOrderList[] = [
                             'order_code'       => $dv['shop_order_id'],
@@ -111,7 +115,6 @@ class DdCrawlerDataService extends CrawlerBaseService
                             'receiver_name'    => $tmpAddressInfo['receiver_name'] ?? '',
                             'receiver_tel'     => $tmpAddressInfo['receiver_tel'] ?? '',
                         ];
-                        $this->mysqlDataCount++;
                     }
                     $this->insertData += $tmpOrderList;
                 }
@@ -192,5 +195,15 @@ class DdCrawlerDataService extends CrawlerBaseService
             'sec-fetch-site' => 'same-origin',
             'referer'        => 'https://fxg.jinritemai.com/ffa/morder/order/list',
         ];
+    }
+
+    /**
+     * 设置当前已爬取数据总量
+     */
+    public function setMysqlDataCount()
+    {
+        $this->setMysqlDb();
+        $this->mysqlDataCount = $this->mysqlDb->count(CrawlerOrderModel::$table,
+            ['dd_shop_id' => $this->shopId, 'receiver_tel[!]' => '']);
     }
 }

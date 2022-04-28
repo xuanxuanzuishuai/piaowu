@@ -17,11 +17,9 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 // require composer autoload
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
-use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
-use App\Libs\Util;
 use App\Models\CrawlerOrderModel;
 use App\Services\CrawlerOrder\DouDian\DdCrawlerDataService;
 use App\Services\CrawlerOrder\GuanYi\CrawlerDataService;
@@ -39,11 +37,17 @@ $dictConfig = DictConstants::get(DictConstants::CRAWLER_TARGET_SHOP_CONFIG, 'acc
 if (empty($dictConfig)) {
     die("商铺配置数据缺失/错误");
 }
+//拼接账户数据
+
+
 $accountConfig = json_decode($dictConfig, true);
 $rdb = RedisDB::getConn();
 //账号可能是不同的第三方公司账号，而且还可以是多个
-foreach ($accountConfig as $dc) {
+foreach ($accountConfig as &$dc) {
     $thirdServiceObj = null;
+    $envConfig = explode('=>', $_ENV[$dc['env_name']]);
+    $dc['account'] = $envConfig[0];
+    $dc['pwd'] = $envConfig[1];
     //获取当前爬取账号可用状态
     if ($rdb->get(CrawlerOrderModel::ACCOUNT_CRAWLER_STATUS_CACHE_KEY . $dc['shop_id'] . '_' . $dc['account']) === "0") {
         continue;

@@ -4,12 +4,10 @@ namespace App\Services\CrawlerOrder\GuanYi;
 
 use App\Libs\Constants;
 use App\Libs\SimpleLogger;
-use App\Libs\Util;
 use App\Models\CrawlerOrderModel;
 use App\Services\CrawlerOrder\CrawlerBaseService;
 use GuzzleHttp\Client;
 use GuzzleHttp\Cookie\CookieJar;
-use Slim\Http\StatusCode;
 
 class CrawlerDataService extends CrawlerBaseService
 {
@@ -19,6 +17,8 @@ class CrawlerDataService extends CrawlerBaseService
     private $searchUri = 'http://v2.guanyierp.com/tc/trade/trade_order_header/data/list';
     //收货地址明文:needDecryptType不传此参数可以解密所有数据 needDecryptType=4 收货人明文needDecryptType=3
     private $decryptReceiveDataUri = 'http://v2.guanyierp.com/tc/trade/trade_order_header/desentizationDataView';
+    //获取订单总数
+    private $orderTotal = 'http://v2.guanyierp.com/tc/trade/trade_order_header/data/total';
 
     /**
      * @param $config
@@ -40,6 +40,7 @@ class CrawlerDataService extends CrawlerBaseService
         $this->source = CrawlerOrderModel::SOURCE_GY;
         $this->headersUserAgent = $loginObj->getHeadersUserAgent();
         $this->requestClientObj = new Client(['debug' => false]);
+        $this->setMysqlDataCount();
     }
 
     /**
@@ -55,12 +56,21 @@ class CrawlerDataService extends CrawlerBaseService
         $this->setCommonCookie();
         $this->setCommonHeaders();
         $this->setListSearchArr();
+        //设置订单数据总量
+        $this->getOrderTotal();
+        //检测订单数量，是否有新数据可爬取
+        if ($this->checkCrawlerOrderCount() === false) {
+            return false;
+        }
         while (true) {
-            if ($this->mysqlDataCount = $this->realTimeCount || $this->currentCrawlerIsFail === true) {
+            if ($this->remainingDealCount <= 0 || $this->currentCrawlerIsFail === true) {
                 break;
             }
             $this->searchOrderList();
             $this->listSearchArr['page'] += 1;
+            if ($this->listSearchArr['page'] > ceil($this->realTimeCount / $this->limit)) {
+                break;
+            }
             $this->listSearchArr['start'] = ($this->listSearchArr['page'] - 1) * $this->limit;
         }
         return $this->addRecord();
@@ -72,7 +82,7 @@ class CrawlerDataService extends CrawlerBaseService
     public function searchOrderList()
     {
         //经过实验得到的，轻易不要改
-        sleep(mt_rand(65, 80));
+        sleep(mt_rand(5, 10));
         try {
             $response = $this->requestClientObj->request('POST', $this->searchUri, [
                 'cookies' => $this->commonCookieJar,
@@ -86,13 +96,15 @@ class CrawlerDataService extends CrawlerBaseService
             if (empty($responseData['rows'])) {
                 $this->currentCrawlerIsFail = true;
                 SimpleLogger::info('search list fail', []);
-                return;
             } else {
-                $this->realTimeCount = (int)$responseData['total'];
                 foreach ($responseData['rows'] as $dv) {
                     if (!$this->checkOrderGoodsIsValid($dv['itemCodeCombo'], $dv['platformCode'])) {
                         continue;
                     }
+                    if ($this->remainingDealCount <= 0) {
+                        break;
+                    }
+                    $this->remainingDealCount--;
                     $decryptData = $this->decryptAddressInfo($dv['id']);
                     $this->insertData[] = [
                         'third_order_id'   => $dv['id'],
@@ -107,7 +119,6 @@ class CrawlerDataService extends CrawlerBaseService
                         'receiver_tel'     => $decryptData['receiverMobile'],
                         'order_code'       => $dv['platformCode'],
                     ];
-                    $this->mysqlDataCount++;
                 }
             }
         } catch (\GuzzleHttp\Exception\GuzzleException $ge) {
@@ -123,9 +134,9 @@ class CrawlerDataService extends CrawlerBaseService
     private function decryptAddressInfo($orderId): array
     {
         //经过实验得到的，轻易不要改
-        sleep(mt_rand(80, 120));
+        sleep(mt_rand(80, 110));
         //查询参数
-        $totalQueryData = [
+        $decryptQueryData = [
             "id"   => $orderId,
             "type" => "/tc/trade/trade_order_approve",
         ];
@@ -134,20 +145,22 @@ class CrawlerDataService extends CrawlerBaseService
             $response = $this->requestClientObj->request('POST', $this->decryptReceiveDataUri, [
                 'headers' => $this->commonHeader,
                 'cookies' => $this->commonCookieJar,
-                'query'   => $totalQueryData
+                'query'   => $decryptQueryData
             ]);
             $body = $response->getBody()->getContents();
-            SimpleLogger::info("gy decrypt address data", ['query' => $totalQueryData, 'response_body' => $body]);
+            SimpleLogger::info("gy decrypt address data", ['query' => $decryptQueryData, 'response_body' => $body]);
             //解析结果
             $responseData = json_decode($body, true);
         } catch (\GuzzleHttp\Exception\GuzzleException $ge) {
             SimpleLogger::error("decrypt guzzleHttp error", ['err_msg' => $ge->getMessage()]);
         }
         //账户触发第三方规则，不能爬取数据
-        if ($responseData['data']['frequencyResult']['errMsg'] != "") {
+        if (empty($responseData['data']['receiverMobile'])) {
             $this->setCrawlerAccountDisable($this->account, $responseData['data']['frequencyResult']['errMsg']);
+            return [];
+        } else {
+            return $responseData['data'];
         }
-        return $responseData['data'] ?? [];
     }
 
     /**
@@ -155,23 +168,20 @@ class CrawlerDataService extends CrawlerBaseService
      */
     private function setListSearchArr()
     {
-        sleep(mt_rand(60, 120));
         $this->listSearchArr = [
-            'page'      => 1,
-            'limit'     => $this->limit,
-            'start'     => 0,//目标页面数据的开始下标,每次只爬取第一页的数据，所以这里写死为0即可
-            'dateType'  => 0,//目前不知道这个参数意义
-            'shopIds'   => $this->shopId, //指定的店铺ID。多个使用逗号分割即可
-            'beginTime' => date("Y-m-d H:i:s", strtotime("-1 day")),
-            'endTime'   => date("Y-m-d H:i:s"),
+            'page'     => 1,
+            'limit'    => $this->limit,
+            'start'    => 0,//目标页面数据的开始下标
+            'dateType' => 0,//目前不知道这个参数意义
+            'shopIds'  => $this->shopId, //指定的店铺ID。多个使用逗号分割即可
             //            'beginTime' => "2022-04-25 10:34:52",
             //            'endTime'   => "2022-04-26 10:34:52",
             //            "hasInvoice"    => true,//发票
             //            "approve"       => true,//审核
             //            "refund"        => false,//退款订单不考虑
             //            "financeReject" => false,//财审驳回订单不考虑
-            //            "cancel"        => false,//作废订单不考虑
-            //            "hold"          => false,//拦截订单不考虑
+            "cancel"   => false,//作废订单不考虑
+            "hold"     => false,//拦截订单不考虑
         ];
     }
 
@@ -197,5 +207,42 @@ class CrawlerDataService extends CrawlerBaseService
             'Origin'       => 'http://v2.guanyierp.com',
             'Referer'      => 'http://v2.guanyierp.com/tc/trade/trade_order_header',
         ];
+    }
+
+    /**
+     * 设置当前已爬取数据总量
+     */
+    public function setMysqlDataCount()
+    {
+        $this->setMysqlDb();
+        $this->mysqlDataCount = $this->mysqlDb->count(CrawlerOrderModel::$table,
+            ['gy_shop_id' => $this->shopId, 'receiver_tel[!]' => '']);
+    }
+
+    /**
+     * 获取订单总数
+     */
+    private function getOrderTotal()
+    {
+        //查询参数
+        $totalQueryData = $this->listSearchArr;
+        unset($totalQueryData['page']);
+        unset($totalQueryData['limit']);
+        unset($totalQueryData['start']);
+        $responseData = [];
+        try {
+            $response = $this->requestClientObj->request('POST', $this->orderTotal, [
+                'headers' => $this->commonHeader,
+                'cookies' => $this->commonCookieJar,
+                'query'   => $totalQueryData
+            ]);
+            $body = $response->getBody()->getContents();
+            SimpleLogger::info("gy data total count", ['query' => $totalQueryData, 'response_body' => $body]);
+            //解析结果
+            $responseData = json_decode($body, true);
+        } catch (\GuzzleHttp\Exception\GuzzleException $ge) {
+            SimpleLogger::error("total count guzzleHttp error", ['err_msg' => $ge->getMessage()]);
+        }
+        $this->realTimeCount = (int)$responseData['total'];
     }
 }

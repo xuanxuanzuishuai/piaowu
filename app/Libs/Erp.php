@@ -29,7 +29,6 @@ class Erp
     const USER_IS_PAY_YES = 1;              // 请求erp获取用户付费属性时， 1是已付费
 
     const SOURCE_TYPE_OP_TO_MONEY = 7001; //OP系统扣减兑换现金
-
     const API_CREATE_BILL = '/ai_dss/bill/create_bill';
     const API_BILL_DETAIL = '/ai_dss/bill/detail';
     const API_PACKAGE_LIST = '/ai_dss/package/package_list';
@@ -105,8 +104,10 @@ class Erp
     const REFEREE_STUDENT_REGISTER = '/op/user/register_bound';
     //神策埋点学生基础数据
     const SENSORS_STUDENT_BASE_DATA = '/api/app/sensors/profile/student';
-    // 获取学生身份属性
+    //获取学生身份属性
     const STUDENT_IDENTIFY_ATTRIBUTE = '/api/student/attribute';
+    //抖店实物商品消费发货/退费
+    const DOU_STORE_MSG = '/api/consumer/dou_store_msg';
 
     private $host;
 
@@ -115,7 +116,7 @@ class Erp
         $this->host = DictConstants::get(DictConstants::SERVICE, "erp_host");
     }
 
-    private function commonAPI($api,  $data = [], $method = 'GET', &$exportBody = '')
+    private function commonAPI($api, $data = [], $method = 'GET', &$exportBody = '')
     {
         try {
             $client = new Client([
@@ -168,32 +169,32 @@ class Erp
     public function createBill($uuid, $packageId, $payChannel, $clientIp, $amount, $oprice, $callbacks, $params = [])
     {
         $data = [
-            'type' => 3, // 购买课程
-            'num' => 1, // 数量
-            'app_id' => 8, // 熊猫陪练
-            'user_id' => $uuid, // uuid 到erp会转为对应
-            'user_type' => 1, // 订单拥有者类型  1 学员 2 老师
-            'object_id' => $packageId, // 对应物品id 如商品包id，商品id，课程单元id
-            'object_type' => 1, // 物品类型 1 商品包id 2 商品id  3 课程id
-            'fee_type' => 'cny', // 账户类型  usd: 美元, cny: 人民币
-            'amount' => $amount, // 实际支付金额，单位是分
-            'oprice' => $oprice, // 应付金额，单位是分
-            'pay_type' => 1, // 1ping++ 2原生微信支付 3 原生支付宝支付 现阶段都是1
-            'pay_channel' => $payChannel, // 1支付宝手机网页支付 2微信H5支付；
-            'msg' => "购买产品包({$packageId})", // 描述
+            'type'               => 3, // 购买课程
+            'num'                => 1, // 数量
+            'app_id'             => 8, // 熊猫陪练
+            'user_id'            => $uuid, // uuid 到erp会转为对应
+            'user_type'          => 1, // 订单拥有者类型  1 学员 2 老师
+            'object_id'          => $packageId, // 对应物品id 如商品包id，商品id，课程单元id
+            'object_type'        => 1, // 物品类型 1 商品包id 2 商品id  3 课程id
+            'fee_type'           => 'cny', // 账户类型  usd: 美元, cny: 人民币
+            'amount'             => $amount, // 实际支付金额，单位是分
+            'oprice'             => $oprice, // 应付金额，单位是分
+            'pay_type'           => 1, // 1ping++ 2原生微信支付 3 原生支付宝支付 现阶段都是1
+            'pay_channel'        => $payChannel, // 1支付宝手机网页支付 2微信H5支付；
+            'msg'                => "购买产品包({$packageId})", // 描述
             'student_address_id' => $params['student_address_id'] ?? 0, // 地址
 
             'success_url' => $callbacks['success_url'] ?? null, // 支付宝web 支付成功跳转链接
-            'cancel_url' => $callbacks['cancel_url'] ?? null, // 支付宝web 支付失败跳转链接
-            'result_url' => $callbacks['result_url'] ?? null, // 微信H5 支付结果跳转链接
+            'cancel_url'  => $callbacks['cancel_url'] ?? null, // 支付宝web 支付失败跳转链接
+            'result_url'  => $callbacks['result_url'] ?? null, // 微信H5 支付结果跳转链接
 
-            'ip' => $clientIp, // 微信H5支付需要客户端ip
-            'employee_uuid' => $params['employee_uuid'] ?? NULL //成单人
+            'ip'            => $clientIp, // 微信H5支付需要客户端ip
+            'employee_uuid' => $params['employee_uuid'] ?? null //成单人
         ];
 
         //把扩展参数合并进data，注意这里不会覆盖原有的key
-        foreach($params as $key => $value) {
-            if(!isset($data[$key])) {
+        foreach ($params as $key => $value) {
+            if (!isset($data[$key])) {
                 $data[$key] = $value;
             }
         }
@@ -244,7 +245,8 @@ class Erp
      */
     public function getPackageDetail($packageId, $uuid, $channel = 1)
     {
-        $result = self::commonAPI(self::API_PACKAGE_DETAIL, ['package_id' => $packageId, 'uuid' => $uuid, 'channel' => $channel], 'GET');
+        $result = self::commonAPI(self::API_PACKAGE_DETAIL,
+            ['package_id' => $packageId, 'uuid' => $uuid, 'channel' => $channel], 'GET');
 
         return $result['data'] ?? [];
     }
@@ -274,11 +276,11 @@ class Erp
     public function studentRegister($channelId, $mobile, $name, $refType = null, $refUuid = null, $countryCode = null)
     {
         $response = HttpHelper::requestJson($this->host . self::API_STUDENT_REGISTER, [
-            'app_id' => Constants::SELF_APP_ID,
-            'mobile' => $mobile,
-            'country_code' => $countryCode,
-            'name' => $name,
-            'channel_id' => $channelId,
+            'app_id'        => Constants::SELF_APP_ID,
+            'mobile'        => $mobile,
+            'country_code'  => $countryCode,
+            'name'          => $name,
+            'channel_id'    => $channelId,
             'referrer_type' => $refType,
             'referrer_uuid' => $refUuid,
         ], 'POST');
@@ -309,11 +311,11 @@ class Erp
     public function copyTask($taskId, $startTime, $endTime, $name)
     {
         $response = HttpHelper::requestJson($this->host . self::API_COPY_TASK, [
-            'app_id' => Constants::SELF_APP_ID,
-            'task_id' => $taskId,
+            'app_id'     => Constants::SELF_APP_ID,
+            'task_id'    => $taskId,
             'start_time' => $startTime,
-            'end_time' => $endTime,
-            'task_name' => $name
+            'end_time'   => $endTime,
+            'task_name'  => $name
         ]);
         return $response;
     }
@@ -366,11 +368,11 @@ class Erp
     public function updateTask($uuid, $eventTaskId, $status)
     {
         $params = [
-            'app_id' => Constants::SELF_APP_ID,
-            'user_type' => 1,
-            'uuid' => $uuid,
+            'app_id'        => Constants::SELF_APP_ID,
+            'user_type'     => 1,
+            'uuid'          => $uuid,
             'event_task_id' => $eventTaskId,
-            'status' => $status
+            'status'        => $status
         ];
         $response = HttpHelper::requestJson($this->host . self::API_UPDATE_TASK, $params, 'POST');
         if ($response['code'] == Valid::CODE_PARAMS_ERROR) {
@@ -393,12 +395,12 @@ class Erp
     {
         $params['app_id'] = Constants::SELF_APP_ID;
         $params = [
-            'app_id' => Constants::SELF_APP_ID,
+            'app_id'                   => Constants::SELF_APP_ID,
             'user_event_task_award_id' => $awardId,
-            'status' => $status,
-            'reviewer_id' => $reviewerId,
-            'review_time' => time(),
-            'reason' => $reason,
+            'status'                   => $status,
+            'reviewer_id'              => $reviewerId,
+            'review_time'              => time(),
+            'reason'                   => $reason,
         ];
         $response = HttpHelper::requestJson($this->host . self::API_UPDATE_AWARD, $params, 'POST');
         if ($response['code'] == Valid::CODE_PARAMS_ERROR) {
@@ -418,7 +420,8 @@ class Erp
         array_walk($awardInfo, function (&$value) {
             $value['app_id'] = Constants::SELF_APP_ID;
         });
-        $response = HttpHelper::requestJson($this->host . self::API_BATCH_UPDATE_AWARD, ['award_info' => $awardInfo], 'POST');
+        $response = HttpHelper::requestJson($this->host . self::API_BATCH_UPDATE_AWARD, ['award_info' => $awardInfo],
+            'POST');
         return $response;
     }
 
@@ -430,7 +433,7 @@ class Erp
     public function getUserAwardInfo($awardIdStr)
     {
         $params = [
-            'app_id' => Constants::SELF_APP_ID,
+            'app_id'            => Constants::SELF_APP_ID,
             'award_info_id_str' => $awardIdStr
         ];
         return HttpHelper::requestJson($this->host . self::API_AWARD_BASE_INFO, $params, 'GET');
@@ -724,24 +727,24 @@ class Erp
     public function addEventTaskAward($uuid, $eventTaskId, $status, $awardId = 0, $refereeUid = '', $extParams = [])
     {
         $params = [
-            'app_id' => Constants::SMART_APP_ID,
-            'user_type' => 1,
-            'uuid' => $uuid,
-            'referee_uuid' => $refereeUid,
-            'event_task_id' => $eventTaskId,
-            'status' => $status,
-            'reason' => $extParams['reason'] ?? '',
-            'bill_id' => $extParams['bill_id'] ?? '',
-            'package_type' => $extParams['package_type'] ?? 0,
-            'task_award_id' => $awardId,
-            'invite_detail_id' => $extParams['invite_detail_id'] ?? 0,
-            'activity_id' => $extParams['activity_id'] ?? 0,
-            'delay' => $extParams['delay'] ?? 0,
-            'amount' => $extParams['amount'] ?? 0,
-            'award_to' => $extParams['award_to'] ?? 0,
-            'passes_num' => $extParams['passes_num'] ?? 0,
+            'app_id'                    => Constants::SMART_APP_ID,
+            'user_type'                 => 1,
+            'uuid'                      => $uuid,
+            'referee_uuid'              => $refereeUid,
+            'event_task_id'             => $eventTaskId,
+            'status'                    => $status,
+            'reason'                    => $extParams['reason'] ?? '',
+            'bill_id'                   => $extParams['bill_id'] ?? '',
+            'package_type'              => $extParams['package_type'] ?? 0,
+            'task_award_id'             => $awardId,
+            'invite_detail_id'          => $extParams['invite_detail_id'] ?? 0,
+            'activity_id'               => $extParams['activity_id'] ?? 0,
+            'delay'                     => $extParams['delay'] ?? 0,
+            'amount'                    => $extParams['amount'] ?? 0,
+            'award_to'                  => $extParams['award_to'] ?? 0,
+            'passes_num'                => $extParams['passes_num'] ?? 0,
             'old_rule_last_activity_id' => $extParams['old_rule_last_activity_id'] ?? 0,
-            'remark' => $extParams['remark'] ?? '',
+            'remark'                    => $extParams['remark'] ?? '',
         ];
         return HttpHelper::requestJson($this->host . self::API_ADD_EVENT_TASK_AWARD, $params, 'POST');
     }
@@ -757,12 +760,12 @@ class Erp
     public function noticeErpUserGetRedPackStatus($uuid, $orderId, $recordSn = 0, $status = 0)
     {
         $params = [
-            'app_id' => Constants::SMART_APP_ID,
+            'app_id'    => Constants::SMART_APP_ID,
             'user_type' => 1,
-            'uuid' => $uuid,
-            'award_id' => $recordSn,
-            'order_id' => $orderId,
-            'status' => $status,
+            'uuid'      => $uuid,
+            'award_id'  => $recordSn,
+            'order_id'  => $orderId,
+            'status'    => $status,
         ];
         $response = HttpHelper::requestJson($this->host . self::API_USER_GET_RED_PACKET_CALL, $params, 'POST');
         return $response;
@@ -825,7 +828,8 @@ class Erp
      * @param $params
      * @return array|bool
      */
-    public function getLogisticsGoodsList($params){
+    public function getLogisticsGoodsList($params)
+    {
         return HttpHelper::requestJson($this->host . self::API_LOGISTICS_GOODS_LIST, $params);
     }
 
@@ -841,13 +845,17 @@ class Erp
 
         $cache = [];
         $cacheKey = sprintf(CountingActivityAwardModel::REDIS_EXPRESS_KEY, $uniqueId);
-        if ($readCache) $cache = $redis->get($cacheKey);
-        if (!empty($cache)) return json_decode($cache, true);
+        if ($readCache) {
+            $cache = $redis->get($cacheKey);
+        }
+        if (!empty($cache)) {
+            return json_decode($cache, true);
+        }
 
-        $result = HttpHelper::requestJson($this->host . self::API_EXPRESS_DETAILS,  ['order_id' => $uniqueId]);
+        $result = HttpHelper::requestJson($this->host . self::API_EXPRESS_DETAILS, ['order_id' => $uniqueId]);
 
         $data = [];
-        if ($result['code'] == 0 && !empty($result['data'])){
+        if ($result['code'] == 0 && !empty($result['data'])) {
             $data = $result['data'];
             $redis->set($cacheKey, json_encode($data), 'EX', Util::TIMESTAMP_1H);
         }
@@ -895,7 +903,8 @@ class Erp
      */
     public function getLogisticsStatusData($params, $timeOut)
     {
-        $data = HttpHelper::requestJson($this->host . self::API_LOGISTICS_STATUS_DATA, $params, 'GET', ['timeout' => $timeOut]);
+        $data = HttpHelper::requestJson($this->host . self::API_LOGISTICS_STATUS_DATA, $params, 'GET',
+            ['timeout' => $timeOut]);
         if ($data === false) {
             return [];
         }
@@ -924,9 +933,10 @@ class Erp
      * @param $params
      * @return bool
      */
-    public function reduce_account($params){
+    public function reduce_account($params)
+    {
         $res = self::commonAPI(self::API_REDUCE_ACCOUNT, $params, 'POST');
-        if($res && $res['code'] == Valid::CODE_SUCCESS){
+        if ($res && $res['code'] == Valid::CODE_SUCCESS) {
             return true;
         }
         return false;
@@ -937,7 +947,8 @@ class Erp
      * @param $params
      * @return array|mixed
      */
-    public function getStudentAccount($params){
+    public function getStudentAccount($params)
+    {
         $data = self::commonAPI(self::API_STUDENT_ACCOUNT_BALANXE, $params);
         if ($data === false) {
             return [];
@@ -983,8 +994,19 @@ class Erp
         }
         $response = HttpHelper::requestJson($this->host . self::STUDENT_IDENTIFY_ATTRIBUTE, [
             'student_uuid' => $studentUuid,
-            'source' => self::REQUEST_ERP_OP_SOURCE
+            'source'       => self::REQUEST_ERP_OP_SOURCE
         ], 'GET');
+        return $response['data'] ?? [];
+    }
+
+    /**
+     * 消费发货/退费
+     * @param $params
+     * @return array|mixed
+     */
+    public function douStoreMsg($params)
+    {
+        $response = HttpHelper::requestJson($this->host . self::DOU_STORE_MSG, $params, 'POST');
         return $response['data'] ?? [];
     }
 }

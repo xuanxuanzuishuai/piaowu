@@ -13,7 +13,8 @@ use GuzzleHttp\Client;
 abstract class CrawlerBaseService
 {
     public $source = 0;//数据来源
-    public $limit = 50;//每次查询的数据量
+    public $limit = 20;//每次查询的数据量
+    public $remainingDealCount = 2;//脚本每次执行解密数据的剩余额度
     public $shopId = '';//目标店铺ID:管易/抖店
     public $ddShopId = '';//抖店店铺ID：如果是抖店此值与$shopId一致，如果是管易则是对应的抖店ID
     public $accessToken = null;//第三方平台登陆成功票据
@@ -23,11 +24,11 @@ abstract class CrawlerBaseService
     public $requestClientObj = null;
     public $insertData = [];//写入数据库的数据
     public $nowTime = 0;//当前时间戳
-    public $realTimeCount = 0;//第三方平台数据总量
-    public $mysqlDataCount = 0;//当前数据库中数据总量
     public $currentCrawlerIsFail = false;//请求第三方失败标志：true代表着要当前这次数据爬取失败了
     public $mysqlDb = null;
     public $account = '';//爬取数据登陆的账号，一般是手机号
+    public $realTimeCount = 0;//第三方平台数据总量
+    public $mysqlDataCount = 0;//当前数据库中数据总量
 
     /**
      * @param $shopId
@@ -37,7 +38,6 @@ abstract class CrawlerBaseService
         $this->nowTime = time();
         $this->shopId = $shopId;
         $this->requestClientObj = new Client(['debug' => false]);
-        $this->setMysqlDataCount();
     }
 
     /**
@@ -54,16 +54,6 @@ abstract class CrawlerBaseService
      * 设置header头
      */
     abstract public function setCommonHeaders();
-
-    /**
-     * 设置当前已爬取数据总量
-     */
-    public function setMysqlDataCount()
-    {
-        $this->setMysqlDb();
-        $this->mysqlDataCount = $this->mysqlDb->count(CrawlerOrderModel::$table,
-            ['dd_shop_id' => $this->ddShopId, 'receiver_tel[!]' => '', 'GROUP' => 'order_code']);
-    }
 
     /**
      * 数据库写入
@@ -93,7 +83,8 @@ abstract class CrawlerBaseService
             return false;
         }
         $this->setMysqlDb();
-        $data = $this->mysqlDb->get(CrawlerOrderModel::$table, ['id'], ['order_code' => $orderCode]);
+        $data = $this->mysqlDb->get(CrawlerOrderModel::$table, ['id'],
+            ['order_code' => $orderCode, 'receiver_tel[!]' => '']);
         if (!empty($data)) {
             return false;
         }
@@ -124,6 +115,20 @@ abstract class CrawlerBaseService
             Constants::STATUS_FALSE);
         Util::errorCapture("账号: " . $accountNumber . ' 爬取数据失败，原因：' . $reason . ',当前账户状态如下：',
             [$rdb->hgetall(CrawlerOrderModel::ACCOUNT_CRAWLER_STATUS_CACHE_KEY)]);
+    }
+
+    /**
+     * 检测第三方平台订单数量和已爬取的数据关系
+     * @return bool
+     */
+    public function checkCrawlerOrderCount(): bool
+    {
+        if ($this->realTimeCount == $this->mysqlDataCount) {
+            SimpleLogger::error("realTimeCount = mysqlDataCount",
+                ["real_time_count" => $this->realTimeCount, "mysql_data_count" => $this->mysqlDataCount]);
+            return false;;
+        }
+        return true;
     }
 
 }

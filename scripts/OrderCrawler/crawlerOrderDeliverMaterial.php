@@ -18,14 +18,15 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\Constants;
+use App\Libs\Erp;
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\CrawlerOrderModel;
-use App\Services\Queue\DouStoreTopic;
 use Dotenv\Dotenv;
 
 /**
- * 脚本爬取抖店实物订单，进行发货处理
+ * 脚本爬取抖店实物订单,推送erp，进行发货处理
  */
 $dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();
@@ -33,14 +34,21 @@ $dotenv->overload();
 SimpleLogger::info('crawler order deliver material start', [time()]);
 //获取订单数据
 $orderList = CrawlerOrderModel::getRecords([
-    'dd_shop_id'   => CrawlerOrderModel::AI_DOU_DIAN_SHOP_ID,
+    'dd_shop_id'      => CrawlerOrderModel::AI_DOU_DIAN_SHOP_ID,
     'receiver_tel[!]' => '',
     'is_send_erp'     => Constants::STATUS_FALSE,
-], ['order_code', 'goods_code', 'dd_shop_id', 'source', 'receiver_name', 'receiver_tel', 'receiver_address']);
+    'LIMIT'           => 10,
+], ['order_code', 'goods_code', 'dd_shop_id', 'receiver_name', 'receiver_tel', 'receiver_address']);
 
-$topic = new DouStoreTopic();
-
+$erpRequestObj = new Erp();
+$rdb = RedisDB::getConn();
 foreach ($orderList as $ov) {
+    $tmpLockCacheKey = CrawlerOrderModel::GOODS_CODE_PUSH_ERP_LOCK_CACHE_KEY . $ov['order_code'];
+    $lockRes = $rdb->setnx($tmpLockCacheKey, Constants::STATUS_TRUE);
+    if (empty($lockRes)) {
+        continue;
+    }
+    $rdb->expire(CrawlerOrderModel::GOODS_CODE_PUSH_ERP_LOCK_CACHE_KEY, Util::TIMESTAMP_1H);
     $tmpMsgBody = [
         "guany_product_id" => $ov['goods_code'],
         "xyz_receiver_msg" => Util::authcode(json_encode([
@@ -53,6 +61,16 @@ foreach ($orderList as $ov) {
         "s_ids"            => [$ov['order_code']],
         "p_id"             => $ov['order_code'],
     ];
-    $topic->messageDelivery($tmpMsgBody, DouStoreTopic::EVENT_TYPE_DELIVER_MATERIAL_OBJECT)->publish(mt_rand(0, 300));
+    $requestResponse = $erpRequestObj->douStoreMsg($tmpMsgBody);
+    if (empty($requestResponse)) {
+        $rdb->del([$tmpLockCacheKey]);
+        continue;
+    }
+    $pushSuccessOrderIds[] = $ov['order_code'];
+}
+if (!empty($pushSuccessOrderIds)) {
+    //修改数据
+    CrawlerOrderModel::batchUpdateRecord(['is_send_erp' => Constants::STATUS_TRUE],
+        ['order_code' => $pushSuccessOrderIds]);
 }
 SimpleLogger::info('crawler order deliver material end', [time()]);
