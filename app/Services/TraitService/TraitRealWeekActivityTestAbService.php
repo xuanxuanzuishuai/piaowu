@@ -22,6 +22,7 @@ use App\Models\RealWeekActivityModel;
 use App\Models\RealWeekActivityPosterAbModel;
 use App\Models\RealWeekActivityUserAllocationABModel;
 use App\Models\TemplatePosterModel;
+use App\Services\Activity\RealWeekActivity\RealWeekActivityClientService;
 use App\Services\MiniAppQrService;
 use App\Models\EmployeeModel;
 use App\Services\PosterService;
@@ -102,6 +103,8 @@ trait TraitRealWeekActivityTestAbService
             // 计算分配比例的关键数据有变动
             if ($isChange && !empty($changePosterList)) {
                 SimpleLogger::info("saveAllocationData_WeekActivityPosterAbModel_change", [$activityId, $params, $isChange, $changePosterList]);
+                // 重新分配比例时，生成新的版本
+                RealWeekActivityClientService::createVersion($activityId, $hasTestAbList, $employeeId);
                 // 初始化分配比例
                 self::initNodeAllocation($activityId, $hasTestAbList);
             }
@@ -219,7 +222,7 @@ trait TraitRealWeekActivityTestAbService
         }
         if (empty($info)) {
             // 计算命中海报 - 计算命中海报一直有锁最终会返回空
-            list($hitPosterId) = self::calculateHitNode($activityId);
+            list($hitPosterId, $hitNode, $abVersion) = self::calculateHitNode($activityId);
             SimpleLogger::info("qingfeng-test-real-getStudentTestAbPoster", ['msg' => 'msg-hit_poster', 'student_id' => $studentId, 'activity_id' => $activityId, 'has_ab_test' => $activityInfo['has_ab_test'], 'hit_poster_id' => $hitPosterId]);
             if ($hitPosterId <= 0) {
                 return self::formatTestAbPoster([]);
@@ -237,10 +240,11 @@ trait TraitRealWeekActivityTestAbService
                     'activity_id' => $activityId,
                     'has_ab_test' => $activityInfo['has_ab_test'],
                     'has_hit_poster' => empty($hasHitPoster),
-                    'hit_poster_id' => $info['ab_poster_id']
+                    'hit_poster_id' => $info['ab_poster_id'],
+                    'ab_version' => $abVersion ?? 0,
                 ]);
                 // 首次命中海报 - 保存学生命中海报信息
-                empty($hasHitPoster) && self::saveStudentTestAbPosterQrId($studentId, $activityId, $info['ab_poster_id']);
+                empty($hasHitPoster) && self::saveStudentTestAbPosterQrId($studentId, $activityId, $info['ab_poster_id'], $abVersion ?? 0);
                 // 海报图：
                 $posterConfig = PosterService::getPosterConfig();
                 $studentType = $extData['user_type'] ?? DssUserQrTicketModel::STUDENT_TYPE;
@@ -278,15 +282,16 @@ trait TraitRealWeekActivityTestAbService
      * @param $studentId
      * @param $activityId
      * @param $abPosterId
-     * @param $qrId
+     * @param $abVersion
      * @return int|mixed|string|null
      */
-    public static function saveStudentTestAbPosterQrId($studentId, $activityId, $abPosterId)
+    public static function saveStudentTestAbPosterQrId($studentId, $activityId, $abPosterId, $abVersion)
     {
         return RealWeekActivityUserAllocationABModel::insertRecord([
             'activity_id'  => $activityId,
             'student_id'   => $studentId,
             'ab_poster_id' => $abPosterId,
+            'ab_version'   => $abVersion,
             'create_time'  => time(),
         ]);
     }
@@ -298,7 +303,7 @@ trait TraitRealWeekActivityTestAbService
      */
     public static function getRedisKey($activityId)
     {
-        return ['real_week_activity_ab_node_num-' . $activityId, 'real_week_activity_ab_node_lock-' . $activityId];
+        return ['real_week_activity_ab_node_num-' . $activityId, 'real_week_activity_ab_node_lock-' . $activityId, 'real_week_activity_ab_version-' . $activityId];
     }
 
     /**
@@ -311,8 +316,8 @@ trait TraitRealWeekActivityTestAbService
     {
         SimpleLogger::info('calculateHitNode_start', [$activityId]);
         $redis = RedisDB::getConn();
-        list($redisKey, $redisKeyLockKey) = self::getRedisKey($activityId);
-        $hitNode = $assignedCount = $hitPosterId = $saturation = 0;
+        list($redisKey, $redisKeyLockKey, $redisKeyAbVersion) = self::getRedisKey($activityId);
+        $hitNode = $assignedCount = $hitPosterId = $saturation = $version = 0;
         $sortAllocation = [];
         try {
             $lock = Util::setLock($redisKeyLockKey, 3, 5);
@@ -325,6 +330,8 @@ trait TraitRealWeekActivityTestAbService
                 SimpleLogger::info('calculateHitNode_node_empty', [$activityId, $nodeList]);
                 $nodeList = self::initNodeAllocation($activityId, [], false);
             }
+            // 获取版本
+            $version = $redis->get($redisKeyAbVersion);
             // 初始化部分默认值
             foreach ($nodeList as $_posterId => $_item) {
                 $assignedCount += $_item['node_assigned_num'];
@@ -360,7 +367,7 @@ trait TraitRealWeekActivityTestAbService
             Util::unLock($redisKeyLockKey);
         }
         SimpleLogger::info('calculateHitNode_end', [$activityId, $hitPosterId, $hitNode, $nodeList]);
-        return [$hitPosterId, $hitNode];
+        return [$hitPosterId, $hitNode, $version];
     }
 
     /**
@@ -379,7 +386,7 @@ trait TraitRealWeekActivityTestAbService
         }
         $redis = RedisDB::getConn();
         $tmpData = [];
-        list($redisKey, $redisKeyLockKey) = self::getRedisKey($activityId);
+        list($redisKey, $redisKeyLockKey, $redisKeyAbVersion) = self::getRedisKey($activityId);
         try {
             if ($isLock) {
                 $lock = Util::setLock($redisKeyLockKey, 3,5);
@@ -399,6 +406,7 @@ trait TraitRealWeekActivityTestAbService
                 $tmpData[$item['poster_id']] = ['allocation' => $item['allocation'], 'node_assigned_num' => 0, 'poster_id' => $item['poster_id']];
             }
             $redis->set($redisKey, json_encode($tmpData));
+            $redis->set($redisKeyAbVersion, RealWeekActivityClientService::getCurrentVersion($activityId));
         } finally {
             $isLock == true && Util::unLock($redisKeyLockKey);
         }
