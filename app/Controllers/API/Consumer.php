@@ -1170,7 +1170,7 @@ class Consumer extends ControllerBase
                     break;
                 }
                 // 排除非抖店渠道订单
-                if ($paramMapInfo['order_channel_id'] != DictConstants::get(DictConstants::REFERRAL_CONFIG, 'doudian_order_channel_id')) {
+                if (!in_array($paramMapInfo['order_channel_id'], [DictConstants::get(DictConstants::REFERRAL_CONFIG, 'doudian_order_channel_id'), DictConstants::get(DictConstants::REFERRAL_CONFIG, 'new_doudian_order_channel_id')])) {
                     SimpleLogger::info('order_channel_id_error', ['topic' => $topicName, 'params' => $params, 'student' => $studentInfo]);
                     break;
                 }

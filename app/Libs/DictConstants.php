@@ -506,6 +506,7 @@ class DictConstants {
             'award_time_wx_msg_url',   // 奖励时长微信消息跳转链接
             'send_award_switch', //转介绍奖励发放开关：0不发放1发放
             'doudian_order_channel_id',   // 抖店的订单渠道
+            'new_doudian_order_channel_id', // 新抖店店铺渠道
         ]
     ];
 
