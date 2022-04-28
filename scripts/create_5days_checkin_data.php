@@ -47,7 +47,7 @@ $wechat = WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_WX_SE
 
 // 查询所有目前在进行的体验课班级
 $startTime = strtotime("-5 days", strtotime(date('Y-m-d', $now)));
-$endTime   = strtotime(date('Y-m-d 24:00:00', $now));
+$endTime   = strtotime(date('Y-m-d 23:59:59', $now));
 $where = [];
 $where['teaching_start_time[>=]'] = $startTime;
 $where['teaching_start_time[<=]'] = $endTime;
