@@ -1188,6 +1188,16 @@ class DictConstants {
 
 
     //========================真人海外投放配置end========================
+    //短信模版配置
+    const MESSAGES_TEMPLATE = [
+        'type' => 'messages_tpl',
+        'keys' => [
+            'qc_divide_classes',//清晨项目开班短信模版
+        ],
+    ];
+
+
+
 
     /**
      * 单个获取op系统dict配置数据
