@@ -1002,11 +1002,11 @@ class Erp
     /**
      * 消费发货/退费
      * @param $params
-     * @return array|mixed
+     * @return bool
      */
-    public function douStoreMsg($params)
+    public function douStoreMsg($params): bool
     {
         $response = HttpHelper::requestJson($this->host . self::DOU_STORE_MSG, $params, 'POST');
-        return $response['data'] ?? [];
+        return !empty($response['code']) ? false : true;
     }
 }

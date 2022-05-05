@@ -107,14 +107,14 @@ abstract class CrawlerBaseService
      * @param $accountNumber
      * @param $reason
      */
-    public function setCrawlerAccountDisable($accountNumber, $reason)
+    public function setCrawlerAccountDisable($accountNumber, $platFormName, $reason)
     {
         $rdb = RedisDB::getNewConn();
         $rdb->setex(CrawlerOrderModel::ACCOUNT_CRAWLER_STATUS_CACHE_KEY . $this->shopId . '_' . $accountNumber,
             Util::TIMESTAMP_1H,
             Constants::STATUS_FALSE);
-        Util::errorCapture("账号: " . $accountNumber . ' 爬取数据失败，原因：' . $reason . ',当前账户状态如下：',
-            [$rdb->hgetall(CrawlerOrderModel::ACCOUNT_CRAWLER_STATUS_CACHE_KEY)]);
+        Util::sendFsWaringText("账号: " . $accountNumber . ' 爬取[' . $platFormName . ']数据失败，原因：' . $reason . '。账户冷冻一小时，将在' . date("Y-m-d H:i:s
+       ", strtotime("+1 hour")) . '自动重试', $_ENV["FEISHU_DEVELOPMENT_TECHNOLOGY_ALERT_ROBOT"]);
     }
 
     /**
