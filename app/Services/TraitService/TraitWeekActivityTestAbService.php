@@ -249,7 +249,7 @@ trait TraitWeekActivityTestAbService
         $activityInfo = WeekActivityModel::getRecord(['activity_id' => $activityId]);
         SimpleLogger::info("qingfeng-test-getStudentTestAbPoster", ['msg' => 'msg-start', 'student_id' => $studentId, 'activity_id' => $activityId, 'has_ab_test' => $activityInfo['has_ab_test']]);
         // 是否开启了ab测， 没有开启直接返回已经命中的海拔或者空
-        if (empty($activityInfo['has_ab_test'])) {
+        if (empty($info) && empty($activityInfo['has_ab_test'])) {
             return self::formatTestAbPoster($info);
         }
         if (empty($info)) {
