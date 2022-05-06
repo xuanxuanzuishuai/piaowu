@@ -1177,6 +1177,13 @@ class DictConstants {
         'type' => 'award_prize_type',
         'keys' => [1, 2],
     ];
+    //短信模版配置
+    const MESSAGES_TEMPLATE = [
+        'type' => 'messages_tpl',
+        'keys' => [
+            'qc_divide_classes',//清晨项目开班短信模版
+        ],
+    ];
     //========================真人海外投放配置start========================
     const REAL_STUDENT_OVERSEAS_DELIVERY = [
         'type' => 'real_student_overseas_delivery',
@@ -1185,20 +1192,7 @@ class DictConstants {
             'default_cc_mobile',//默认cc客服微信号
         ],
     ];
-
-
     //========================真人海外投放配置end========================
-    //短信模版配置
-    const MESSAGES_TEMPLATE = [
-        'type' => 'messages_tpl',
-        'keys' => [
-            'qc_divide_classes',//清晨项目开班短信模版
-        ],
-    ];
-
-
-
-
     /**
      * 单个获取op系统dict配置数据
      * @param $type
