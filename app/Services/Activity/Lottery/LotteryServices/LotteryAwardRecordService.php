@@ -209,30 +209,30 @@ class LotteryAwardRecordService
         ];
         //获取活动数据
         $activityData = LotteryActivityModel::getRecord(['op_activity_id' => $searchParams['op_activity_id']],
-            ['app_id', 'name']);
+            ['app_id', 'name'], false);
         if (empty($activityData)) {
             return $recordsData;
         }
         //查询条件
         //主表
-        if (isset($searchParams['id'])) {
+        if (!empty($searchParams['id'])) {
             $where['ar.id'] = $searchParams['id'];
         } else {
             $where = ["ar.id[>=]" => 1,];
         }
-        if (isset($searchParams['uuid'])) {
+        if (!empty($searchParams['uuid'])) {
             $where['ar.uuid'][] = trim($searchParams['uuid']);
         }
-        if (isset($searchParams['op_activity_id'])) {
+        if (!empty($searchParams['op_activity_id'])) {
             $where['ar.op_activity_id'] = $searchParams['op_activity_id'];
         }
-        if (isset($searchParams['create_time_min'])) {
+        if (!empty($searchParams['create_time_min'])) {
             $where['ar.create_time[>=]'] = (int)$searchParams['create_time_min'];
         }
-        if (isset($searchParams['create_time_max'])) {
+        if (!empty($searchParams['create_time_max'])) {
             $where['ar.create_time[>=]'] = (int)$searchParams['create_time_min'];
         }
-        if (isset($searchParams['shipping_status'])) {
+        if (!empty($searchParams['shipping_status'])) {
             $where['ar.shipping_status'] = (int)$searchParams['shipping_status'];
         }
         //学生

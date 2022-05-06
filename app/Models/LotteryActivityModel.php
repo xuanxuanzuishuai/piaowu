@@ -14,8 +14,8 @@ class LotteryActivityModel extends Model
     const USER_SOURCE_IMPORT = 2;
 
     // 中奖限制参与次数限制类型:1自定义2不限
-    const TYPE_UNLIMITED = 2;
-    const TYPE_CUSTOM = 1;
+    const MAX_HIT_TYPE_CUSTOM = 1;
+    const MAX_HIT_TYPE_UNLIMITED = 2;
 
     // 中奖时间段规则类型:1同活动时间 2自定义
     const HIT_TIMES_TYPE_KEEP_ACTIVITY = 1;

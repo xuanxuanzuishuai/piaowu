@@ -1234,8 +1234,8 @@ class DictConstants {
     const LOTTERY_CONFIG = [
         'type' => 'lottery_config',
         'keys' => [
-            'real_lottery_register_channel',//抽奖活动真人用户注册默认渠道
-            'smart_lottery_register_channel',//抽奖活动智能用户注册默认渠道
+            '1',//抽奖活动真人用户注册默认渠道key_code
+            '8',//抽奖活动智能用户注册默认渠道key_code
         ],
     ];
 

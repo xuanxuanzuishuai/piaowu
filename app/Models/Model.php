@@ -41,11 +41,11 @@ class Model
      * @param $id
      * @return mixed|null
      */
-    public static function getById($id)
+    public static function getById($id, bool $isStopEmulatePrepares = true)
     {
         $ret = null;
 
-        $db = MysqlDB::getDB();
+        $db = MysqlDB::getDB(null, $isStopEmulatePrepares);
         $redis = RedisDB::getConn(static::$redisDB);
 
         $cacheKey = self::createCacheKey($id);
@@ -110,12 +110,12 @@ class Model
      * @param array $fields
      * @return mixed
      */
-    public static function getRecord($where, $fields = [])
+    public static function getRecord($where, $fields = [], bool $isStopEmulatePrepares = true)
     {
         if (empty($fields)) {
             $fields = '*';
         }
-        $db = MysqlDB::getDB();
+        $db = MysqlDB::getDB(null, $isStopEmulatePrepares);
         return $db->get(static::$table, $fields, $where);
     }
 
@@ -125,12 +125,12 @@ class Model
      * @param array $fields
      * @return array
      */
-    public static function getRecords($where, $fields = [])
+    public static function getRecords($where, $fields = [], bool $isStopEmulatePrepares = true)
     {
         if (empty($fields)) {
             $fields = '*';
         }
-        $db = MysqlDB::getDB();
+        $db = MysqlDB::getDB(null, $isStopEmulatePrepares);
         return $db->select(static::$table, $fields, $where);
     }
 

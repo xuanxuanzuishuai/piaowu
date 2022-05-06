@@ -66,9 +66,21 @@ class ActivityLottery extends ControllerBase
                 'error_code' => 'start_time_is_required'
             ],
             [
+                'key'        => 'start_time',
+                'type'       => 'min',
+                'value'      => time(),
+                'error_code' => 'start_time_is_positive_integer'
+            ],
+            [
                 'key'        => 'end_time',
                 'type'       => 'required',
                 'error_code' => 'end_time_is_required'
+            ],
+            [
+                'key'        => 'end_time',
+                'type'       => 'min',
+                'value'      => time(),
+                'error_code' => 'end_time_is_positive_integer'
             ],
             [
                 'key'        => 'activity_desc',
@@ -232,7 +244,7 @@ class ActivityLottery extends ControllerBase
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
-        return HttpHelper::buildResponse($response, [$res]);
+        return HttpHelper::buildResponse($response, $res);
     }
 
     /**
@@ -266,7 +278,7 @@ class ActivityLottery extends ControllerBase
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
-        return HttpHelper::buildResponse($response, [$res]);
+        return HttpHelper::buildResponse($response, $res);
     }
 
     /**
@@ -301,7 +313,7 @@ class ActivityLottery extends ControllerBase
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
-        return HttpHelper::buildResponse($response, [$res]);
+        return HttpHelper::buildResponse($response, $res);
     }
 
     /**

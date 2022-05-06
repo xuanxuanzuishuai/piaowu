@@ -44,18 +44,9 @@ class LotteryActivityService
      * @param $appId
      * @return int
      */
-    public static function getRegisterChannelId($appId)
+    public static function getRegisterChannelId($appId): int
     {
-        if ($appId == Constants::REAL_APP_ID) {
-            $registerChannelId = DictService::getKeyValue(DictConstants::LOTTERY_CONFIG,
-                'real_lottery_register_channel');
-        } elseif ($appId == Constants::SMART_APP_ID) {
-            $registerChannelId = DictService::getKeyValue(DictConstants::LOTTERY_CONFIG,
-                'smart_lottery_register_channel');
-        } else {
-            $registerChannelId = 0;
-        }
-        return $registerChannelId;
+        return (int)DictService::getKeyValue(DictConstants::LOTTERY_CONFIG, $appId);
     }
 
     /**
@@ -343,10 +334,10 @@ class LotteryActivityService
     {
         //查询条件
         $where = ["id[>=]" => 1];
-        if (isset($searchParams['name'])) {
+        if (!empty($searchParams['name'])) {
             $where['name'] = trim($searchParams['name']);
         }
-        if (isset($searchParams['user_source'])) {
+        if (!empty($searchParams['user_source'])) {
             $where['user_source'] = $searchParams['user_source'];
         }
         //根据不同状态设置不同查询条件
@@ -364,7 +355,7 @@ class LotteryActivityService
         $data['total'] = $total;
         $where['LIMIT'] = [($page - 1) * $limit, $limit];
         $where['ORDER'] = ['id' => 'DESC'];
-        $data['list'] = LotteryActivityModel::getRecords($where);
+        $data['list'] = LotteryActivityModel::getRecords($where, [], false);
         return $data;
     }
 
@@ -400,7 +391,7 @@ class LotteryActivityService
             "start_pay_time",
             "end_pay_time",
             "activity_desc"
-        ]);
+        ], false);
         if (empty($activityBaseData)) {
             return $detailData;
         }
@@ -410,12 +401,12 @@ class LotteryActivityService
             "low_pay_amount",
             "high_pay_amount",
             "times"
-        ]);
+        ], false);
         $detailData['win_prize_rule'] = LotteryAwardRuleModel::getRecords($where, [
             "low_pay_amount",
             "high_pay_amount",
             "award_level"
-        ]);
+        ], false);
         $detailData['awards'] = LotteryAwardInfoModel::getRecords($where, [
             "name",
             "type",
@@ -424,9 +415,10 @@ class LotteryActivityService
             "img_url",
             "weight",
             "num",
+            "rest_num",
             "hit_times",
             "hit_times_type",
-        ]);
+        ], false);
         return $detailData;
     }
 

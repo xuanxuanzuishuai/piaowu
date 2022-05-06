@@ -5,6 +5,7 @@ namespace App\Services\Activity\Lottery;
 use App\Libs\AliOSS;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Erp;
 use App\Libs\Excel\ExcelImportFormat;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
@@ -50,14 +51,9 @@ class LotteryAdminService
         $nowTime = time();
         $formatParams = [];
         //检测参数
-        if ($paramsData['start_time'] < $nowTime) {
-            throw new RuntimeException(["start_time_must_greater_than_current_time"]);
-        }
-        if ($paramsData['end_time'] <= $paramsData['start_time']) {
-            throw new RunTimeException(["start_time_eq_end_time"]);
-        }
-        if ($paramsData['end_time'] < $nowTime) {
-            throw new RuntimeException(["end_time_eq_time"]);
+        if ($paramsData['start_time'] < $nowTime ||
+            $paramsData['end_time'] <= $paramsData['start_time']) {
+            throw new RuntimeException(["activity_start_time_error"]);
         }
         $formatParams['base_data']['name'] = Util::textEncode(trim($paramsData['name']));
         $formatParams['base_data']['activity_desc'] = Util::textEncode(trim($paramsData['activity_desc']));
@@ -84,7 +80,7 @@ class LotteryAdminService
             }
             $formatParams['base_data']['start_pay_time'] = $paramsData['start_pay_time'];
             $formatParams['base_data']['end_pay_time'] = $paramsData['end_pay_time'];
-            //抽奖次数规则
+            //中奖规则
             if (empty($paramsData['lottery_times_rule'])) {
                 throw new RuntimeException(["lottery_times_rule_is_required"]);
             }
@@ -146,23 +142,25 @@ class LotteryAdminService
             }
         } elseif ($paramsData['user_source'] == LotteryActivityModel::USER_SOURCE_IMPORT) {
             //导入名单数据处理
-            $importData = ExcelImportFormat::formatImportExcelData(true, ['uuid', 'rest_times']);
-            $formatParams['import_user'] = $importData;
+            $formatParams['import_user'] = self::checkImportExcelData();
         }
         //中奖限制条件
-        if ($paramsData['day_max_hit_type'] == LotteryActivityModel::TYPE_CUSTOM) {
+        if ($paramsData['day_max_hit_type'] == LotteryActivityModel::MAX_HIT_TYPE_UNLIMITED) {
             $paramsData['day_max_hit'] = -1;
         }
-        if ($paramsData['max_hit_type'] == LotteryActivityModel::TYPE_CUSTOM) {
+        if ($paramsData['max_hit_type'] == LotteryActivityModel::MAX_HIT_TYPE_UNLIMITED) {
             $paramsData['max_hit'] = -1;
+        }
+        if ($paramsData['max_hit_type'] == LotteryActivityModel::MAX_HIT_TYPE_CUSTOM &&
+            $paramsData['day_max_hit_type'] == LotteryActivityModel::MAX_HIT_TYPE_CUSTOM &&
+            $paramsData['day_max_hit'] > $paramsData['max_hit']) {
+            throw new RuntimeException(["max_hit_and_day_hit_relation_error"]);
         }
         $formatParams['base_data']['day_max_hit_type'] = $paramsData['day_max_hit_type'];
         $formatParams['base_data']['day_max_hit'] = $paramsData['day_max_hit'];
         $formatParams['base_data']['max_hit_type'] = $paramsData['max_hit_type'];
         $formatParams['base_data']['max_hit'] = $paramsData['max_hit'];
-        if ($paramsData['day_max_hit'] > $paramsData['max_hit']) {
-            throw new RuntimeException(["max_hit_and_day_hit_relation_error"]);
-        }
+
         //奖品设置:最后一个奖品默认设置为兜底奖品（1.库存=-1 2.中奖时间段=活动开始结束时间 3.奖品类型不能是实物
         if (!is_array($paramsData['awards']) || empty($paramsData['awards'])) {
             throw new RuntimeException(["award_params_error"]);
@@ -216,7 +214,7 @@ class LotteryAdminService
                 $formatParams['base_data']['rest_award_num'] += $formatParams['awards'][$awk]['num'];
 
             }
-            //中奖时间段，分组数量
+            //奖品中奖时间段
             if (!is_array($awv['hit_times']) || count($awv['hit_times']) > 3) {
                 throw new RuntimeException(["hit_times_value_count_error"]);
             }
@@ -224,14 +222,32 @@ class LotteryAdminService
                 [LotteryActivityModel::HIT_TIMES_TYPE_KEEP_ACTIVITY, LotteryActivityModel::HIT_TIMES_TYPE_CUSTOM])) {
                 throw new RuntimeException(["hit_time_type_error"]);
             }
-            //同活动时间默认一组，并且时间和活动时间保持一致
+            //奖品中奖时间类型同活动时间
             if ($awv['hit_times_type'] == LotteryActivityModel::HIT_TIMES_TYPE_KEEP_ACTIVITY) {
                 $awv['hit_times'] = [
                     [
-                        'start_time' => $formatParams['base_data']['start_time'],
-                        'end_time'   => $formatParams['base_data']['end_time'],
+                        'start_time' => (int)$formatParams['base_data']['start_time'],
+                        'end_time'   => (int)$formatParams['base_data']['end_time'],
                     ]
                 ];
+            } else {
+                array_multisort(array_column($awv['hit_times'], 'end_time'), SORT_ASC,
+                    $awv['hit_times']);
+                foreach ($awv['hit_times'] as $thk => $thv) {
+                    $tmpHitTimesItem = [
+                        'start_time' => (int)$thv['start_time'],
+                        'end_time'   => (int)$thv['end_time'],
+                    ];
+                    if ($tmpHitTimesItem['start_time'] <= $nowTime ||
+                        $tmpHitTimesItem['start_time'] >= $tmpHitTimesItem['end_time']) {
+                        throw new RuntimeException(["hit_times_start_time_error"]);
+                    }
+                    if (isset($awv['hit_times'][$thk + 1]['start_time']) &&
+                        $tmpHitTimesItem['end_time'] >= $awv['hit_times'][$thk + 1]['start_time']) {
+                        throw new RuntimeException(["hit_times_join"]);
+                    }
+                }
+
             }
             $formatParams['awards'][$awk]['weight'] = substr(sprintf("%.3f", $awv['weight']), 0, -1) * 100;
             $formatParams['awards'][$awk]['hit_times_type'] = $awv['hit_times_type'];
@@ -295,7 +311,7 @@ class LotteryAdminService
             "name"    => ['error' => "award_name_is_required", 'type' => 'string'],
             "img_url" => ['error' => "img_is_required", 'type' => 'string'],
             "weight"  => ['error' => "weight_is_error", 'type' => 'float', '0_relation' => ">"],
-            "num"     => ['error' => "award_storage_num_error", 'type' => 'int', '0_relation' => ">"],
+            "num"     => ['error' => "award_storage_num_error", 'type' => 'int', '0_relation' => ">="],
         ];
         $awardCheckParams = [];
         foreach ($checkParamsConfig as $ck => $cv) {
@@ -313,7 +329,7 @@ class LotteryAdminService
             }
             if ($cv['type'] == "string" && empty($tmpCv)) {
                 throw new RuntimeException([$cv['error']]);
-            } elseif ($cv['type'] == "int" && $cv['0_relation'] == ">" && $tmpCv <= 0) {
+            } elseif ($cv['type'] == "float" && $cv['0_relation'] == ">" && $tmpCv < 0) {
                 throw new RuntimeException([$cv['error']]);
             } elseif ($cv['type'] == "int" && $cv['0_relation'] == ">=" && $tmpCv < 0) {
                 throw new RuntimeException([$cv['error']]);
@@ -321,6 +337,25 @@ class LotteryAdminService
             $awardCheckParams[$ck] = $tmpCv;
         }
         return $awardCheckParams;
+    }
+
+    /**
+     * 检测表格数据
+     * @return array|array[]
+     * @throws RunTimeException
+     */
+    private static function checkImportExcelData(): array
+    {
+        $importData = ExcelImportFormat::formatImportExcelData(true, ['uuid', 'rest_times']);
+        foreach ($importData as $k => $v) {
+            if (strlen($v['uuid']) != 18 || (int)$v['rest_times'] <= 0) {
+                unset($importData[$k]);
+            }
+        }
+        if (empty($importData) || !is_array($importData)) {
+            throw new RuntimeException(["invalid_import_user_excel_data"]);
+        }
+        return $importData;
     }
 
     /**
@@ -333,10 +368,7 @@ class LotteryAdminService
     public static function appendImportUserData($opActivityId, $employeeUuid): bool
     {
         //导入名单数据处理
-        $importData = ExcelImportFormat::formatImportExcelData(true, ['uuid', 'rest_times']);
-        if (empty($importData)) {
-            throw new RuntimeException(["invalid_import_user_excel_data"]);
-        }
+        $importData = self::checkImportExcelData();
         $nowTime = time();
         foreach ($importData as &$iv) {
             $iv['op_activity_id'] = $opActivityId;
@@ -379,16 +411,19 @@ class LotteryAdminService
             DictConstants::USER_SOURCE['type'],
             DictConstants::ACTIVITY_TIME_STATUS['type'],
             DictConstants::ACTIVITY_ENABLE_STATUS['type'],
+            DictConstants::LOTTERY_CONFIG['type'],
         ]);
         //操作人信息
         $employeeData = array_column(EmployeeService::getEmployeeByUuids(array_column($list, 'create_uuid'),
             ['uuid', 'name']), null, 'uuid');
         foreach ($list as $lv) {
             if ($lv['status'] == OperationActivityModel::ENABLE_STATUS_ON) {
-                $showStatusZh = $dictData[DictConstants::ACTIVITY_TIME_STATUS['type']][OperationActivityModel::dataMapToTimeStatus($lv['start_time'],
-                    $lv['end_time'])]['value'];
+                $timeStatus = OperationActivityModel::dataMapToTimeStatus($lv['start_time'], $lv['end_time']);
+                $showStatus = OperationActivityModel::TIME_STATUS_MAP_SHOW_STATUS[$timeStatus];
+                $showStatusZh = $dictData[DictConstants::ACTIVITY_TIME_STATUS['type']][$timeStatus]['value'];
             } else {
                 $showStatusZh = $dictData[DictConstants::ACTIVITY_ENABLE_STATUS['type']][$lv['status']]['value'];
+                $showStatus = $lv['status'];
             }
             $formatList[] = [
                 'op_activity_id' => $lv['op_activity_id'],
@@ -400,7 +435,10 @@ class LotteryAdminService
                 'join_num'       => $lv['join_num'],
                 'user_source_zh' => $dictData[DictConstants::USER_SOURCE['type']][$lv['user_source']]['value'],
                 'show_status_zh' => $showStatusZh,
+                'show_status'    => $showStatus,
                 'enable_status'  => $lv['status'],
+                'app_id'         => $lv['app_id'],
+                'channel_id'     => $dictData[DictConstants::LOTTERY_CONFIG['type']][$lv['app_id']]['value'],
                 'creator_name'   => $employeeData[$lv['create_uuid']]['name'] ?? '',
                 'create_time'    => date("Y-m-d H:i:s", $lv['create_time']),
             ];
@@ -412,34 +450,77 @@ class LotteryAdminService
      * 活动详情
      * @param $opActivityId
      * @return array
+     * @throws RunTimeException
      */
     public static function detail($opActivityId): array
     {
         $detailData = LotteryActivityService::detail($opActivityId);
+        if (empty($detailData['base_data'])) {
+            throw new RunTimeException(["record_not_found"]);
+        }
+        //基础数据
         $detailData['base_data']['title_url_oss'] = AliOSS::replaceCdnDomainForDss($detailData['base_data']['title_url']);
         $detailData['base_data']['name'] = Util::textDecode($detailData['base_data']['name']);
         $detailData['base_data']['activity_desc'] = Util::textDecode($detailData['base_data']['activity_desc']);
-        $dictData = DictConstants::getTypesMap([
-            DictConstants::AWARD_LEVEL['type'],
-            DictConstants::AWARD_TYPE['type'],
-        ]);
-        foreach ($detailData['awards'] as &$avl) {
-            $avl['img_url_oss'] = AliOSS::replaceCdnDomainForDss($avl['img_url']);
-            $avl['hit_times'] = json_decode($avl['hit_times'], true);
-            $avl += json_decode($avl['award_detail'], true);
-            $avl['award_level_zh'] = $dictData[DictConstants::AWARD_LEVEL['type']][$avl['level']]['value'];
-            $avl['award_type_zh'] = $dictData[DictConstants::AWARD_TYPE['type']][$avl['type']]['value'];
-
-        }
+        $detailData['base_data']['max_hit'] = $detailData['base_data']['max_hit_type'] == LotteryActivityModel::MAX_HIT_TYPE_UNLIMITED ? 0 : $detailData['base_data']['max_hit'];
+        $detailData['base_data']['day_max_hit'] = $detailData['base_data']['day_max_hit_type'] == LotteryActivityModel::MAX_HIT_TYPE_UNLIMITED ? 0 : $detailData['base_data']['day_max_hit'];
+        //奖品数据
+        $detailData['awards'] = self::formatEntityAwardDetailData($detailData['awards']);
+        //抽奖次数
         foreach ($detailData['lottery_times_rule'] as &$lr) {
             $lr['low_pay_amount'] /= 100;
             $lr['high_pay_amount'] /= 100;
         }
+        //中奖规则
         foreach ($detailData['win_prize_rule'] as &$wr) {
             $wr['low_pay_amount'] /= 100;
             $wr['high_pay_amount'] /= 100;
         }
         return $detailData;
+    }
+
+    /**
+     * 格式化处理实物奖品数据
+     * @param $detailAwardData
+     * @return array
+     */
+    private static function formatEntityAwardDetailData($detailAwardData): array
+    {
+        array_map(function (&$w) use (&$goodsIds) {
+            $w += json_decode($w['award_detail'], true);
+            if ($w['type'] == Constants::AWARD_TYPE_TYPE_ENTITY) {
+                $goodsIds[] = $w['common_award_id'];
+            }
+            return $w;
+        }, $detailAwardData);
+        $goodsInfo = [];
+        if (!empty($goodsIds)) {
+            //商品信息
+            $goodsInfo = array_column((new Erp())->getLogisticsGoodsList([
+                'goods_id' => implode(',', $goodsIds)
+            ])['data']['list'],
+                'name', 'id');
+        }
+        $dictData = DictConstants::getTypesMap([
+            DictConstants::AWARD_LEVEL['type'],
+            DictConstants::AWARD_TYPE['type'],
+        ]);
+        $awardCount = count($detailAwardData);
+        foreach ($detailAwardData as $avk => &$avl) {
+            $avl['img_url_oss'] = AliOSS::replaceCdnDomainForDss($avl['img_url']);
+            $avl['hit_times'] = json_decode($avl['hit_times'], true);
+            $avl['weight'] = $avl['weight'] / 100;
+            $avl['goods_name'] = ($avl['type'] == Constants::AWARD_TYPE_TYPE_ENTITY) ? $goodsInfo['entity_goods_info'][$avl['common_award_id']]['name'] : '';
+            $avl['award_level_zh'] = $dictData[DictConstants::AWARD_LEVEL['type']][$avl['level']]['value'];
+            $avl['award_type_zh'] = $dictData[DictConstants::AWARD_TYPE['type']][$avl['type']]['value'];
+            unset($avl['award_detail']);
+            //兜底奖品
+            if ($avk == $awardCount - 1) {
+                $avl['num'] = 0;
+                $avl['rest_num'] = 0;
+            }
+        }
+        return $detailAwardData;
     }
 
     /**
@@ -462,13 +543,13 @@ class LotteryAdminService
     /**
      * 导出活动中奖记录表格
      * @param $searchParams
-     * @return array|void
+     * @throws RunTimeException
      */
     public static function exportRecords($searchParams)
     {
         $recordData = LotteryAwardRecordService::search($searchParams, 1, 0);
         if (empty($recordData['list'])) {
-            return $recordData;
+            throw new RunTimeException(["record_not_found"]);
         }
         $formatData = self::formatJoinRecordsData($recordData['list']);
         $title = [

@@ -42,6 +42,12 @@ class OperationActivityModel extends Model
     const TIME_STATUS_PENDING = 1;//待开始
     const TIME_STATUS_ONGOING = 2;//进行中
     const TIME_STATUS_FINISHED = 3;//已结束
+    // 活动时间状态与前端展示状态映射关系
+    const TIME_STATUS_MAP_SHOW_STATUS = [
+        self::TIME_STATUS_PENDING  => 4,
+        self::TIME_STATUS_ONGOING  => 5,
+        self::TIME_STATUS_FINISHED => 6,
+    ];
     //活动前端展示状态于活动不同状态的映射关系
     const ACTIVITY_SHOW_STATUS_MAP_ENABLE_AND_TIME_STATUS = [
         1 => self::ENABLE_STATUS_OFF,
@@ -63,8 +69,8 @@ class OperationActivityModel extends Model
     const ACTIVITY_COUNTRY_EN = 1;  // 所有非中国地区
 
     // 是否支持海报AB测 0：没有 1：支持
-    const HAS_AB_TEST_NO         = 0; // 不支持
-    const HAS_AB_TEST_YES        = 1; // 支持
+    const HAS_AB_TEST_NO = 0; // 不支持
+    const HAS_AB_TEST_YES = 1; // 支持
 
     const ALLOCATION_MODE_AUTO = 1; // 平均分配
     const ALLOCATION_MODE_HAND = 2; // 手动分配
@@ -168,7 +174,7 @@ WHERE
      * @param $timeStatus
      * @return array
      */
-    public static function timeStatusMapToSqlWhere($timeStatus)
+    public static function timeStatusMapToSqlWhere($timeStatus):array
     {
         $where = [];
         $time = time();
@@ -195,7 +201,7 @@ WHERE
      * @param $endTime
      * @return int
      */
-    public static function dataMapToTimeStatus($startTime, $endTime)
+    public static function dataMapToTimeStatus($startTime, $endTime): int
     {
         $time = time();
         if ($startTime <= $time && $endTime >= $time) {

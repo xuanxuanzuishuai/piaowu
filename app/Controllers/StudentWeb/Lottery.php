@@ -77,6 +77,7 @@ class Lottery extends ControllerBase
         $data = [
             'record_id'   => $hitAwardInfo['record_id'],
             'award_id'   => $hitAwardInfo['id'],
+            'award_name'   => $hitAwardInfo['name'],
             'award_type' => $hitAwardInfo['type'],
             'award_level' => $hitAwardInfo['level'],
             'img_url'    => $hitAwardInfo['img_url'],

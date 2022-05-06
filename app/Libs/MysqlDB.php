@@ -41,31 +41,38 @@ class MysqlDB
     const CONFIG_SLAVE = 'dss_slave';
     const CONFIG_ERP_SLAVE = 'erp_slave';
     const CONFIG_AD = 'ad';
+
     /**
+     * 获取数据库实例
      * @param null $configType
-     * @return MysqlDB
+     * @param true $isStopEmulatePrepares     启用或禁用预处理语句的模拟。 有些驱动不支持或有限度地支持本地预处理。
+     *                                          使用此设置强制PDO总是模拟预处理语句（如果为 true ），或试着使用本地预处理语句（如果为 false）。
+     *                                          如果驱动不能成功预处理当前查询，它将总是回到模拟预处理语句上。 需要 bool 类型。
+     * @return MysqlDB|mixed
      */
-    public static function getDB($configType = null)
+    public static function getDB($configType = null, bool $isStopEmulatePrepares = true)
     {
         if (!isset(self::$instances)) {
             self::$instances = [];
         }
-
         $configType = $configType ?? 'default';
-        if (!isset(self::$instances[$configType])) {
-            self::$instances[$configType] = new self($configType);
+        $instancesKey = $configType.$isStopEmulatePrepares;
+        if (!isset(self::$instances[$instancesKey])) {
+            self::$instances[$instancesKey] = new self($configType, $isStopEmulatePrepares);
         }
 
-        return self::$instances[$configType];
+        return self::$instances[$instancesKey];
     }
 
-    public function __construct($configName)
+    public function __construct($configName, $isStopEmulatePrepares)
     {
         $this->name = $configName;
 
         $configData = self::getConfig($configName);
         try {
             $this->client = new Medoo($configData);
+            //设置返回数据和数据表字段设置类型一致，禁止所有字段自动格式化成为字符串
+            $this->client->pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, $isStopEmulatePrepares);
         } catch (\Exception $exception) {
             SentryClient::captureException($exception, ['db' => 'mysql', 'config_name' => $configName, 'server' => $configData['server']]);
         }
@@ -248,20 +255,5 @@ class MysqlDB
                         \PDO::ATTR_EMULATE_PREPARES => true]
                 ];
         }
-    }
-
-    /**
-     * @param $where
-     * @param string $column
-     * @return mixed
-     */
-    public static function addOrgId($where,$column = '') {
-        if (!empty($where['org_id'])) {
-            return $where;
-        }
-        global $orgId ;
-        $column = empty($column)?"org_id":$column;
-        $where[$column] = $orgId;
-        return $where;
     }
 }
