@@ -58,18 +58,50 @@ class Util
     public static function idNumberCheck($vStr)
     {
         $vCity = array(
-            '11', '12', '13', '14', '15', '21', '22',
-            '23', '31', '32', '33', '34', '35', '36',
-            '37', '41', '42', '43', '44', '45', '46',
-            '50', '51', '52', '53', '54', '61', '62',
-            '63', '64', '65', '71', '81', '82', '91'
+            '11',
+            '12',
+            '13',
+            '14',
+            '15',
+            '21',
+            '22',
+            '23',
+            '31',
+            '32',
+            '33',
+            '34',
+            '35',
+            '36',
+            '37',
+            '41',
+            '42',
+            '43',
+            '44',
+            '45',
+            '46',
+            '50',
+            '51',
+            '52',
+            '53',
+            '54',
+            '61',
+            '62',
+            '63',
+            '64',
+            '65',
+            '71',
+            '81',
+            '82',
+            '91'
         );
 
-        if (!preg_match('/^([\d]{17}[xX\d]|[\d]{15})$/', $vStr))
+        if (!preg_match('/^([\d]{17}[xX\d]|[\d]{15})$/', $vStr)) {
             return false;
+        }
 
-        if (!in_array(substr($vStr, 0, 2), $vCity))
+        if (!in_array(substr($vStr, 0, 2), $vCity)) {
             return false;
+        }
 
         $vStr = preg_replace('/[xX]$/i', 'a', $vStr);
         $vLength = strlen($vStr);
@@ -81,8 +113,9 @@ class Util
             $vBirthday = '19' . substr($vStr, 6, 2) . '-' . substr($vStr, 8, 2) . '-' . substr($vStr, 10, 2);
         }
 
-        if (date('Y-m-d', strtotime($vBirthday)) != $vBirthday)
+        if (date('Y-m-d', strtotime($vBirthday)) != $vBirthday) {
             return false;
+        }
 
         if ($vLength == 18) {
             $vSum = 0;
@@ -92,8 +125,9 @@ class Util
                 $vSum += (pow(2, $i) % 11) * (($vSubStr == 'a') ? 10 : intval($vSubStr, 11));
             }
 
-            if ($vSum % 11 != 1)
+            if ($vSum % 11 != 1) {
                 return false;
+            }
         }
 
         # 1男, 2女
@@ -158,9 +192,11 @@ class Util
                         break;
                     }
                 }
-                if ($flag)
+                if ($flag) {
                     return true;
-                else continue;
+                } else {
+                    continue;
+                }
             }
         }
         return false;
@@ -212,7 +248,8 @@ class Util
      * @param $time
      * @return bool
      */
-    public static function checkTime($time){
+    public static function checkTime($time)
+    {
         $check_time = false;
 
         //判断开始时间和结束时间格式 包含分钟不包含秒
@@ -220,9 +257,9 @@ class Util
         $format_1 = preg_match($preg, $time);
 
         //验证时间必须是整点或者半点
-        $format_2 = intval(date('i',strtotime($time)));
+        $format_2 = intval(date('i', strtotime($time)));
 
-        if ($format_1 == 1 && ($format_2 == 0 || $format_2 == 30)){
+        if ($format_1 == 1 && ($format_2 == 0 || $format_2 == 30)) {
             $check_time = true;
         }
         return $check_time;
@@ -263,14 +300,16 @@ class Util
      * @param $endTime
      * @return array
      */
-    public static function getWholeWeek($startTime, $endTime = null){
-        if (!isset($endTime)){
+    public static function getWholeWeek($startTime, $endTime = null)
+    {
+        if (!isset($endTime)) {
             $endTime = $startTime;
         }
         $weekIndex = date('N', $startTime) - 1;
         $endWeekIndex = date('N', $endTime) - 1;
         $startTimeMonday = strtotime(date('Y-m-d', $startTime)) - $weekIndex * self::TIMESTAMP_ONEDAY;
-        $endTimeSundayEnd = strtotime(date('Y-m-d', $endTime)) - $endWeekIndex * self::TIMESTAMP_ONEDAY + self::TIMESTAMP_ONEWEEK;
+        $endTimeSundayEnd = strtotime(date('Y-m-d',
+                $endTime)) - $endWeekIndex * self::TIMESTAMP_ONEDAY + self::TIMESTAMP_ONEWEEK;
         return [$startTimeMonday, $endTimeSundayEnd];
     }
 
@@ -294,26 +333,28 @@ class Util
      * @param $date
      * @return bool
      */
-    public static function checkDate($date){
+    public static function checkDate($date)
+    {
         $check_time = false;
 
         //判断开始时间和结束时间格式 包含分钟不包含秒
         $preg = '/^([12]\d\d\d)-(0?[1-9]|1[0-2])-(0?[1-9]|[12]\d|3[0-1])$/';
         $format = preg_match($preg, $date);
 
-        if ($format == 1){
+        if ($format == 1) {
             $check_time = true;
         }
         return $check_time;
     }
+
     /**
      * 下划线转驼峰
      */
     public static function underlineToHump($str)
     {
-        $str = preg_replace_callback('/([-_]+([a-z]{1}))/i',function($matches){
+        $str = preg_replace_callback('/([-_]+([a-z]{1}))/i', function ($matches) {
             return strtoupper($matches[2]);
-        },$str);
+        }, $str);
         return $str;
     }
 
@@ -322,18 +363,19 @@ class Util
      * @param $params
      * @return array
      */
-    public static function formatPageCount($params) {
+    public static function formatPageCount($params)
+    {
         //格式化page 页数
-        if(empty($params['page']) || !is_numeric($params['page']) || (int)$params['page']<1) {
+        if (empty($params['page']) || !is_numeric($params['page']) || (int)$params['page'] < 1) {
             $page = 1;
-        }else{
+        } else {
             $page = (int)$params['page'];
         }
         //格式化count 分页数量
-        if(empty($params['count']) || !is_numeric($params['count']) || (int)$params['count']<1) {
-            $defaultCount = DictService::getKeyValue(Constants::DICT_TYPE_SYSTEM_ENV,Constants::DEFAULT_PAGE_LIMIT);
+        if (empty($params['count']) || !is_numeric($params['count']) || (int)$params['count'] < 1) {
+            $defaultCount = DictService::getKeyValue(Constants::DICT_TYPE_SYSTEM_ENV, Constants::DEFAULT_PAGE_LIMIT);
             $count = $defaultCount ?: 20;
-        }else{
+        } else {
             $count = (int)$params['count'];
         }
         return [$page, $count];
@@ -343,8 +385,9 @@ class Util
      * @param $time
      * @return mixed
      */
-    public static function getShortWeekName($time){
-        $week = array("周一","周二","周三","周四","周五","周六","周日");
+    public static function getShortWeekName($time)
+    {
+        $week = array("周一", "周二", "周三", "周四", "周五", "周六", "周日");
         return $week[date('N', $time) - 1];
     }
 
@@ -355,8 +398,8 @@ class Util
      */
     public static function getWeekName($time)
     {
-        $week_array=array("星期一","星期二","星期三","星期四","星期五","星期六","星期日");
-        $week_name = $week_array[date("N",$time)-1];
+        $week_array = array("星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日");
+        $week_name = $week_array[date("N", $time) - 1];
         return $week_name;
     }
 
@@ -367,7 +410,7 @@ class Util
      */
     public static function isInt($num)
     {
-        if(is_numeric($num) && strpos($num, '.') === false){
+        if (is_numeric($num) && strpos($num, '.') === false) {
             return true;
         }
         return false;
@@ -379,19 +422,20 @@ class Util
      * @param $array
      * @return bool|string
      */
-    public static function buildSqlIn($array) {
-        if( ! is_array($array)) {
+    public static function buildSqlIn($array)
+    {
+        if (!is_array($array)) {
             return '';
         }
-        if(count($array) == 0){
+        if (count($array) == 0) {
             return '';
         }
         $s = '';
-        foreach($array as $a) {
+        foreach ($array as $a) {
             $s .= "'{$a}',";
         }
 
-        return substr($s,0,-1);
+        return substr($s, 0, -1);
     }
 
     /**
@@ -402,28 +446,35 @@ class Util
      * @param $freeCourseRefundCount
      * @return array
      */
-    public static function computeRefund($averageConsumePrice,$lastTimeConsumePrice,$formalCourseRefundCount,$freeCourseRefundCount) {
+    public static function computeRefund(
+        $averageConsumePrice,
+        $lastTimeConsumePrice,
+        $formalCourseRefundCount,
+        $freeCourseRefundCount
+    ) {
         $a = $averageConsumePrice / 100;
         $l = $lastTimeConsumePrice / 100;
 
-        if($formalCourseRefundCount < 1){
-            return [0,"{$a} * 0 + {$l} * 0 + 0 * {$freeCourseRefundCount}"];
-        }else if($formalCourseRefundCount == 1) {
-            return [$lastTimeConsumePrice,"{$l} * 0 + 0 * {$freeCourseRefundCount}"];
-        }else{
-            $rest = $formalCourseRefundCount - 1;
-            return [
-                $averageConsumePrice * ($formalCourseRefundCount - 1) + $lastTimeConsumePrice * 1,
-                "{$a} * {$rest} + {$l} * 1 + 0 * {$freeCourseRefundCount}"
-            ];
+        if ($formalCourseRefundCount < 1) {
+            return [0, "{$a} * 0 + {$l} * 0 + 0 * {$freeCourseRefundCount}"];
+        } else {
+            if ($formalCourseRefundCount == 1) {
+                return [$lastTimeConsumePrice, "{$l} * 0 + 0 * {$freeCourseRefundCount}"];
+            } else {
+                $rest = $formalCourseRefundCount - 1;
+                return [
+                    $averageConsumePrice * ($formalCourseRefundCount - 1) + $lastTimeConsumePrice * 1,
+                    "{$a} * {$rest} + {$l} * 1 + 0 * {$freeCourseRefundCount}"
+                ];
+            }
         }
     }
 
     /**
      * 获取七牛图片完整链接地址
-     * @param string $img       图片路径
-     * @param string $domain    域名
-     * @param string $folder    文件夹目录
+     * @param string $img 图片路径
+     * @param string $domain 域名
+     * @param string $folder 文件夹目录
      * @return string
      */
     public static function getQiNiuFullImgUrl($img, $domain, $folder)
@@ -444,14 +495,15 @@ class Util
      * @param array $formats
      * @return bool
      */
-    public static function isDateValid($date, $formats = array('Y-m-d', 'Y/m/d', 'Y/n/j')) {
+    public static function isDateValid($date, $formats = array('Y-m-d', 'Y/m/d', 'Y/n/j'))
+    {
         $unixTime = strtotime($date);
-        if(!$unixTime) { //无法用strtotime转换，说明日期格式非法
+        if (!$unixTime) { //无法用strtotime转换，说明日期格式非法
             return false;
         }
         //校验日期合法性，只要满足其中一个格式就可以
         foreach ($formats as $format) {
-            if(date($format, $unixTime) == $date) {
+            if (date($format, $unixTime) == $date) {
                 return true;
             }
         }
@@ -462,7 +514,8 @@ class Util
      * 获取当前毫秒时间戳
      * @return float
      */
-    public static function milliSecond() {
+    public static function milliSecond()
+    {
         list($m, $sec) = explode(' ', microtime());
         return intval(sprintf('%.0f', (floatval($m) + floatval($sec)) * 1000));
     }
@@ -471,7 +524,8 @@ class Util
      * 获取ip
      * @return mixed
      */
-    public static function IP(){
+    public static function IP()
+    {
         return $_SERVER['REMOTE_ADDR'];
     }
 
@@ -480,11 +534,12 @@ class Util
      * @param $birthday
      * @return mixed
      */
-    public static function formatBirthday($birthday){
-        if(self::isInt($birthday)  && in_array(substr($birthday, 0, 2), [19, 20])){
-            if(strlen($birthday) == 4){
-                return $birthday.'0101';
-            }elseif(strlen($birthday) == 8){
+    public static function formatBirthday($birthday)
+    {
+        if (self::isInt($birthday) && in_array(substr($birthday, 0, 2), [19, 20])) {
+            if (strlen($birthday) == 4) {
+                return $birthday . '0101';
+            } elseif (strlen($birthday) == 8) {
                 return $birthday;
             }
         }
@@ -498,8 +553,8 @@ class Util
      */
     public static function formatYear($year)
     {
-        if(self::isInt($year)  && in_array(substr($year, 0, 2), [19, 20])){
-            if(strlen($year) == 4){
+        if (self::isInt($year) && in_array(substr($year, 0, 2), [19, 20])) {
+            if (strlen($year) == 4) {
                 return $year;
             }
         }
@@ -543,7 +598,7 @@ class Util
      */
     public static function limitation($page, $count)
     {
-        list($page, $count) = self::formatPageCount(['page' => $page,'count' => $count]);
+        list($page, $count) = self::formatPageCount(['page' => $page, 'count' => $count]);
         $limit = ($page - 1) * $count;
         return " limit {$limit},{$count} ";
     }
@@ -572,7 +627,9 @@ class Util
 
     public static function unusedParam($param)
     {
-        if (empty($param)) { NULL; /* unused params */ }
+        if (empty($param)) {
+            null; /* unused params */
+        }
     }
 
     /**
@@ -590,7 +647,8 @@ class Util
      * @param $url
      * @return int
      */
-    public static function isUrl($url){
+    public static function isUrl($url)
+    {
         return preg_match("/^http[s]?:\/\/.+$/", $url);
     }
 
@@ -604,11 +662,12 @@ class Util
      * @param $f
      * @return bool
      */
-    public static function floatIsInt($f){
-        if(!is_numeric($f)){
+    public static function floatIsInt($f)
+    {
+        if (!is_numeric($f)) {
             return false;
         }
-        return  (int)$f == $f ? true : false;
+        return (int)$f == $f ? true : false;
     }
 
     /**
@@ -616,8 +675,9 @@ class Util
      * @param $f
      * @return int
      */
-    public static function convertToIntIfCan($f){
-        if(self::floatIsInt($f)){
+    public static function convertToIntIfCan($f)
+    {
+        if (self::floatIsInt($f)) {
             return (int)$f;
         }
         return $f;
@@ -634,13 +694,13 @@ class Util
         $second = $seconds % 60;
 
         $str = '';
-        if($minute > 0) {
+        if ($minute > 0) {
             $str .= $minute . '分钟';
         }
-        if($second > 0) {
+        if ($second > 0) {
             $str .= $second . '秒';
         }
-        if(empty($str)) {
+        if (empty($str)) {
             $str = '0秒';
         }
 
@@ -678,7 +738,7 @@ class Util
         $contain = preg_replace_callback(
             '/./u',
             function (array $match) use (&$contain) {
-                if (strlen($match[0]) >=4 && !$contain) {
+                if (strlen($match[0]) >= 4 && !$contain) {
                     return true;
                 }
             },
@@ -692,12 +752,12 @@ class Util
 
     /**
      * 获取过去n天的起止时间
-     * @param int $days. 天数
+     * @param int $days . 天数
      * @return array
      */
-    public static function nDaysBeforeNow($now=null, $days=7)
+    public static function nDaysBeforeNow($now = null, $days = 7)
     {
-        if(empty($now)){
+        if (empty($now)) {
             $now = time();
         }
         $nDaysBefore = (int)$days * 24 * 60 * 60;
@@ -733,9 +793,11 @@ class Util
             return 0;
         }
         $bitmap = 0;
-        foreach($array as $bitPos) {
+        foreach ($array as $bitPos) {
             $pos = (int)$bitPos - 1;
-            if ($pos < 0) { return 0; }
+            if ($pos < 0) {
+                return 0;
+            }
             $bitmap |= (1 << $pos);
         };
         return $bitmap;
@@ -768,8 +830,12 @@ class Util
      */
     public static function textEncode($str)
     {
-        if (!is_string($str)) return $str;
-        if (!$str || $str == 'undefined') return '';
+        if (!is_string($str)) {
+            return $str;
+        }
+        if (!$str || $str == 'undefined') {
+            return '';
+        }
 
         $text = json_encode($str); //暴露出unicode
         $text = preg_replace_callback("/(\\\u[ed][0-9a-f]{3})/i", function ($str) {
@@ -792,10 +858,10 @@ class Util
 
     /**
      * 替换以关键词开头和结尾
-     * @param string $string            目标字符串
-     * @param string $patternStart      正则匹配规则开始关键字
-     * @param string $patternEnd        正则匹配规则结尾关键字
-     * @param array  $replaceParams     替换参数数组
+     * @param string $string 目标字符串
+     * @param string $patternStart 正则匹配规则开始关键字
+     * @param string $patternEnd 正则匹配规则结尾关键字
+     * @param array $replaceParams 替换参数数组
      * @return mixed|string|void
      */
     public static function pregReplaceTargetStr($string, $replaceParams, $patternStart = '{{', $patternEnd = '}}')
@@ -829,13 +895,15 @@ class Util
     {
         return empty($value) && $value !== 0 && $value !== '0';
     }
+
     /**
      * 计算两个日期之间相差天数
-     * @param string $start    开始日期:2020-03-01
-     * @param string $end      结束日期:2020-03-02
+     * @param string $start 开始日期:2020-03-01
+     * @param string $end 结束日期:2020-03-02
      * @return mixed|string|void
      */
-    public static function dateDiff($start,$end){
+    public static function dateDiff($start, $end)
+    {
         $datetime_start = date_create($start);
         $datetime_end = date_create($end);
         $days = date_diff($datetime_start, $datetime_end);
@@ -851,14 +919,14 @@ class Util
     {
         $date = date('Ymd', $dateTimestamp);
         $beginDay = strtotime($date);
-        $endDay = $beginDay+self::TIMESTAMP_ONEDAY-1;
+        $endDay = $beginDay + self::TIMESTAMP_ONEDAY - 1;
         return [$beginDay, $endDay];
     }
 
     /**
      * 计算两个日期之间的天数:包含开始和结束日期
-     * @param string $startDate    开始日期:2020-03-01
-     * @param string $endDate      结束日期:2020-03-31
+     * @param string $startDate 开始日期:2020-03-01
+     * @param string $endDate 结束日期:2020-03-31
      * @return float|int
      */
     public static function dateBetweenDays($startDate, $endDate)
@@ -971,11 +1039,11 @@ class Util
      */
     public static function secondToDate($seconds)
     {
-        if ($seconds > 3600){
-            $hours = intval($seconds/3600);
+        if ($seconds > 3600) {
+            $hours = intval($seconds / 3600);
             $minutes = $seconds % 3600;
-            $time = $hours."时".gmstrftime('%M分%S秒', $minutes);
-        }else{
+            $time = $hours . "时" . gmstrftime('%M分%S秒', $minutes);
+        } else {
             $time = gmstrftime('%M分%S秒', $seconds);
         }
         return $time;
@@ -1141,7 +1209,7 @@ class Util
         if (empty($params)) {
             return;
         }
-        if (strpos($url, '?')===false) {
+        if (strpos($url, '?') === false) {
             $url .= '?';
         } else {
             $url .= '&';
@@ -1159,7 +1227,7 @@ class Util
         if (empty($month)) {
             $month = date("Y-m");
         }
-        $maxDay  = date('t', strtotime($month . "-01"));
+        $maxDay = date('t', strtotime($month . "-01"));
         $mondays = array();
         for ($i = 1; $i <= $maxDay; $i++) {
             if (date('w', strtotime($month . "-" . $i)) == 1) {
@@ -1262,7 +1330,9 @@ class Util
      */
     public static function isChineseText(string $text): bool
     {
-        if (preg_match("/^[\x80-\xff]{6,30}$/", $text)) return true;
+        if (preg_match("/^[\x80-\xff]{6,30}$/", $text)) {
+            return true;
+        }
         return false;
     }
 
@@ -1292,12 +1362,12 @@ class Util
             return array('day' => 0, 'hour' => 0, 'minute' => 0, 'second' => 0);
         }
         $second = $to_time - time();
-        $day = floor($second/(3600*24)); //天
-        $second = $second%(3600*24);
-        $hour = floor($second/3600); //时
+        $day = floor($second / (3600 * 24)); //天
+        $second = $second % (3600 * 24);
+        $hour = floor($second / 3600); //时
         $second = $second % 3600;
-        $minute = floor($second/60);//分
-        $second = $second%60; //秒
+        $minute = floor($second / 60);//分
+        $second = $second % 60; //秒
 
         return array('day' => $day, 'hour' => $hour, 'minute' => $minute, 'second' => $second);
     }
@@ -1311,7 +1381,7 @@ class Util
     public static function preventRepeatSubmit($redis_key, $expire = 3)
     {
         $redis = RedisDB::getConn();
-        $ttl   = $redis->ttl($redis_key);
+        $ttl = $redis->ttl($redis_key);
         if ($ttl == -1) {
             $redis->del($redis_key);
         }
@@ -1333,7 +1403,7 @@ class Util
     {
 
         //获取当天0点时间戳
-        $today     = strtotime('today');
+        $today = strtotime('today');
         $yesterday = strtotime('yesterday');
 
         if ($today < $time) {
@@ -1369,42 +1439,45 @@ class Util
         // 密匙b会用来做数据完整性验证
         $keyb = md5(substr($key, 16, 16));
         // 密匙c用于变化生成的密文
-        $keyc =$ckey_length ? ($operation =='DECODE'?substr($string, 0, $ckey_length):substr(md5(microtime()), -$ckey_length)) : '';
+        $keyc = $ckey_length ? ($operation == 'DECODE' ? substr($string, 0, $ckey_length) : substr(md5(microtime()),
+            -$ckey_length)) : '';
         // 参与运算的密匙
-        $cryptkey =$keya.md5($keya.$keyc);
-        $key_length =strlen($cryptkey);
+        $cryptkey = $keya . md5($keya . $keyc);
+        $key_length = strlen($cryptkey);
         // 明文，前10位用来保存时间戳，解密时验证数据有效性，10到26位用来保存$keyb(密匙b)，
         //解密时会通过这个密匙验证数据完整性
         // 如果是解码的话，会从第$ckey_length位开始，因为密文前$ckey_length位保存 动态密匙，以保证解密正确
-        $string = $operation=='DECODE'?base64_decode(substr($string, $ckey_length)):sprintf('%010d', $expiry?$expiry+time():0).substr(md5($string.$keyb), 0, 16).$string;
-        $string_length =strlen($string);
-        $result ='';
+        $string = $operation == 'DECODE' ? base64_decode(substr($string, $ckey_length)) : sprintf('%010d',
+                $expiry ? $expiry + time() : 0) . substr(md5($string . $keyb), 0, 16) . $string;
+        $string_length = strlen($string);
+        $result = '';
         $box = range(0, 255);
-        $rndkey =array();
+        $rndkey = array();
         // 产生密匙簿
         for ($i = 0; $i <= 255; $i++) {
-            $rndkey[$i] = ord($cryptkey[$i %$key_length]);
+            $rndkey[$i] = ord($cryptkey[$i % $key_length]);
         }
         // 用固定的算法，打乱密匙簿，增加随机性，好像很复杂，实际上对并不会增加密文的强度
         for ($j = $i = 0; $i < 256; $i++) {
-            $j = ($j +$box[$i] +$rndkey[$i]) % 256;
-            $tmp =$box[$i];
-            $box[$i] =$box[$j];
-            $box[$j] =$tmp;
+            $j = ($j + $box[$i] + $rndkey[$i]) % 256;
+            $tmp = $box[$i];
+            $box[$i] = $box[$j];
+            $box[$j] = $tmp;
         }
         // 核心加解密部分
         for ($a = $j = $i = 0; $i < $string_length; $i++) {
             $a = ($a + 1) % 256;
-            $j = ($j +$box[$a]) % 256;
-            $tmp =$box[$a];
-            $box[$a] =$box[$j];
-            $box[$j] =$tmp;
+            $j = ($j + $box[$a]) % 256;
+            $tmp = $box[$a];
+            $box[$a] = $box[$j];
+            $box[$j] = $tmp;
             // 从密匙簿得出密匙进行异或，再转成字符
-            $result .=chr(ord($string[$i]) ^ ($box[($box[$a] +$box[$j]) % 256]));
+            $result .= chr(ord($string[$i]) ^ ($box[($box[$a] + $box[$j]) % 256]));
         }
         if ($operation == 'DECODE') {
             // 验证数据有效性，请看未加密明文的格式
-            if((substr($result, 0, 10)==0||substr($result, 0, 10)-time()>0)&&substr($result, 10, 16)==substr(md5(substr($result, 26).$keyb), 0, 16)) {
+            if ((substr($result, 0, 10) == 0 || substr($result, 0, 10) - time() > 0) && substr($result, 10,
+                    16) == substr(md5(substr($result, 26) . $keyb), 0, 16)) {
                 return substr($result, 26);
             } else {
                 return '';
@@ -1412,7 +1485,7 @@ class Util
         } else {
             // 把动态密匙保存在密文里，这也是为什么同样的明文，生产不同密文后能解密的原因
             // 因为加密后的密文可能是一些特殊字符，复制过程可能会丢失，所以用base64编码
-            return $keyc.str_replace('=', '', base64_encode($result));
+            return $keyc . str_replace('=', '', base64_encode($result));
         }
     }
 
@@ -1494,5 +1567,21 @@ class Util
             SimpleLogger::error('PhoneNumberUtil exception', [$e]);
             return false;
         }
+    }
+
+    /**
+     * 发送飞书文本消息
+     * @param $message
+     * @param $webHook
+     */
+    public static function sendFsWaringText($message, $webHook)
+    {
+        $msg = [
+            'msg_type' => 'text',
+            'content'  => [
+                'text' => $message ?? '',
+            ],
+        ];
+        HttpHelper::requestJson($webHook, $msg, 'POST');
     }
 }

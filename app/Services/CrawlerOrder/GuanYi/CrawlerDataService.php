@@ -69,6 +69,7 @@ class CrawlerDataService extends CrawlerBaseService
             $this->searchOrderList();
             $this->listSearchArr['page'] += 1;
             if ($this->listSearchArr['page'] > ceil($this->realTimeCount / $this->limit)) {
+                SimpleLogger::info("page is max value", []);
                 break;
             }
             $this->listSearchArr['start'] = ($this->listSearchArr['page'] - 1) * $this->limit;
@@ -156,7 +157,7 @@ class CrawlerDataService extends CrawlerBaseService
         }
         //账户触发第三方规则，不能爬取数据
         if (empty($responseData['data']['receiverMobile'])) {
-            $this->setCrawlerAccountDisable($this->account, $responseData['data']['frequencyResult']['errMsg']);
+            $this->setCrawlerAccountDisable($this->account, "管易", $responseData['data']['frequencyResult']['errMsg']);
             return [];
         } else {
             return $responseData['data'];

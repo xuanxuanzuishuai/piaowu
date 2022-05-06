@@ -5,7 +5,6 @@ namespace App\Services\CrawlerOrder\DouDian;
 use App\Libs\Constants;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
-use App\Libs\Util;
 use App\Models\CrawlerOrderModel;
 use App\Services\CrawlerOrder\CrawlerBaseService;
 use GuzzleHttp\Cookie\CookieJar;
@@ -20,8 +19,6 @@ class DdCrawlerDataService extends CrawlerBaseService
     private $listQueryData = [];//订单列表查询条件
     private $svWebId = '';
     private $phpSessid = '';
-    private $createTimeStart = 0;
-    private $createTimeEnd = 0;
 
     public function __construct($config)
     {
@@ -35,7 +32,6 @@ class DdCrawlerDataService extends CrawlerBaseService
             $this->phpSessid = $settingData['PHPSESSID'];
             $this->listQueryData = parse_query($settingData['list_query_params']);
             $this->accessToken = true;
-            list($this->createTimeStart, $this->createTimeEnd) = Util::getStartEndTimestamp($this->nowTime);
             $this->setCommonCookie();
             $this->setCommonHeaders();
             $this->setMysqlDataCount();
@@ -60,7 +56,7 @@ class DdCrawlerDataService extends CrawlerBaseService
     {
         //检测订单数量，是否有新数据可爬取
         if ($this->checkCrawlerOrderCount() === false) {
-            return false;;
+            return false;
         }
         while (true) {
             $this->searchOrderList();
@@ -78,7 +74,7 @@ class DdCrawlerDataService extends CrawlerBaseService
      */
     public function searchOrderList()
     {
-        sleep(mt_rand(60, 120));
+        sleep(mt_rand(60, 100));
         //查询参数
         try {
             $response = $this->requestClientObj->request('GET', $this->orderListUri, [
@@ -92,11 +88,16 @@ class DdCrawlerDataService extends CrawlerBaseService
             $responseData = json_decode($body, true);
             if ($responseData['code'] != 0) {
                 $this->currentCrawlerIsFail = true;
+                $this->setCrawlerAccountDisable($this->account, "抖店", $body);
             } else {
                 $tmpOrderList = [];
                 $this->realTimeCount = (int)$responseData['total'];
                 if (!empty($responseData['data'])) {
                     foreach ($responseData['data'] as $dv) {
+                        if ($this->remainingDealCount <= 0) {
+                            break;
+                        }
+                        $this->remainingDealCount--;
                         if (!$this->checkOrderGoodsIsValid($dv['product_item'][0]['merchant_sku_code'],
                             $dv['shop_order_id'])) {
                             continue;
@@ -131,19 +132,17 @@ class DdCrawlerDataService extends CrawlerBaseService
      */
     public function decryptAddressInfo($orderId): array
     {
-        sleep(mt_rand(120, 240));
+        sleep(mt_rand(60, 120));
         //查询参数
         $totalQueryData = [
-            "order_id"   => $orderId,
-            "ome_from"   => "pc",
-            "aid"        => $this->listQueryData['aid'],
-            "appid"      => $this->listQueryData['appid'],
-            "__token"    => $this->listQueryData['__token'],
-            "_bid"       => $this->listQueryData['_bid'],
-            "_lid"       => $this->listQueryData['_lid'],
-            "msToken"    => $this->listQueryData['msToken'],
-            "X-Bogus"    => $this->listQueryData['X-Bogus'],
-            "_signature" => $this->listQueryData['_signature'],
+            "order_id" => $orderId,
+            "ome_from" => "pc",
+            "aid"      => $this->listQueryData['aid'],
+            "appid"    => $this->listQueryData['appid'],
+            "__token"  => $this->listQueryData['__token'],
+            "_bid"     => $this->listQueryData['_bid'],
+            "_lid"     => $this->listQueryData['_lid'],
+            "msToken"  => $this->listQueryData['msToken'],
         ];
         try {
             $response = $this->requestClientObj->request('GET', $this->orderReceiveInfoUri, [
@@ -180,7 +179,6 @@ class DdCrawlerDataService extends CrawlerBaseService
         $this->commonCookieJar = CookieJar::fromArray([
             's_v_web_id' => $this->svWebId,
             'PHPSESSID'  => $this->phpSessid,
-            'SHOP_ID'    => $this->shopId,
         ], 'fxg.jinritemai.com');
     }
 
@@ -191,7 +189,6 @@ class DdCrawlerDataService extends CrawlerBaseService
     {
         $this->commonHeader = [
             'User-Agent'     => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36',
-            'Content-Type'   => 'application/x-www-form-urlencoded',
             'sec-fetch-site' => 'same-origin',
             'referer'        => 'https://fxg.jinritemai.com/ffa/morder/order/list',
         ];

@@ -38,8 +38,6 @@ if (empty($dictConfig)) {
     die("商铺配置数据缺失/错误");
 }
 //拼接账户数据
-
-
 $accountConfig = json_decode($dictConfig, true);
 $rdb = RedisDB::getConn();
 //账号可能是不同的第三方公司账号，而且还可以是多个

@@ -23,6 +23,7 @@ use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\CrawlerOrderModel;
+use App\Services\Queue\DouStoreTopic;
 use Dotenv\Dotenv;
 
 /**
@@ -31,7 +32,8 @@ use Dotenv\Dotenv;
 $dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();
 $dotenv->overload();
-SimpleLogger::info('crawler order deliver material start', [time()]);
+$notTime = time();
+SimpleLogger::info('crawler order deliver material start', []);
 //获取订单数据
 $orderList = CrawlerOrderModel::getRecords([
     'dd_shop_id'      => CrawlerOrderModel::AI_DOU_DIAN_SHOP_ID,
@@ -61,8 +63,16 @@ foreach ($orderList as $ov) {
         "s_ids"            => [$ov['order_code']],
         "p_id"             => $ov['order_code'],
     ];
-    $requestResponse = $erpRequestObj->douStoreMsg($tmpMsgBody);
-    if (empty($requestResponse)) {
+    $requestResponse = $erpRequestObj->douStoreMsg([
+        'topic_name'    => DouStoreTopic::TOPIC_NAME,
+        'event_type'    => DouStoreTopic::EVENT_TYPE_DELIVER_MATERIAL_OBJECT,
+        'source_app_id' => Constants::SELF_APP_ID,
+        'exec_time'     => $notTime,
+        'publish_time'  => $notTime,
+        'msg_body'      => $tmpMsgBody
+    ]);
+    //请求失败
+    if ($requestResponse === false) {
         $rdb->del([$tmpLockCacheKey]);
         continue;
     }
@@ -73,4 +83,4 @@ if (!empty($pushSuccessOrderIds)) {
     CrawlerOrderModel::batchUpdateRecord(['is_send_erp' => Constants::STATUS_TRUE],
         ['order_code' => $pushSuccessOrderIds]);
 }
-SimpleLogger::info('crawler order deliver material end', [time()]);
+SimpleLogger::info('crawler order deliver material end', []);
