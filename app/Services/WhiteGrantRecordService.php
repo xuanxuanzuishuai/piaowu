@@ -261,7 +261,11 @@ class WhiteGrantRecordService
         if (!empty($next['grantInfo']) && in_array($next['grantInfo']['result_code'], [WeChatAwardCashDealModel::CA_ERROR, WeChatAwardCashDealModel::SYSTEMERROR])) {
             return $next['grantInfo']['bill_no'];
         } else {
-            return $_ENV['ENV_NAME'] . min($next['awardIds'] ) . $next['awardNum'] . date('Ymd');
+            // 注意这里awardIds一定不能为空， 如果为空可能会出现未知的订单id（这里会用微妙6位数参与订单id生成）
+            $awardIds = $next['awardIds'] ?? ['e'. explode(' ', microtime())[0]*1000000];
+            $billNo = $_ENV['ENV_NAME'] . reset($awardIds) . $next['awardNum'] . date('Ymd');
+            SimpleLogger::info("getMchBillNo", ['data' => $next, 'bill_no' => $billNo]);
+            return $billNo;
         }
     }
 
