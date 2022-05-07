@@ -444,7 +444,11 @@ class WhiteGrantRecordService
         $resultData = $weChatPackage->getRedPackBillInfo($data['bill_no']);
 
         SimpleLogger::info("wx red pack query", ['mch_billno' => $data['bill_no'], 'data' => $resultData]);
-
+        // 请求微信接口失败直接返回不做任何操作
+        if (empty($resultData)) {
+            SimpleLogger::info("wx_qurey_pack_status", ['mch_billno' => $data['bill_no'], 'data' => $resultData]);
+            return [];
+        }
         if ($resultData['result_code'] == WeChatAwardCashDealModel::RESULT_FAIL_CODE) {
             $resultCode = $resultData['err_code'];
             $status     = WhiteGrantRecordModel::STATUS_GIVE_FAIL;
