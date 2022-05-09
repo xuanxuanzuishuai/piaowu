@@ -69,7 +69,7 @@ class ActivityLottery extends ControllerBase
                 'key'        => 'start_time',
                 'type'       => 'min',
                 'value'      => time(),
-                'error_code' => 'start_time_is_positive_integer'
+                'error_code' => 'start_time_must_greater_than_current_time'
             ],
             [
                 'key'        => 'end_time',
@@ -80,7 +80,7 @@ class ActivityLottery extends ControllerBase
                 'key'        => 'end_time',
                 'type'       => 'min',
                 'value'      => time(),
-                'error_code' => 'end_time_is_positive_integer'
+                'error_code' => 'end_time_error'
             ],
             [
                 'key'        => 'activity_desc',

@@ -140,10 +140,12 @@ class LotteryAdminService
                     'status'          => Constants::STATUS_TRUE,
                 ]);
             }
-        } elseif ($paramsData['user_source'] == LotteryActivityModel::USER_SOURCE_IMPORT) {
-            //导入名单数据处理
-            $formatParams['import_user'] = self::checkImportExcelData();
         }
+//        elseif ($paramsData['user_source'] == LotteryActivityModel::USER_SOURCE_IMPORT) {
+//            //导入名单数据处理
+//            $formatParams['import_user'] = self::checkImportExcelData();
+//        }
+
         //中奖限制条件
         if ($paramsData['day_max_hit_type'] == LotteryActivityModel::MAX_HIT_TYPE_UNLIMITED) {
             $paramsData['day_max_hit'] = -1;
@@ -185,6 +187,7 @@ class LotteryAdminService
                 case Constants::AWARD_TYPE_GOLD_LEAF:
                 case Constants::AWARD_TYPE_MAGIC_STONE:
                 case Constants::AWARD_TYPE_EMPTY:
+                case Constants::AWARD_TYPE_TYPE_NOTE:
                     $awv['common_award_id'] = 0;
                     break;
                 case Constants::AWARD_TYPE_TIME:
@@ -215,9 +218,6 @@ class LotteryAdminService
 
             }
             //奖品中奖时间段
-            if (!is_array($awv['hit_times']) || count($awv['hit_times']) > 3) {
-                throw new RuntimeException(["hit_times_value_count_error"]);
-            }
             if (!in_array($awv['hit_times_type'],
                 [LotteryActivityModel::HIT_TIMES_TYPE_KEEP_ACTIVITY, LotteryActivityModel::HIT_TIMES_TYPE_CUSTOM])) {
                 throw new RuntimeException(["hit_time_type_error"]);
@@ -231,6 +231,10 @@ class LotteryAdminService
                     ]
                 ];
             } else {
+                if (!is_array($awv['hit_times']) || count($awv['hit_times']) > 3) {
+                    throw new RuntimeException(["hit_times_value_count_error"]);
+                }
+
                 array_multisort(array_column($awv['hit_times'], 'end_time'), SORT_ASC,
                     $awv['hit_times']);
                 foreach ($awv['hit_times'] as $thk => $thv) {
@@ -486,7 +490,7 @@ class LotteryAdminService
      */
     private static function formatEntityAwardDetailData($detailAwardData): array
     {
-        array_map(function (&$w) use (&$goodsIds) {
+        $detailAwardData = array_map(function (&$w) use (&$goodsIds) {
             $w += json_decode($w['award_detail'], true);
             if ($w['type'] == Constants::AWARD_TYPE_TYPE_ENTITY) {
                 $goodsIds[] = $w['common_award_id'];

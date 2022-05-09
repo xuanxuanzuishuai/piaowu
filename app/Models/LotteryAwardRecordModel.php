@@ -13,7 +13,12 @@ class LotteryAwardRecordModel extends Model
     const USE_TYPE_FILTER = 1;
     const USE_TYPE_IMPORT = 2;
 
-    public static function getHitAwardByTime($opActivityId, $startTime, $endTime)
+    /**
+     * 获取中奖记录
+     * @param $opActivityId
+     * @return array
+     */
+    public static function getHitAwardByTime($opActivityId)
     {
         $db  = MysqlDB::getDB();
         $hitList = $db->select(self::$table.'(ar)',[
@@ -25,12 +30,10 @@ class LotteryAwardRecordModel extends Model
         ],[
             'ar.op_activity_id' => $opActivityId,
             'ar.award_type[!]'  => Constants::AWARD_TYPE_EMPTY,
-            'ar.create_time[>]' => $startTime,
-            'ar.create_time[<]' => $endTime,
             'ORDER'          => [
                 'ar.id' => 'DESC'
             ],
-            'LIMIT'=>10
+            'LIMIT'=>3
         ]);
         return $hitList ?: [];
     }

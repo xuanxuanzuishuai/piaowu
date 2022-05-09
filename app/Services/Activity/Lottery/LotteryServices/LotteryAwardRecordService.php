@@ -23,13 +23,12 @@ class LotteryAwardRecordService
      * @param $opActivityId
      * @return array
      */
-    public static function getHitAwardByTime($opActivityId)
+    public static function getHitAwardByTime($opActivityId,$awardInfo)
     {
         $endTime = time();
-        $startTime = $endTime - Util::TIMESTAMP_ONEDAY;
-        $hitAwardInfo = LotteryAwardRecordModel::getHitAwardByTime($opActivityId, $startTime, $endTime);
-        if (empty($hitAwardInfo)){
-            return [];
+        $hitAwardInfo = LotteryAwardRecordModel::getHitAwardByTime($opActivityId);
+        if (empty($hitAwardInfo) || count($hitAwardInfo) < 3){
+            return self::constructedData($awardInfo);
         }
 
         $uuidList = array_unique(array_column($hitAwardInfo, 'uuid')) ?? [];
@@ -46,6 +45,35 @@ class LotteryAwardRecordService
     }
 
     /**
+     * 伪造中奖数据
+     * @param $awardInfo
+     * @return array
+     */
+    public static function constructedData($awardInfo)
+    {
+        $mobile = [
+            ['187****', '10 秒前', 2],
+            ['184****', '30 秒前', 1],
+            ['153****', '48 秒前', 2],
+            ['151****', '1 分钟前', 0],
+            ['132****', '3 分钟前', 2],
+            ['137****', '4 分钟前', 1],
+            ['136****', '7 分钟前', 2],
+            ['138****', '10 分钟前', 2],
+        ];
+        $award = array_slice($awardInfo, -4, 3);
+        foreach ($mobile as $value) {
+            $single = [
+                'mobile'     => $value[0].mt_rand(1000,9999) ?? '187****6573',
+                'award_name' => $award[$value[2]]['name'] ?? '',
+                'hit_time'   => $value[1] ?? '10秒前',
+            ];
+            $data[] = $single;
+        }
+        return $data;
+    }
+
+    /**
      * 格式化时间
      * @param $time
      * @param $createTime
@@ -55,13 +83,13 @@ class LotteryAwardRecordService
     {
         $diff = $time - $createTime;
         if ($diff < 60) {
-            return '刚刚';
+            return $diff . " 秒前";
         } elseif ($diff < 3540) {
             return (bcdiv($diff, 60) ?: 1) . " 分钟前";
         } elseif ($diff < 86400) {
             return (bcdiv($diff, 3600) ?: 1) . ' 小时前';
         } elseif ($diff > 86400) {
-            return date('m-d', $createTime);
+            return (bcdiv($diff, 86400) ?: 1) . ' 天前';
         }
     }
 

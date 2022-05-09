@@ -28,7 +28,7 @@ class LotteryClientService
         }
         $register = LotteryActivityService::getRegisterChannelId($activityInfo['app_id']);
         $awardInfo = LotteryAwardInfoService::getAwardInfo($params['op_activity_id'],['id','type','name','img_url','level']);
-        $hitAwardList = LotteryAwardRecordService::getHitAwardByTime($params['op_activity_id']);
+        $hitAwardList = LotteryAwardRecordService::getHitAwardByTime($params['op_activity_id'],$awardInfo);
         $timesInfo = LotteryActivityService::getRestLotteryTimes($params, $activityInfo);
         return [
             'op_activity_id'   => $activityInfo['op_activity_id'],
