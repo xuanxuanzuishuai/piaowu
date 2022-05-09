@@ -36,6 +36,7 @@ class StudentWXRouter extends RouterBase
         '/student_wx/student/register' => ['method'=>['post'],'call' => Student::class . ':register', 'middles' => []],
         '/student_wx/student/login'    => ['method'=>['get'],'call'=>Student::class . ':login', 'middles' => [WeChatOpenIdCheckMiddleware::class]],
         '/student_wx/student/send_sms_code' => ['method'=>['get'],'call'=>Student::class.':sendSmsCode', 'middles' => []],
+        '/student_wx/student/assistant_info' => ['method'=>['get'],'call'=>Student::class.':getStudentAssistantInfo'],  // 获取助教信息
 
         // 获取分享海报：
         '/student_wx/employee_activity/poster' => ['method' => ['get'], 'call' => Student::class . ':getPosterList'],

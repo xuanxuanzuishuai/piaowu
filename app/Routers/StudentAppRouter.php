@@ -172,6 +172,7 @@ class StudentAppRouter extends RouterBase
             'call' => \App\Controllers\StudentWeb\Area::class . ':getByParentCode',
             'middles' => [AppAuthMiddleWare::class]
         ],
+        '/student_app/student/assistant_info' => ['method'=>['get'],'call'=>Student::class.':getStudentAssistantInfo'],  // 获取助教信息
 
         /* 五日打卡返学费相关 */
         '/student_app/sign/upload'            => [
