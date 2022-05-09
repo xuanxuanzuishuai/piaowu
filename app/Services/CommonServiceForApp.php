@@ -26,10 +26,9 @@ class CommonServiceForApp
     const INT_VALIDATE_CODE_WAIT_TIME = 120;
     const DEFAULT_COUNTRY_CODE = '86';
 
-    const SIGN_TEACHER_APP = '小叶子';
     const SIGN_STUDENT_APP = '小叶子';
-    const SIGN_WX_TEACHER_APP = '小叶子';
     const SIGN_WX_STUDENT_APP = '小叶子';
+    const SIGN_STUDENT_QC_APP = '小叶子';//清晨业务线短信签名
     const SIGN_AI_PEILIAN = '小叶子智能陪练';
 
     /**

@@ -105,5 +105,10 @@ class APIRouter extends RouterBase
             'call' => Consumer::class . ':realAd',
             'middles' => [],
         ],
+        '/api/consumer/common_track' => [
+            'method' => ['post'],
+            'call' => Consumer::class . ':commonTrack',
+            'middles' => [],
+        ],
     ];
 }

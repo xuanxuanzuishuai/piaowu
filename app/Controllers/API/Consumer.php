@@ -25,7 +25,6 @@ use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\BillMapModel;
 use App\Models\Dss\DssPackageExtModel;
-use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpStudentModel;
@@ -51,6 +50,7 @@ use App\Services\Queue\RealReferralTopic;
 use App\Services\Queue\SaveTicketTopic;
 use App\Services\Queue\StudentAccountAwardPointsTopic;
 use App\Services\Queue\ThirdPartBillTopic;
+use App\Services\Queue\Track\CommonTrackConsumerService;
 use App\Services\Queue\UserPointsExchangeRedPackTopic;
 use App\Services\Queue\WechatTopic;
 use App\Services\Queue\WeekActivityTopic;
@@ -71,6 +71,37 @@ use App\Services\SharePosterService;
 
 class Consumer extends ControllerBase
 {
+    /**
+     * 由于此控制器的参数全部一致，故此处设置公用的参数检查方法，避免重复
+     * @param Request $request
+     * @param Response $response
+     * @return array|Response|null
+     */
+    private static function commonParamsCheck(Request $request, Response $response){
+        $rules = [
+            [
+                'key' => 'topic_name',
+                'type' => 'required',
+                'error_code' => 'topic_name_is_required',
+            ],
+            [
+                'key' => 'event_type',
+                'type' => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+            [
+                'key' => 'msg_body',
+                'type' => 'required',
+                'error_code' => 'msg_body_is_required',
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        return $params;
+    }
     /**
      * 更新不同系统的access_token
      * @param Request $request
@@ -1239,6 +1270,27 @@ class Consumer extends ControllerBase
             default:
                 SimpleLogger::error('unknown event type', ['params' => $params]);
                 break;
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 投放系统链路追踪，消费者控制器入口
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public static function commonTrack(Request $request, Response $response): Response
+    {
+        $checkFormatParams = self::commonParamsCheck($request, $response);
+        if (is_object($checkFormatParams)) {
+            return $checkFormatParams;
+        }
+        $consumerObj = new CommonTrackConsumerService();
+        if (method_exists($consumerObj, $checkFormatParams['event_type'])) {
+            call_user_func(array($consumerObj, $checkFormatParams['event_type']), $checkFormatParams);
+        } else {
+            SimpleLogger::error('unknown event type', ['params' => $checkFormatParams]);
         }
         return HttpHelper::buildResponse($response, []);
     }
