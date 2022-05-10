@@ -18,9 +18,12 @@ use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Services\Activity\Lottery\LotteryAdminService;
+use App\Services\UniqueIdGeneratorService\DeliverIdGeneratorService;
+use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
+use function Qiniu\base64_urlSafeEncode;
 
 class ActivityLottery extends ControllerBase
 {
@@ -168,7 +171,7 @@ class ActivityLottery extends ControllerBase
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
-        return HttpHelper::buildResponse($response, []);
+        return HttpHelper::buildResponse($response, $res);
     }
 
     /**
@@ -191,14 +194,22 @@ class ActivityLottery extends ControllerBase
                 'value'      => 1,
                 'error_code' => 'op_activity_id_is_integer'
             ],
+            [
+                'key'        => 'is_cover',
+                'type'       => 'in',
+                'value'      => [0, 1],
+                'error_code' => 'is_cover_value_error'
+            ],
         ];
         $params = $request->getParams();
         $result = Valid::appValidate($params, $rules);
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
+        $params['is_cover'] = isset($params['is_cover']) ? $params['is_cover'] : Constants::STATUS_FALSE;
         try {
-            $res = LotteryAdminService::appendImportUserData($params['op_activity_id'], $this->ci['employee']['uuid']);
+            $res = LotteryAdminService::appendImportUserData($params['op_activity_id'], $this->ci['employee']['uuid'],
+                $params['is_cover']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
@@ -559,11 +570,15 @@ class ActivityLottery extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            $res = LotteryAdminService::exportRecords($params);
+            $fileName = LotteryAdminService::exportRecords($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
-        return $response;
+        return $response
+            ->withHeader('Cache-Control', 'no-store, no-cache')
+            ->withHeader('Content-Type', 'application/download; text/csv; charset=GB18030')
+            ->withHeader('Content-Transfer-Encoding', 'binary')
+            ->withHeader('Content-Disposition', 'attachment; filename="' . $fileName . '.csv"');
     }
 
     /**

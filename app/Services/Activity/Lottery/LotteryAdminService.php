@@ -25,10 +25,10 @@ class LotteryAdminService
     /**
      * 增加/修改抽奖活动基础信息
      * @param $paramsData
-     * @return bool
+     * @return int
      * @throws RunTimeException
      */
-    public static function addOrUpdate($paramsData): bool
+    public static function addOrUpdate($paramsData): int
     {
         $formatParams = self::formatParams($paramsData);
         if (isset($paramsData['op_activity_id'])) {
@@ -39,7 +39,7 @@ class LotteryAdminService
         if (empty($res)) {
             throw new RunTimeException(["update_failure"]);
         }
-        return $res;
+        return $formatParams['base_data']['op_activity_id'];
     }
 
     /**
@@ -366,10 +366,11 @@ class LotteryAdminService
      * 追加导流账户
      * @param $opActivityId
      * @param $employeeUuid
+     * @param $isCover
      * @return bool
      * @throws RunTimeException
      */
-    public static function appendImportUserData($opActivityId, $employeeUuid): bool
+    public static function appendImportUserData($opActivityId, $employeeUuid, $isCover): bool
     {
         //导入名单数据处理
         $importData = self::checkImportExcelData();
@@ -379,7 +380,7 @@ class LotteryAdminService
             $iv['create_time'] = $nowTime;
             $iv['create_uuid'] = $employeeUuid;
         }
-        $importRes = LotteryImportUserService::appendImportUserData($opActivityId, $importData);
+        $importRes = LotteryImportUserService::appendImportUserData($opActivityId, $importData, $isCover);
         if (empty($importRes)) {
             throw new RuntimeException(["insert_failure"]);
         }
@@ -396,7 +397,7 @@ class LotteryAdminService
     public static function list($params, $page, $pageSize): array
     {
         $listData = LotteryActivityService::search($params, $page, $pageSize);
-        if ($listData['total'] == 0) {
+        if ($listData['list'] == 0) {
             return $listData;
         }
         $listData['list'] = self::formatListData($listData['list']);
@@ -589,7 +590,8 @@ class LotteryAdminService
         }
         $fileName = $recordData['activity_name'] . '(' . date("Y-m-d") . ')参与记录';
         ExcelImportFormat::createExcelTable($dataResult, $title, $fileName,
-            ExcelImportFormat::OUTPUT_TYPE_BROWSER_EXPORT, 'Csv');
+            ExcelImportFormat::OUTPUT_TYPE_BROWSER_EXPORT);
+        return $fileName;
     }
 
     /**

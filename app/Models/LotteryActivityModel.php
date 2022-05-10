@@ -105,7 +105,6 @@ class LotteryActivityModel extends Model
         LotteryAwardRuleModel::batchDelete($commonDeleteWhere);
         LotteryFilterUserModel::batchDelete($commonDeleteWhere);
         LotteryAwardInfoModel::batchDelete($commonDeleteWhere);
-        LotteryImportUserModel::batchDelete($commonDeleteWhere);
         //中奖规则
         $awardRuleRes = true;
         if (!empty($updateParamsData['win_prize_rule'])) {
@@ -117,7 +116,7 @@ class LotteryActivityModel extends Model
             return false;
         }
         //规则筛选可抽奖用户
-        $lotteryFilterUserRes = 0;
+        $lotteryFilterUserRes = true;
         if (!empty($updateParamsData['lottery_times_rule'])) {
             $lotteryFilterUserRes = LotteryFilterUserModel::batchInsert($updateParamsData['lottery_times_rule']);
         }

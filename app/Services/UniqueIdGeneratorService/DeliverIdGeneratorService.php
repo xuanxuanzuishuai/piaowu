@@ -13,7 +13,7 @@ class DeliverIdGeneratorService
     private $redisKey = 'unique_deliver_ids';
     private $lockKey = 'unique_deliver_lock';
 
-    public function __Construct()
+    public function __construct()
     {
         $this->redisDb = RedisDB::getConn();
 
@@ -34,7 +34,7 @@ class DeliverIdGeneratorService
             }
             $deliverId = $this->redisDb->rpop($this->redisKey);
         }
-        return Constants::UNIQUE_ID_PREFIX . sprintf("%010d",$deliverId);
+        return Constants::UNIQUE_ID_PREFIX . sprintf("%010d", $deliverId);
     }
 
     /**
@@ -65,7 +65,11 @@ class DeliverIdGeneratorService
                 return false;
             }
             //生成缓存
-            $this->redisDb->lpush($this->redisKey, range($configData['max_id'] + 1, $configData['step']));
+            $uniqueIdArr = [];
+            for ($i = 1; $i <= $configData['step']; $i++) {
+                $uniqueIdArr[] = $configData['max_id'] + $i;
+            }
+            $this->redisDb->lpush($this->redisKey, $uniqueIdArr);
             return true;
         } finally {
             $this->redisDb->del([$this->lockKey]);

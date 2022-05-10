@@ -258,7 +258,7 @@ class LotteryAwardRecordService
             $where['ar.create_time[>=]'] = (int)$searchParams['create_time_min'];
         }
         if (!empty($searchParams['create_time_max'])) {
-            $where['ar.create_time[>=]'] = (int)$searchParams['create_time_min'];
+            $where['ar.create_time[<=]'] = (int)$searchParams['create_time_max'];
         }
         if (!empty($searchParams['shipping_status'])) {
             $where['ar.shipping_status'] = (int)$searchParams['shipping_status'];
@@ -272,8 +272,8 @@ class LotteryAwardRecordService
             $where['ar.uuid'][] = $studentUuid['uuid'];
         }
         //奖品表
-        if (!empty($searchParams['award_level'])) {
-            $where['ai.level'] = (int)$searchParams['award_level'];
+        if (!empty($searchParams['level'])) {
+            $where['ai.level'] = (int)$searchParams['level'];
         }
         if (!empty($searchParams['award_type'])) {
             $where['ai.type'] = (int)$searchParams['award_type'];

@@ -95,7 +95,7 @@ class ExcelImportFormat
      * @param string $fileType
      * @return false|string|void
      */
-    public static function createExcelTable($dataResult, $title, $fileName, $outputType, string $fileType = 'Xlsx')
+    public static function createExcelTable($dataResult, $title, $fileName, $outputType, string $fileType = 'Csv')
     {
         try {
 
@@ -128,7 +128,7 @@ class ExcelImportFormat
                 self::outputSaveTmpFile($spreadsheet, $tmpSavePath, $fileType);
                 return $tmpSavePath;
             } else {
-                self::outputClientBrowser($spreadsheet, $fileName, $fileType);
+                self::outputClientBrowser($spreadsheet, $fileType);
             }
         } catch (Exception $e) {
             SimpleLogger::error("create excel table error", ['err_msg' => $e->getMessage()]);
@@ -151,39 +151,12 @@ class ExcelImportFormat
     /**
      * 输出到浏览器
      * @param $spreadsheet
-     * @param $fileName
      * @param $fileType
-     * @throws RunTimeException
      * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
      */
-    private static function outputClientBrowser($spreadsheet, $fileName, $fileType)
+    private static function outputClientBrowser($spreadsheet, $fileType)
     {
         $writer = IOFactory::createWriter($spreadsheet, $fileType); //按照指定格式生成Excel文件
-        self::excelBrowserExport($fileName, $fileType);
         $writer->save('php://output');
-    }
-
-    /**
-     * 输出到浏览器(需要设置header头)
-     * @param $fileName
-     * @param $fileType
-     * @throws RunTimeException
-     */
-    private static function excelBrowserExport($fileName, $fileType)
-    {
-        //文件名称校验
-        if (!$fileName) {
-            throw new RuntimeException(["file_name_empty"]);
-        }
-        //Excel文件类型校验
-        $type = ['Csv'];
-        if (!in_array($fileType, $type)) {
-            throw new RuntimeException(["file_type_error"]);
-        }
-        if ($fileType == 'Csv') {
-            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            header('Content-Disposition: attachment;filename="' . $fileName . '.csv"');
-        }
-        header('Cache-Control: max-age=0');
     }
 }
