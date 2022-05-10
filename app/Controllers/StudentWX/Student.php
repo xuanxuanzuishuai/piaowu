@@ -113,7 +113,7 @@ class Student extends ControllerBase
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
-        return HttpHelper::buildResponse($response, ['token' => $token,'is_new' => $info['is_new'] ?? 0]);
+        return HttpHelper::buildResponse($response, ['token' => $token,'is_new' => $info['is_new'] ?? 0, 'uuid' => $info['uuid']]);
     }
 
     /** token失效时获取token
@@ -146,9 +146,10 @@ class Student extends ControllerBase
         $params = $request->getParams();
         $channelId = $params['channel_id'] ?? 0;
         StudentService::studentLoginActivePushQueue($this->ci["app_id"], $boundInfo['user_id'], Constants::DSS_STUDENT_LOGIN_TYPE_WX, $channelId);
+        $student = DssStudentModel::getRecord(['id' => $boundInfo['user_id']]);
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'data' => ["token" => $token]
+            'data' => ["token" => $token, 'uuid' => $student['uuid']]
         ], StatusCode::HTTP_OK);
     }
 
