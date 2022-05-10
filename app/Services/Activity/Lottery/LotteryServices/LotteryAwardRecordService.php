@@ -217,7 +217,8 @@ class LotteryAwardRecordService
     {
         $update = [
             'erp_address_id' => $params['erp_address_id'],
-            'address_detail' => json_encode($params['address_detail'])
+            'address_detail' => json_encode($params['address_detail']),
+            'draw_time'      => time()
         ];
         return LotteryAwardRecordModel::updateRecord($params['record_id'], $update);
     }

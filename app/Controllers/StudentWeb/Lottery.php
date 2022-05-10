@@ -112,7 +112,7 @@ class Lottery extends ControllerBase
      * @param Response $response
      * @return Response
      */
-    public static function getAddress(Request $request, Response $response)
+    public function getAddress(Request $request, Response $response)
     {
         $rules = [
             [
@@ -128,7 +128,9 @@ class Lottery extends ControllerBase
         }
 
         $detailAddress = LotteryClientService::getAddress($params['record_id']);
-        $detailAddress['record_id'] = $params['record_id'];
+        if (!empty($detailAddress)){
+            $detailAddress['record_id'] = $params['record_id'];
+        }
         return HttpHelper::buildResponse($response, $detailAddress);
     }
 
@@ -138,7 +140,7 @@ class Lottery extends ControllerBase
      * @param Response $response
      * @return Response
      */
-    public static function modifyAddress(Request $request, Response $response)
+    public function modifyAddress(Request $request, Response $response)
     {
         $rules = [
             [
@@ -178,7 +180,7 @@ class Lottery extends ControllerBase
      * @param Response $response
      * @return Response
      */
-    public static function shippingInfo(Request $request, Response $response)
+    public function shippingInfo(Request $request, Response $response)
     {
         $rules = [
             [

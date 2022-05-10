@@ -87,9 +87,9 @@ class LotteryClientService
      */
     public static function getAddress($recordId)
     {
-        $awardRecordInfo =  LotteryAwardRecordModel::getRecord(['id' => $recordId]);
+        $awardRecordInfo = LotteryAwardRecordModel::getRecord(['id' => $recordId]);
 
-        if (empty($awardRecordInfo['address_detail'])){
+        if (empty($awardRecordInfo['address_detail'])) {
             return [];
         }
         return json_decode($awardRecordInfo['address_detail'],true);

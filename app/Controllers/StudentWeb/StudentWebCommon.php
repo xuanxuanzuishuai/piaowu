@@ -57,7 +57,7 @@ class StudentWebCommon extends ControllerBase
             [
                 'key' => 'channel_id',
                 'type' => 'required',
-                'error_code' => 'app_id_is_required',
+                'error_code' => 'channel_id_is_required',
             ],
         ];
         $params = $request->getParams();
