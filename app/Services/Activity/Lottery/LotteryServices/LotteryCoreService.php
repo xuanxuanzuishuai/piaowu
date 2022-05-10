@@ -66,13 +66,10 @@ class LotteryCoreService
     {
         //根据中奖规则确定课抽中奖品等级
         $readyAwardLevel = self::getReadyAwardLevel($params['op_activity_id'], $params['pay_amount']);
-        if (empty($readyAwardLevel)) {
-            return array_pop($params['award_info']);
-        }
 
         //遍历符合条件的奖品
         $readyAwardInfo = self::removeAwardImport($params['award_info'], $params['time'], $readyAwardLevel);
-        if (empty($readyAwardLevel)) {
+        if (empty($readyAwardInfo)) {
             return array_pop($params['award_info']);
         }
 

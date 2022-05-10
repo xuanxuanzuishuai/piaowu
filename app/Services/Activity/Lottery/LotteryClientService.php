@@ -4,6 +4,8 @@ namespace App\Services\Activity\Lottery;
 
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\Util;
+use App\Models\LotteryActivityModel;
 use App\Models\LotteryAwardRecordModel;
 use App\Services\Activity\Lottery\LotteryServices\LotteryActivityService;
 use App\Services\Activity\Lottery\LotteryServices\LotteryAwardInfoService;
@@ -107,6 +109,12 @@ class LotteryClientService
         $awardRecordInfo =  LotteryAwardRecordModel::getRecord(['id' => $params['record_id']]);
         if ($awardRecordInfo['shipping_status'] != Constants::SHIPPING_STATUS_BEFORE){
             throw new RunTimeException(['not_waiting_send_stop_update_shipping_address']);
+        }
+
+        $activityInfo = LotteryActivityModel::getRecord(['op_activity_id' => $awardRecordInfo['op_activity_id']], ['end_time']);
+        $modifyEndTime = $activityInfo['end_time'] + Util::TIMESTAMP_ONEWEEK;
+        if ($modifyEndTime < time()) {
+            throw new RunTimeException(['receive_award_time_error']);
         }
         return LotteryAwardRecordService::modifyAddress($params);
     }
