@@ -39,7 +39,7 @@ class AreaService
         if (!empty($params['province_name'])) {
             $where['province_name[~]'] = $params['province_name'];
         }
-        return AreaProvinceModel::getRecords($where, ['id', 'province_name']);
+        return AreaProvinceModel::getRecords($where, ['id', 'province_adcode', 'province_name']);
     }
 
     /**
@@ -59,7 +59,7 @@ class AreaService
         if (!empty($params['province_id'])) {
             $where['province_id'] = $params['province_id'];
         }
-        return AreaCityModel::getRecords($where, ['id', 'city_name']);
+        return AreaCityModel::getRecords($where, ['id', 'city_adcode', 'city_name']);
     }
 
     /**
@@ -82,7 +82,7 @@ class AreaService
         if (!empty($params['province_id'])) {
             $where['province_id'] = $params['province_id'];
         }
-        return AreaDistrictModel::getRecords($where, ['id', 'district_name']);
+        return AreaDistrictModel::getRecords($where, ['id', 'district_adcode', 'district_name']);
     }
 
     /**

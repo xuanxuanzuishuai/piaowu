@@ -31,10 +31,10 @@ class LotteryActivityService
             'op_activity_id' => $opActivityId
         ];
         $activityInfo = LotteryActivityModel::getRecord($where);
-        if (!empty($activityInfo['img_url'])) {
+        $activityInfo['name'] = Util::textDecode($activityInfo['name']);
+        $activityInfo['activity_desc'] = Util::textDecode($activityInfo['activity_desc']);
+        if (!empty($activityInfo['title_url'])) {
             $activityInfo['title_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['img_url']);
-            $activityInfo['name'] = Util::textDecode($activityInfo['name']);
-            $activityInfo['activity_desc'] = Util::textDecode($activityInfo['activity_desc']);
         }
         return $activityInfo ?: [];
     }

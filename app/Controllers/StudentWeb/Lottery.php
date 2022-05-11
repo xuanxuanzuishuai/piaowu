@@ -100,6 +100,8 @@ class Lottery extends ControllerBase
         list($page, $pageSize) = Util::formatPageCount($params);
         $hitRecord = LotteryAwardRecordService::getHitRecord($userInfo['uuid'],$page,$pageSize);
         $data = [
+            'name'=>$userInfo['name'],
+            'thumb'=>$userInfo['thumb'],
             'mobile'=>Util::hideUserMobile($userInfo['mobile']),
             'hit_list'=>$hitRecord,
         ];

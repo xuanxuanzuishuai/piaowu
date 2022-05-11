@@ -519,10 +519,12 @@ class StudentService
     {
         if ($appId == Constants::REAL_APP_ID) {
             //注册真人用户信息
-            $studentInfo = ErpStudentModel::getRecord(['id' => $userId], ['uuid','mobile']);
+            $studentInfo = ErpStudentModel::getRecord(['id' => $userId], ['uuid','name','mobile','thumb']);
+            $studentInfo['thumb'] = ErpUserService::getStudentThumbUrl([$studentInfo['thumb']])[0];
         } elseif ($appId == Constants::SMART_APP_ID) {
             //注册智能用户信息
-            $studentInfo = DssStudentModel::getRecord(['id' => $userId], ['uuid','mobile']);
+            $studentInfo = DssStudentModel::getRecord(['id' => $userId], ['uuid','name','mobile','thumb']);
+            $studentInfo['thumb'] = StudentService::getStudentThumb($studentInfo['thumb']);
         }
         return $studentInfo ?? [];
     }

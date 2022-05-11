@@ -199,11 +199,14 @@ class LotteryAwardRecordService
         if (empty($data)) {
             return $data;
         }
-
+        $awardLevelZH = array('一', '二', '三', '四', '五', '六', '七', '八', '九');
+        $shippingZH = array(0 => '已废除', 1 => '待发货', 2 => '已发货', 3 => '发货中', -1 => '发货失败', -2 => '取消发货');
         foreach ($data['list'] as $key => $value) {
             if (!empty($value['img_url'])) {
                 $data['list'][$key]['img_url'] = AliOSS::replaceCdnDomainForDss($value['img_url']);
             }
+            $data['list'][$key]['level_zh'] = $awardLevelZH[$value['level'] - 1] . '等奖';
+            $data['list'][$key]['shipping_status_zh'] = $shippingZH[$value['shipping_status']];
         }
         return $data;
     }
