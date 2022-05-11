@@ -58,7 +58,7 @@ class DeliverIdGeneratorService
                 return false;
             }
             $updateRes = UniqueIdGeneratorModel::updateGeneratorConfig($configData['id'],
-                $configData['max_id'] + $configData['step'], $configData['version']);
+                $configData['max_id'] + $configData['step'], $configData['version'] + 1);
             //更新数据
             if (empty($updateRes)) {
                 SimpleLogger::error("update generate data error", [$configData]);

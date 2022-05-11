@@ -62,7 +62,7 @@ foreach ($waitSendAwardRecordData as $wak => $wav) {
     $nsqData = [
         'record_id'  => $wav['id'],
         'type'       => $wav['award_type'],
-        'unique_id'   => $wav['unique_id'],
+        'unique_id'  => $wav['unique_id'],
         'plat_id'    => Constants::UNIQUE_ID_PREFIX,
         'app_id'     => $wav['app_id'],
         'sale_shop'  => LotteryActivityModel::BUSINESS_MAP_SHOP[$wav['app_id']],
@@ -70,8 +70,8 @@ foreach ($waitSendAwardRecordData as $wak => $wav) {
         'goods_code' => $goodsData[$wav['common_award_id']]['code'],
         'mobile'     => $studentData[$wav['uuid']]['mobile'],
         'uuid'       => $wav['uuid'],
-        'amount'        => $wav['common_award_amount'],
-        'address_id' => $wav['erp_address_id'],
+        'amount'     => $wav['common_award_amount'],
+        'erp_address_id' => $wav['erp_address_id'],
     ];
     $topicObj->lotteryGrantAward($nsqData)->publish($wak % 600);
 }

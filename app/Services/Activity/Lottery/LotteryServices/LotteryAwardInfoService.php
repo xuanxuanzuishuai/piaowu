@@ -11,10 +11,10 @@ class LotteryAwardInfoService
     /**
      * 获取奖品信息
      * @param $opActivityId
-     * @param $fields
+     * @param array $fields
      * @return array|mixed
      */
-    public static function getAwardInfo($opActivityId,$fields = [])
+    public static function getAwardInfo($opActivityId,array $fields = []):array
     {
         $where = [
             'op_activity_id' => $opActivityId,

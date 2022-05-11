@@ -335,7 +335,7 @@ class LotteryActivityService
         //查询条件
         $where = ["id[>=]" => 1];
         if (!empty($searchParams['name'])) {
-            $where['name'] = trim($searchParams['name']);
+            $where['name[~]'] = trim($searchParams['name']);
         }
         if (!empty($searchParams['user_source'])) {
             $where['user_source'] = $searchParams['user_source'];

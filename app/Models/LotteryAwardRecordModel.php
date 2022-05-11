@@ -20,20 +20,20 @@ class LotteryAwardRecordModel extends Model
      */
     public static function getHitAwardByTime($opActivityId)
     {
-        $db  = MysqlDB::getDB();
-        $hitList = $db->select(self::$table.'(ar)',[
-            "[><]".LotteryAwardInfoModel::$table.'(ai)'=>['ar.award_id'=>'id'],
-        ],[
+        $db = MysqlDB::getDB();
+        $hitList = $db->select(self::$table . '(ar)', [
+            "[><]" . LotteryAwardInfoModel::$table . '(ai)' => ['ar.award_id' => 'id'],
+        ], [
             'ar.uuid',
             'ai.name',
             'ar.create_time'
-        ],[
+        ], [
             'ar.op_activity_id' => $opActivityId,
             'ar.award_type[!]'  => Constants::AWARD_TYPE_EMPTY,
-            'ORDER'          => [
+            'ORDER'             => [
                 'ar.id' => 'DESC'
             ],
-            'LIMIT'=>3
+            'LIMIT'             => 3
         ]);
         return $hitList ?: [];
     }
@@ -64,7 +64,7 @@ class LotteryAwardRecordModel extends Model
             'ORDER'   => ['ar.id' => 'DESC'],
             'LIMIT'   => [($page - 1) * $pageSize, $pageSize],
         ];
-        $count = $db->count(self::$table . '(ar)', [],null, $where);
+        $count = $db->count(self::$table . '(ar)', [], null, $where);
         if (empty($count)) {
             return [
                 'total' => 0,
@@ -122,8 +122,8 @@ class LotteryAwardRecordModel extends Model
         return $db->select(self::$table,
             [
                 "[>]" . LotteryAwardInfoModel::$table => ["award_id" => "id"],
-                "[>]" . LotteryActivityModel::$table => ["op_activity_id" => "op_activity_id"],
-                ],
+                "[>]" . LotteryActivityModel::$table  => ["op_activity_id" => "op_activity_id"],
+            ],
             [
                 self::$table . ".unique_id",
                 self::$table . ".uuid",
@@ -134,6 +134,7 @@ class LotteryAwardRecordModel extends Model
                 LotteryActivityModel::$table . ".app_id",
             ],
             [
+                self::$table . ".draw_time[>]"    => 0,
                 self::$table . ".draw_time[<=]"   => $drawTime,
                 self::$table . ".shipping_status" => $shippingStatus,
                 self::$table . ".award_type"      => $awardType,

@@ -13,6 +13,7 @@ use App\Models\Erp\ErpStudentModel;
 use App\Models\LotteryActivityModel;
 use App\Models\OperationActivityModel;
 use App\Services\Activity\Lottery\LotteryServices\LotteryActivityService;
+use App\Services\Activity\Lottery\LotteryServices\LotteryAwardInfoService;
 use App\Services\Activity\Lottery\LotteryServices\LotteryAwardRecordService;
 use App\Services\Activity\Lottery\LotteryServices\LotteryImportUserService;
 use App\Services\EmployeeService;
@@ -108,44 +109,41 @@ class LotteryAdminService
                 ];
             }
             //中奖规则
-            if (empty($paramsData['win_prize_rule']) || !is_array($paramsData['win_prize_rule'])) {
-                throw new RuntimeException(["win_prize_rule_is_required"]);
-            }
-            if (count($paramsData['win_prize_rule']) > 5) {
-                throw new RuntimeException(["win_prize_rule_count_error"]);
-            }
-            //校验中奖的付款时间组是否有交集
-            array_multisort(array_column($paramsData['win_prize_rule'], 'high_pay_amount'), SORT_ASC,
-                $paramsData['win_prize_rule']);
-            $checkAmount = 0;
-            foreach ($paramsData['win_prize_rule'] as &$wpv) {
-                $wpv['high_pay_amount'] = floatval($wpv['high_pay_amount']);
-                $wpv['low_pay_amount'] = floatval($wpv['low_pay_amount']);
-                if ($wpv['low_pay_amount'] <= 0 || $wpv['high_pay_amount'] <= 0 || $wpv['low_pay_amount'] >= $wpv['high_pay_amount']) {
-                    throw new RuntimeException(["pay_amount_error"]);
+            if (!empty($paramsData['win_prize_rule'])) {
+                if (!is_array($paramsData['win_prize_rule'])) {
+                    throw new RuntimeException(["win_prize_rule_is_required"]);
                 }
-                //可抽中奖品等级
-                $tmpAwardLevels = explode(',', $wpv['award_level']);
-                if (empty($tmpAwardLevels) || !is_array($tmpAwardLevels)) {
-                    throw new RuntimeException(["win_prize_rule_account_error"]);
+                if (count($paramsData['win_prize_rule']) > 5) {
+                    throw new RuntimeException(["win_prize_rule_count_error"]);
                 }
-                if ($checkAmount > 0 && $wpv['low_pay_amount'] < $checkAmount) {
-                    throw new RuntimeException(["win_prize_rule_account_error"]);
+                //校验中奖的付款时间组是否有交集
+                array_multisort(array_column($paramsData['win_prize_rule'], 'high_pay_amount'), SORT_ASC,
+                    $paramsData['win_prize_rule']);
+                $checkAmount = 0;
+                foreach ($paramsData['win_prize_rule'] as &$wpv) {
+                    $wpv['high_pay_amount'] = floatval($wpv['high_pay_amount']);
+                    $wpv['low_pay_amount'] = floatval($wpv['low_pay_amount']);
+                    if ($wpv['low_pay_amount'] <= 0 || $wpv['high_pay_amount'] <= 0 || $wpv['low_pay_amount'] >= $wpv['high_pay_amount']) {
+                        throw new RuntimeException(["pay_amount_error"]);
+                    }
+                    //可抽中奖品等级
+                    $tmpAwardLevels = explode(',', $wpv['award_level']);
+                    if (empty($tmpAwardLevels) || !is_array($tmpAwardLevels)) {
+                        throw new RuntimeException(["win_prize_rule_account_error"]);
+                    }
+                    if ($checkAmount > 0 && $wpv['low_pay_amount'] < $checkAmount) {
+                        throw new RuntimeException(["win_prize_rule_account_error"]);
+                    }
+                    $checkAmount = $wpv['high_pay_amount'];
+                    array_push($formatParams['win_prize_rule'], [
+                        'low_pay_amount'  => substr(sprintf("%.3f", $wpv['low_pay_amount']), 0, -1) * 100,
+                        'high_pay_amount' => substr(sprintf("%.3f", $wpv['high_pay_amount']), 0, -1) * 100,
+                        'award_level'     => $wpv['award_level'],
+                        'status'          => Constants::STATUS_TRUE,
+                    ]);
                 }
-                $checkAmount = $wpv['high_pay_amount'];
-                array_push($formatParams['win_prize_rule'], [
-                    'low_pay_amount'  => substr(sprintf("%.3f", $wpv['low_pay_amount']), 0, -1) * 100,
-                    'high_pay_amount' => substr(sprintf("%.3f", $wpv['high_pay_amount']), 0, -1) * 100,
-                    'award_level'     => $wpv['award_level'],
-                    'status'          => Constants::STATUS_TRUE,
-                ]);
             }
         }
-//        elseif ($paramsData['user_source'] == LotteryActivityModel::USER_SOURCE_IMPORT) {
-//            //导入名单数据处理
-//            $formatParams['import_user'] = self::checkImportExcelData();
-//        }
-
         //中奖限制条件
         if ($paramsData['day_max_hit_type'] == LotteryActivityModel::MAX_HIT_TYPE_UNLIMITED) {
             $paramsData['day_max_hit'] = -1;
@@ -397,7 +395,7 @@ class LotteryAdminService
     public static function list($params, $page, $pageSize): array
     {
         $listData = LotteryActivityService::search($params, $page, $pageSize);
-        if ($listData['list'] == 0) {
+        if (empty($listData['list'])) {
             return $listData;
         }
         $listData['list'] = self::formatListData($listData['list']);
@@ -417,10 +415,21 @@ class LotteryAdminService
             DictConstants::ACTIVITY_TIME_STATUS['type'],
             DictConstants::ACTIVITY_ENABLE_STATUS['type'],
             DictConstants::LOTTERY_CONFIG['type'],
+            DictConstants::AWARD_LEVEL['type'],
         ]);
         //操作人信息
         $employeeData = array_column(EmployeeService::getEmployeeByUuids(array_column($list, 'create_uuid'),
             ['uuid', 'name']), null, 'uuid');
+        //奖品等级数据
+        $awardData = LotteryAwardInfoService::getAwardInfo(array_column($list, 'op_activity_id'),
+            ['op_activity_id', 'level']);
+        $awardFormatData = [];
+        foreach ($awardData as $avl) {
+            $awardFormatData[$avl['op_activity_id']][] = [
+                'code'  => $avl['level'],
+                'value' => $dictData[DictConstants::AWARD_LEVEL['type']][$avl['level']]['value']
+            ];
+        }
         foreach ($list as $lv) {
             if ($lv['status'] == OperationActivityModel::ENABLE_STATUS_ON) {
                 $timeStatus = OperationActivityModel::dataMapToTimeStatus($lv['start_time'], $lv['end_time']);
@@ -430,22 +439,26 @@ class LotteryAdminService
                 $showStatusZh = $dictData[DictConstants::ACTIVITY_ENABLE_STATUS['type']][$lv['status']]['value'];
                 $showStatus = $lv['status'];
             }
+            $tmpEndAward = end($awardFormatData[$lv['op_activity_id']]);
+            $tmpEndAward['value'] = '兜底奖';
+            array_splice($awardFormatData[$lv['op_activity_id']], -1, 1, [$tmpEndAward]);
             $formatList[] = [
-                'op_activity_id' => $lv['op_activity_id'],
-                'name'           => Util::textDecode($lv['name']),
-                'start_time'     => date("Y-m-d H:i:s", $lv['start_time']),
-                'end_time'       => date("Y-m-d H:i:s", $lv['end_time']),
-                'rest_award_num' => $lv['rest_award_num'],
-                'hit_times'      => $lv['hit_times'],
-                'join_num'       => $lv['join_num'],
-                'user_source_zh' => $dictData[DictConstants::USER_SOURCE['type']][$lv['user_source']]['value'],
-                'show_status_zh' => $showStatusZh,
-                'show_status'    => $showStatus,
-                'enable_status'  => $lv['status'],
-                'app_id'         => $lv['app_id'],
-                'channel_id'     => $dictData[DictConstants::LOTTERY_CONFIG['type']][$lv['app_id']]['value'],
-                'creator_name'   => $employeeData[$lv['create_uuid']]['name'] ?? '',
-                'create_time'    => date("Y-m-d H:i:s", $lv['create_time']),
+                'op_activity_id'   => $lv['op_activity_id'],
+                'name'             => Util::textDecode($lv['name']),
+                'start_time'       => date("Y-m-d H:i:s", $lv['start_time']),
+                'end_time'         => date("Y-m-d H:i:s", $lv['end_time']),
+                'rest_award_num'   => $lv['rest_award_num'],
+                'hit_times'        => $lv['hit_times'],
+                'join_num'         => $lv['join_num'],
+                'user_source_zh'   => $dictData[DictConstants::USER_SOURCE['type']][$lv['user_source']]['value'],
+                'show_status_zh'   => $showStatusZh,
+                'show_status'      => $showStatus,
+                'enable_status'    => $lv['status'],
+                'app_id'           => $lv['app_id'],
+                'channel_id'       => $dictData[DictConstants::LOTTERY_CONFIG['type']][$lv['app_id']]['value'],
+                'creator_name'     => $employeeData[$lv['create_uuid']]['name'] ?? '',
+                'create_time'      => date("Y-m-d H:i:s", $lv['create_time']),
+                'award_level_dict' => $awardFormatData[$lv['op_activity_id']],
             ];
         }
         return $formatList;
@@ -485,7 +498,7 @@ class LotteryAdminService
     }
 
     /**
-     * 格式化处理实物奖品数据
+     * 格式化处理奖品数据
      * @param $detailAwardData
      * @return array
      */
@@ -523,6 +536,7 @@ class LotteryAdminService
             if ($avk == $awardCount - 1) {
                 $avl['num'] = 0;
                 $avl['rest_num'] = 0;
+                $avl['award_level_zh'] = "兜底奖";
             }
         }
         return $detailAwardData;
