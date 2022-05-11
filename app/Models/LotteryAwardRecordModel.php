@@ -54,17 +54,19 @@ class LotteryAwardRecordModel extends Model
         $fields = [
             'ar.id(record_id)',
             'ai.name',
+            'ai.type',
             'ai.level',
             'ai.img_url',
             'ar.create_time',
             'ar.shipping_status',
+            'ar.express_number(logistics_no)',
         ];
         $where = [
             'ar.uuid' => $uuid,
             'ORDER'   => ['ar.id' => 'DESC'],
             'LIMIT'   => [($page - 1) * $pageSize, $pageSize],
         ];
-        $count = $db->count(self::$table . '(ar)', [], null, $where);
+        $count = $db->count(self::$table . '(ar)', $join,['ar.id'], $where);
         if (empty($count)) {
             return [
                 'total' => 0,
