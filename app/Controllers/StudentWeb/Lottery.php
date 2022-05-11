@@ -94,11 +94,22 @@ class Lottery extends ControllerBase
      */
     public function hitRecord(Request $request, Response $response)
     {
+        $rules = [
+            [
+                'key'        => 'op_activity_id',
+                'type'       => 'required',
+                'error_code' => 'op_activity_id_is_required',
+            ]
+        ];
         $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
         $tokenInfo = $this->ci['user_info'];
-        $userInfo = StudentService::getUuid($tokenInfo['app_id'],$tokenInfo['user_id']);
+        $userInfo = StudentService::getUuid($tokenInfo['app_id'], $tokenInfo['user_id']);
         list($page, $pageSize) = Util::formatPageCount($params);
-        $hitRecord = LotteryAwardRecordService::getHitRecord($userInfo['uuid'],$page,$pageSize);
+        $hitRecord = LotteryAwardRecordService::getHitRecord($params['op_activity_id'], ['uuid'], $page, $pageSize);
         $data = [
             'name'=>$userInfo['name'],
             'thumb'=>$userInfo['thumb'],

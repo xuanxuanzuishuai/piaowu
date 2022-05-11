@@ -22,7 +22,7 @@ class ExpressDetailService
         $ret['logistics_no'] = $expressInfo['logistics_no'] ?? '';
         $ret['shipping_status'] = $expressInfo['status'] ?? 1;
         $ret['company'] = $expressInfo['company'] ?? '';
-        $ret['address_detail'] = $awardData['address_detail'] ?? '{}';
+        $ret['address_detail'] = json_decode($awardData['address_detail'], true) ?? [];
         $deliver[] = [
             'node'          => '已发货',
             'acceptTime'    => Util::formatTimeToChinese($awardData['create_time']),

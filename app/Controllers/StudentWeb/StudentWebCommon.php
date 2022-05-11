@@ -67,7 +67,7 @@ class StudentWebCommon extends ControllerBase
         }
 
         // 验证手机验证码
-        if (!empty($params['sms_code']) && !CommonServiceForApp::checkValidateCode($params['mobile'], $params['code'], $params['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE)) {
+        if (!empty($params['code']) && !CommonServiceForApp::checkValidateCode($params['mobile'], $params['code'], $params['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE)) {
             return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
         }
         try {

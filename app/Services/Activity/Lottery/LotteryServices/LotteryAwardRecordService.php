@@ -188,14 +188,15 @@ class LotteryAwardRecordService
 
     /**
      * 获取指定用户的中奖记录
+     * @param $opActivityId
      * @param $uuid
      * @param $page
      * @param $pageSize
      * @return array
      */
-    public static function getHitRecord($uuid, $page, $pageSize)
+    public static function getHitRecord($opActivityId, $uuid, $page, $pageSize)
     {
-        $data = LotteryAwardRecordModel::getHitRecord($uuid, $page, $pageSize);
+        $data = LotteryAwardRecordModel::getHitRecord($opActivityId, $uuid, $page, $pageSize);
         if (empty($data)) {
             return $data;
         }

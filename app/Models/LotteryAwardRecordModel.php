@@ -40,12 +40,13 @@ class LotteryAwardRecordModel extends Model
 
     /**
      * 获取指定用户的中奖记录
+     * @param $opActivityId
      * @param $uuid
      * @param $page
      * @param $pageSize
      * @return array
      */
-    public static function getHitRecord($uuid, $page, $pageSize)
+    public static function getHitRecord($opActivityId, $uuid, $page, $pageSize)
     {
         $db = MysqlDB::getDB();
         $join = [
@@ -63,6 +64,7 @@ class LotteryAwardRecordModel extends Model
         ];
         $where = [
             'ar.uuid' => $uuid,
+            'ar.op_activity_id' => $opActivityId,
             'ORDER'   => ['ar.id' => 'DESC'],
             'LIMIT'   => [($page - 1) * $pageSize, $pageSize],
         ];
