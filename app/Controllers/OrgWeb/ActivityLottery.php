@@ -93,7 +93,7 @@ class ActivityLottery extends ControllerBase
             [
                 'key'        => 'activity_desc',
                 'type'       => 'lengthMax',
-                'value'      => 1000,
+                'value'      => 5000,
                 'error_code' => 'activity_desc_length_error'
             ],
             [

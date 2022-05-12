@@ -74,7 +74,13 @@ class LotteryActivityService
             $importTimes = LotteryImportUserService::importUserTimes($params['op_activity_id'], $params['uuid']);
             //用户消耗的抽奖次数
             $useTime = LotteryAwardRecordService::useLotteryTimes($params['op_activity_id'], $params['uuid']);
-            $restTimes = $filterTimes + $importTimes - $useTime;
+
+            $totalTimes = $filterTimes + $importTimes;
+            if ($totalTimes == 0) {
+                $restTimes = -1;
+            } else {
+                $restTimes = $totalTimes - $useTime;
+            }
         } else {
             $restTimes = 0;
         }
