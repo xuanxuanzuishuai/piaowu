@@ -65,7 +65,7 @@ for ($i = 1; $i <= $batchTimes; $i++) {
     $tmpAwardData = array_slice($totalAwardRecordList, ($i - 1) * $batchLimit, $batchLimit);
     foreach ($tmpAwardData as $avl) {
         try {
-            switch ($avl['event']) {
+            switch ($avl['event_type']) {
                 case GrantAwardTopic::LOTTERY_AWARD_LOGISTICS_SYNC:
                     $topicObj->lotterySyncAwardLogistics(['unique_id' => $avl['unique_id']])->publish($delayTime);
                     break;

@@ -33,7 +33,7 @@ class LotteryAwardRecordModel extends Model
             'ORDER'             => [
                 'ar.id' => 'DESC'
             ],
-            'LIMIT'             => 3
+            'LIMIT'             => 8
         ]);
         return $hitList ?: [];
     }

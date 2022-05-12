@@ -576,7 +576,7 @@ class ActivityLottery extends ControllerBase
         }
         return $response
             ->withHeader('Cache-Control', 'no-store, no-cache')
-            ->withHeader('Content-Type', 'application/download; text/csv; charset=GB18030')
+            ->withHeader('Content-Type', 'application/download; text/csv; charset=UTF8')
             ->withHeader('Content-Transfer-Encoding', 'binary')
             ->withHeader('Content-Disposition', 'attachment; filename="' . $fileName . '.csv"');
     }

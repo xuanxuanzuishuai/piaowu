@@ -94,7 +94,9 @@ class LotteryClientService
         if (empty($awardRecordInfo['address_detail'])) {
             return [];
         }
-        return json_decode($awardRecordInfo['address_detail'],true);
+
+        $awardRecordInfo['address_detail'] = json_decode($awardRecordInfo['address_detail'], true);
+        return $awardRecordInfo;
     }
 
     /**

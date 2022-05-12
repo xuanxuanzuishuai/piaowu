@@ -109,7 +109,7 @@ class Lottery extends ControllerBase
         $tokenInfo = $this->ci['user_info'];
         $userInfo = StudentService::getUuid($tokenInfo['app_id'], $tokenInfo['user_id']);
         list($page, $pageSize) = Util::formatPageCount($params);
-        $hitRecord = LotteryAwardRecordService::getHitRecord($params['op_activity_id'], ['uuid'], $page, $pageSize);
+        $hitRecord = LotteryAwardRecordService::getHitRecord($params['op_activity_id'], $userInfo['uuid'], $page, $pageSize);
         $data = [
             'name'=>$userInfo['name'],
             'thumb'=>$userInfo['thumb'],
@@ -141,10 +141,15 @@ class Lottery extends ControllerBase
         }
 
         $detailAddress = LotteryClientService::getAddress($params['record_id']);
-        if (!empty($detailAddress)){
-            $detailAddress['record_id'] = $params['record_id'];
+        if (empty($detailAddress)){
+            return HttpHelper::buildResponse($response, []);
         }
-        return HttpHelper::buildResponse($response, $detailAddress);
+        $data = [
+            'record_id'      => $params['record_id'],
+            'erp_address_id' => $detailAddress['erp_address_id'],
+            'address_detail' => $detailAddress['address_detail'],
+        ];
+        return HttpHelper::buildResponse($response, $data);
     }
 
     /**
