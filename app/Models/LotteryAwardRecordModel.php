@@ -65,6 +65,7 @@ class LotteryAwardRecordModel extends Model
         $where = [
             'ar.uuid' => $uuid,
             'ar.op_activity_id' => $opActivityId,
+            'ar.award_type[!]' => Constants::AWARD_TYPE_EMPTY,
         ];
         $count = $db->count(self::$table . '(ar)', $join,['ar.id'], $where);
         if (empty($count)) {

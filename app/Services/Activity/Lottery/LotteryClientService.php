@@ -42,6 +42,7 @@ class LotteryClientService
             'app_id'           => $activityInfo['app_id'],
             'activity_desc'    => $activityInfo['activity_desc'],
             'rest_times'       => $timesInfo['rest_times'],
+            'qualification'    => $timesInfo['qualification'],
             'register_channel' => $register,
             'award_info'       => $awardInfo,
             'hit_award_list'   => $hitAwardList,

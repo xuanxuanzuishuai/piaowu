@@ -95,7 +95,7 @@ class ExcelImportFormat
      * @param string $fileType
      * @return false|string|void
      */
-    public static function createExcelTable($dataResult, $title, $fileName, $outputType, string $fileType = 'Csv')
+    public static function createExcelTable($dataResult, $title, $fileName, $outputType, string $fileType = 'Xlsx')
     {
         try {
 

@@ -158,6 +158,13 @@ class ActivityLottery extends ControllerBase
                 'type'       => 'required',
                 'error_code' => 'award_params_is_required'
             ],
+            [
+                'key'        => 'enable_status',
+                'type'       => 'in',
+                'value'      => [2],
+                'error_code' => 'enable_status_is_invalid'
+            ],
+
 
         ];
         $params = $request->getParams();
@@ -574,11 +581,16 @@ class ActivityLottery extends ControllerBase
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
+        //        header(‘Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet‘);//告诉浏览器输出07Excel文件
+        ////header(‘Content-Type:application/vnd.ms-excel‘);//告诉浏览器将要输出Excel03版本文件
+        //        header(‘Content-Disposition: attachment;filename="01simple.xlsx"‘);//告诉浏览器输出浏览器名称
+        //        header(‘Cache-Control: max-age=0‘);//禁止缓存
+        //        $writer = new Xlsx($spreadsheet);
+        //        $writer->save(‘php://output‘);
         return $response
-            ->withHeader('Cache-Control', 'no-store, no-cache')
-            ->withHeader('Content-Type', 'application/download; text/csv; charset=UTF8')
-            ->withHeader('Content-Transfer-Encoding', 'binary')
-            ->withHeader('Content-Disposition', 'attachment; filename="' . $fileName . '.csv"');
+            ->withHeader('Cache-Control', 'max-age=0')
+            ->withHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=UTF8')
+            ->withHeader('Content-Disposition', 'attachment; filename="' . $fileName . '.xlsx"');
     }
 
     /**

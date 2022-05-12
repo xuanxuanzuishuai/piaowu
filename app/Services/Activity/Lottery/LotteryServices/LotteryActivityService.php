@@ -57,6 +57,7 @@ class LotteryActivityService
      */
     public static function getRestLotteryTimes($params, $activityInfo)
     {
+        $qualification = true;
         if (!empty($params['uuid'])) {
             //查询规则获得抽奖次数
             $filterTimes = 0;
@@ -77,10 +78,9 @@ class LotteryActivityService
 
             $totalTimes = $filterTimes + $importTimes;
             if ($totalTimes == 0) {
-                $restTimes = -1;
-            } else {
-                $restTimes = $totalTimes - $useTime;
+                $qualification = false;
             }
+            $restTimes = $totalTimes - $useTime;
         } else {
             $restTimes = 0;
         }
@@ -89,6 +89,7 @@ class LotteryActivityService
             'import_times' => $importTimes ?? 0,
             'use_times'    => $useTime ?? 0,
             'rest_times'   => $restTimes ?? 0,
+            'qualification'   => $qualification,
         ];
     }
 

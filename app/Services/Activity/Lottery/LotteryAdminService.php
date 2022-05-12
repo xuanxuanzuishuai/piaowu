@@ -66,6 +66,7 @@ class LotteryAdminService
         $formatParams['base_data']['start_pay_time'] = 0;
         $formatParams['base_data']['end_pay_time'] = 0;
         $formatParams['base_data']['rest_award_num'] = 0;
+        $formatParams['base_data']['status'] = $paramsData['enable_status'] ?? OperationActivityModel::ENABLE_STATUS_OFF;
         //参与用户规则
         $formatParams['import_user'] = $formatParams['lottery_times_rule'] = $formatParams['win_prize_rule'] = [];
         if ($paramsData['user_source'] == LotteryActivityModel::USER_SOURCE_FILTER) {
