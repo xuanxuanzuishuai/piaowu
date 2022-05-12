@@ -34,7 +34,7 @@ class LotteryActivityService
         $activityInfo['name'] = Util::textDecode($activityInfo['name']);
         $activityInfo['activity_desc'] = Util::textDecode($activityInfo['activity_desc']);
         if (!empty($activityInfo['title_url'])) {
-            $activityInfo['title_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['img_url']);
+            $activityInfo['title_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['title_url']);
         }
         return $activityInfo ?: [];
     }

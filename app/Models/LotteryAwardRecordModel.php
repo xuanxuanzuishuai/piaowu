@@ -33,7 +33,7 @@ class LotteryAwardRecordModel extends Model
             'ORDER'             => [
                 'ar.id' => 'DESC'
             ],
-            'LIMIT'             => 8
+            'LIMIT'             => 15
         ]);
         return $hitList ?: [];
     }
@@ -65,8 +65,6 @@ class LotteryAwardRecordModel extends Model
         $where = [
             'ar.uuid' => $uuid,
             'ar.op_activity_id' => $opActivityId,
-            'ORDER'   => ['ar.id' => 'DESC'],
-            'LIMIT'   => [($page - 1) * $pageSize, $pageSize],
         ];
         $count = $db->count(self::$table . '(ar)', $join,['ar.id'], $where);
         if (empty($count)) {
@@ -77,6 +75,8 @@ class LotteryAwardRecordModel extends Model
         }
 
         $res['total'] = $count;
+        $where['ORDER'] = ['ar.id' => 'DESC'];
+        $where['LIMIT'] = [($page - 1) * $pageSize, $pageSize];
         $res['list'] = $db->select(self::$table . '(ar)', $join, $fields, $where);
         return $res;
     }
