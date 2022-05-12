@@ -23,6 +23,7 @@ use App\Models\DictModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Services\MiniAppQrService;
+use App\Services\Queue\Track\DeviceCommonTrackTopic;
 use App\Services\ReferralActivityService;
 use App\Services\ReferralService;
 use App\Services\ShowMiniAppService;
@@ -113,6 +114,19 @@ class Student extends ControllerBase
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
+        // 上报设备信息
+        try {
+            (new DeviceCommonTrackTopic)->pushLogin([
+                'from'         => DeviceCommonTrackTopic::FROM_TYPE_WX,
+                'channel_id'   => $channelId,
+                'open_id'      => $data['openid'] ?? '',
+                'uuid'         => $student['uuid'] ?? '',
+                'new_user'     => $info['is_new'] ?? 0,    // 0老用户，1新用户
+                'anonymous_id' => $params['anonymous_id'] ?? '',   // 埋点匿名id, 投放页有
+            ])->publish();
+        } catch (\Exception $e) {
+            SimpleLogger::info('push_login_err', ['msg' => 'wx_student_register', 'err' => $e->getMessage()]);
+        }
         return HttpHelper::buildResponse($response, ['token' => $token,'is_new' => $info['is_new'] ?? 0, 'uuid' => $info['uuid']]);
     }
 
@@ -147,6 +161,19 @@ class Student extends ControllerBase
         $channelId = $params['channel_id'] ?? 0;
         StudentService::studentLoginActivePushQueue($this->ci["app_id"], $boundInfo['user_id'], Constants::DSS_STUDENT_LOGIN_TYPE_WX, $channelId);
         $student = DssStudentModel::getRecord(['id' => $boundInfo['user_id']]);
+        // 上报设备信息
+        try {
+            (new DeviceCommonTrackTopic)->pushLogin([
+                'from'         => DeviceCommonTrackTopic::FROM_TYPE_WX,
+                'channel_id'   => $channelId,
+                'open_id'      => $openId,
+                'uuid'         => $student['uuid'] ?? '',
+                'new_user'     => 0,    // 0老用户，1新用户
+                'anonymous_id' => $params['anonymous_id'] ?? '',   // 埋点匿名id, 投放页有
+            ])->publish();
+        } catch (\Exception $e) {
+            SimpleLogger::info('push_login_err', ['msg' => 'wx_student_login', 'err' => $e->getMessage()]);
+        }
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => ["token" => $token, 'uuid' => $student['uuid']]

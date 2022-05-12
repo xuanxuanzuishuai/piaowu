@@ -1584,4 +1584,40 @@ class Util
         ];
         HttpHelper::requestJson($webHook, $msg, 'POST');
     }
+
+    /**
+     * 获取当前请求的真实 IP
+     * @return string
+     */
+    public static function getClientIp() :string
+    {
+        $ip = false;
+        //代理服务器 IP
+        if (getenv('HTTP_CLIENT_IP')) {
+            $ip = getenv('HTTP_CLIENT_IP');
+        }
+        //NGINX 扒完后的IP
+        if (getenv('HTTP_X_REAL_IP')) {
+            $ip = getenv('HTTP_X_REAL_IP');
+        }
+        if (preg_match("/^(10|172\.21|172\.17|192\.168)\./", $ip) && getenv('HTTP_X_FORWARDED_FOR')) {
+            $ipTmp = getenv('HTTP_X_FORWARDED_FOR');
+            $ips = explode(',', $ipTmp);
+            if ($ip) {
+                array_unshift($ips, $ip);
+                $ip = false;
+            }
+            for ($i = 0; $i < count($ips); $i++) {
+                if (!preg_match("/^(10|172\.21|172\.17|192\.168)\./", $ips[$i]) && $ips[$i] != '34.107.216.199') {
+                    $ip = $ips[$i];
+                    break;
+                }
+            }
+        }
+        if (!$ip && getenv('REMOTE_ADDR')) {
+            $ip = getenv('REMOTE_ADDR');
+        }
+
+        return $ip ?: '0.0.0.0';
+    }
 }

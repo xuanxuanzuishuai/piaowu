@@ -15,6 +15,7 @@ use App\Models\UserWeiXinModel;
 use App\Services\CommonServiceForApp;
 use App\Services\QrInfoService;
 use App\Services\Queue\QueueService;
+use App\Services\Queue\Track\DeviceCommonTrackTopic;
 use App\Services\ReferralService;
 use App\Services\ShowMiniAppService;
 use App\Services\UserService;
@@ -102,7 +103,7 @@ class Landing extends ControllerBase
             if (!empty($params['wx_code'])) {
                 $sceneData['wx_code'] = $params['wx_code'];
             }
-            list($openid, $lastId, $mobile, $uuid, $hadPurchased) = ReferralService::remoteRegister(
+            list($openid, $lastId, $mobile, $uuid, $hadPurchased, $isNew) = ReferralService::remoteRegister(
                 $openid,
                 $params['iv'] ?? '',
                 $params['encrypted_data'] ?? '',
@@ -125,6 +126,19 @@ class Landing extends ControllerBase
             ];
             $shareScene = QrInfoService::getQrIdList(Constants::SMART_APP_ID, Constants::REAL_MINI_BUSI_TYPE, $createShareSceneData)[0]['qr_id'] ?? '';
             SimpleLogger::info("referral_mini_register", [$shareScene, $lastId, $createShareSceneData]);
+            // 上报设备信息
+            try {
+                (new DeviceCommonTrackTopic)->pushLogin([
+                    'from'         => DeviceCommonTrackTopic::FROM_TYPE_MINI_APP,
+                    'channel_id'   => $sceneData['c'] ?? '',
+                    'open_id'      => $openid,
+                    'uuid'         => $uuid,
+                    'new_user'     => $isNew,    // 0老用户，1新用户
+                    'anonymous_id' => $params['anonymous_id'] ?? '',   // 埋点匿名id, 投放页有
+                ])->publish();
+            } catch (\Exception $e) {
+                SimpleLogger::info('push_login_err', ['msg' => 'landing_mini_app_register', 'err' => $e->getMessage()]);
+            }
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
