@@ -38,6 +38,7 @@ class ShangYinSheService
             return $urlScheme;
         } else {
             Util::errorCapture('shang yin she url scheme error', $urlSchemeInfo);
+            return $_ENV['AI_REFERRER_URL'];
         }
     }
 }
