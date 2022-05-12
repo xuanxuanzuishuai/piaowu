@@ -9,18 +9,50 @@
 namespace App\Controllers\AIPlayMiniapp;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\HttpHelper;
 use App\Libs\OpernCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Libs\WeChat\WeChatMiniPro;
+use App\Models\Dss\DssUserWeiXinModel;
 use App\Services\OpernService;
+use App\Services\ShangYinSheService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
 
 class Opn extends ControllerBase
 {
+
+    /**
+     * 获取上音社曲谱列表小程序的url_scheme
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function urlScheme(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'collection_id',
+                'type' => 'required',
+                'error_code' => 'collection_id_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $urlScheme = ShangYinSheService::getMiniUrlScheme($params['collection_id']);
+
+        return HttpHelper::buildResponse($response, [
+            'url_scheme' => $urlScheme
+        ]);
+    }
+
     /**
      * 曲谱列表
      * @param Request $request

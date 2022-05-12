@@ -30,5 +30,10 @@ class AIPlayMiniAppRouter extends RouterBase
             'method'  => ['get'],
             'call'    => Opn::class.':lesson',
         ],
+        '/ai_play_miniapp/opn/url_scheme' => [
+            'method'  => ['get'],
+            'call'    => Opn::class.':urlScheme',
+            'middles' => []
+        ],
     ];
 }
