@@ -194,9 +194,10 @@ class NewSMS
      * @param $msg
      * @param $mobile
      * @param string $sign
+     * @param int $smsType
      * @return bool
      */
-    public function sendCommonSms($msg, $mobile, $sign = '')
+    public function sendCommonSms($msg, $mobile, $sign = '', $smsType = self::SMS_TYPE_NOTICE)
     {
 
         if (empty($sign)) {
@@ -207,7 +208,7 @@ class NewSMS
             'sign_name' => $sign,
             'phone_number' => $mobile,
             'content' => $msg,
-            'sms_type' => self::SMS_TYPE_NOTICE,
+            'sms_type' => $smsType,
         ];
         return self::sendSMS($data);
     }

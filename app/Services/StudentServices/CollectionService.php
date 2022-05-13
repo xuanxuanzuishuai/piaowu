@@ -40,7 +40,7 @@ class CollectionService
         $smsObj = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
         $shortUrl = ((new Dss())->getShortUrl('http://www.xiaoyezi.com/html/study_piano_download.html'))['data']['short_url'];
         $res = $smsObj->sendCommonSms(Util::pregReplaceTargetStr($content, ['content1' => $shortUrl]), $mobile,
-            CommonServiceForApp::SIGN_STUDENT_QC_APP);
+            CommonServiceForApp::SIGN_STUDENT_QC_APP, NewSMS::SMS_TYPE_MARKETING);
         if (empty($res)) {
             Util::errorCapture("qing chen divide into classes message send fail",
                 ['mobile' => $mobile, 'content' => $content]);
