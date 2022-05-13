@@ -52,7 +52,7 @@ class DeviceCommonTrackTopic extends BaseTopic
     public function pushLogin(array $params)
     {
         $msgBody = array(
-            'from'             => $params['from_type'] ?? (string)self::FROM_TYPE_OTHER,
+            'from'             => $params['from'] ?? (string)self::FROM_TYPE_OTHER,
             'device_type'      => $params['device_type'] ?? (string)self::DEVICE_TYPE_UNKNOWN,
             'channel_id'       => (int)$params['channel_id'] ?? 0,
             'event_time'       => $params['event_time'] ?? time(),
@@ -88,7 +88,7 @@ class DeviceCommonTrackTopic extends BaseTopic
     public function pushCreateOrder(array $params)
     {
         $msgBody = array(
-            'from'         => $params['from_type'] ?? (string)self::FROM_TYPE_OTHER,
+            'from'         => $params['from'] ?? (string)self::FROM_TYPE_OTHER,
             'device_type'  => $params['device_type'] ?? (string)self::DEVICE_TYPE_UNKNOWN,
             'channel_id'   => (int)$params['channel_id'] ?? 0,
             'event_time'   => $params['event_time'] ?? time(),
