@@ -23,11 +23,11 @@ class LotteryAwardRecordService
      * @param $opActivityId
      * @return array
      */
-    public static function getHitAwardByTime($opActivityId,$awardInfo)
+    public static function getHitAwardByTime($opActivityId, $awardInfo)
     {
         $endTime = time();
         $hitAwardInfo = LotteryAwardRecordModel::getHitAwardByTime($opActivityId);
-        if (empty($hitAwardInfo) || count($hitAwardInfo) < 3){
+        if (empty($hitAwardInfo) || count($hitAwardInfo) < 3) {
             return self::constructedData($awardInfo);
         }
 
@@ -64,7 +64,7 @@ class LotteryAwardRecordService
         $award = array_slice($awardInfo, -4, 3);
         foreach ($mobile as $value) {
             $single = [
-                'mobile'     => $value[0].mt_rand(1000,9999) ?? '187****6573',
+                'mobile'     => $value[0] . mt_rand(1000, 9999) ?? '187****6573',
                 'award_name' => $award[$value[2]]['name'] ?? '',
                 'hit_time'   => $value[1] ?? '10秒前',
             ];
@@ -79,7 +79,7 @@ class LotteryAwardRecordService
      * @param $createTime
      * @return false|string
      */
-    public static function formatTime($time,$createTime)
+    public static function formatTime($time, $createTime)
     {
         $diff = $time - $createTime;
         if ($diff < 60) {
@@ -280,7 +280,7 @@ class LotteryAwardRecordService
         if (!empty($searchParams['level'])) {
             $where['ai.level'] = (int)$searchParams['level'];
         }
-        if (!empty($searchParams['award_type'])) {
+        if ($searchParams['award_type'] != null && $searchParams['award_type'] >= 0) {
             $where['ai.type'] = (int)$searchParams['award_type'];
         }
         $recordData = LotteryAwardRecordModel::search($where, [
@@ -308,6 +308,7 @@ class LotteryAwardRecordService
      * @param $opActivityId
      * @param $employeeUuid
      * @return bool
+     * @throws RunTimeException
      */
     public static function cancelDeliver($ids, $opActivityId, $employeeUuid): bool
     {
@@ -319,8 +320,11 @@ class LotteryAwardRecordService
         //目前实物支持取消发货/禁止重复取消
         $updateData = [];
         foreach ($recordList as $rv) {
-            if ($rv['shipping_status'] == Constants::SHIPPING_STATUS_CANCEL || $rv['award_type'] != Constants::AWARD_TYPE_TYPE_ENTITY) {
-                continue;
+            if ($rv['award_type'] != Constants::AWARD_TYPE_TYPE_ENTITY) {
+                throw new RuntimeException(["only_entity_support_cancel"]);
+            }
+            if ($rv['shipping_status'] != Constants::SHIPPING_STATUS_BEFORE) {
+                throw new RuntimeException(["only_wait_send_entity_support_cancel"]);
             }
             $updateData = [
                 'shipping_status'      => Constants::SHIPPING_STATUS_CANCEL,
@@ -406,12 +410,15 @@ class LotteryAwardRecordService
      */
     public static function updateAwardShippingAddress($id, $addressDetail): bool
     {
-        $recordData = LotteryAwardRecordModel::getRecord(['id' => $id], ['award_type', 'shipping_status']);
+        $recordData = LotteryAwardRecordModel::getRecord(['id' => $id], ['end_time', 'award_type', 'shipping_status']);
         if ($recordData['award_type'] != Constants::AWARD_TYPE_TYPE_ENTITY) {
             throw new RuntimeException(["not_entity_award_stop_update_shipping_address"]);
         }
         if ($recordData['shipping_status'] != Constants::SHIPPING_STATUS_BEFORE) {
             throw new RuntimeException(["not_waiting_send_stop_update_shipping_address"]);
+        }
+        if (time() > ($recordData['end_time'] + 7 * Util::TIMESTAMP_ONEDAY)) {
+            throw new RuntimeException(["not_entity_award_stop_update_shipping_address"]);
         }
         //请求erp新增地址
         $erp = new Erp();

@@ -319,6 +319,12 @@ class ActivityLottery extends ControllerBase
                 'value'      => 1,
                 'error_code' => 'op_activity_id_is_integer'
             ],
+            [
+                'key'        => 'award_type',
+                'type'       => 'in',
+                'value'      => [0, 1, 2, 3, 4, 5, 6],
+                'error_code' => 'award_type_value_error'
+            ],
         ];
         $params = $request->getParams();
         $result = Valid::appValidate($params, $rules);
@@ -581,16 +587,11 @@ class ActivityLottery extends ControllerBase
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
-        //        header(‘Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet‘);//告诉浏览器输出07Excel文件
-        ////header(‘Content-Type:application/vnd.ms-excel‘);//告诉浏览器将要输出Excel03版本文件
-        //        header(‘Content-Disposition: attachment;filename="01simple.xlsx"‘);//告诉浏览器输出浏览器名称
-        //        header(‘Cache-Control: max-age=0‘);//禁止缓存
-        //        $writer = new Xlsx($spreadsheet);
-        //        $writer->save(‘php://output‘);
         return $response
             ->withHeader('Cache-Control', 'max-age=0')
-            ->withHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; charset=UTF8')
-            ->withHeader('Content-Disposition', 'attachment; filename="' . $fileName . '.xlsx"');
+            ->withHeader('Content-Type',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            ->withHeader('Content-Disposition', 'attachment; filename="' . urlencode($fileName) . '.xlsx"');
     }
 
     /**

@@ -547,3 +547,5 @@ hit_times_start_time_error='中奖时间段开始时间不能大于当前时间�
 hit_times_join='中奖时间段存在交集请检查'
 activity_start_time_error='活动开始时间不能大于当前时间或小于活动结束时间'
 receive_award_time_error='领取奖品时间已过期'
+only_entity_support_cancel='只有实物支持取消发货'
+only_wait_send_entity_support_cancel='只有代发货实物支持取消发货'

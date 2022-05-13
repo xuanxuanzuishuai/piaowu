@@ -276,7 +276,6 @@ class LotteryAdminService
                     'app_id'      => $formatParams['base_data']['app_id'],
                 ]
             );
-            $formatParams['base_data']['status'] = OperationActivityModel::ENABLE_STATUS_OFF;
             $formatParams['base_data']['create_time'] = $nowTime;
             $formatParams['base_data']['create_uuid'] = $paramsData['employee_uuid'];
         }
@@ -563,9 +562,10 @@ class LotteryAdminService
     /**
      * 导出活动中奖记录表格
      * @param $searchParams
+     * @return string
      * @throws RunTimeException
      */
-    public static function exportRecords($searchParams)
+    public static function exportRecords($searchParams): string
     {
         $recordData = LotteryAwardRecordService::search($searchParams, 1, 0);
         if (empty($recordData['list'])) {

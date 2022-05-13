@@ -98,8 +98,6 @@ class ExcelImportFormat
     public static function createExcelTable($dataResult, $title, $fileName, $outputType, string $fileType = 'Xlsx')
     {
         try {
-
-
             if (empty($dataResult)) {
                 return false;
             }
