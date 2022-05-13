@@ -30,6 +30,7 @@ use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\InviteActivityModel;
 use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
+use App\Services\StudentServices\DssStudentService;
 
 class ActivityService
 {
@@ -100,7 +101,7 @@ class ActivityService
             throw new RunTimeException(['student_collection_is_empty']);
         }
         // 检查是否添加了助教，未添加助教不能参与RW活动
-        if (empty($studentData['is_add_assistant_wx'])) {
+        if (empty(DssStudentService::checkStudentIsAddAssistant($studentId))) {
             throw new RunTimeException(['assistant_is_not_add']);
         }
         $activityData = self::signInActivityData($studentData['collection_id'], $time);
@@ -130,7 +131,7 @@ class ActivityService
         ];
         $studentData = DssStudentModel::getById($studentId);
         // 是否已经添加了助教
-        $data['is_add_assistant_wx'] = !empty($studentData['is_add_assistant_wx']) ? (int)$studentData['is_add_assistant_wx'] : 0;
+        $data['is_add_assistant_wx'] = DssStudentService::checkStudentIsAddAssistant($studentId);
         if (empty($studentData['collection_id'])) {
             return $data;
         }

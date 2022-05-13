@@ -5,6 +5,7 @@ namespace App\Services\StudentServices;
 
 use App\Libs\Dss;
 use App\Libs\Exceptions\RunTimeException;
+use App\Models\Dss\DssStudentLeadsModel;
 use App\Models\Dss\DssStudentModel;
 use App\Services\Employee\DssEmployeeService;
 
@@ -27,7 +28,7 @@ class DssStudentService
         if (empty($studentInfo)) {
             throw new RunTimeException(['student_not_exist']);
         }
-        $returnData['is_add_assistant_wx'] = (int)$studentInfo['is_add_assistant_wx'];
+        $returnData['is_add_assistant_wx'] = self::checkStudentIsAddAssistant($studentId);
         // 没有助教直接返回空
         if (empty($studentInfo['assistant_id'])) {
             return $returnData;
@@ -40,5 +41,16 @@ class DssStudentService
             $returnData['assistant_info'] = array_merge($assistantInfo, $appAssistantInfo ?? []);
         }
         return $returnData;
+    }
+
+    /**
+     * 检查学生是否添加了助教id
+     * @param $studentId
+     * @return int
+     */
+    public static function checkStudentIsAddAssistant($studentId)
+    {
+        $id = DssStudentLeadsModel::getRecord(['student_id' => $studentId], ['is_add_assistant_wx'])['is_add_assistant_wx'] ?? 0;
+        return (int)$id;
     }
 }
