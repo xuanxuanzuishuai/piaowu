@@ -21,13 +21,19 @@ class LotteryAwardRecordService
     /**
      * 获取最近一段时间中奖活动的列表
      * @param $opActivityId
+     * @param $awardInfo
      * @return array
      */
-    public static function getHitAwardByTime($opActivityId, $awardInfo)
+    public static function getHitAwardByTime($opActivityId,$awardInfo)
     {
         $endTime = time();
+        $activityInfo = LotteryActivityModel::getRecord(['op_activity_id' => $opActivityId], ['join_num']);
+        if (empty($activityInfo['join_num']) || count($activityInfo['join_num']) < 3) {
+            return self::constructedData($awardInfo);
+        }
+
         $hitAwardInfo = LotteryAwardRecordModel::getHitAwardByTime($opActivityId);
-        if (empty($hitAwardInfo) || count($hitAwardInfo) < 3) {
+        if (empty($hitAwardInfo)){
             return self::constructedData($awardInfo);
         }
 
@@ -98,14 +104,18 @@ class LotteryAwardRecordService
      * 获取用户在指定活动的抽奖次数
      * @param $opActivityId
      * @param $uuid
+     * @param int $useType
      * @return int|number
      */
-    public static function useLotteryTimes($opActivityId, $uuid)
+    public static function useLotteryTimes($opActivityId, $uuid, $useType = 0)
     {
         $where = [
             'op_activity_id' => $opActivityId,
             'uuid'           => $uuid,
         ];
+        if (!empty($useType)) {
+            $where['use_type'] = $useType;
+        }
         return LotteryAwardRecordModel::getCount($where);
     }
 

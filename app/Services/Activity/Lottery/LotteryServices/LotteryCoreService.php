@@ -2,6 +2,7 @@
 
 namespace App\Services\Activity\Lottery\LotteryServices;
 
+use App\Libs\SimpleLogger;
 use App\Models\LotteryAwardRecordModel;
 
 class LotteryCoreService
@@ -13,6 +14,7 @@ class LotteryCoreService
      */
     public static function LotteryCore($params)
     {
+        SimpleLogger::info('LotteryCore start', $params);
         $params['award_info'] = LotteryAwardInfoService::getAwardInfo($params['op_activity_id']);
 
         //触发中奖上线直接返回兜底奖品
@@ -103,6 +105,11 @@ class LotteryCoreService
             $length += $readyAwardList[$i]['weight'];
         }
 
+        foreach ($readyAwardList as $key => $value) {
+            $readyAwardList[$key]['weight_rate'] = number_format($value['weight'] / $length, 2);
+            SimpleLogger::info("待抽中奖品信息：", $readyAwardList);
+        }
+
         for ($i = 0; $i < count($readyAwardList); $i++) {
             $random = rand(1, $length);
             if ($random <= $readyAwardList[$i]['weight']) {
@@ -154,11 +161,11 @@ class LotteryCoreService
             //移除不在可抽中时间的奖品
             $inTime = false;
             foreach ($award['hit_times'] as $ht) {
-                if (($time >= $ht['start_time']) || ($time <= $ht['end_time'])) {
+                if (($time >= $ht['start_time']) && ($time <= $ht['end_time'])) {
                     $inTime = true;
                 }
             }
-            if ($inTime !== true) {
+            if ($inTime == false) {
                 unset($awardInfo[$key]);
                 continue;
             }

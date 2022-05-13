@@ -79,8 +79,10 @@ class LotteryActivityService
             $totalTimes = $filterTimes + $importTimes;
             if ($totalTimes == 0) {
                 $qualification = false;
+                $restTimes = -1;
+            } else {
+                $restTimes = $totalTimes - $useTime;
             }
-            $restTimes = $totalTimes - $useTime;
         } else {
             $restTimes = 0;
         }
@@ -236,7 +238,8 @@ class LotteryActivityService
             throw new RunTimeException(['lottery_times_empty']);
         }
 
-        if ($filerTimes > $useTimes) {
+        $importTimesUsed = LotteryAwardRecordService::useLotteryTimes($params['op_activity_id'], $params['uuid'],LotteryAwardRecordModel::USE_TYPE_FILTER);
+        if ($filerTimes > $importTimesUsed) {
             $params['use_type'] = LotteryAwardRecordModel::USE_TYPE_FILTER;
             $params['pay_amount'] = $orderToTimes[$useTimes] ?? -1;
         } else {
