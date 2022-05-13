@@ -38,7 +38,7 @@ class CollectionService
                 ['wx_number' => $wxNumber, 'content' => $content]);
         }
         $smsObj = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
-        $shortUrl = (new Dss())->getShortUrl('http://www.xiaoyezi.com/html/study_piano_download.html')['short_url'];
+        $shortUrl = ((new Dss())->getShortUrl('http://www.xiaoyezi.com/html/study_piano_download.html'))['short_url'];
         $res = $smsObj->sendCommonSms(Util::pregReplaceTargetStr($content, ['content1' => $shortUrl]), $mobile,
             CommonServiceForApp::SIGN_STUDENT_QC_APP);
         if (empty($res)) {
