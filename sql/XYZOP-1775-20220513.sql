@@ -1,1 +1,1 @@
-update dict set key_value = '【小叶子】恭喜您已成功购买小叶子学钢琴体验课，点击链接下载App体验相关课程 {{content1}} 退订回复T' where key_code = 'qc_divide_classes';
+update dict set key_value = '恭喜您已成功购买小叶子学钢琴体验课，点击链接下载App体验相关课程 {{content1}} 退订回复T' where key_code = 'qc_divide_classes';
