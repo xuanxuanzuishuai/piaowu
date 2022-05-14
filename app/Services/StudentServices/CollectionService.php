@@ -21,16 +21,16 @@ class CollectionService
     {
         if ($sourceAppId == Constants::QC_APP_ID) {
             self::qcDivideIntoClassesMessage($collectionData['wx_number'],
-                $studentData['mobile']);
+                $studentData);
         }
     }
 
     /**
      * 清晨业务线体验课班级分配成功后发送短信息
      * @param $wxNumber
-     * @param $mobile
+     * @param $studentData
      */
-    private static function qcDivideIntoClassesMessage($wxNumber, $mobile)
+    private static function qcDivideIntoClassesMessage($wxNumber, $studentData)
     {
         $content = DictConstants::get(DictConstants::MESSAGES_TEMPLATE, "qc_divide_classes");
         if (empty($content)) {
@@ -38,12 +38,12 @@ class CollectionService
                 ['wx_number' => $wxNumber, 'content' => $content]);
         }
         $smsObj = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
-        $shortUrl = ((new Dss())->getShortUrl('http://www.xiaoyezi.com/html/study_piano_download.html'))['data']['short_url'];
-        $res = $smsObj->sendCommonSms(Util::pregReplaceTargetStr($content, ['content1' => $shortUrl]), $mobile,
+        $shortUrl = ((new Dss())->getShortUrl($_ENV['REFERRAL_FRONT_DOMAIN'] . '/morningMarket/pay_succeed?uuid=' . $studentData['uuid']))['data']['short_url'];
+        $res = $smsObj->sendCommonSms(Util::pregReplaceTargetStr($content, ['content1' => $shortUrl]), $studentData['mobile'],
             CommonServiceForApp::SIGN_STUDENT_QC_APP, NewSMS::SMS_TYPE_MARKETING);
         if (empty($res)) {
             Util::errorCapture("qing chen divide into classes message send fail",
-                ['mobile' => $mobile, 'content' => $content]);
+                ['mobile' => $studentData['mobile'], 'content' => $content]);
         }
     }
 }
