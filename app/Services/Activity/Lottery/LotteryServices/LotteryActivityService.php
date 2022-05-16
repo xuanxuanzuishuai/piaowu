@@ -331,9 +331,9 @@ class LotteryActivityService
         if (empty($activityData)) {
             return false;
         }
-        $updateParamsData['base_data']['status'] = ($updateParamsData['base_data']['enable_status'] != $activityData['status'])
-            ? $updateParamsData['base_data']['enable_status'] : $activityData['status'];
-
+        if(empty($updateParamsData['base_data']['status'])){
+            unset($updateParamsData['base_data']['status']);
+        }
         return LotteryActivityModel::update($opActivityId, $updateParamsData);
     }
 

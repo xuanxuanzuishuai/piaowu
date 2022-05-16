@@ -66,7 +66,6 @@ class LotteryAdminService
         $formatParams['base_data']['start_pay_time'] = 0;
         $formatParams['base_data']['end_pay_time'] = 0;
         $formatParams['base_data']['rest_award_num'] = 0;
-        $formatParams['base_data']['status'] = $paramsData['enable_status'] ?? OperationActivityModel::ENABLE_STATUS_OFF;
         //参与用户规则
         $formatParams['import_user'] = $formatParams['lottery_times_rule'] = $formatParams['win_prize_rule'] = [];
         if ($paramsData['user_source'] == LotteryActivityModel::USER_SOURCE_FILTER) {
@@ -127,7 +126,7 @@ class LotteryAdminService
                     if ($wpv['low_pay_amount'] <= 0 || $wpv['high_pay_amount'] <= 0 || $wpv['low_pay_amount'] >= $wpv['high_pay_amount']) {
                         throw new RuntimeException(["pay_amount_error"]);
                     }
-                    //可抽中奖品等级
+                    //可抽中奖品等级:将兜底奖品拼接起来
                     $tmpAwardLevels = explode(',', $wpv['award_level']);
                     if (empty($tmpAwardLevels) || !is_array($tmpAwardLevels)) {
                         throw new RuntimeException(["win_prize_rule_account_error"]);
@@ -266,6 +265,7 @@ class LotteryAdminService
         if (isset($paramsData['op_activity_id'])) {
             $formatParams['base_data']['update_time'] = $nowTime;
             $formatParams['base_data']['update_uuid'] = $paramsData['employee_uuid'];
+            $formatParams['base_data']['status'] = (int)$paramsData['enable_status'];
             $opActivityId = $paramsData['op_activity_id'];
         } else {
             //全局活动ID
@@ -278,6 +278,7 @@ class LotteryAdminService
             );
             $formatParams['base_data']['create_time'] = $nowTime;
             $formatParams['base_data']['create_uuid'] = $paramsData['employee_uuid'];
+            $formatParams['base_data']['status'] = (int)$paramsData['enable_status'] ?? OperationActivityModel::ENABLE_STATUS_OFF;
         }
 
         if (empty($opActivityId)) {
@@ -285,6 +286,7 @@ class LotteryAdminService
         }
         foreach ($formatParams['win_prize_rule'] as &$fwv) {
             $fwv['op_activity_id'] = $opActivityId;
+            $fwv['award_level'] .= ','.$awardCount;
         }
         foreach ($formatParams['lottery_times_rule'] as &$flv) {
             $flv['op_activity_id'] = $opActivityId;
@@ -483,7 +485,7 @@ class LotteryAdminService
         $detailData['base_data']['max_hit'] = $detailData['base_data']['max_hit_type'] == LotteryActivityModel::MAX_HIT_TYPE_UNLIMITED ? 0 : $detailData['base_data']['max_hit'];
         $detailData['base_data']['day_max_hit'] = $detailData['base_data']['day_max_hit_type'] == LotteryActivityModel::MAX_HIT_TYPE_UNLIMITED ? 0 : $detailData['base_data']['day_max_hit'];
         //奖品数据
-        $detailData['awards'] = self::formatEntityAwardDetailData($detailData['awards']);
+        list($detailData['awards'],$detailData['goods_list']) = self::formatEntityAwardDetailData($detailData['awards']);
         //抽奖次数
         foreach ($detailData['lottery_times_rule'] as &$lr) {
             $lr['low_pay_amount'] /= 100;
@@ -514,10 +516,7 @@ class LotteryAdminService
         $goodsInfo = [];
         if (!empty($goodsIds)) {
             //商品信息
-            $goodsInfo = array_column((new Erp())->getLogisticsGoodsList([
-                'goods_id' => implode(',', $goodsIds)
-            ])['data']['list'],
-                'name', 'id');
+            $goodsInfo = (new Erp())->getLogisticsGoodsList(['goods_id' => implode(',', $goodsIds)])['data']['list'];
         }
         $dictData = DictConstants::getTypesMap([
             DictConstants::AWARD_LEVEL['type'],
@@ -528,7 +527,6 @@ class LotteryAdminService
             $avl['img_url_oss'] = AliOSS::replaceCdnDomainForDss($avl['img_url']);
             $avl['hit_times'] = json_decode($avl['hit_times'], true);
             $avl['weight'] = $avl['weight'] / 100;
-            $avl['goods_name'] = ($avl['type'] == Constants::AWARD_TYPE_TYPE_ENTITY) ? $goodsInfo['entity_goods_info'][$avl['common_award_id']]['name'] : '';
             $avl['award_level_zh'] = $dictData[DictConstants::AWARD_LEVEL['type']][$avl['level']]['value'];
             $avl['award_type_zh'] = $dictData[DictConstants::AWARD_TYPE['type']][$avl['type']]['value'];
             unset($avl['award_detail']);
@@ -539,7 +537,7 @@ class LotteryAdminService
                 $avl['award_level_zh'] = "兜底奖";
             }
         }
-        return $detailAwardData;
+        return [$detailAwardData, $goodsInfo];
     }
 
     /**
@@ -613,7 +611,7 @@ class LotteryAdminService
         $ossPath = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_TMP_EXCEL . '/' . $fileName;
         AliOSS::uploadFile($ossPath, $tmpFileSavePath);
         unlink($tmpFileSavePath);
-        return AliOSS::signUrls($ossPath);
+        return AliOSS::replaceCdnDomainForDss($ossPath);
     }
 
     /**
