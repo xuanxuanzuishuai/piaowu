@@ -242,7 +242,7 @@ class LotteryActivityService
             LotteryAwardRecordModel::USE_TYPE_FILTER);
         if ($filerTimes > $importTimesUsed) {
             $params['use_type'] = LotteryAwardRecordModel::USE_TYPE_FILTER;
-            $params['pay_amount'] = $orderToTimes[$useTimes] ?? -1;
+            $params['pay_amount'] = $orderToTimes[$importTimesUsed] ?? -1;
         } else {
             $params['use_type'] = LotteryAwardRecordModel::USE_TYPE_IMPORT;
         }

@@ -104,6 +104,7 @@ class LotteryCoreService
     public static function core($readyAwardList)
     {
         $length = 0;
+        $readyAwardList = array_values($readyAwardList);
         for ($i = 0; $i < count($readyAwardList); $i++) {
             $length += $readyAwardList[$i]['weight'];
         }
