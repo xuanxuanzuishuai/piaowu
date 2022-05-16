@@ -75,6 +75,8 @@ class DeviceCommonTrackTopic extends BaseTopic
             'position'         => $params['position'] ?? '',
         );
         SimpleLogger::info("topic:common_track:pushData", ['params' => $params, 'msg_body' => $msgBody]);
+        // 改变topicName
+        $this->setTopicName(self::TOPIC_NAME);
         $this->setEventType(self::EVENT_TYPE_LOGIN);
         $this->setMsgBody($msgBody);
         return $this;
@@ -111,6 +113,8 @@ class DeviceCommonTrackTopic extends BaseTopic
             'position'     => $params['position'] ?? '',
         );
         SimpleLogger::info("topic:common_track:pushData", ['params' => $params, 'msg_body' => $msgBody]);
+        // 改变topicName
+        $this->setTopicName(self::TOPIC_NAME);
         $this->setEventType(self::EVENT_TYPE_CREATE_ORDER);
         $this->setMsgBody($msgBody);
         return $this;
