@@ -210,6 +210,11 @@ class LotteryAwardRecordService
         if (empty($data)) {
             return $data;
         }
+        $activityInfo = LotteryActivityModel::getRecord(['op_activity_id' => $opActivityId], ['end_time']);
+        $modifyEndTime = $activityInfo['end_time'] + Util::TIMESTAMP_ONEWEEK;
+        if ($modifyEndTime < time()) {
+            $allowModifyAddress = false;
+        }
         $awardLevelZH = array('一', '二', '三', '四', '五', '六', '七', '八', '九');
         $shippingZH = array(0 => '已废除', 1 => '待发货', 2 => '已发货', 3 => '发货中', -1 => '发货失败', -2 => '取消发货');
         foreach ($data['list'] as $key => $value) {
@@ -218,6 +223,7 @@ class LotteryAwardRecordService
             }
             $data['list'][$key]['level_zh'] = $awardLevelZH[$value['level'] - 1] . '等奖';
             $data['list'][$key]['shipping_status_zh'] = $shippingZH[$value['shipping_status']];
+            $data['list'][$key]['allow_modify_address'] = $allowModifyAddress ?? true;
         }
         return $data;
     }

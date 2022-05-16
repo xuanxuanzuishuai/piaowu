@@ -20,13 +20,16 @@ class LotteryCoreService
         //触发中奖上线直接返回兜底奖品
         $defaultAwardInfo = self::directReturnHitAward($params);
         if (!empty($defaultAwardInfo)) {
+            SimpleLogger::info('LotteryCore direct return hit award', []);
             return $defaultAwardInfo;
         }
 
         //经过算法计算奖品
         if ($params['use_type'] == LotteryAwardRecordModel::USE_TYPE_FILTER) {
+            SimpleLogger::info('LotteryCore consume filter times', []);
             $hitInfo = self::LotteryFilterRuleCore($params);
         } elseif ($params['use_type'] == LotteryAwardRecordModel::USE_TYPE_IMPORT) {
+            SimpleLogger::info('LotteryCore consume import times', []);
             $hitInfo = self::LotteryImportCore($params);
         }
 
@@ -107,8 +110,8 @@ class LotteryCoreService
 
         foreach ($readyAwardList as $key => $value) {
             $readyAwardList[$key]['weight_rate'] = number_format($value['weight'] / $length, 2);
-            SimpleLogger::info("待抽中奖品信息：", $readyAwardList);
         }
+        SimpleLogger::info('LotteryCore ready award', $readyAwardList);
 
         for ($i = 0; $i < count($readyAwardList); $i++) {
             $random = rand(1, $length);
