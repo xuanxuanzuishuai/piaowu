@@ -87,11 +87,11 @@ class LotteryActivityService
             $restTimes = 0;
         }
         return [
-            'filter_times' => $filterTimes ?? 0,
-            'import_times' => $importTimes ?? 0,
-            'use_times'    => $useTime ?? 0,
-            'rest_times'   => $restTimes ?? 0,
-            'qualification'   => $qualification,
+            'filter_times'  => $filterTimes ?? 0,
+            'import_times'  => $importTimes ?? 0,
+            'use_times'     => $useTime ?? 0,
+            'rest_times'    => $restTimes ?? 0,
+            'qualification' => $qualification,
         ];
     }
 
@@ -238,7 +238,8 @@ class LotteryActivityService
             throw new RunTimeException(['lottery_times_empty']);
         }
 
-        $importTimesUsed = LotteryAwardRecordService::useLotteryTimes($params['op_activity_id'], $params['uuid'],LotteryAwardRecordModel::USE_TYPE_FILTER);
+        $importTimesUsed = LotteryAwardRecordService::useLotteryTimes($params['op_activity_id'], $params['uuid'],
+            LotteryAwardRecordModel::USE_TYPE_FILTER);
         if ($filerTimes > $importTimesUsed) {
             $params['use_type'] = LotteryAwardRecordModel::USE_TYPE_FILTER;
             $params['pay_amount'] = $orderToTimes[$useTimes] ?? -1;
@@ -330,6 +331,9 @@ class LotteryActivityService
         if (empty($activityData)) {
             return false;
         }
+        $updateParamsData['base_data']['status'] = ($updateParamsData['base_data']['enable_status'] != $activityData['status'])
+            ? $updateParamsData['base_data']['enable_status'] : $activityData['status'];
+
         return LotteryActivityModel::update($opActivityId, $updateParamsData);
     }
 

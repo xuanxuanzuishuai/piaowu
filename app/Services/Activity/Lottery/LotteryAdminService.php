@@ -552,6 +552,10 @@ class LotteryAdminService
     public static function joinRecords($searchParams, $page, $pageSize): array
     {
         $recordData = LotteryAwardRecordService::search($searchParams, $page, $pageSize);
+        $recordData['is_can_update_address'] = Constants::STATUS_TRUE;
+        if (time() > ($recordData['activity_end_time'] + 7 * Util::TIMESTAMP_ONEDAY)) {
+            $recordData['is_can_update_address'] = Constants::STATUS_FALSE;
+        }
         if (empty($recordData['list'])) {
             return $recordData;
         }
@@ -603,10 +607,13 @@ class LotteryAdminService
                 'express_number'     => '[' . $fv['logistics_company'] . ']' . $fv['express_number'],
             ];
         }
-        $fileName = $recordData['activity_name'] . '(' . date("Y-m-d") . ')参与记录';
-        ExcelImportFormat::createExcelTable($dataResult, $title, $fileName,
-            ExcelImportFormat::OUTPUT_TYPE_BROWSER_EXPORT);
-        return $fileName;
+        $fileName = $recordData['activity_name'] . '(' . date("Y-m-d") . ')参与记录.xlsx';
+        $tmpFileSavePath = ExcelImportFormat::createExcelTable($dataResult, $title,
+            ExcelImportFormat::OUTPUT_TYPE_SAVE_FILE);
+        $ossPath = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_TMP_EXCEL . '/' . $fileName;
+        AliOSS::uploadFile($ossPath, $tmpFileSavePath);
+        unlink($tmpFileSavePath);
+        return AliOSS::signUrls($ossPath);
     }
 
     /**

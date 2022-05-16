@@ -583,15 +583,15 @@ class ActivityLottery extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            $fileName = LotteryAdminService::exportRecords($params);
+            $ossUrl = LotteryAdminService::exportRecords($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
-        return $response
-            ->withHeader('Cache-Control', 'max-age=0')
-            ->withHeader('Content-Type',
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            ->withHeader('Content-Disposition', 'attachment; filename="' . urlencode($fileName) . '.xlsx"');
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => ['oss_url' => $ossUrl]
+        ]);
+
     }
 
     /**

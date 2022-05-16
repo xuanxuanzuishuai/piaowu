@@ -1341,7 +1341,7 @@ class Util
         } elseif ($yesterday < $time) {
             return '昨天 ' . date('H:i', $time);
         } elseif (date('Y') == date('Y', $time)) {
-            return date('m:d H:i', $time);
+            return date('m-d H:i', $time);
         } else {
             return date('Y-m-d H:i', $time);
         }

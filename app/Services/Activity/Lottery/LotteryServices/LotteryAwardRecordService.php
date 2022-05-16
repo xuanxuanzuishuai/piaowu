@@ -24,7 +24,7 @@ class LotteryAwardRecordService
      * @param $awardInfo
      * @return array
      */
-    public static function getHitAwardByTime($opActivityId,$awardInfo)
+    public static function getHitAwardByTime($opActivityId, $awardInfo)
     {
         $endTime = time();
         $activityInfo = LotteryActivityModel::getRecord(['op_activity_id' => $opActivityId], ['join_num']);
@@ -33,7 +33,7 @@ class LotteryAwardRecordService
         }
 
         $hitAwardInfo = LotteryAwardRecordModel::getHitAwardByTime($opActivityId);
-        if (empty($hitAwardInfo)){
+        if (empty($hitAwardInfo)) {
             return self::constructedData($awardInfo);
         }
 
@@ -252,7 +252,7 @@ class LotteryAwardRecordService
         ];
         //获取活动数据
         $activityData = LotteryActivityModel::getRecord(['op_activity_id' => $searchParams['op_activity_id']],
-            ['app_id', 'name'], false);
+            ['app_id', 'name', 'end_time'], false);
         if (empty($activityData)) {
             return $recordsData;
         }
@@ -309,6 +309,7 @@ class LotteryAwardRecordService
             'ai.type',
         ], $page, $pageSize);
         $recordData['activity_name'] = $activityData['name'];
+        $recordData['activity_end_time'] = $activityData['end_time'];
         return $recordData;
     }
 
@@ -420,14 +421,18 @@ class LotteryAwardRecordService
      */
     public static function updateAwardShippingAddress($id, $addressDetail): bool
     {
-        $recordData = LotteryAwardRecordModel::getRecord(['id' => $id], ['end_time', 'award_type', 'shipping_status']);
+        $recordData = LotteryAwardRecordModel::getRecord(['id' => $id],
+            ['op_activity_id', 'end_time', 'award_type', 'shipping_status']);
         if ($recordData['award_type'] != Constants::AWARD_TYPE_TYPE_ENTITY) {
             throw new RuntimeException(["not_entity_award_stop_update_shipping_address"]);
         }
         if ($recordData['shipping_status'] != Constants::SHIPPING_STATUS_BEFORE) {
             throw new RuntimeException(["not_waiting_send_stop_update_shipping_address"]);
         }
-        if (time() > ($recordData['end_time'] + 7 * Util::TIMESTAMP_ONEDAY)) {
+        //获取活动数据
+        $activityData = LotteryActivityModel::getRecord(['op_activity_id' => $recordData['op_activity_id'],],
+            ['end_time'], false);
+        if (time() > ($activityData['end_time'] + 7 * Util::TIMESTAMP_ONEDAY)) {
             throw new RuntimeException(["not_entity_award_stop_update_shipping_address"]);
         }
         //请求erp新增地址

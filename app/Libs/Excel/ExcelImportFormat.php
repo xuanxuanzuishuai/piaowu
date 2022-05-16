@@ -90,12 +90,11 @@ class ExcelImportFormat
      * 生成表格
      * @param $dataResult
      * @param $title
-     * @param $fileName
      * @param $outputType
      * @param string $fileType
      * @return false|string|void
      */
-    public static function createExcelTable($dataResult, $title, $fileName, $outputType, string $fileType = 'Xlsx')
+    public static function createExcelTable($dataResult, $title, $outputType, string $fileType = 'Xlsx')
     {
         try {
             if (empty($dataResult)) {
@@ -122,8 +121,9 @@ class ExcelImportFormat
                 $row++;  //每一列填充完，+1
             }
             if ($outputType == self::OUTPUT_TYPE_SAVE_FILE) {
-                $tmpSavePath = '/tmp/' . $fileName . '.' . $fileType;
+                $tmpSavePath = '/tmp/' . (time() .'-'. mt_rand(1, 9999)) . '.' . strtolower($fileType);
                 self::outputSaveTmpFile($spreadsheet, $tmpSavePath, $fileType);
+                chmod($tmpSavePath, 0777);
                 return $tmpSavePath;
             } else {
                 self::outputClientBrowser($spreadsheet, $fileType);

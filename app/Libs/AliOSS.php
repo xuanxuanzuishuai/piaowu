@@ -44,6 +44,7 @@ class AliOSS
     const DIR_AGENT_PRE_STORAGE_BILL = 'agent_pre_storage_bill';//代理商预存订单支付截图保存目录
     const DIR_REAL_ACTIVITY_WEEK = 'real_activity_week';//真人业务线周周领奖活动截图上传目录
     const DIR_ACTIVITY_AWARD = 'activity_award';//活动奖品封面图上传目录
+    const DIR_TMP_EXCEL = 'tmp_excel';//临时文本文件上传目录，比如excel，txt，此目录会定时删除
 
     /**
      * 替换cdn域名 erp上传图片专用
