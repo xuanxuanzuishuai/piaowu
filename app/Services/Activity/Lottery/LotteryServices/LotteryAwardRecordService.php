@@ -27,8 +27,8 @@ class LotteryAwardRecordService
     public static function getHitAwardByTime($opActivityId, $awardInfo)
     {
         $endTime = time();
-        $activityInfo = LotteryActivityModel::getRecord(['op_activity_id' => $opActivityId], ['join_num']);
-        if (empty($activityInfo['join_num']) || count($activityInfo['join_num']) < 3) {
+        $num = LotteryAwardRecordModel::getHitNumNotEmpty($opActivityId);
+        if ($num < 3) {
             return self::constructedData($awardInfo);
         }
 

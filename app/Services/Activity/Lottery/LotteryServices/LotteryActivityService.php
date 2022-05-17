@@ -137,6 +137,8 @@ class LotteryActivityService
             'order_status'   => ErpStudentOrderV1Model::STATUS_PAID,
             'start_pay_time' => $startPayTime,
             'end_pay_time'   => $endPayTime,
+            'order_by'       => 'pay_time',
+            'order_desc'     => 2,
             'page'           => 1,
             'count'          => 100,
         ];
@@ -149,8 +151,9 @@ class LotteryActivityService
                 $request['page'] += 1;
                 $response = (new Erp())->orderSearch($request);
                 $res = array_merge($res, $response['data']);
+            }else{
+                break;
             }
-            break;
         }
 
         if (!empty($res)) {

@@ -278,7 +278,7 @@ class LotteryAdminService
             );
             $formatParams['base_data']['create_time'] = $nowTime;
             $formatParams['base_data']['create_uuid'] = $paramsData['employee_uuid'];
-            $formatParams['base_data']['status'] = (int)$paramsData['enable_status'] ?? OperationActivityModel::ENABLE_STATUS_OFF;
+            $formatParams['base_data']['status'] = !empty($paramsData['enable_status']) ?(int)$paramsData['enable_status']: OperationActivityModel::ENABLE_STATUS_OFF;
         }
 
         if (empty($opActivityId)) {

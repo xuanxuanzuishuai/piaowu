@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Libs\Constants;
 use App\Libs\MysqlDB;
-use App\Models\Erp\ErpStudentModel;
+use Medoo\Medoo;
 
 class LotteryAwardRecordModel extends Model
 {
@@ -12,6 +12,20 @@ class LotteryAwardRecordModel extends Model
 
     const USE_TYPE_FILTER = 1;
     const USE_TYPE_IMPORT = 2;
+
+    /**
+     * 获取未中空奖人数
+     * @param $opActivityId
+     * @return mixed
+     */
+    public static function getHitNumNotEmpty($opActivityId)
+    {
+        $db = MysqlDB::getDB();
+        return $db->get(self::$table, ['num' => Medoo::raw('count(distinct uuid)')], [
+            'op_activity_id'   => $opActivityId,
+            'award_type[!]' => Constants::AWARD_TYPE_EMPTY,
+        ]);
+    }
 
     /**
      * 获取中奖记录

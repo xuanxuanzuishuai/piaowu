@@ -24,6 +24,12 @@ use Slim\Http\StatusCode;
 
 class Lottery extends ControllerBase
 {
+    /**
+     * 获取活动详细信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function activityInfo(Request $request, Response $response)
     {
         $rules = [
@@ -71,7 +77,7 @@ class Lottery extends ControllerBase
         try {
             $hitAwardInfo = LotteryClientService::hitAwardInfo($params);
         } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
 
         $data = [
