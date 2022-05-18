@@ -27,6 +27,7 @@ use App\Services\ReferralActivityService;
 use App\Services\ReferralService;
 use App\Services\ShowMiniAppService;
 use App\Services\StudentService;
+use App\Services\StudentServices\DssStudentService;
 use App\Services\UserService;
 use App\Services\WechatService;
 use App\Services\WechatTokenService;
@@ -358,5 +359,22 @@ class Student extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 获取学生助教信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getStudentAssistantInfo(Request $request, Response $response)
+    {
+        try {
+            $studentId = $this->ci['user_info']['user_id'];
+            $assistantInfo = DssStudentService::getStudentAssistantInfo($studentId, ['wx_nick', 'wx_thumb', 'wx_num', 'wx_qr']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        return HttpHelper::buildResponse($response, $assistantInfo);
     }
 }
