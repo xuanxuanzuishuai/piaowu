@@ -124,7 +124,7 @@ class Pay extends ControllerBase
                     'open_id'      => $data['openid'] ?? '',
                     'uuid'         => $student['uuid'] ?? '',
                     'new_user'     => 0,    // 0老用户，1新用户
-                    'anonymous_id' => $params['anonymous_id'] ?? '',   // 埋点匿名id, 投放页有
+                    'anonymous_id' => $request->getHeader('anonymous_id')[0] ?? '',   // 埋点匿名id, 投放页有
                     'order_type'   => DeviceCommonTrackTopic::ORDER_TYPE_TRAIL,  // 订单类型
                     'order_id'     => $orderId,    // 订单号
                 ])->publish();
