@@ -61,8 +61,10 @@ class RealActivityService
         // 获取活动详情
         $activityList = RealWeekActivityService::getStudentCanPartakeWeekActivityList($studentDetail);
         $canPartakeActivityId = $activityList[0]['activity_id'] ?? 0;
-        // 获取活动任务列表
-        $activityTaskList = RealSharePosterTaskListModel::getRecords(['activity_id' => $canPartakeActivityId, 'ORDER' => ['task_num' => 'ASC']]);
+        if (!empty($canPartakeActivityId)) {
+            // 获取活动任务列表
+            $activityTaskList = RealSharePosterTaskListModel::getRecords(['activity_id' => $canPartakeActivityId, 'ORDER' => ['task_num' => 'ASC']]);
+        }
         if (empty($activityTaskList)) {
             $data['is_have_activity'] = false;
             $data['student_info']['can_upload'] = false;

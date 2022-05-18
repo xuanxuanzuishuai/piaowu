@@ -25,6 +25,7 @@ use App\Models\RealSharePosterTaskListModel;
 use App\Models\RealWeekActivityPosterAbModel;
 use App\Models\TemplatePosterModel;
 use App\Models\RealWeekActivityModel;
+use App\Services\Activity\RealWeekActivity\RealWeekActivityClientService;
 use App\Services\Queue\QueueService;
 use App\Services\TraitService\TraitRealWeekActivityTestAbService;
 
@@ -774,6 +775,10 @@ class RealWeekActivityService
         ];
         if ($operationType == 1) {
             //当前生效的活动
+            // 检查当前用户是否可以参与周周领奖活动
+            if (RealWeekActivityClientService::checkIsAllowJoinWeekActivity($studentId, $studentUUID)) {
+                return [];
+            }
             $baseWhere['end_time[>=]'] = $time;
         } elseif ($operationType == 2) {
             //已结束并启用的活动：结束时间距离当前时间五天内

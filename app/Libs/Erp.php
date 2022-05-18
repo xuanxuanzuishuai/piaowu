@@ -108,6 +108,8 @@ class Erp
     const STUDENT_IDENTIFY_ATTRIBUTE = '/api/student/attribute';
     //抖店实物商品消费发货/退费
     const DOU_STORE_MSG = '/api/consumer/dou_store_msg';
+    // 获取用户付费订单列表（目前只返回正式课的 - 2022.05.19 如有变动记得改备注）
+    const STUDENT_COURSES = '/op/user/student_courses';
 
     private $host;
 
@@ -1008,5 +1010,21 @@ class Erp
     {
         $response = HttpHelper::requestJson($this->host . self::DOU_STORE_MSG, $params, 'POST');
         return !empty($response['code']) ? false : true;
+    }
+
+    /**
+     * 获取学生订单列表（付费课）
+     * @param $studentUUID
+     * @return array
+     * @throws RunTimeException
+     */
+    public function getStudentCourses($studentUUID)
+    {
+        $params['student_uuid'] = trim($studentUUID);
+        $response = HttpHelper::requestJson($this->host . self::STUDENT_COURSES, $params, 'GET');
+        if ($response['code'] != Valid::CODE_SUCCESS) {
+            throw new RunTimeException(['service_busy_try_later']);
+        }
+        return $response['data'] ?? [];
     }
 }
