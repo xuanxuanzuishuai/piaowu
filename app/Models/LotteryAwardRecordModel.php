@@ -21,10 +21,11 @@ class LotteryAwardRecordModel extends Model
     public static function getHitNumNotEmpty($opActivityId)
     {
         $db = MysqlDB::getDB();
-        return $db->get(self::$table, ['num' => Medoo::raw('count(distinct uuid)')], [
+        $res = $db->get(self::$table, ['num' => Medoo::raw('count(distinct uuid)')], [
             'op_activity_id'   => $opActivityId,
             'award_type[!]' => Constants::AWARD_TYPE_EMPTY,
         ]);
+        return $res['num'] ?? 0;
     }
 
     /**

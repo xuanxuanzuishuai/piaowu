@@ -100,8 +100,21 @@ class StudentWebCommon extends ControllerBase
     public function provinceList(Request $request, Response $response)
     {
         $params = $request->getParams();
-        $list = AreaService::provinceList($params);
-        return HttpHelper::buildResponse($response, $list);
+        if (empty($params)){
+            $list = AreaService::getAreaByParentCode('100000');
+        }elseif (!empty($params['province_code'])){
+            $list[] = AreaService::getByCode($params['province_code']);
+        }
+        $data = [];
+        if (!empty($list)){
+            foreach ($list as $value){
+                $data[] = [
+                    'province_code'=>$value['code'],
+                    'province_name'=>$value['name'],
+                ];
+            }
+        }
+        return HttpHelper::buildResponse($response, $data);
     }
 
     /**
@@ -113,8 +126,22 @@ class StudentWebCommon extends ControllerBase
     public function cityList(Request $request, Response $response)
     {
         $params = $request->getParams();
-        $list = AreaService::cityList($params);
-        return HttpHelper::buildResponse($response, $list);
+        if (!empty($params['province_code'])){
+            $list = AreaService::getAreaByParentCode($params['province_code']);
+        }elseif (!empty($params['city_code'])){
+            $list[] = AreaService::getByCode($params['city_code']);
+        }
+
+        $data = [];
+        if (!empty($list)){
+            foreach ($list as $value){
+                $data[] = [
+                    'city_code'=>$value['code'],
+                    'city_name'=>$value['name'],
+                ];
+            }
+        }
+        return HttpHelper::buildResponse($response, $data);
     }
 
     /**
@@ -126,7 +153,21 @@ class StudentWebCommon extends ControllerBase
     public function districtList(Request $request, Response $response)
     {
         $params = $request->getParams();
-        $list = AreaService::districtList($params);
-        return HttpHelper::buildResponse($response, $list);
+        if (!empty($params['city_code'])){
+            $list = AreaService::getAreaByParentCode($params['city_code']);
+        }elseif (!empty($params['district_code'])){
+            $list[] = AreaService::getByCode($params['district_code']);
+        }
+
+        $data = [];
+        if (!empty($list)){
+            foreach ($list as $value){
+                $data[] = [
+                    'city_code'=>$value['code'],
+                    'city_name'=>$value['name'],
+                ];
+            }
+        }
+        return HttpHelper::buildResponse($response, $data);
     }
 }
