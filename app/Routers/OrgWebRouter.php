@@ -211,6 +211,13 @@ class OrgWebRouter extends RouterBase
         '/op_web/area/province' => ['method' => ['get'], 'call' => Area::class . ':provinceList'],
         '/op_web/area/city' => ['method' => ['get'], 'call' => Area::class . ':cityList'],
         '/op_web/area/district' => ['method' => ['get'], 'call' => Area::class . ':districtList'],
+        //账户收货地址使用
+        '/op_web/area/address_province' => ['method' => ['get'], 'call' => Area::class . ':addressProvinceList'],
+        '/op_web/area/address_city' => ['method' => ['get'], 'call' => Area::class . ':addressCityList'],
+        '/op_web/area/address_district' => ['method' => ['get'], 'call' => Area::class . ':addressDistrictList'],
+
+
+
         // 课包管理
         '/op_web/package/search' => ['method' => ['get'], 'call' => Package::class . ':search'],
         '/op_web/package/new_package' => ['method' => ['get'], 'call' => Package::class . ':getNewPackage'],

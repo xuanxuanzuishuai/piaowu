@@ -163,8 +163,8 @@ class StudentWebCommon extends ControllerBase
         if (!empty($list)){
             foreach ($list as $value){
                 $data[] = [
-                    'city_code'=>$value['code'],
-                    'city_name'=>$value['name'],
+                    'district_code'=>$value['code'],
+                    'district_name'=>$value['name'],
                 ];
             }
         }
