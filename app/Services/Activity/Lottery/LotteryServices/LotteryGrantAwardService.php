@@ -47,6 +47,9 @@ class LotteryGrantAwardService
                 'batch_id'    => $params['batch_id'] ?? '',
                 'grant_state' => Constants::STATUS_TRUE
             ];
+            if ($params['type'] == Constants::AWARD_TYPE_TYPE_ENTITY) {
+                $update['shipping_status'] = Constants::SHIPPING_STATUS_CENTRE;
+            }
             LotteryAwardRecordModel::updateRecord($params['record_id'], $update);
         }
         return true;
