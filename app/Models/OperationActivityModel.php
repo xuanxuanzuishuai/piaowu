@@ -11,8 +11,6 @@ namespace App\Models;
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
-use App\Libs\RedisDB;
-use App\Libs\Util;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpStudentModel;
@@ -302,6 +300,7 @@ WHERE
             case 6:
                 //时间状态
                 $where = OperationActivityModel::timeStatusMapToSqlWhere(OperationActivityModel::ACTIVITY_SHOW_STATUS_MAP_ENABLE_AND_TIME_STATUS[$showStatus]);
+                $where['status'] = self::ENABLE_STATUS_ON;
                 break;
             default:
                 return [];

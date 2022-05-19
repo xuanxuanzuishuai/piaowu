@@ -549,3 +549,4 @@ activity_start_time_error='活动开始时间不能大于当前时间或小于�
 receive_award_time_error='领取奖品时间已过期'
 only_entity_support_cancel='只有实物支持取消发货'
 only_wait_send_entity_support_cancel='只有代发货实物支持取消发货'
+student_mobile_format_is_error='手机号格式错误'

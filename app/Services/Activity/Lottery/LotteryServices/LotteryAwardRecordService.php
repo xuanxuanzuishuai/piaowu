@@ -428,7 +428,7 @@ class LotteryAwardRecordService
     public static function updateAwardShippingAddress($id, $addressDetail): bool
     {
         $recordData = LotteryAwardRecordModel::getRecord(['id' => $id],
-            ['op_activity_id', 'end_time', 'award_type', 'shipping_status']);
+            ['op_activity_id', 'award_type', 'shipping_status']);
         if ($recordData['award_type'] != Constants::AWARD_TYPE_TYPE_ENTITY) {
             throw new RuntimeException(["not_entity_award_stop_update_shipping_address"]);
         }
@@ -436,7 +436,7 @@ class LotteryAwardRecordService
             throw new RuntimeException(["not_waiting_send_stop_update_shipping_address"]);
         }
         //获取活动数据
-        $activityData = LotteryActivityModel::getRecord(['op_activity_id' => $recordData['op_activity_id'],],
+        $activityData = LotteryActivityModel::getRecord(['op_activity_id' => $recordData['op_activity_id']],
             ['end_time'], false);
         if (time() > ($activityData['end_time'] + 7 * Util::TIMESTAMP_ONEDAY)) {
             throw new RuntimeException(["not_entity_award_stop_update_shipping_address"]);
