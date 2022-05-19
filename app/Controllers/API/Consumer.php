@@ -31,6 +31,8 @@ use App\Models\Erp\ErpStudentModel;
 use App\Models\StudentAccountAwardPointsFileModel;
 use App\Models\StudentAccountAwardPointsLogModel;
 use App\Models\WhiteGrantRecordModel;
+use App\Services\Activity\Lottery\LotteryServices\LotteryAwardRecordService;
+use App\Services\Activity\Lottery\LotteryServices\LotteryGrantAwardService;
 use App\Services\AgentService;
 use App\Services\AutoCheckPicture;
 use App\Services\BillMapService;
@@ -926,16 +928,23 @@ class Consumer extends ControllerBase
                 CountingActivityAwardService::grantCountingAward($params['msg_body']['sign_id']);
                 break;
             case GrantAwardTopic::COUNTING_AWARD_LOGISTICS_SYNC:
-                //解析物流信息，获取最新状态
+                //全勤奖:更新物流信息
                 CountingActivityAwardService::syncAwardLogistics($params['msg_body']['unique_id']);
                 break;
+            case GrantAwardTopic::LOTTERY_AWARD_LOGISTICS_SYNC:
+                //抽奖活动:更新物流信息
+                LotteryAwardRecordService::lotterySyncAwardLogistics($params['msg_body']['unique_id']);
+                break;
             case GrantAwardTopic::EDIT_QUALIFIED:
-                $countingActivtyId = $params['msg_body']['id'];
-                CountingActivitySignService::refreshCountingNum($countingActivtyId);
+                $countingActivityId = $params['msg_body']['id'];
+                CountingActivitySignService::refreshCountingNum($countingActivityId);
                 break;
             case GrantAwardTopic::SIGN_UP:
                 $id = $params['msg_body']['id'];
                 CountingActivitySignService::signAction($id);
+                break;
+            case GrantAwardTopic::LOTTERY_GRANT_AWARD:
+                LotteryGrantAwardService::grantAward($params['msg_body']);
                 break;
             default:
                 SimpleLogger::error('unknown event type', ['params' => $params]);

@@ -12,6 +12,11 @@ use App\Models\Erp\ErpDictModel;
 use App\Services\DictService;
 
 class DictConstants {
+    //业务线相关配置
+    const APP_ID = [
+        'type' => 'app_id',
+        'keys' => ['1', '8']
+    ];
 
     //邀请学生渠道配置
     const STUDENT_INVITE_CHANNEL = [
@@ -180,6 +185,7 @@ class DictConstants {
             'batch_import_reward_points_template',
             'export_amount',
             'export_total',
+            'lottery_import_user_template',
         ]
     ];
 
@@ -1205,6 +1211,52 @@ class DictConstants {
         ],
     ];
     //========================真人海外投放配置end========================
+
+    //奖品类型
+    const AWARD_TYPE = [
+        'type' => 'award_type',
+        'keys' => [0, 1, 2, 3, 4, 5, 6],
+    ];
+    //奖品等级
+    const AWARD_LEVEL = [
+        'type' => 'award_level',
+        'keys' => [1, 2, 3, 4, 5, 6, 7, 8],
+    ];
+    //抽奖奖品课程id
+    const LESSON_ID = [
+        'type' => 'lesson_id',
+        'keys' => [25, 50],
+    ];
+    //用户筛选规则类型
+    const USER_SOURCE = [
+        'type' => 'user_source',
+        'keys' => [1, 2],
+    ];
+    //活动前端展示状态
+    const ACTIVITY_SHOW_STATUS = [
+        'type' => 'show_status',
+        'keys' => [1, 3, 4, 5, 6],
+    ];
+    //发货单状态
+    const SHIPPING_STATUS = [
+        'type' => 'shipping_status',
+        'keys' => [0, 1, 2, 3, -1, -2],
+    ];
+    //中奖时间段规则类型
+    const HIT_TIMES_TYPE = [
+        'type' => 'hit_times_type',
+        'keys' => [1, 2],
+    ];
+
+    //抽奖活动配置
+    const LOTTERY_CONFIG = [
+        'type' => 'lottery_config',
+        'keys' => [
+            '1',//抽奖活动真人用户注册默认渠道key_code
+            '8',//抽奖活动智能用户注册默认渠道key_code
+        ],
+    ];
+
     /**
      * 单个获取op系统dict配置数据
      * @param $type

@@ -1411,7 +1411,7 @@ class Util
         } elseif ($yesterday < $time) {
             return '昨天 ' . date('H:i', $time);
         } elseif (date('Y') == date('Y', $time)) {
-            return date('m:d H:i', $time);
+            return date('m-d H:i', $time);
         } else {
             return date('Y-m-d H:i', $time);
         }
@@ -1583,5 +1583,14 @@ class Util
             ],
         ];
         HttpHelper::requestJson($webHook, $msg, 'POST');
+    }
+
+    /**
+     * 生成batch_id
+     * @return false|string
+     */
+    public static function getBatchId()
+    {
+        return substr(md5(uniqid()), 0, 6);
     }
 }

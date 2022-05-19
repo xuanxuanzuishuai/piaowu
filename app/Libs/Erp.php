@@ -69,6 +69,13 @@ class Erp
     const API_CHECK_PACKAGE_HAVE_KIND_V1 = '/ai_dss/billV1/check_package_have_kind';
     const API_UPDATE_ORDER_ADDRESS_V1 = '/ai_dss/billV1/update_order_address';
 
+    //抽奖活动
+    const API_ORDER_SEARCH = '/pri/v1/order/search';
+    const API_GRANT_COURSE = '/referee/student/giftCourse';
+    //赠送金叶子或音符
+    const API_GRANT_GOLD_LEAF_NOTE = '/ai_dss/account/enter';
+
+
     // 账户
     const API_STUDENT_ACCOUNTS = '/ai_dss/account/detail';
     const API_STUDENT_ACCOUNT_DETAIL = '/ai_dss/account/logs';
@@ -1008,5 +1015,38 @@ class Erp
     {
         $response = HttpHelper::requestJson($this->host . self::DOU_STORE_MSG, $params, 'POST');
         return !empty($response['code']) ? false : true;
+    }
+
+    /**
+     * 查询支付成功订单信息
+     * @param $params
+     * @return array|bool
+     */
+    public function orderSearch($params)
+    {
+        $response = HttpHelper::requestJson($this->host . self::API_ORDER_SEARCH, $params, 'GET');
+        return $response ?? [];
+    }
+
+    /**
+     * 赠送课程
+     * @param $params
+     * @return array|mixed
+     */
+    public function grantCourse($params)
+    {
+        $response = HttpHelper::requestJson($this->host . self::API_GRANT_COURSE, $params, 'POST');
+        return $response['data'] ?? [];
+    }
+
+    /**
+     * 赠送金叶子和音符
+     * @param $params
+     * @return array|mixed
+     */
+    public function grantGoldLeafNote($params)
+    {
+        $response = HttpHelper::requestJson($this->host . self::API_GRANT_GOLD_LEAF_NOTE, $params, 'POST');
+        return $response['data'] ?? [];
     }
 }
