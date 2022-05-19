@@ -18,6 +18,7 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
@@ -34,14 +35,21 @@ $dotenv->load();
 $dotenv->overload();
 $notTime = time();
 SimpleLogger::info('crawler order deliver material start', []);
+//获取有效的goods code
+$goodsCodeDictConfig = array_column(DictConstants::getErpDictArr(DictConstants::DOU_CODE_TO_PACKAGE['type'])[DictConstants::DOU_CODE_TO_PACKAGE['type']],
+    'code');
+SimpleLogger::info("valid goods code", [$goodsCodeDictConfig]);
+if (empty($goodsCodeDictConfig)) {
+    return true;
+}
 //获取订单数据
 $orderList = CrawlerOrderModel::getRecords([
     'dd_shop_id'      => CrawlerOrderModel::AI_DOU_DIAN_SHOP_ID,
     'receiver_tel[!]' => '',
     'is_send_erp'     => Constants::STATUS_FALSE,
+    'goods_code'      => $goodsCodeDictConfig,
     'LIMIT'           => 10,
 ], ['order_code', 'goods_code', 'dd_shop_id', 'receiver_name', 'receiver_tel', 'receiver_address']);
-
 $erpRequestObj = new Erp();
 $rdb = RedisDB::getConn();
 foreach ($orderList as $ov) {
