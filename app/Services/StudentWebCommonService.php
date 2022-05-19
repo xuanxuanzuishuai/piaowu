@@ -28,7 +28,7 @@ class StudentWebCommonService
     {
         if ($params['app_id'] == Constants::REAL_APP_ID) {
             //注册真人用户信息
-            $studentInfo = ErpStudentModel::getRecord(['mobile' => $params['mobile']],['id(student_id)','uuid']);
+            $studentInfo = ErpStudentModel::getRealUserInfoByMobile($params['mobile']);
         } elseif ($params['app_id'] == Constants::SMART_APP_ID) {
             //注册智能用户信息
             $studentInfo = DssStudentModel::getRecord(['mobile' => $params['mobile']],['id(student_id)','uuid']);

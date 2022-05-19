@@ -75,6 +75,7 @@ class LotteryCoreService
         //遍历符合条件的奖品
         $readyAwardInfo = self::removeAwardImport($params['award_info'], $params['time'], $readyAwardLevel);
         if (empty($readyAwardInfo)) {
+            SimpleLogger::info('LotteryCore filter ready award empty', []);
             return array_pop($params['award_info']);
         }
 
@@ -91,6 +92,7 @@ class LotteryCoreService
         //遍历符合条件的奖品
         $readyAwardInfo = self::removeAwardImport($params['award_info'], $params['time'], []);
         if (empty($readyAwardInfo)) {
+            SimpleLogger::info('LotteryCore import ready award empty', []);
             return array_pop($params['award_info']);
         }
         return self::core($readyAwardInfo);
@@ -103,16 +105,12 @@ class LotteryCoreService
      */
     public static function core($readyAwardList)
     {
+        SimpleLogger::info('LotteryCore ready award', $readyAwardList);
         $length = 0;
         $readyAwardList = array_values($readyAwardList);
         for ($i = 0; $i < count($readyAwardList); $i++) {
             $length += $readyAwardList[$i]['weight'];
         }
-
-        foreach ($readyAwardList as $key => $value) {
-            $readyAwardList[$key]['weight_rate'] = number_format($value['weight'] / $length, 2);
-        }
-        SimpleLogger::info('LotteryCore ready award', $readyAwardList);
 
         for ($i = 0; $i < count($readyAwardList); $i++) {
             $random = rand(1, $length);

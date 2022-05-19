@@ -181,4 +181,27 @@ class ErpStudentModel extends ErpModel
         );
         return is_array($info) ? $info : [];
     }
+
+    /**
+     * 根据手机号获取真人用户信息
+     * @param $studentMobile
+     * @return mixed
+     */
+    public static function getRealUserInfoByMobile($studentMobile)
+    {
+        $db = self::dbRO();
+        return $db->get(self::$table,
+            [
+                "[><]" . ErpStudentAppModel::$table => ['id' => 'student_id']
+            ],
+            [
+                self::$table . '.id((student_id))',
+                self::$table . '.mobile',
+                self::$table . '.uuid',
+            ],
+            [
+                self::$table . '.mobile' => $studentMobile,
+                ErpStudentAppModel::$table . '.app_id' => Constants::REAL_APP_ID,
+            ]);
+    }
 }
