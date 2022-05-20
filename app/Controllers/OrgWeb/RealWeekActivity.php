@@ -243,6 +243,8 @@ class RealWeekActivity extends ControllerBase
     {
         try {
             $params = $request->getParams();
+            $params['count'] = 60;
+            $params['page'] = 1;
             list($data, $total) = RealWeekActivityService::getSelectList($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
