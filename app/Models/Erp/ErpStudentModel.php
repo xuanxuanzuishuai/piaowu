@@ -195,7 +195,7 @@ class ErpStudentModel extends ErpModel
                 "[><]" . ErpStudentAppModel::$table => ['id' => 'student_id']
             ],
             [
-                self::$table . '.id((student_id))',
+                self::$table . '.id(student_id)',
                 self::$table . '.mobile',
                 self::$table . '.uuid',
             ],
