@@ -605,7 +605,7 @@ class LotteryAdminService
                 'express_number'     => '[' . $fv['logistics_company'] . ']' . $fv['express_number'],
             ];
         }
-        $fileName = $recordData['activity_name'] . '(' . date("Y-m-d") . ')参与记录.xlsx';
+        $fileName = $recordData['activity_name'] . '(' . date("Y-m-d H:i:s") . mt_rand(1, 100) . ')参与记录.xlsx';
         $tmpFileSavePath = ExcelImportFormat::createExcelTable($dataResult, $title,
             ExcelImportFormat::OUTPUT_TYPE_SAVE_FILE);
         $ossPath = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_TMP_EXCEL . '/' . $fileName;

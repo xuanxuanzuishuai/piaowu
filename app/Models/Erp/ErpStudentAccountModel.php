@@ -14,7 +14,7 @@ class ErpStudentAccountModel extends ErpModel
     const DATA_TYPE_LEAF = 4; //金叶子
 
     //发放积分类用户行为类型
-    const LOTTERY_ACTION = 6001; //抽奖活动
+    const LOTTERY_ACTION = 6003; //抽奖活动
 
     const TYPE_LOTTERY_ACTIVE_HIS_AWARD_COURSE = 18; //活动赠课-抽奖活动赠课
 }
