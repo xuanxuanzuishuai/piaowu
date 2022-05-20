@@ -1416,4 +1416,37 @@ class ReferralService
 
         return $result;
     }
+
+    /**
+     * 获取添加助教微信Scheme
+     * @param $uuid
+     * @param $projectName
+     * @return mixed
+     * @throws RunTimeException
+     */
+    public static function getAssistantWxUrl($uuid,$projectName)
+    {
+        //先从缓存中取
+        $redis = RedisDB::getConn();
+        $key = 'get_assistant_url_scheme_' . $uuid;
+        $urlScheme = $redis->get($key);
+        if (!empty($urlScheme)) {
+            return $urlScheme;
+        }
+
+        $appId = Constants::SMART_APP_ID;
+        $busiType = DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP;
+        $query = 'uuid=' . $uuid . '&projectName=' . $projectName;
+        $wx = WeChatMiniPro::factory($appId, $busiType);
+        $expireTime = time() + Util::TIMESTAMP_ONEDAY;
+        $urlSchemeInfo = $wx->getSupportSmsJumpLink('/pages/paySuccess', $query, $expireTime);
+        if (!empty($urlSchemeInfo['openlink'])) {
+            $urlScheme = $urlSchemeInfo['openlink'];
+            $redis->setex($key, Util::TIMESTAMP_ONEDAY, $urlScheme);
+            return $urlScheme;
+        } else {
+            Util::errorCapture('add assistant wx url scheme error', $urlSchemeInfo);
+            return $_ENV['AI_REFERRER_URL'];
+        }
+    }
 }
