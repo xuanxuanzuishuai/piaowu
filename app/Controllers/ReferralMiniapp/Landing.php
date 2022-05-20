@@ -135,6 +135,7 @@ class Landing extends ControllerBase
                     'uuid'         => $uuid,
                     'new_user'     => $isNew,    // 0老用户，1新用户
                     'anonymous_id' => $request->getHeader('anonymous_id')[0] ?? '',   // 埋点匿名id, 投放页有
+                    'mobile'       => $params['mobile'] ?? '',
                 ])->publish();
             } catch (\Exception $e) {
                 SimpleLogger::info('push_login_err', ['msg' => 'landing_mini_app_register', 'err' => $e->getMessage()]);
