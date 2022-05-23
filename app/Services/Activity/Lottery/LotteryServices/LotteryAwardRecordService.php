@@ -428,7 +428,7 @@ class LotteryAwardRecordService
     public static function updateAwardShippingAddress($id, $addressDetail): bool
     {
         $recordData = LotteryAwardRecordModel::getRecord(['id' => $id],
-            ['op_activity_id', 'award_type', 'shipping_status']);
+            ['op_activity_id', 'award_type', 'shipping_status', 'draw_time']);
         if ($recordData['award_type'] != Constants::AWARD_TYPE_TYPE_ENTITY) {
             throw new RuntimeException(["not_entity_award_stop_update_shipping_address"]);
         }
@@ -450,7 +450,8 @@ class LotteryAwardRecordService
         $addressDetail['id'] = $result['data']['address_id'];
         $res = LotteryAwardRecordModel::batchUpdateRecord([
             'erp_address_id' => $result['data']['address_id'],
-            'address_detail' => json_encode($addressDetail, true),
+            'address_detail' => json_encode($addressDetail),
+            'draw_time'      => empty($recordData['draw_time']) ? time() : $recordData['draw_time']
         ], ['id' => $id, 'shipping_status' => Constants::SHIPPING_STATUS_BEFORE]);
         return !empty($res);
     }
