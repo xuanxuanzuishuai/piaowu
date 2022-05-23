@@ -17,6 +17,7 @@ use App\Controllers\StudentWeb\Recall;
 use App\Controllers\StudentWeb\Student;
 use App\Controllers\StudentWeb\Area;
 use App\Controllers\StudentWeb\StudentWebCommon;
+use App\Middleware\CommonWebCheckMiddleware;
 use App\Middleware\RecallAuthCheckMiddleware;
 use App\Middleware\WebAuthCheckMiddleware;
 
@@ -77,23 +78,25 @@ class StudentWebRouter extends RouterBase
 
 
         /********************抽奖活动接口**********************/
+        '/student_web/common/address_list' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':addressList','middles' => [CommonWebCheckMiddleware::class]],
+        '/student_web/common/modify_address' => ['method' => ['post'], 'call' => StudentWebCommon::class . ':modifyAddress','middles' => [CommonWebCheckMiddleware::class]],
         //用户登录接口
         '/student_web/common/login' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':login','middles' => []],
-        '/student_web/common/country' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':countryList'],
-        '/student_web/common/province' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':provinceList'],
-        '/student_web/common/city' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':cityList'],
-        '/student_web/common/district' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':districtList'],
+        '/student_web/common/country' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':countryList','middles' => [CommonWebCheckMiddleware::class]],
+        '/student_web/common/province' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':provinceList','middles' => [CommonWebCheckMiddleware::class]],
+        '/student_web/common/city' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':cityList','middles' => [CommonWebCheckMiddleware::class]],
+        '/student_web/common/district' => ['method' => ['get'], 'call' => StudentWebCommon::class . ':districtList','middles' => [CommonWebCheckMiddleware::class]],
         //活动信息获取
         '/student_web/lottery/activity_info' => ['method' => ['get'], 'call' => Lottery::class . ':activityInfo','middles'=>[]],
         //开始抽奖
-        '/student_web/lottery/start_lottery' => ['method' => ['get'], 'call' => Lottery::class . ':startLottery'],
+        '/student_web/lottery/start_lottery' => ['method' => ['get'], 'call' => Lottery::class . ':startLottery','middles' => [CommonWebCheckMiddleware::class]],
         //获取中奖记录
-        '/student_web/lottery/hit_record' => ['method' => ['get'], 'call' => Lottery::class . ':hitRecord'],
+        '/student_web/lottery/hit_record' => ['method' => ['get'], 'call' => Lottery::class . ':hitRecord','middles' => [CommonWebCheckMiddleware::class]],
         //获取收货地址
-        '/student_web/lottery/get_address' => ['method' => ['get'], 'call' => Lottery::class . ':getAddress'],
+        '/student_web/lottery/get_address' => ['method' => ['get'], 'call' => Lottery::class . ':getAddress','middles' => [CommonWebCheckMiddleware::class]],
         //修改收货地址
-        '/student_web/lottery/modify_address' => ['method' => ['post'], 'call' => Lottery::class . ':modifyAddress'],
+        '/student_web/lottery/modify_address' => ['method' => ['post'], 'call' => Lottery::class . ':modifyAddress','middles' => [CommonWebCheckMiddleware::class]],
         //查看物流信息
-        '/student_web/lottery/shipping_info' => ['method' => ['get'], 'call' => Lottery::class . ':shippingInfo'],
+        '/student_web/lottery/shipping_info' => ['method' => ['get'], 'call' => Lottery::class . ':shippingInfo','middles' => [CommonWebCheckMiddleware::class]],
     ];
 }

@@ -38,11 +38,10 @@ class StudentWebCommonService
             $studentInfo = self::register($params);
         }
 
-        $token = WechatTokenService::generateToken(
+        $token = CommonWebTokenService::generateToken(
             $studentInfo['student_id'],
             Constants::USER_TYPE_STUDENT,
-            $params['app_id'],
-            null);
+            $params['app_id']);
         return [
             'app_id'     => $params['app_id'],
             'student_id' => $studentInfo['student_id'],
