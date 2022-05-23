@@ -27,7 +27,7 @@ use App\Services\Queue\GrantAwardTopic;
 use Dotenv\Dotenv;
 
 /**
- * 异步发送抽奖活动的实物奖品:领取奖品24小时后发货，即24小时后推送到ERP，晚11点~早8点不推送
+ * 异步发送抽奖活动的实物奖品:领取奖品24小时后发货，即24小时后推送到ERP
  */
 $dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();

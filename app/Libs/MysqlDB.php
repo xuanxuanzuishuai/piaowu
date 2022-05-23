@@ -256,4 +256,13 @@ class MysqlDB
                 ];
         }
     }
+
+    /**
+     * 获取数据库操纵对象
+     * @return Medoo
+     */
+    public function getClientObj(): Medoo
+    {
+        return $this->client;
+    }
 }

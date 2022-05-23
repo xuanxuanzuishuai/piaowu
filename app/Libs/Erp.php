@@ -13,6 +13,7 @@ use App\Models\CountingActivityAwardModel;
 use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Erp\ErpDictModel;
 use App\Models\Erp\ErpEventModel;
+use App\Services\Queue\MessageReminder\MessageReminderProducerService;
 use GuzzleHttp\Client;
 use Slim\Http\StatusCode;
 
@@ -753,7 +754,9 @@ class Erp
             'old_rule_last_activity_id' => $extParams['old_rule_last_activity_id'] ?? 0,
             'remark'                    => $extParams['remark'] ?? '',
         ];
-        return HttpHelper::requestJson($this->host . self::API_ADD_EVENT_TASK_AWARD, $params, 'POST');
+        $responseData = HttpHelper::requestJson($this->host . self::API_ADD_EVENT_TASK_AWARD, $params, 'POST');
+        MessageReminderProducerService::addEventTaskAwardMessageReminderProducer(!empty($awardId) ? [$awardId] : $responseData['data']['points_award_ids']);
+        return $responseData;
     }
 
     /**

@@ -192,4 +192,15 @@ class ErpUserEventTaskAwardGoldLeafModel extends ErpModel
         $returnList['list'] = is_array($list) ? $list : [];
         return $returnList;
     }
+
+    /**
+     * 获取待发放金叶子金额总数
+     * @param string $studentUuid
+     * @return int
+     */
+    public static function getWaitSendGoldLeafBNum(string $studentUuid): int
+    {
+        $db = self::dbRO();
+        return (int)$db->sum(self::$table, ['award_num'], ['uuid' => $studentUuid, 'status' => self::STATUS_WAITING]);
+    }
 }

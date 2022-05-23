@@ -47,6 +47,7 @@ use App\Services\Queue\AgentTopic;
 use App\Services\Queue\CheckPosterSyncTopic;
 use App\Services\Queue\DurationTopic;
 use App\Services\Queue\GrantAwardTopic;
+use App\Services\Queue\MessageReminder\MessageReminderConsumerService;
 use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\RealReferralTopic;
 use App\Services\Queue\SaveTicketTopic;
@@ -1300,6 +1301,33 @@ class Consumer extends ControllerBase
             call_user_func(array($consumerObj, $checkFormatParams['event_type']), $checkFormatParams);
         } else {
             SimpleLogger::error('unknown event type', ['params' => $checkFormatParams]);
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+
+    /**
+     * 消息提醒数据，消费者控制器入口
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public static function messageReminder(Request $request, Response $response): Response
+    {
+        $checkFormatParams = self::commonParamsCheck($request, $response);
+        if (is_object($checkFormatParams)) {
+            return $checkFormatParams;
+        }
+        $funName = Util::underlineToHump($checkFormatParams['event_type']);
+        try {
+            $consumerObj = new MessageReminderConsumerService();
+            if (method_exists($consumerObj, $funName)) {
+                call_user_func(array($consumerObj, $funName), $checkFormatParams);
+            } else {
+                SimpleLogger::error('unknown event type', ['params' => $checkFormatParams]);
+            }
+        }catch (RunTimeException $e){
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, []);
     }
