@@ -1436,7 +1436,7 @@ class ReferralService
 
         $appId = Constants::SMART_APP_ID;
         $busiType = DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP;
-        $query = 'uuid=' . $uuid . '&projectName=' . $projectName;
+        $query = 'uuid=' . $uuid . '&projectName=' . urlencode($projectName);
         $wx = WeChatMiniPro::factory($appId, $busiType);
         $expireTime = time() + Util::TIMESTAMP_ONEDAY;
         $urlSchemeInfo = $wx->getSupportSmsJumpLink('/pages/paySuccess', $query, $expireTime);
