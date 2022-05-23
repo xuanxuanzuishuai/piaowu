@@ -53,11 +53,12 @@ class Landing extends ControllerBase
 
         try {
             $params = $request->getParams();
-            $sceneData = ShowMiniAppService::getSceneData(urldecode($params['scene'] ?? ''));
-            parse_str(urldecode(urldecode($params['scene'])), $res);
+            $paramsScene = urldecode($params['scene']);
+            $sceneData = ShowMiniAppService::getSceneData($paramsScene);
+            parse_str($paramsScene, $res);
             !empty($res['play_id']) && $sceneData['play_id'] = $res['play_id'];
             $pageData = ShowMiniAppService::getMiniAppPlayReviewData($sceneData, $this->ci['open_id']);
-            $pageData['share_scene'] = urlencode($params['scene']);
+            $pageData['share_scene'] = $params['scene'];
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
