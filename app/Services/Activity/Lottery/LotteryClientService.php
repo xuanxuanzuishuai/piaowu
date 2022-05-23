@@ -119,6 +119,7 @@ class LotteryClientService
         if ($modifyEndTime < time()) {
             throw new RunTimeException(['receive_award_time_error']);
         }
+        $params['draw_time'] = $awardRecordInfo['draw_time'] ?? 0;
         return LotteryAwardRecordService::modifyAddress($params);
     }
 
