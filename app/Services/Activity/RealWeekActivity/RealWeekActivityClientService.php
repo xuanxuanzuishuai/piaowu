@@ -15,7 +15,6 @@ use App\Libs\SimpleLogger;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\OperationActivityModel;
 use App\Models\RealSharePosterModel;
-use App\Models\RealSharePosterTaskListModel;
 use App\Models\RealWeekActivityModel;
 use App\Models\RealWeekActivityRuleVersionAbModel;
 use App\Services\Activity\RealWeekActivity\TraitService\RealWeekActivityCURDService;
@@ -71,8 +70,8 @@ class RealWeekActivityClientService
         if (!empty($searchName)) {
             if (is_numeric($searchName)) {
                 $searchWhere['OR'] = [
-                    'AND #one' => ['activity_id' => intval($searchName)],
-                    'AND #two' => ['name[~]' => trim($searchName)],
+                    'AND #one' => ['w.activity_id' => intval($searchName)],
+                    'AND #two' => ['w.name[~]' => trim($searchName)],
                 ];
             } else {
                 $searchWhere['name'] = $searchName;
@@ -138,7 +137,7 @@ class RealWeekActivityClientService
                 }
             }
         } catch (RunTimeException $e) {
-            SimpleLogger::info("isHasFirstPayTimeNode20211025Course_runtimeException", [$studentUUID, $studentCourseList, $e]);
+            SimpleLogger::info("isHasFirstPayTimeNode20211025Course_runtimeException", [$studentUUID, $studentCourseList ?? [], $e]);
             return false;
         }
         return !empty($isHas);

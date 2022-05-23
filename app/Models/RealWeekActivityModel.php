@@ -7,6 +7,7 @@ namespace App\Models;
 
 use App\Libs\Constants;
 use App\Libs\MysqlDB;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use Medoo\Medoo;
 
@@ -246,5 +247,56 @@ class RealWeekActivityModel extends Model
                 'ORDER' => ['activity_id' => 'DESC'],
             ]);
         return empty($list) ? [] : $list;
+    }
+
+    public static function getActivityList($where)
+    {
+        $sql = "SELECT {{columns}} from " . self::$table . ' as w  {{join}} where 1=1 ';
+        !empty($where['activity_id']) && $sql .= ' and w.activity_id=' . intval($where['activity_id']);
+        !empty($where['name']) && $sql .= " and w.name like '%" . trim($where['name']) . "%'";
+        !empty($where['OR']) && $searchWhere['OR'] = $where['OR'];
+        if (!empty($where['OR'])) {
+            $childSql = '';
+            foreach ($where['OR'] as $key => $item) {
+                foreach ($item as $_c => $_v) {
+                    !empty($childSql) && $childSql .= ' or ';
+                    if (stripos($_c, '[~]')) {
+                        $childSql .= ' ' . str_replace('[~]','',$_c) . " like '%" . $_v . "%'";
+                    } else {
+                        $childSql .= ' ' . $_c . "='" . $_v . "'";
+                    }
+                }
+                unset($_c, $_v);
+            }
+            unset($key, $item);
+            !empty($childSql) && $sql .= ' and (' . $childSql . ')';
+        }
+        if (!empty($where['enable_status'])) {
+            if (is_array($where['enable_status'])) {
+                $sql .= ' and w.enable_status in (' . implode(',', $where['enable_status']) . ')';
+            } else {
+                $sql .= ' and w.enable_status=' . intval($where['enable_status']);
+            }
+        }
+        if ($where['share_poster_verify_status'] == RealSharePosterModel::VERIFY_STATUS_WAIT) {
+            $join = ' LEFT JOIN ' . RealSharePosterModel::$table . " as sp on sp.activity_id=w.activity_id and sp.verify_status=" . RealSharePosterModel::VERIFY_STATUS_WAIT;
+            $sql .= ' and sp.verify_status=' . RealSharePosterModel::VERIFY_STATUS_WAIT;
+        } else {
+            $join = '';
+        }
+        $db = MysqlDB::getDB();
+        $countSql = str_replace(['{{columns}}', "{{join}}"], ['count(distinct w.activity_id) as total_count', $join], $sql);
+        $res = $db->queryAll($countSql);
+        SimpleLogger::info("getActivityList_sql", [$where, $countSql, $res]);
+        if (empty($res[0]['total_count'])) {
+            return [0, []];
+        }
+        $columns = 'w.activity_id,w.name';
+        $sql .= ' ORDER BY w.id DESC';
+        !empty($where['ORDER']) && $sql .= ' LIMIT '. $where['LIMIT'][0] . ','. $where['LIMIT'][1];
+        $listSql = str_replace(['{{columns}}', "{{join}}"], [$columns, $join], $sql);
+        $list = $db->queryAll($listSql);
+        SimpleLogger::info("getActivityList_sql", [$where, $listSql, $list]);
+        return [intval($res[0]['total_count']), is_array($list) ? $list : []];
     }
 }
