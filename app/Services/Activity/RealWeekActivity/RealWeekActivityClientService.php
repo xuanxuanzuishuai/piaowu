@@ -91,56 +91,23 @@ class RealWeekActivityClientService
      * 检查学生是否可以参加周周领奖活动
      * @param $studentId
      * @param $studentUUID
-     * @return bool true:可以参加， false:不可以参加
+     * @return bool false:可以参加， true:不可以参加
      */
     public static function checkIsAllowJoinWeekActivity($studentId, $studentUUID)
     {
         // 获取学生首次付费时间
-        $studentIdAttribute = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentId, $studentUUID);
-        if (!UserService::checkRealStudentIdentityIsNormal($studentId, $studentIdAttribute)) {
+        $studentCourseData = UserService::getStudentCourseData($studentUUID);
+        if (empty($studentCourseData['is_valid_pay'])) {
             // 不是付费有效用户， 直接返回不能参与
-            return false;
+            return true;
         }
         // 检查首次付费时间是2021.10.26号零点前(不包含零点)，检查用户是否有2021.10.26号零点前的订单是否消耗完成，消耗完不能再参加周周领奖活动
-        $firstPayTimeNode20211025 = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'first_pay_time_node_20211025');
-        if ($studentIdAttribute['first_pay_time'] < $firstPayTimeNode20211025 && !self::isHasFirstPayTimeNode20211025Course($studentUUID)) {
+        if (empty($studentCourseData['first_pay_time_20211025_remainder_num'])) {
             // 时间小于2021.10.26号零点前，并且没有改时间点之前未消耗完的订单
-            return false;
+            return true;
         }
         // 检查2021.10.26零点前的订单，如果没有消耗完继续往下走
-        return true;
-    }
-
-    /**
-     * 获取学生2021.10.26号零点之前付费订单是否都已经消耗完
-     * @param $studentUUID
-     * @return bool  true:存在， false:不存在
-     */
-    public static function isHasFirstPayTimeNode20211025Course($studentUUID)
-    {
-        // 获取用户所有付费订单
-        try {
-            $studentCourseList = (new Erp())->getStudentCourses($studentUUID);
-            if (empty($studentCourseList)) {
-                // 没有查到付费订单
-                SimpleLogger::info("isHasFirstPayTimeNode20211025Course", ['msg' => 'erp_student_course_empty', $studentUUID, $studentCourseList]);
-                return false;
-            }
-            $firstPayTimeNode20211025 = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'first_pay_time_node_20211025');
-            foreach ($studentCourseList as $course) {
-                foreach ($course as $item) {
-                    // 未退费， 并且时间是节点之前， 并且剩余课程数量大于0
-                    if ($item['is_refund'] == 1 && $item['create_time'] < $firstPayTimeNode20211025 && $item['remain_num'] > 0) {
-                        $isHas = true;
-                        break;
-                    }
-                }
-            }
-        } catch (RunTimeException $e) {
-            SimpleLogger::info("isHasFirstPayTimeNode20211025Course_runtimeException", [$studentUUID, $studentCourseList ?? [], $e]);
-            return false;
-        }
-        return !empty($isHas);
+        return false;
     }
 
     /**

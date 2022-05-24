@@ -254,11 +254,12 @@ class RealWeekActivityModel extends Model
         $sql = "SELECT {{columns}} from " . self::$table . ' as w  {{join}} where 1=1 ';
         !empty($where['activity_id']) && $sql .= ' and w.activity_id=' . intval($where['activity_id']);
         !empty($where['name']) && $sql .= " and w.name like '%" . trim($where['name']) . "%'";
-        !empty($where['OR']) && $searchWhere['OR'] = $where['OR'];
         if (!empty($where['OR'])) {
             $childSql = '';
             foreach ($where['OR'] as $key => $item) {
                 foreach ($item as $_c => $_v) {
+                    // 循环拼接sql 如果不是首位存在[~]认为是模糊搜索，否则用等号作为条件
+                    // 最后和外面的SQL 拼接好格式： 1=1 and (n like '%1%' or f=1)
                     !empty($childSql) && $childSql .= ' or ';
                     if (stripos($_c, '[~]')) {
                         $childSql .= ' ' . str_replace('[~]','',$_c) . " like '%" . $_v . "%'";
@@ -269,6 +270,7 @@ class RealWeekActivityModel extends Model
                 unset($_c, $_v);
             }
             unset($key, $item);
+            // 把 OR作为一个整体和外面的其他条件做and操作
             !empty($childSql) && $sql .= ' and (' . $childSql . ')';
         }
         if (!empty($where['enable_status'])) {
