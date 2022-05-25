@@ -116,11 +116,12 @@ class Student extends ControllerBase
         }
         // 上报设备信息
         try {
+            $studentInfo = DssStudentModel::getRecord(['id' => $info['student_id']]);
             (new DeviceCommonTrackTopic)->pushLogin([
                 'from'         => DeviceCommonTrackTopic::FROM_TYPE_WX,
                 'channel_id'   => $channelId,
                 'open_id'      => $data['openid'] ?? '',
-                'uuid'         => $student['uuid'] ?? '',
+                'uuid'         => $studentInfo['uuid'] ?? '',
                 'new_user'     => $info['is_new'] ?? 0,    // 0老用户，1新用户
                 'anonymous_id' => $request->getHeader('anonymous_id')[0] ?? '',   // 埋点匿名id, 投放页有
                 'mobile'       => $params['mobile'],
