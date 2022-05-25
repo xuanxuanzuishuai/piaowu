@@ -314,4 +314,35 @@ class Landing extends ControllerBase
         }
         return HttpHelper::buildResponse($response, $data);
     }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getAssistantWxUrl(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'uuid',
+                'type' => 'required',
+                'error_code' => 'uuid_is_required'
+            ],
+            [
+                'key' => 'project_name',
+                'type' => 'required',
+                'error_code' => 'project_name_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $urlScheme = ReferralService::getAssistantWxUrl($params['uuid'], $params['project_name']);
+
+        return HttpHelper::buildResponse($response, [
+            'url_scheme' => $urlScheme
+        ]);
+    }
 }
