@@ -294,7 +294,7 @@ class RealWeekActivityModel extends Model
             return [0, []];
         }
         $columns = 'w.activity_id,w.name';
-        $sql .= ' ORDER BY w.id DESC';
+        $sql .= ' GROUP BY w.activity_id ORDER BY w.id DESC ';
         !empty($where['ORDER']) && $sql .= ' LIMIT '. $where['LIMIT'][0] . ','. $where['LIMIT'][1];
         $listSql = str_replace(['{{columns}}', "{{join}}"], [$columns, $join], $sql);
         $list = $db->queryAll($listSql);

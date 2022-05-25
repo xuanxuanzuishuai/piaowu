@@ -330,6 +330,9 @@ class UserService
     public static function getStudentCourseData($studentUUID)
     {
         $returnData = [];
+        if(empty($studentUUID)) {
+            return $returnData;
+        }
         $orderCourseList = (new Erp())->getStudentCourses($studentUUID);
         SimpleLogger::info("getStudentCourseData", ['msg' => 'erp_student_course_data', $studentUUID, $orderCourseList]);
         if (empty($orderCourseList)) {
@@ -340,19 +343,24 @@ class UserService
         $returnData['is_real_person_paid'] = Erp::USER_IS_PAY_YES;  // 已付费
         $returnData['paid_course_remainder_num'] = 0;               // 剩余有效课程数量
         $returnData['first_pay_time_20211025_remainder_num'] = 0;   // 2021.10.26零点前付费并且未消耗完的订单剩余课程总数
-        $returnData['first_pay_time_20211025_order_id'] = 0;        // 2021.10.26零点前付费并且未消耗完的订单id
+        $returnData['first_pay_time_20211025_order_id'] = [];       // 2021.10.26零点前付费并且未消耗完的订单id
+        $returnData['is_first_pay_time_20211025'] = false;          // 首次付费时间是不是在2021.10.26零点前
         $firstPayTimeNode20211025 = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'first_pay_time_node_20211025');
-
         foreach ($orderCourseList as $_orderId => $_orderList) {
             foreach ($_orderList as $item) {
+                if ($item['is_refund'] != 1) {
+                    // 非"未退费"状态
+                    continue;
+                }
                 // 过滤不需要的sub_type
-                if (!in_array($item['sub_type'], [Constants::REFEREE_BUY_LADDER_PLAYER, Constants::REFEREE_BUY_FORMAL])) {
+                if (!in_array($item['sub_type'], array_merge(...array_values(Constants::REFEREE_ID_CONTRAST_SUB_TYPE)))) {
                     continue;
                 }
                 // 检查2021。10.26零点前订单是否有未消耗完的订单
                 if ($item['create_time'] < $firstPayTimeNode20211025) {
                     $returnData['first_pay_time_20211025_remainder_num'] += $item['remain_num'];   // 2021.10.26零点前付费并且未消耗完的订单剩余课程总数
-                    $returnData['first_pay_time_20211025_order_id'][] = $_orderId;        // 2021.10.26零点前付费并且未消耗完的订单id
+                    $item['remain_num'] > 0 && $returnData['first_pay_time_20211025_order_id'][] = $_orderId;        // 2021.10.26零点前付费并且未消耗完的订单id
+                    $returnData['is_first_pay_time_20211025'] = true;        // 2021.10.26零点前付费并且未消耗完的订单id
                 }
                 $item['create_time'] > $returnData['first_pay_time'] && $returnData['first_pay_time'] = $item['create_time'];
                 // 购买过陪练课，并且有剩余课程数量的订单
@@ -382,7 +390,6 @@ class UserService
             unset($item);
         }
         unset($_orderId, $_orderList);
-
         // 确定用户购课身份
         if (isset($returnData[Constants::REFEREE_BUY_LADDER_PLAYER]) && isset($returnData[Constants::REFEREE_BUY_FORMAL])) {
             $returnData['buy_course_type'] = Constants::REFEREE_BUY_FORMAL_AND_LADDER_PLAYER;

@@ -102,7 +102,7 @@ class RealWeekActivityClientService
             return true;
         }
         // 检查首次付费时间是2021.10.26号零点前(不包含零点)，检查用户是否有2021.10.26号零点前的订单是否消耗完成，消耗完不能再参加周周领奖活动
-        if (empty($studentCourseData['first_pay_time_20211025_remainder_num'])) {
+        if ($studentCourseData['is_first_pay_time_20211025'] && empty($studentCourseData['first_pay_time_20211025_remainder_num'])) {
             // 时间小于2021.10.26号零点前，并且没有改时间点之前未消耗完的订单
             return true;
         }
