@@ -121,7 +121,7 @@ class Pay extends ControllerBase
                 (new DeviceCommonTrackTopic)->pushCreateOrder([
                     'from'         => DeviceCommonTrackTopic::FROM_TYPE_MINI_APP,
                     'channel_id'   => $sceneData['c'] ?? '',
-                    'open_id'      => $data['openid'] ?? '',
+                    'open_id'      => $openId,
                     'uuid'         => $student['uuid'] ?? '',
                     'new_user'     => 0,    // 0老用户，1新用户
                     'anonymous_id' => $request->getHeader('anonymous_id')[0] ?? '',   // 埋点匿名id, 投放页有
