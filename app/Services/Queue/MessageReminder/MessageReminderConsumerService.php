@@ -78,7 +78,7 @@ class MessageReminderConsumerService
         foreach ($awardData['list'] as $avl) {
             //确定提醒消息标题：判断本条奖励是不是推荐人奖励 - 如果是需要拼接被推荐人手机号码
             if ($avl['to'] == ErpEventTaskModel::AWARD_TO_REFERRER) {
-                $tmpTitle = $avl['event_name'] . $avl['mobile'] . '+' . $avl['award_num'];
+                $tmpTitle = $avl['event_name'] . $avl['buyer_student_mobile'] . ' +' . $avl['award_num'];
             } else {
                 $tmpTitle = $avl['event_name'] . '+' . $avl['award_num'];
             }

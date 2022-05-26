@@ -44,7 +44,7 @@ class MessageReminderService
         $dictConfig = DictConstants::getTypesMap([DictConstants::MESSAGE_REMINDER_TYPE['type']]);
         foreach ($data['list'] as &$lv) {
             $lv['type_zh'] = $dictConfig[DictConstants::MESSAGE_REMINDER_TYPE['type']][$lv['type']]['value'];
-            $lv['create_time'] = date("Y-m-d H:i:s", $lv['create_time']);
+            $lv['create_time'] = date("Y.m.d H:i", $lv['create_time']);
         }
         return $data;
     }
@@ -76,6 +76,24 @@ class MessageReminderService
     }
 
     /**
+     * 队列数据幂等性检测：数据存在返回false，不存在返回true
+     * @param string $studentUuid
+     * @param int $messageType
+     * @param int $dataId
+     * @return bool
+     */
+    private static function idempotenceCheck(string $studentUuid, int $messageType, int $dataId): bool
+    {
+        $dataCount = StudentMessageReminderModel::getCount(
+            [
+                'student_uuid' => $studentUuid,
+                'type'         => $messageType,
+                'data_id'      => $dataId,
+            ]);
+        return $dataCount == 0;
+    }
+    
+    /**
      * 格式化数据
      * @param int $messageType
      * @param array $messageDataArr
@@ -85,11 +103,19 @@ class MessageReminderService
     {
         $formatParams = [];
         foreach ($messageDataArr as $item) {
+            $idempotenceCheckRes = true;
+            $tmpDataId = (int)$item['data_id'];
+            if (!empty($tmpDataId)) {
+                $idempotenceCheckRes = self::idempotenceCheck($item['student_uuid'], $messageType, $tmpDataId);
+            }
+            if ($idempotenceCheckRes == false) {
+                continue;
+            }
             $formatParams[] = [
                 'type'         => $messageType,
                 'title'        => $item['title'],
                 'content'      => $item['content'],
-                'data_id'      => (int)$item['data_id'],
+                'data_id'      => $tmpDataId,
                 'read_status'  => StudentMessageReminderModel::STATUS_UNREAD,
                 'status'       => Constants::STATUS_TRUE,
                 'student_uuid' => $item['student_uuid'],
@@ -136,7 +162,9 @@ class MessageReminderService
             ],
             [
                 'student_uuid' => $studentUuid,
-                'type'         => $messageTypes
+                'type'         => $messageTypes,
+                'status'       => Constants::STATUS_TRUE,
+                'read_status'  => StudentMessageReminderModel::STATUS_UNREAD,
             ]);
         if (empty($res)) {
             throw new RuntimeException(["update_failure"]);

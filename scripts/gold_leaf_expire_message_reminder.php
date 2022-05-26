@@ -57,7 +57,7 @@ if (empty($data)) {
 try {
     $nsqObj = new MessageReminderTopic();
     foreach ($data as $dv) {
-        $tmpFormatParams[] = [
+        $tmpFormatParams = [
             'title'        => $dv['num'] / 100,
             'content'      => "积分将于" . date('Y年m月d日', $dv['expire_time']) . '过期',
             'data_id'      => $dv['id'],
