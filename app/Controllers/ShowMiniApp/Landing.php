@@ -20,6 +20,7 @@ use App\Models\Dss\DssUserWeiXinModel;
 use App\Services\CommonServiceForApp;
 use App\Services\MiniAppQrService;
 use App\Services\PayServices;
+use App\Services\Queue\Track\DeviceCommonTrackTopic;
 use App\Services\ShowMiniAppService;
 use App\Services\StudentService;
 use Slim\Http\Request;
@@ -176,7 +177,7 @@ class Landing extends ControllerBase
             }
             $sceneData = ShowMiniAppService::getSceneData(urldecode($params['scene'] ?? ''));
             $sessionKeyOpenId = WeChatMiniPro::factory(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,DssUserWeiXinModel::BUSI_TYPE_SHOW_MINAPP)->getSessionKey($this->ci['open_id']);
-            list($openid, $lastId, $mobile, $uuid, $hadPurchased) = ShowMiniAppService::remoteRegister(
+            list($openid, $lastId, $mobile, $uuid, $hadPurchased, $studentExists) = ShowMiniAppService::remoteRegister(
                 $this->ci['open_id'],
                 $params['iv'] ?? '',
                 $params['encrypted_data'] ?? '',
@@ -192,6 +193,15 @@ class Landing extends ControllerBase
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
+        (new DeviceCommonTrackTopic)->pushLogin([
+            'from'         => DeviceCommonTrackTopic::FROM_TYPE_MINI_APP,
+            'channel_id'   => $sceneData['c'] ?? 0,
+            'open_id'      => $openid,
+            'uuid'         => $uuid,
+            'new_user'     => empty($studentExists) ? 1 : 0,    // 0老用户，1新用户
+            'anonymous_id' => $request->getHeader('anonymous_id')[0] ?? '',   // 埋点匿名id, 投放页有
+            'mobile'       => $params['mobile'],
+        ])->publish();
         return HttpHelper::buildResponse($response, ['openid' => $openid, 'last_id' => $lastId, 'mobile' => $mobile, 'uuid' => $uuid, 'had_purchased' => $hadPurchased, 'share_scene' => $shareScene]);
     }
 
@@ -217,6 +227,17 @@ class Landing extends ControllerBase
         }
 
         $data = (new Dss())->createBill($params);
+        $sceneData = ShowMiniAppService::getSceneData(urldecode($params['scene'] ?? ''));
+        (new DeviceCommonTrackTopic)->pushCreateOrder([
+            'from'         => DeviceCommonTrackTopic::FROM_TYPE_MINI_APP,
+            'channel_id'   => $params['channel_id'] ?? ($sceneData['c'] ?? 0),
+            'open_id'      => $params['open_id'] ?? '',
+            'uuid'         => $params['uuid'] ?? '',
+            'new_user'     => 0,    // 0老用户，1新用户
+            'anonymous_id' => $request->getHeader('anonymous_id')[0] ?? '',   // 埋点匿名id, 投放页有
+            'order_type'   => DeviceCommonTrackTopic::ORDER_TYPE_TRAIL,  // 订单类型
+            'order_id'     => $data['order_id'] ?? '',    // 订单号
+        ])->publish();
         return HttpHelper::buildResponse($response, $data);
     }
 

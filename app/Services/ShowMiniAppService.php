@@ -316,7 +316,7 @@ class ShowMiniAppService
         $uuid = $userInfo['uuid'];
 
         $hadPurchased = !empty(DssGiftCodeModel::hadPurchasePackageByType($lastId, DssPackageExtModel::PACKAGE_TYPE_TRIAL, false));
-        return [$openId, $lastId, $mobile, $uuid, $hadPurchased];
+        return [$openId, $lastId, $mobile, $uuid, $hadPurchased, !empty($studentExists)];
     }
 
     /**
