@@ -93,8 +93,8 @@ function checkLotteryTimes($opActivityId, $appId, $startPayTime, $endPayTime)
     $awardRecord = LotteryAwardRecordModel::getRecords([
         'op_activity_id' => $opActivityId,
         'GROUP'          => 'uuid',
-        'ORDER'          => ["id" => "DESC"],
-        'LIMIT'          => [10, 10],
+        'ORDER'          => ["num" => "DESC"],
+        'LIMIT'          => 10,
     ], ['num' => Medoo::raw('count(1)'), 'uuid']);
     if (empty($awardRecord)) {
         return false;
