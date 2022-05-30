@@ -120,4 +120,14 @@ class BaseTopic
             $this->nsqd->publish($this->topicName, $this->getData());
         }
     }
+
+    /**
+     * 设置特殊的topic name
+     * @param $topicName
+     * @return void
+     */
+    public function setTopicName($topicName)
+    {
+        $this->topicName = $topicName;
+    }
 }

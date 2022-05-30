@@ -39,6 +39,7 @@ use App\Services\ErpUserService;
 use App\Services\MiniAppQrService;
 use App\Services\PackageService;
 use App\Services\PayServices;
+use App\Services\Queue\Track\DeviceCommonTrackTopic;
 use App\Services\ReferralActivityService;
 use App\Services\ReferralService;
 use App\Services\StudentService;
@@ -224,6 +225,21 @@ class Order extends ControllerBase
             }
         } catch (RuntimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        // 上报设备信息
+        try {
+            (new DeviceCommonTrackTopic)->pushCreateOrder([
+                'from'         => DeviceCommonTrackTopic::FROM_TYPE_H5,
+                'channel_id'   => $sceneData['c'] ?? '',
+                'open_id'      => $studentInfo['openid'] ?? '',
+                'uuid'         => $studentInfo['uuid'] ?? '',
+                'new_user'     => 0,    // 0老用户，1新用户
+                'anonymous_id' => $request->getHeader('anonymous_id')[0] ?? '',   // 埋点匿名id, 投放页有
+                'order_type'   => DeviceCommonTrackTopic::ORDER_TYPE_TRAIL,  // 订单类型
+                'order_id'     => $ret['order_id'] ?? '',    // 订单号
+            ])->publish();
+        } catch (\Exception $e) {
+            SimpleLogger::info('push_create_order_err', ['msg' =>'h5_order_createOrder', 'err' => $e->getMessage()]);
         }
         return HttpHelper::buildResponse($response, $ret);
     }
@@ -483,6 +499,7 @@ class Order extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
+            $isNewUser = 0;
             $appId = Constants::SMART_APP_ID;
             $busiType = Constants::SMART_WX_SERVICE;
             $userType = Constants::USER_TYPE_STUDENT;
@@ -510,6 +527,21 @@ class Order extends ControllerBase
                 //未注册用户自动注册
                 $student = UserService::studentRegisterBound($appId, $params['mobile'], $channel, $openId, $busiType, $userType);
                 $student['id'] = $student['student_id'];
+                $isNewUser = 1;
+                // 上报设备信息
+                try {
+                    (new DeviceCommonTrackTopic)->pushLogin([
+                        'from'         => DeviceCommonTrackTopic::FROM_TYPE_H5,
+                        'channel_id'   => $channel,
+                        'open_id'      => $data['openid'] ?? '',
+                        'uuid'         => $student['uuid'] ?? '',
+                        'new_user'     => $isNewUser,    // 0老用户，1新用户
+                        'anonymous_id' => $request->getHeader('anonymous_id')[0] ?? '',   // 埋点匿名id, 投放页有
+                        'mobile'       => $params['mobile'] ?? '',
+                    ])->publish();
+                } catch (\Exception $e) {
+                    SimpleLogger::info('push_login_err', ['msg' => 'h5_order_LandingRecallCreateOrder_register', 'err' => $e->getMessage()]);
+                }
             }
             $pkg = $params['pkg'];
             $packageId = PayServices::getPackageIDByParameterPkg($pkg);
@@ -546,6 +578,21 @@ class Order extends ControllerBase
             SimpleLogger::info('Order_LandingRecallCreateOrder_res', ['res' => $ret]);
         } catch (RuntimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+        // 上报设备信息
+        try {
+            (new DeviceCommonTrackTopic)->pushCreateOrder([
+                'from'         => DeviceCommonTrackTopic::FROM_TYPE_H5,
+                'channel_id'   => $sceneData['c'] ?? '',
+                'open_id'      => $studentInfo['openid'] ?? '',
+                'uuid'         => $studentInfo['uuid'] ?? '',
+                'new_user'     => $isNewUser,    // 0老用户，1新用户
+                'anonymous_id' => $request->getHeader('anonymous_id')[0] ?? '',   // 埋点匿名id, 投放页有
+                'order_type'   => DeviceCommonTrackTopic::ORDER_TYPE_TRAIL,  // 订单类型
+                'order_id'     => $billId,    // 订单号
+            ])->publish();
+        } catch (\Exception $e) {
+            SimpleLogger::info('push_create_order_err', ['msg' =>'h5_order_LandingRecallCreateOrder_createOrder', 'err' => $e->getMessage()]);
         }
         return HttpHelper::buildResponse($response, $ret);
     }

@@ -5,6 +5,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\Constants;
 use App\Libs\HttpHelper;
 use App\Libs\NewSMS;
+use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssGiftCodeModel;
@@ -13,6 +14,7 @@ use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\FreeCodeLogModel;
 use App\Services\CommonServiceForApp;
 use App\Services\Queue\QueueService;
+use App\Services\Queue\Track\DeviceCommonTrackTopic;
 use App\Services\StudentService;
 use App\Services\UserService;
 use App\Services\WebLandingService;
@@ -92,6 +94,7 @@ class Landing extends ControllerBase
             $userId   = '';
             $uuid     = '';
             $openId   = $params['open_id'] ?? '';
+            $isNewUser = 0; // 是否是新注册的用户
             if (!$flag) {
                 $word = 'event_pass_deadline';
                 $give = false;
@@ -115,6 +118,7 @@ class Landing extends ControllerBase
                 $userId       = $info['student_id'];
                 $uuid         = $info['uuid'];
                 $registerTime = time();
+                $isNewUser = 1;
             } elseif ($give) {
                 $userId       = $student['id'];
                 $uuid         = $student['uuid'];
@@ -149,6 +153,20 @@ class Landing extends ControllerBase
             ];
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        // 上报设备信息
+        try {
+            (new DeviceCommonTrackTopic)->pushLogin([
+                'from'         => DeviceCommonTrackTopic::FROM_TYPE_H5,
+                'channel_id'   => $channelId,
+                'open_id'      => $openId ?? '',
+                'uuid'         => $student['uuid'] ?? '',
+                'new_user'     => $isNewUser ?? 0,    // 0老用户，1新用户
+                'anonymous_id' => $request->getHeader('anonymous_id')[0] ?? '',   // 埋点匿名id, 投放页有
+                'mobile'       => $params['mobile'],
+            ])->publish();
+        } catch (\Exception $e) {
+            SimpleLogger::info('push_login_err', ['msg' => 'studentWeb_h5_register', 'err' => $e->getMessage()]);
         }
         return HttpHelper::buildResponse($response, $data);
     }
