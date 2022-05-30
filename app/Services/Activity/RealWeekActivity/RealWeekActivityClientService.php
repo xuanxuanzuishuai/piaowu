@@ -19,6 +19,7 @@ use App\Models\RealWeekActivityModel;
 use App\Models\RealWeekActivityRuleVersionAbModel;
 use App\Services\Activity\RealWeekActivity\TraitService\RealWeekActivityCURDService;
 use App\Services\RealWeekActivityService;
+use App\Services\StudentServices\ErpStudentService;
 use App\Services\UserService;
 use App\Libs\Exceptions\RunTimeException;
 
@@ -96,7 +97,7 @@ class RealWeekActivityClientService
     public static function checkIsAllowJoinWeekActivity($studentId, $studentUUID)
     {
         // 获取学生首次付费时间
-        $studentCourseData = UserService::getStudentCourseData($studentUUID);
+        $studentCourseData = ErpStudentService::getStudentCourseData($studentUUID);
         if (empty($studentCourseData['is_valid_pay'])) {
             // 不是付费有效用户， 直接返回不能参与
             return true;

@@ -27,6 +27,7 @@ use App\Models\TemplatePosterModel;
 use App\Models\RealWeekActivityModel;
 use App\Services\Activity\RealWeekActivity\RealWeekActivityClientService;
 use App\Services\Queue\QueueService;
+use App\Services\StudentServices\ErpStudentService;
 use App\Services\TraitService\TraitRealWeekActivityTestAbService;
 
 class RealWeekActivityService
@@ -765,7 +766,7 @@ class RealWeekActivityService
             return [];
         }
         // 获取用户身份属性
-        $studentIdAttribute = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentId, $studentUUID);
+        $studentIdAttribute = ErpStudentService::getStudentCourseData($studentUUID);
         // 获取活动列表
         $baseWhere = [
             "start_time[<]" => $time,
@@ -793,7 +794,7 @@ class RealWeekActivityService
         $activityList = RealWeekActivityModel::getRecords($baseWhere);
         foreach ($activityList as $_activityKey => $_activityInfo) {
             // 检查一下用户是否是有效用户，不是有效用户不可能有可参与的活动
-            if (!UserService::checkRealStudentIdentityIsNormal($studentId, $studentIdAttribute)) {
+            if (empty($studentIdAttribute['is_valid_pay'])) {
                 unset($activityList[$_activityKey]);
                 continue;
             }
