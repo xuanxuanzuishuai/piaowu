@@ -71,7 +71,7 @@ class DeviceCommonTrackTopic extends BaseTopic
             'app_version'      => $params['app_version'] ?? '',
             'ip'               => $params['ip'] ?? Util::getClientIp(),
             'uuid'             => $params['uuid'] ?? '',
-            'new_user'         => intval($params['new_user'] ?? 0),
+            'new_user'         => !empty($params['new_user']) ? 1 : 2,
             'position'         => $params['position'] ?? '',
             'mobile'           => $params['mobile'] ?? '',
         );
