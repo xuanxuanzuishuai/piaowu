@@ -111,7 +111,7 @@ class ErpStudentService
             $studentAttr = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentInfo['id'], $studentUUID);
             $returnData['is_cleaned'] = $studentAttr['is_cleaned'] ?? 0;
             $returnData['buy_after_clean'] = $studentAttr['buy_after_clean'] ?? 0;
-            $returnData['clean_is_join'] = $studentAttr['clean_is_join'] ?? 0;
+            $returnData['clean_time'] = $studentAttr['clean_time'] ?? 0;
             self::$studentIdentityCourse[$key] = $returnData;
         }
         SimpleLogger::info("getStudentCourseData", ['msg' => 'return_data', $studentUUID, $returnData]);
