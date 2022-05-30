@@ -232,7 +232,7 @@ class Order extends ControllerBase
                 'from'         => DeviceCommonTrackTopic::FROM_TYPE_H5,
                 'channel_id'   => $sceneData['c'] ?? '',
                 'open_id'      => $studentInfo['openid'] ?? '',
-                'uuid'         => $studentInfo['uuid'] ?? '',
+                'uuid'         => $studentInfo['uuid'] ?? DssStudentModel::getById($student['user_id'])['uuid'],
                 'new_user'     => 0,    // 0老用户，1新用户
                 'anonymous_id' => $request->getHeader('anonymous_id')[0] ?? '',   // 埋点匿名id, 投放页有
                 'order_type'   => DeviceCommonTrackTopic::ORDER_TYPE_TRAIL,  // 订单类型
