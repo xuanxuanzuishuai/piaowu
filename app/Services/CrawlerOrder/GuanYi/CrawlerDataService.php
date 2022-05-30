@@ -99,7 +99,9 @@ class CrawlerDataService extends CrawlerBaseService
                 SimpleLogger::info('search list fail', []);
             } else {
                 foreach ($responseData['rows'] as $dv) {
-                    if (!$this->checkOrderGoodsIsValid($dv['itemCodeCombo'], $dv['platformCode'])) {
+                    //一笔订单可能存在多个商品，我们取第一个商品的sku，解析获得goods code
+                    $tmpGoodsCode = explode("||",$dv['goodsList'][0]['platformSkuName'])[0];
+                    if (!$this->checkOrderGoodsIsValid($tmpGoodsCode, $dv['platformCode'])) {
                         continue;
                     }
                     if ($this->remainingDealCount <= 0) {
@@ -157,7 +159,7 @@ class CrawlerDataService extends CrawlerBaseService
         }
         //账户触发第三方规则，不能爬取数据
         if (empty($responseData['data']['receiverMobile'])) {
-            $this->setCrawlerAccountDisable($this->account, "管易", $responseData['data']['frequencyResult']['errMsg']);
+            $this->setCrawlerAccountDisable($this->account, "管易", $responseData['message'].$responseData['data']['frequencyResult']['errMsg']);
             return [];
         } else {
             return $responseData['data'];

@@ -3,6 +3,7 @@
 namespace App\Services\CrawlerOrder;
 
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
@@ -78,11 +79,16 @@ abstract class CrawlerBaseService
      */
     public function checkOrderGoodsIsValid($goodsCode, $orderCode): bool
     {
-        //有可能是多个商品编码，按照当前使用场景取第一个商品的编码
-        if (strlen($goodsCode) != 12) {
+        //获取有效的goods code
+        $goodsCodeDictConfig = array_column(DictConstants::getErpDictArr(DictConstants::DOU_CODE_TO_PACKAGE['type'])[DictConstants::DOU_CODE_TO_PACKAGE['type']],
+            'code');
+        SimpleLogger::info("goods code",
+            ['third_goods_code' => $goodsCode, 'valid_goods_code' => $goodsCodeDictConfig]);
+        if (empty($goodsCodeDictConfig) || !in_array($goodsCode, $goodsCodeDictConfig)) {
             return false;
         }
         $this->setMysqlDb();
+
         $data = $this->mysqlDb->get(CrawlerOrderModel::$table, ['id'],
             ['order_code' => $orderCode, 'receiver_tel[!]' => '']);
         if (!empty($data)) {
