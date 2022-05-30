@@ -36,8 +36,9 @@ class ErpStudentService
 
         $key = 'student_identity_course_'. Constants::REAL_APP_ID . '-' . $studentUUID;
         if (!isset(self::$studentIdentityCourse[$key])) {
-            $orderCourseList = (new Erp())->getStudentCourses($studentUUID);
-            SimpleLogger::info("getStudentCourseData", ['msg' => 'erp_student_course_data', $studentUUID, $orderCourseList]);
+            $orderCourseData = (new Erp())->getStudentCourses($studentUUID);
+            $orderCourseList = $orderCourseData['courses'] ?? [];
+            SimpleLogger::info("getStudentCourseData", ['msg' => 'erp_student_course_data', $studentUUID, $orderCourseData]);
             if (empty($orderCourseList)) {
                 // 没有查到用户身份订单
                 return [];

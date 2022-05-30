@@ -108,10 +108,6 @@ class StudentActivity extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            // 检查用户是否能够参与该活动
-            if (RealWeekActivityClientService::checkStudentIsUploadPoster($this->ci['user_info']['user_Id'], $params['activity_id'])) {
-                throw new RunTimeException(['week_activity_user_not_upload']);
-            }
             $uploadId = 0;
             //上传并发处理:一个账户针对同一个活动5秒内上传截图只允许进行一次有效动作
             $lockKey = RealWeekActivityModel::REAL_WEEK_LOCK_KEY . $this->ci['user_info']['user_id'] . '_' . $params['activity_id'];

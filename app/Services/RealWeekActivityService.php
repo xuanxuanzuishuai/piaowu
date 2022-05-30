@@ -767,6 +767,10 @@ class RealWeekActivityService
         }
         // 获取用户身份属性
         $studentIdAttribute = ErpStudentService::getStudentCourseData($studentUUID);
+        // 检查当前用户是否可以参与周周领奖活动
+        if (RealWeekActivityClientService::checkIsAllowJoinWeekActivity($studentId, $studentUUID)) {
+            return [];
+        }
         // 获取活动列表
         $baseWhere = [
             "start_time[<]" => $time,
@@ -776,12 +780,9 @@ class RealWeekActivityService
         ];
         if ($operationType == 1) {
             //当前生效的活动
-            // 检查当前用户是否可以参与周周领奖活动
-            if (RealWeekActivityClientService::checkIsAllowJoinWeekActivity($studentId, $studentUUID)) {
-                return [];
-            }
             $baseWhere['end_time[>=]'] = $time;
         } elseif ($operationType == 2) {
+
             //已结束并启用的活动：结束时间距离当前时间五天内
             $activityOverAllowUploadSecond = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'activity_over_allow_upload_second');
             $baseWhere['end_time[>=]'] = $time - $activityOverAllowUploadSecond;

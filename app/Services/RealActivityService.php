@@ -19,6 +19,7 @@ use App\Models\RealSharePosterTaskListModel;
 use App\Models\RealWeekActivityModel;
 use App\Models\TemplatePosterModel;
 use App\Services\Queue\QueueService;
+use App\Services\StudentServices\ErpStudentService;
 use Medoo\Medoo;
 
 class RealActivityService
@@ -425,9 +426,9 @@ class RealActivityService
         if (empty($uploadRecord)) {
             $studentInfo = ErpStudentModel::getRecord(['id' => $studentData['id']]);
             //资格检测 - 获取用户身份属性
-            $studentIdAttribute = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentData['id'], '');
+            $studentIdAttribute = ErpStudentService::getStudentCourseData($studentInfo['uuid']);
             // 检查一下用户是否是有效用户，不是有效用户不可能有可参与的活动
-            if (!UserService::checkRealStudentIdentityIsNormal($studentData['id'], $studentIdAttribute)) {
+            if (empty($studentIdAttribute['is_valid_pay'])) {
                 // 检查用户是不是活动指定的uuid
                 $designateUuid = RealSharePosterDesignateUuidModel::getRecord(['activity_id' => $activityId, 'uuid' => $studentInfo['uuid'] ?? '']);
                 if (empty($designateUuid)) {
