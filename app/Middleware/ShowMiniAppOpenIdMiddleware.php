@@ -12,6 +12,7 @@ use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\WeChat\WeChatMiniPro;
+use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\UserWeiXinModel;
 use App\Services\ShowMiniAppTokenService;
 use Slim\Http\Request;
@@ -35,6 +36,10 @@ class ShowMiniAppOpenIdMiddleware extends MiddlewareBase
         if (!empty($token)) {
             $userInfo = ShowMiniAppTokenService::getTokenInfo($token);
             if (empty($userInfo['open_id'])) {
+                return $response->withJson(Valid::addAppErrors([], StatusCode::HTTP_UNAUTHORIZED), StatusCode::HTTP_OK);
+            }
+            $sessionKeyOpenId = WeChatMiniPro::factory(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,DssUserWeiXinModel::BUSI_TYPE_SHOW_MINAPP)->getSessionKey($userInfo['open_id']);
+            if (empty($sessionKeyOpenId)) {
                 return $response->withJson(Valid::addAppErrors([], StatusCode::HTTP_UNAUTHORIZED), StatusCode::HTTP_OK);
             }
             $this->container['open_id'] = $userInfo['open_id'];
