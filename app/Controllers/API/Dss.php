@@ -1588,7 +1588,7 @@ class Dss extends ControllerBase
         $messageReminderData = MessageReminderService::getMessageReminderData($params['uuid'],
             explode(',', (string)$params['type']), $page, $limit);
         //待发放金叶子总数
-        $messageReminderData['wait_send_nums'] = ErpUserEventTaskAwardGoldLeafModel::getWaitSendGoldLeafBNum($params['uuid']) / 100;
+        $messageReminderData['wait_send_nums'] = ErpUserEventTaskAwardGoldLeafModel::getWaitSendGoldLeafBNum($params['uuid']);
         $messageReminderData['unread_message_reminder_count'] = MessageReminderService::getUnreadMessageReminderCount($params['uuid'],
             StudentMessageReminderModel::GOLD_LEAF_SHOP_REMINDER_TYPE);
         return HttpHelper::buildResponse($response, $messageReminderData);

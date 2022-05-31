@@ -32,7 +32,7 @@ class AccountService
     {
 
         //待发放金叶子总数
-        $thawNum = ErpUserEventTaskAwardGoldLeafModel::getWaitSendGoldLeafBNum($uuid) / 100;
+        $thawNum = ErpUserEventTaskAwardGoldLeafModel::getWaitSendGoldLeafBNum($uuid);
         //获取金叶子提醒消息数据
         $unreadMessageReminderCount = MessageReminderService::getUnreadMessageReminderCount($uuid,
             StudentMessageReminderModel::GOLD_LEAF_SHOP_REMINDER_TYPE);
