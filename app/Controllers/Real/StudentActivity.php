@@ -19,6 +19,7 @@ use App\Models\ActivityExtModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\RealSharePosterModel;
 use App\Models\RealWeekActivityModel;
+use App\Services\Activity\RealWeekActivity\RealWeekActivityClientService;
 use App\Services\RealActivityService;
 use App\Services\RealSharePosterService;
 use App\Services\RealUserAwardMagicStoneService;

@@ -11,6 +11,7 @@ namespace App\Services;
 use App\Libs\Constants;
 use App\Libs\Dss;
 use App\Libs\Erp;
+use App\Libs\RealDictConstants;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
@@ -228,18 +229,20 @@ class UserService
         if (empty($studentId) && empty($studentUUID)) {
             return [];
         }
+        if ($appId == Constants::REAL_APP_ID) {
+            if (empty($studentUUID)) {
+                $studentInfo = ErpStudentModel::getRecord(['id' => $studentId], ['uuid']);
+                $studentUUID = $studentInfo['uuid'] ?? '';
+            }
+        }
         $key = 'student_identity_attribute_'.$appId . '-' . $studentUUID;
         if (!isset(self::$studentAttribute[$key])) {
             if ($appId == Constants::REAL_APP_ID) {
-                if (empty($studentUUID)) {
-                    $studentInfo = ErpStudentModel::getRecord(['id' => $studentId], ['uuid']);
-                    $studentUUID = $studentInfo['uuid'] ?? '';
-                }
                 self::$studentAttribute[$key] = (new Erp())->getStudentIdentityAttribute($studentUUID);
                 SimpleLogger::info('getStudentIdentityAttributeById', [$studentId, $studentInfo ?? [], $studentIdAttribute]);
             }
         }
-        SimpleLogger::info('getStudentIdentityAttributeById', [$studentId, $studentInfo ?? [], $studentIdAttribute, self::$studentAttribute[$key]]);
+        SimpleLogger::info('getStudentIdentityAttributeById', [$studentId, $studentInfo ?? [], $studentIdAttribute, self::$studentAttribute[$key], $key]);
         return self::$studentAttribute[$key];
     }
 
@@ -266,7 +269,7 @@ class UserService
             return false;
         }
         // 没有付费时间
-        if (!isset($studentIdAttribute['first_pay_time'])) {
+        if (empty($studentIdAttribute['first_pay_time'])) {
             return false;
         }
         return true;

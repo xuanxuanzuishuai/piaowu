@@ -115,6 +115,8 @@ class Erp
     const STUDENT_IDENTIFY_ATTRIBUTE = '/api/student/attribute';
     //抖店实物商品消费发货/退费
     const DOU_STORE_MSG = '/api/consumer/dou_store_msg';
+    // 获取用户付费订单列表（目前只返回正式课的 - 2022.05.19 如有变动记得改备注）
+    const STUDENT_COURSES = '/op/user/student_courses';
 
     private $host;
 
@@ -1047,6 +1049,22 @@ class Erp
     public function grantGoldLeafNote($params)
     {
         $response = HttpHelper::requestJson($this->host . self::API_GRANT_GOLD_LEAF_NOTE, $params, 'POST');
+        return $response['data'] ?? [];
+    }
+
+    /**
+     * 获取学生订单列表（付费课）
+     * @param $studentUUID
+     * @return array
+     * @throws RunTimeException
+     */
+    public function getStudentCourses($studentUUID)
+    {
+        $params['student_uuid'] = trim($studentUUID);
+        $response = HttpHelper::requestJson($this->host . self::STUDENT_COURSES, $params, 'GET');
+        if ($response['code'] != Valid::CODE_SUCCESS) {
+            throw new RunTimeException(['service_busy_try_later']);
+        }
         return $response['data'] ?? [];
     }
 }

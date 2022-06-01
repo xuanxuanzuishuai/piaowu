@@ -17,6 +17,7 @@ use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\Erp\ErpEventModel;
+use App\Services\Activity\RealWeekActivity\RealWeekActivityClientService;
 use App\Services\RealSharePosterDesignateUuidService;
 use App\Services\RealWeekActivityService;
 use App\Services\UserService;
@@ -243,13 +244,12 @@ class RealWeekActivity extends ControllerBase
     {
         try {
             $params = $request->getParams();
-            $params['count'] = 60;
-            $params['page'] = 1;
-            list($data, $total) = RealWeekActivityService::getSelectList($params);
+            list($page, $count) = Util::formatPageCount($params);
+            $data = RealWeekActivityClientService::getVerifySharePosterActivityList($page, $count, $params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
-        return HttpHelper::buildResponse($response, ['activities' => $data, 'total_count' => $total]);
+        return HttpHelper::buildResponse($response, ['activities' => $data['list'], 'total_count' => $data['total_count']]);
     }
     
     /**

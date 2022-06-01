@@ -169,4 +169,13 @@ class Constants
     const REAL_STUDENT_LOGIN_TYPE_TAKE_LESSON_OFFICIAL_WEB = 5;
     const REAL_STUDENT_LOGIN_TYPE_MAIN_LESSON_H5 = 6;
 
+    //推荐人生成奖励时买课情况， 0不是有效用户，1仅购买了陪练课并且有剩余课时，2仅购买了正式课并且有剩余课时，3购买了陪练课和正式课并且都有剩余课时
+    const REFEREE_BUY_LADDER_PLAYER = 1;   // 仅购买了陪练课并且有剩余课时
+    const REFEREE_BUY_FORMAL = 2;   // 仅购买了正式课并且有剩余课时
+    const REFEREE_BUY_FORMAL_AND_LADDER_PLAYER = 3;   // 购买了陪练课和正式课并且都有剩余课时
+    // 推荐身份对应的几种sub_type 枚举备注: 1001: 陪练正式课 25分钟 1002: 陪练正式课 50分钟 1005:陪练正式课 60分钟  10001：主课正式课 50分钟 10002：主课正式课25分钟
+    const REFEREE_ID_CONTRAST_SUB_TYPE = [
+        self::REFEREE_BUY_LADDER_PLAYER => [1001, 1002, 1005],
+        self::REFEREE_BUY_FORMAL        => [10001, 10002],
+    ];    // 推荐人购课情况对
 }

@@ -25,7 +25,9 @@ use App\Models\RealSharePosterTaskListModel;
 use App\Models\RealWeekActivityPosterAbModel;
 use App\Models\TemplatePosterModel;
 use App\Models\RealWeekActivityModel;
+use App\Services\Activity\RealWeekActivity\RealWeekActivityClientService;
 use App\Services\Queue\QueueService;
+use App\Services\StudentServices\ErpStudentService;
 use App\Services\TraitService\TraitRealWeekActivityTestAbService;
 
 class RealWeekActivityService
@@ -764,7 +766,11 @@ class RealWeekActivityService
             return [];
         }
         // 获取用户身份属性
-        $studentIdAttribute = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentId, $studentUUID);
+        $studentIdAttribute = ErpStudentService::getStudentCourseData($studentUUID);
+        // 检查当前用户是否可以参与周周领奖活动
+        if (RealWeekActivityClientService::checkIsAllowJoinWeekActivity($studentId, $studentUUID)) {
+            return [];
+        }
         // 获取活动列表
         $baseWhere = [
             "start_time[<]" => $time,
@@ -776,6 +782,7 @@ class RealWeekActivityService
             //当前生效的活动
             $baseWhere['end_time[>=]'] = $time;
         } elseif ($operationType == 2) {
+
             //已结束并启用的活动：结束时间距离当前时间五天内
             $activityOverAllowUploadSecond = RealDictConstants::get(RealDictConstants::REAL_ACTIVITY_CONFIG, 'activity_over_allow_upload_second');
             $baseWhere['end_time[>=]'] = $time - $activityOverAllowUploadSecond;
@@ -788,7 +795,7 @@ class RealWeekActivityService
         $activityList = RealWeekActivityModel::getRecords($baseWhere);
         foreach ($activityList as $_activityKey => $_activityInfo) {
             // 检查一下用户是否是有效用户，不是有效用户不可能有可参与的活动
-            if (!UserService::checkRealStudentIdentityIsNormal($studentId, $studentIdAttribute)) {
+            if (empty($studentIdAttribute['is_valid_pay'])) {
                 unset($activityList[$_activityKey]);
                 continue;
             }
