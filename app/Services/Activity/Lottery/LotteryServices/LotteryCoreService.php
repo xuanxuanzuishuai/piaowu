@@ -47,7 +47,7 @@ class LotteryCoreService
             return [];
         }
         //如果触发单个用户最大中奖次数，直接返回兜底奖品
-        $userTotalHitNum = LotteryAwardRecordService::useLotteryTimes($params['op_activity_id'], $params['uuid']);
+        $userTotalHitNum = LotteryAwardRecordService::useLotteryTimes($params['op_activity_id'], $params['uuid'], 0, true);
         if ($params['max_hit'] > 0 && $userTotalHitNum >= $params['max_hit']) {
             $awardInfo = LotteryAwardInfoService::getAwardInfo($params['op_activity_id']);
             return array_pop($awardInfo);

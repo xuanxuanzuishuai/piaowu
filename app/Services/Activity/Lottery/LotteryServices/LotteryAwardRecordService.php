@@ -105,9 +105,10 @@ class LotteryAwardRecordService
      * @param $opActivityId
      * @param $uuid
      * @param int $useType
+     * @param bool $removeEmpty
      * @return int|number
      */
-    public static function useLotteryTimes($opActivityId, $uuid, $useType = 0)
+    public static function useLotteryTimes($opActivityId, $uuid, $useType = 0, $removeEmpty = false)
     {
         $where = [
             'op_activity_id' => $opActivityId,
@@ -115,6 +116,9 @@ class LotteryAwardRecordService
         ];
         if (!empty($useType)) {
             $where['use_type'] = $useType;
+        }
+        if (!empty($removeEmpty)) {
+            $where['award_type[!]'] = Constants::AWARD_TYPE_TYPE_ENTITY;
         }
         return LotteryAwardRecordModel::getCount($where);
     }
@@ -130,6 +134,7 @@ class LotteryAwardRecordService
         $where = [
             'op_activity_id' => $opActivityId,
             'uuid'           => $uuid,
+            'award_type[!]'  => Constants::AWARD_TYPE_TYPE_ENTITY,
             'create_time[>]' => strtotime(date('Y-m-d')),
         ];
         return LotteryAwardRecordModel::getCount($where);
