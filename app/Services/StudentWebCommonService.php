@@ -59,19 +59,21 @@ class StudentWebCommonService
      */
     public static function register($params)
     {
+        $countryCode = $params['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE;
         if ($params['app_id'] == Constants::REAL_APP_ID) {
             //注册真人用户信息
             $studentInfo = (new Erp())->refereeStudentRegister([
                 'app_id'       => $params['app_id'],
                 'mobile'       => $params['mobile'],
-                'country_code' => NewSMS::DEFAULT_COUNTRY_CODE,
+                'country_code' => (int)$countryCode,
                 'channel_id'   => $params['channel_id'],
             ]);
         } elseif ($params['app_id'] == Constants::SMART_APP_ID) {
             //注册智能用户信息
             $studentInfo = (new Dss())->studentRegisterBound([
                 'mobile'     => (string)$params['mobile'],
-                'channel_id' => $params['channel_id']
+                'channel_id' => $params['channel_id'],
+                'country_code' => (int)$countryCode,
             ]);
         }
         return $studentInfo ?? [];

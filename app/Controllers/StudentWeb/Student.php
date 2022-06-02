@@ -13,6 +13,7 @@ use App\Libs\Constants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Libs\NewSMS;
 use App\Libs\Valid;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
@@ -345,8 +346,8 @@ class Student extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-
-        $errorCode = CommonServiceForApp::sendValidateCode($params['mobile'], CommonServiceForApp::SIGN_WX_STUDENT_APP);
+        $countryCode = $params['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE;
+        $errorCode = CommonServiceForApp::sendValidateCode($params['mobile'], CommonServiceForApp::SIGN_WX_STUDENT_APP, $countryCode);
         if (!empty($errorCode)) {
             $result = Valid::addAppErrors([], $errorCode);
             return $response->withJson($result, StatusCode::HTTP_OK);
