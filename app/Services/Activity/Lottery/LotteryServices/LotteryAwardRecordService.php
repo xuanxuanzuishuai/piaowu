@@ -118,7 +118,7 @@ class LotteryAwardRecordService
             $where['use_type'] = $useType;
         }
         if (!empty($removeEmpty)) {
-            $where['award_type[!]'] = Constants::AWARD_TYPE_TYPE_ENTITY;
+            $where['award_type[!]'] = Constants::AWARD_TYPE_EMPTY;
         }
         return LotteryAwardRecordModel::getCount($where);
     }
@@ -134,7 +134,7 @@ class LotteryAwardRecordService
         $where = [
             'op_activity_id' => $opActivityId,
             'uuid'           => $uuid,
-            'award_type[!]'  => Constants::AWARD_TYPE_TYPE_ENTITY,
+            'award_type[!]'  => Constants::AWARD_TYPE_EMPTY,
             'create_time[>]' => strtotime(date('Y-m-d')),
         ];
         return LotteryAwardRecordModel::getCount($where);
