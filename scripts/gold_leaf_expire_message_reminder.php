@@ -32,6 +32,7 @@ $dotenv->overload();
 SimpleLogger::info('expire gold leaf message reminder start', []);
 //查询即将过期数据
 $startTimeData = Util::getStartEndTimestamp(time());
+$expireTime = strtotime("+60 day", $startTimeData[1]);
 $db = MysqlDB::getDB(MysqlDB::CONFIG_ERP_SLAVE);
 $data = $db->select(ErpStudentAccountModel::$table,
     [
@@ -44,7 +45,10 @@ $data = $db->select(ErpStudentAccountModel::$table,
         ErpStudentModel::$table . '.uuid',
     ],
     [
-        ErpStudentAccountModel::$table . '.expire_time' => strtotime("+60 day", $startTimeData[1]),
+        ErpStudentAccountModel::$table . '.expire_time' => [
+            $expireTime,
+            $expireTime + 1,//后台充值的是到0点,这里兼容一下
+        ],
         ErpStudentAccountModel::$table . '.app_id'      => Constants::SMART_APP_ID,
         ErpStudentAccountModel::$table . '.sub_type'    => ErpStudentAccountModel::SUB_TYPE_GOLD_LEAF,
         ErpStudentAccountModel::$table . '.num[>]'      => 0,
