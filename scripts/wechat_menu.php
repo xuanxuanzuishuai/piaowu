@@ -28,42 +28,37 @@ $wechat = WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_WX_SE
 $menuList = [
     'button' => [
         [
-            'name' => '推荐有奖',
+            'name' => '福利活动',
             'sub_button' => [
                 [
                     "type" => "view",
-                    "name" => "专属海报",
-                    "url"  => "https://dss-weixin.xiongmaopeilian.com/student/poster"
-                ],
-                [
-                    "type" => "click",
-                    "name" => "推荐好友",
-                    "key"  => "STUDENT_PUSH_MSG_USER_SHARE"
+                    "name" => "🎁年卡活动",
+                    "url"  => "https://referral.xiaoyezi.com/operation/activity/awards/index?awtype=week&show_activity=true"
                 ],
                 [
                     "type" => "view",
-                    "name" => "🧧分享领学费",
-                    "url"  => "https://dss-weixin.xiongmaopeilian.com/student/returnMoney?tag=1"
+                    "name" => "🎁体验卡活动",
+                    "url"  => "https://referral.xiaoyezi.com/operation/student/clock5Day/home"
                 ],
                 [
                     "type" => "view",
-                    "name" => "福利中心",
-                    "url" => "https://referral.xiaoyezi.com/operation/activity/awards/index"
+                    "name" => "🎉金叶子商城",
+                    "url"  => "https://dss-weixin.xiongmaopeilian.com/Student/goldLeaf/index"
+                ],
+                [
+                    "type" => "view",
+                    "name" => "0元钢琴课",
+                    "url" => "https://referral.xiaoyezi.com/operation/landing/mainCourse?uuid=&c=4303"
                 ],
             ],
         ],
         [
-            "type" => "view",
-            "name" => "💯练琴神器",
-            "url" => "https://referral.xiaoyezi.com/operation/landing/recall?m=&a=99&p=17&c=3782"
-        ],
-        [
-            "name" => "我的账户",
+            "name" => "个人中心",
             "sub_button" => [
                 [
                     "type" => "view",
                     "name" => "我的账户",
-                    "url" => "https://dss-weixin.xiongmaopeilian.com/student/myAccount"
+                    "url" => "https://dss-weixin.xiongmaopeilian.com/student/myAccountNew"
                 ],
                 [
                     "type" => "view",
@@ -77,13 +72,13 @@ $menuList = [
                 ],
                 [
                     "type" => "view",
-                    "name" => "联系客服",
-                    "url" => "https://ceshi10.sobot.com/chat/h5/v2/index.html?sysnum=4a24039fb3cd4bce89f738a341a3e93a&channelid=10&uname=用户"
+                    "name" => "郎朗测评",
+                    "url" => "http://mp.weixin.qq.com/s?__biz=MzU1NTkxNzY3MQ==&mid=100000231&idx=1&sn=d11c0cfa5a19418dab0c99c1d8b9b77a&chksm=7bcc49ef4cbbc0f9f923570f89f7389933ee84750cd1751f8be23084d4311f740aff1d9c8775&scene=18#rd"
                 ],
                 [
                     "type" => "view",
-                    "name" => "郎朗测评",
-                    "url" => "http://mp.weixin.qq.com/s?__biz=MzU1NTkxNzY3MQ==&mid=100000231&idx=1&sn=d11c0cfa5a19418dab0c99c1d8b9b77a&chksm=7bcc49ef4cbbc0f9f923570f89f7389933ee84750cd1751f8be23084d4311f740aff1d9c8775&scene=18#rd"
+                    "name" => "联系客服",
+                    "url" => "https://ceshi10.sobot.com/chat/h5/v2/index.html?sysnum=4a24039fb3cd4bce89f738a341a3e93a&channelid=10&uname=用户"
                 ]
             ]
         ],
