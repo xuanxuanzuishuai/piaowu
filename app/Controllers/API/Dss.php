@@ -17,7 +17,9 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
 use App\Models\MessagePushRulesModel;
+use App\Models\StudentMessageReminderModel;
 use App\Models\PosterModel;
 use App\Models\RtActivityModel;
 use App\Models\SharePosterModel;
@@ -39,6 +41,8 @@ use App\Services\RtActivityService;
 use App\Services\SharePosterService;
 use App\Services\SourceMaterialService;
 use App\Services\StudentService;
+use App\Services\StudentServices\AccountService;
+use App\Services\StudentServices\MessageReminderService;
 use App\Services\ThirdPartBillService;
 use App\Services\UserPointsExchangeOrderService;
 use App\Services\UserRefereeService;
@@ -1541,6 +1545,112 @@ class Dss extends ControllerBase
             $returnList = ErpUserEventTaskAwardService::awardRedPackList($params, $page, $count);
         }
         return HttpHelper::buildResponse($response, $returnList);
+    }
+
+
+    /**
+     * 获取提醒消息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getMessageReminder(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key'        => 'uuid',
+                'type'       => 'required',
+                'error_code' => 'uuid_is_required',
+            ],
+            [
+                'key'        => 'type',
+                'type'       => 'required',
+                'error_code' => 'message_type_is_required',
+            ],
+            [
+                'key'        => 'page',
+                'type'       => 'integer',
+                'error_code' => 'page_is_integer'
+            ],
+            [
+                'key'        => 'count',
+                'type'       => 'integer',
+                'error_code' => 'count_is_integer'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        list($page, $limit) = Util::formatPageCount($params);
+        //提醒消息列表
+        $messageReminderData = MessageReminderService::getMessageReminderData($params['uuid'],
+            explode(',', (string)$params['type']), $page, $limit);
+        //待发放金叶子总数
+        $messageReminderData['wait_send_nums'] = ErpUserEventTaskAwardGoldLeafModel::getWaitSendGoldLeafBNum($params['uuid']);
+        $messageReminderData['unread_message_reminder_count'] = MessageReminderService::getUnreadMessageReminderCount($params['uuid'],
+            StudentMessageReminderModel::GOLD_LEAF_SHOP_REMINDER_TYPE);
+        return HttpHelper::buildResponse($response, $messageReminderData);
+    }
+
+    /**
+     * 获取学生账户信息统计数据
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getStudentAccountSurveyData(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key'        => 'uuid',
+                'type'       => 'required',
+                'error_code' => 'uuid_is_required',
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        //获取概况数据
+        $data = AccountService::getStudentAccountSurveyData($params['uuid']);
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 修改提醒消息已读状态
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function updateMessageReminderReadStatus(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key'        => 'uuid',
+                'type'       => 'required',
+                'error_code' => 'uuid_is_required',
+            ],
+            [
+                'key'        => 'type',
+                'type'       => 'required',
+                'error_code' => 'message_type_is_required',
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $res = MessageReminderService::updateMessageReminderReadStatus($params['uuid'],
+                explode(',', (string)$params['type']));
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $res);
     }
 }
 

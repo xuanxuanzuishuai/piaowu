@@ -110,5 +110,10 @@ class APIRouter extends RouterBase
             'call' => Consumer::class . ':commonTrack',
             'middles' => [],
         ],
+        '/api/consumer/message_reminder' => [
+            'method' => ['post'],
+            'call' => Consumer::class . ':messageReminder',
+            'middles' => [],
+        ],
     ];
 }

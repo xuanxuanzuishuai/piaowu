@@ -55,6 +55,7 @@ class DSSRouter extends RouterBase
         '/dss/integral/gold_leaf_list' => ['method' => ['get'], 'call' => Dss::class . ':goldLeafList'],
         '/dss/student/wx_menu_type' => ['method' => ['get'], 'call' => Dss::class . ':getUserMenuType'],
         '/dss/student/update_tag' => ['method' => ['get'], 'call' => Dss::class . ':updateUserTag'],
+
         // 积分兑换红包列表
         '/dss/points/exchange_red_pack_list' => ['method' => ['get'], 'call' => Dss::class . ':pointsExchangeRedPackList'],
         '/dss/awards/red_pack_list' => ['method' => ['get', 'post'], 'call' => Dss::class . ':awardRedPackList'],
@@ -96,6 +97,12 @@ class DSSRouter extends RouterBase
         '/dss/white_grant/list' => ['method' => ['get'], 'call' => Dss::class . ':getWhiteGrantRecord'],
         '/dss/white_grant/update' => ['method' => ['post'], 'call' => Dss::class . ':updateGrantRecord'],
         '/dss/white_grant/manualGrant' => ['method' => ['post'], 'call' => Dss::class . ':manualGrant'],
+        //提醒消息
+        '/dss/student/message_reminder' => ['method' => ['get'], 'call' => Dss::class . ':getMessageReminder'],
+        '/dss/student/update_message_reminder_read_status' => ['method' => ['post'], 'call' => Dss::class . ':updateMessageReminderReadStatus'],
+        //学生账户信息路由
+        '/dss/student/account_survey' => ['method' => ['get'], 'call' => Dss::class . ':getStudentAccountSurveyData'],
+
 
     ];
 }

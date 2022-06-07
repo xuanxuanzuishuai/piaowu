@@ -30,19 +30,20 @@ class ErpUserEventTaskAwardGoldLeafService
      * @param $page
      * @param $limitNum
      * @param bool $isBackend 是否是后台调用
+     * @param array $orderParams 排序
      * @return array
      */
-    public static function getWaitingGoldLeafList($params, $page, $limitNum, $isBackend = false)
+    public static function getWaitingGoldLeafList($params, $page, $limitNum, $isBackend = false, $orderParams = ['id' => 'DESC'])
     {
         $limit = [
             ($page - 1) * $limitNum,
             $limitNum,
         ];
-        $params['status'] = [
+        $params['status'] =is_array($params['status'])?$params['status']: [
             ErpUserEventTaskAwardGoldLeafModel::STATUS_WAITING,
             ErpUserEventTaskAwardGoldLeafModel::STATUS_DISABLED,
         ];
-        $list = ErpUserEventTaskAwardGoldLeafModel::getList($params, $limit);
+        $list = ErpUserEventTaskAwardGoldLeafModel::getList($params, $limit, $orderParams);
         $returnList = [
             'total' => $list['total'],
             'total_num' => $list['total_award_num'],

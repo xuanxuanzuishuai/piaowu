@@ -32,12 +32,19 @@ class BaseTopic
      * @param $topicName
      * @param null $publishTime
      * @param int $sourceAppId
+     * @param false $isClusterModel     是否是集群模式：false不是 true是
      * @throws Exception
      */
-    protected function __construct($topicName, $publishTime = null, $sourceAppId = QueueService::FROM_OP)
+    protected function __construct($topicName, $publishTime = null, $sourceAppId = QueueService::FROM_OP, $isClusterModel=false)
     {
         //获取消息队列topic前缀和主机地址
-        list($prefix, $lookupds) = DictConstants::getValues(DictConstants::QUEUE_CONFIG, ['NSQ_TOPIC_PREFIX', 'NSQ_LOOKUPS']);
+        $dictConfig = DictConstants::getTypesMap([DictConstants::QUEUE_CONFIG['type']]);
+        if ($isClusterModel === true) {
+            $lookupds = $dictConfig[DictConstants::QUEUE_CONFIG['type']]['NSQ_LOOKUPS_CLUSTER']['value'];
+        } else {
+            $lookupds = $dictConfig[DictConstants::QUEUE_CONFIG['type']]['NSQ_LOOKUPS']['value'];
+        }
+        $prefix = $dictConfig[DictConstants::QUEUE_CONFIG['type']]['NSQ_TOPIC_PREFIX']['value'];
         //队列参数
         $this->topicName = $prefix . $topicName;
         $this->sourceAppId = $sourceAppId;

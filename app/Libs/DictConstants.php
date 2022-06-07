@@ -37,7 +37,7 @@ class DictConstants {
     const QUEUE_CONFIG = [
         'type' => 'queue_config',
         'keys' => [
-            'NSQ_LOOKUPS', 'NSQ_TOPIC_PREFIX'
+            'NSQ_LOOKUPS', 'NSQ_TOPIC_PREFIX', 'NSQ_LOOKUPS_CLUSTER'
         ]
     ];
 
@@ -1255,6 +1255,12 @@ class DictConstants {
             '1',//抽奖活动真人用户注册默认渠道key_code
             '8',//抽奖活动智能用户注册默认渠道key_code
         ],
+    ];
+
+    //消息提醒类型
+    const MESSAGE_REMINDER_TYPE = [
+        'type' => 'message_reminder_type',
+        'keys' => [1, 2, 3, 4, 5, 6, 7]
     ];
 
     /**

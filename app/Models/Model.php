@@ -153,7 +153,7 @@ class Model
     }
 
     /**
-     * 更新多条记录内容
+     * 更新多条记录内容:不同的条件修改为同样的内容
      * @param $data
      * @param $where
      * @return int|null
@@ -167,6 +167,23 @@ class Model
         self::batchDelCache($where);
         $cnt = $db->updateGetCount(static::$table, $data, $where);
         return $cnt;
+    }
+
+    /**
+     * 批量修改数据：不同的条件修改为不同样的内容
+     * @param string $updateSqlStr
+     * @return bool
+     */
+    public static function batchUpdateRecordDifferentWhereAndData(string $updateSqlStr): bool
+    {
+        $db = MysqlDB::getDB();
+        $client = $db->getClientObj();
+        $client->pdo->exec($updateSqlStr);
+        $error = $client->error();
+        if($error[0]!='0000'||!empty($error[1]) || !empty($error[2])){
+            return false;
+        }
+        return true;
     }
 
     /**

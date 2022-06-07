@@ -133,30 +133,6 @@ class ErpStudentModel extends ErpModel
     }
 
     /**
-     * 获取学生真人应用注册信息:通过mobile
-     * @param $studentMobile
-     * @return array
-     */
-    public static function getStudentInfoByMobile($studentMobile)
-    {
-        $db = self::dbRO();
-        $info = $db->select(self::$table,
-            [
-                "[>]" . ErpStudentAppModel::$table => ['id' => 'student_id']
-            ],
-            [
-                self::$table . '.id((student_id))',
-                self::$table . '.mobile',
-                self::$table . '.uuid',
-            ],
-            [
-                self::$table . '.mobile' => $studentMobile,
-                ErpStudentAppModel::$table . '.app_id' => Constants::REAL_APP_ID,
-            ]);
-        return empty($info) ? [] : $info[0];
-    }
-
-    /**
      * 批量获取学生uuid
      * @param $studentUuidArr
      * @return array
