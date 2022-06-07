@@ -74,6 +74,7 @@ class DeviceCommonTrackTopic extends BaseTopic
             'new_user'         => !empty($params['new_user']) ? 1 : 2,
             'position'         => $params['position'] ?? '',
             'mobile'           => $params['mobile'] ?? '',
+            'union_id'         => $params['union_id'] ?? '',
         );
         SimpleLogger::info("topic:common_track:pushData", ['params' => $params, 'msg_body' => $msgBody]);
         // 改变topicName
