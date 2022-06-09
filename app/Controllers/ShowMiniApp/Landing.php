@@ -202,7 +202,7 @@ class Landing extends ControllerBase
             'new_user'     => empty($studentExists) ? 1 : 0,    // 0老用户，1新用户
             'anonymous_id' => $request->getHeader('anonymous_id')[0] ?? '',   // 埋点匿名id, 投放页有
             'mobile'       => $params['mobile'],
-            'union_id'     => WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE)->getMiniAppUnionid($openid),
+            'union_id'     => WeChatMiniPro::factory(UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT,DssUserWeiXinModel::BUSI_TYPE_SHOW_MINAPP)->getMiniAppUnionid($openid),
         ])->publish();
         return HttpHelper::buildResponse($response, ['openid' => $openid, 'last_id' => $lastId, 'mobile' => $mobile, 'uuid' => $uuid, 'had_purchased' => $hadPurchased, 'share_scene' => $shareScene]);
     }

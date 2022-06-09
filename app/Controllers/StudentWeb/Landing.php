@@ -164,6 +164,7 @@ class Landing extends ControllerBase
                 'new_user'     => $isNewUser ?? 0,    // 0老用户，1新用户
                 'anonymous_id' => $request->getHeader('anonymous_id')[0] ?? '',   // 埋点匿名id, 投放页有
                 'mobile'       => $params['mobile'],
+                'union_id'     => WeChatMiniPro::factory($appId, $busiType)->getMiniAppUnionid($openid ?? ''),
             ])->publish();
         } catch (\Exception $e) {
             SimpleLogger::info('push_login_err', ['msg' => 'studentWeb_h5_register', 'err' => $e->getMessage()]);
