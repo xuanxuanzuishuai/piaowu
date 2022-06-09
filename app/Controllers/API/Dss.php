@@ -1683,6 +1683,16 @@ class Dss extends ControllerBase
                 'type'       => 'required',
                 'error_code' => 'jump_to_is_required',
             ],
+            [
+                'key'        => 'push_title',
+                'type'       => 'required',
+                'error_code' => 'push_title_is_required',
+            ],
+            [
+                'key'        => 'push_content',
+                'type'       => 'required',
+                'error_code' => 'push_content_is_required',
+            ],
         ];
         $params = $request->getParams();
         $result = Valid::appValidate($params, $rules);
