@@ -32,6 +32,7 @@ use App\Services\ErpUserEventTaskAwardService;
 use App\Services\MiniAppQrService;
 use App\Services\PosterService;
 use App\Services\AgentService;
+use App\Services\PushServices;
 use App\Services\QrInfoService;
 use App\Services\RealSharePosterService;
 use App\Services\ReferralActivityService;
@@ -1651,6 +1652,50 @@ class Dss extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, $res);
+    }
+
+    /**
+     * 发送app push
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function appPush(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key'        => 'uuid_arr',
+                'type'       => 'required',
+                'error_code' => 'uuid_arr_is_required',
+            ],
+            [
+                'key'        => 'jump_type',
+                'type'       => 'required',
+                'error_code' => 'jump_type_is_required',
+            ],
+            [
+                'key'        => 'link_url',
+                'type'       => 'required',
+                'error_code' => 'link_url_is_required',
+            ],
+            [
+                'key'        => 'jump_to',
+                'type'       => 'required',
+                'error_code' => 'jump_to_is_required',
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $params['push_user_type'] = PushServices::PUSH_USER_PART;
+            PushServices::push($params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
     }
 }
 

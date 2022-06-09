@@ -109,7 +109,7 @@ class PushServices
                 break;
         }
 
-        if ($params['push_user_type'] == self::PUSH_USER_PART && empty($params['file_name'])) {
+        if ($params['push_user_type'] == self::PUSH_USER_PART && (empty($params['file_name']) && empty($params['uuid_arr']))) {
             throw new RunTimeException(['push_file_is_required']);
         }
 

@@ -162,7 +162,14 @@ class TPNS
                 break;
             case PushServices::PUSH_USER_PART:
                 $data['audience_type'] = 'token_list';
-                $uuid = PushServices::analysisExcel($params['file_name']);
+                if (!empty($params['file_name'])) {
+                    $uuid = PushServices::analysisExcel($params['file_name']);
+                }
+
+                if (!empty($params['uuid_arr'])) {
+                    $uuid = implode(',', $params['uuid_arr']);
+                }
+
                 $deviceTokenList = PushServices::getDeviceToken($uuid);
                 break;
             case PushServices::PUSH_USER_PAY:

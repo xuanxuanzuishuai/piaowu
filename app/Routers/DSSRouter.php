@@ -102,6 +102,7 @@ class DSSRouter extends RouterBase
         '/dss/student/update_message_reminder_read_status' => ['method' => ['post'], 'call' => Dss::class . ':updateMessageReminderReadStatus'],
         //学生账户信息路由
         '/dss/student/account_survey' => ['method' => ['get'], 'call' => Dss::class . ':getStudentAccountSurveyData'],
+        '/dss/push/app_push' => ['method' => ['post'], 'call' => Dss::class . ':appPush'],
 
 
     ];
