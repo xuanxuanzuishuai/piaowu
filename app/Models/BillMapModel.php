@@ -17,6 +17,7 @@ class BillMapModel extends Model
     public static $table = "bill_map";
     const USER_TYPE_AGENT = ParamMapModel::TYPE_AGENT;
     const USER_TYPE_STUDENT = ParamMapModel::TYPE_STUDENT;
+    const IS_SUCCESS_YES = 1;   // 是否是支付成功 1：成功
 
     /**
      * 检测数据是否满足条件

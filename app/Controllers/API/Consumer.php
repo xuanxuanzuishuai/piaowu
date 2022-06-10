@@ -1155,6 +1155,7 @@ class Consumer extends ControllerBase
     /**
      * 记录订单映射关系
      * topic: bill_status
+     * @deprecated 抖店订单记录渠道以及改为 self::recordDouShopOrder ;  删除改方法时应该同步删除消费者配置以及对应的路由
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -1162,6 +1163,9 @@ class Consumer extends ControllerBase
     public function recordOrderMappingRelation(Request $request, Response $response): Response
     {
         $params = $request->getParams();
+        SimpleLogger::info('recordOrderMappingRelation_bypassed_order', ['params' => $params]);
+        return HttpHelper::buildResponse($response, []);
+
         $rules = [
             [
                 'key' => 'topic_name',
@@ -1328,6 +1332,81 @@ class Consumer extends ControllerBase
             }
         }catch (RunTimeException $e){
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 记录抖店智能体验课订单信息
+     * topic: order_dou
+     * event_type: event_order_paid
+     * 备注：暂时只记录订单渠道
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function recordDouShopOrder(Request $request, Response $response): Response
+    {
+        $params = $request->getParams();
+        $rules = [
+            [
+                'key'        => 'topic_name',
+                'type'       => 'required',
+                'error_code' => 'topic_name_is_required',
+            ],
+            [
+                'key'        => 'source_app_id',
+                'type'       => 'required',
+                'error_code' => 'source_app_id_is_required',
+            ],
+            [
+                'key'        => 'event_type',
+                'type'       => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+            [
+                'key'        => 'msg_body',
+                'type'       => 'required',
+                'error_code' => 'msg_body_is_required',
+            ],
+        ];
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $paramMapInfo = $params['msg_body'];
+        $douShopId = $paramMapInfo['dou_shop_id'] ?? 0;
+        $uuid = $paramMapInfo['student']['uuid'] ?? '';
+        SimpleLogger::info('record_dou_shop_order', ['msg' => 'request_start', 'params' => $params]);
+        // 必要参数检测， 不满足不记录
+        if (empty($douShopId)) {
+            SimpleLogger::info('record_dou_shop_order', ['msg' => 'dou_shop_id_empty']);
+            return HttpHelper::buildResponse($response, []);
+        }
+        // 获取用户是否存在
+        $studentInfo = StudentService::getStudentInfo($uuid);
+        if (empty($studentInfo)) {
+            SimpleLogger::info('record_dou_shop_order', ['msg' => 'student_not_found', 'uuid' => $uuid, 'student' => $studentInfo]);
+            return HttpHelper::buildResponse($response, []);
+        }
+        $shopChannel = json_decode(DictConstants::get(DictConstants::DOU_SHOP_CONFIG, 'shop_channel'), true);
+        SimpleLogger::info('record_dou_shop_order', ['msg' => 'shop_channel', 'shop_channel' => $shopChannel]);
+        // 排除非指定抖店渠道订单
+        if (empty($shopChannel[$douShopId])) {
+            SimpleLogger::info('record_dou_shop_order', ['msg' => 'dou_shop_id_invalid']);
+            return HttpHelper::buildResponse($response, []);
+        }
+        // 查询订单是否存在不记录 - 订单号
+        $billMapInfo = BillMapModel::getRecord(['bill_id' => $paramMapInfo['order_id']], ['id']);
+        if (!empty($billMapInfo)) {
+            SimpleLogger::info('record_dou_shop_order', ['msg' => 'bill_is_exist', 'bill_map_info' => $billMapInfo]);
+            return HttpHelper::buildResponse($response, []);
+        }
+        // 保存订单信息
+        $res = BillMapService::mapDataRecord(['c' => $shopChannel[$douShopId], 'is_success' => BillMapModel::IS_SUCCESS_YES], $paramMapInfo['order_id'], $studentInfo['id']);
+        if (!$res) {
+            SimpleLogger::info('record_dou_shop_order', ['msg' => 'save_bill_map_fail']);
+            return HttpHelper::buildResponse($response, []);
         }
         return HttpHelper::buildResponse($response, []);
     }
