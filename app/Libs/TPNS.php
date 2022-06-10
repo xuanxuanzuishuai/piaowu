@@ -83,6 +83,7 @@ class TPNS
             }
 
             $data['headers'] = self::getRequestHeader($platform, $data, $service);
+            $data['timeout'] = 1;
             SimpleLogger::info(__FILE__ . ':' . __LINE__, ['api' => $fullUrl, 'data' => $data]);
             $response = $client->request($method, $fullUrl, $data);
             $body = $response->getBody()->getContents();
