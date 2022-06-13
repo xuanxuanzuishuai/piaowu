@@ -100,6 +100,8 @@ class APIRouter extends RouterBase
             'call' => Consumer::class . ':recordOrderMappingRelation',
             'middles' => [],
         ],
+        // 抖店订单信息记录的消费者
+        '/api/consumer/record_dou_shop_order' => ['method' => ['post'], 'call' => Consumer::class . ':recordDouShopOrder', 'middles' => []],
         '/api/consumer/real_ad' => [
             'method' => ['post'],
             'call' => Consumer::class . ':realAd',
