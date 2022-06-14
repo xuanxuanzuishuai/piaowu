@@ -33,7 +33,8 @@ class WeChatMiniPro
     const BASIC_WX_PREFIX = 'basic_wx_prefix_';
     const SESSION_KEY = 'SESSION_KEY';
     const KEY_TICKET = "jsapi_ticket";
-    
+    const WX_UNIONID_KEY_PRIFIX = "wx_unionid";
+
     const API_UPLOAD_IMAGE     = '/cgi-bin/media/upload';
     const API_SEND             = '/cgi-bin/message/custom/send';
     const API_USER_INFO        = '/cgi-bin/user/info';
@@ -70,11 +71,20 @@ class WeChatMiniPro
     private $appId = ''; //当前的微信id
     private $secret = ''; //当前的微信secret
 
+    private $busiType = ''; // 业务场景
+    private $busiId = '';   // factory方法对应的appid，不是真正的微信的appid
+
 
     public static function factory($appId, $busiType)
     {
         $wxAppKey = self::getWxAppKey($appId, $busiType);
-        return new self($wxAppKey);
+        return (new self($wxAppKey))->setBusies($appId, $busiType);
+    }
+
+    public function setBusies($busiesId, $busiesType) {
+        $this->busiType = $busiesType;
+        $this->busiId = $busiesId;
+        return $this;
     }
 
     public function __construct($config)
@@ -597,6 +607,7 @@ class WeChatMiniPro
         $data = $this->requestJson($url, $params);
         if (empty($data['errcode'])) {
             $this->setSessionKey($data['openid'], $data['session_key']);
+            $this->setUnionid($data['openid'] ?? '', $data['unionid'] ?? '');
         }
         return $data;
     }
@@ -1082,5 +1093,69 @@ class WeChatMiniPro
         }
         SimpleLogger::error("[WeChatMiniPro] get mini app code error", [$res]);
         return false;
+    }
+
+    /**
+     * 记录openid对应的unionid
+     * @param $openId
+     * @param $sessionKey
+     * @return int
+     */
+    public function setUnionid($openId, $unionId)
+    {
+        SimpleLogger::info("setUnionid", [$openId, $unionId]);
+        if (empty($openId) || empty($unionId)) {
+            return false;
+        }
+        return RedisDB::getConn()->hset(self::getUnionidCacheKey(), $openId, $unionId);
+    }
+
+    /**
+     * 获取公众号openid对应的unionid
+     * @param $openId
+     * @return string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function getUnionid($openId)
+    {
+        if (empty($openId)) {
+            return "";
+        }
+        $redis = RedisDB::getConn();
+        $unionid = $redis->hget(self::getUnionidCacheKey(), $openId);
+        if (empty($unionid)) {
+            $wxInfo = $this->getUserInfo($openId);
+            $this->setUnionid($openId, $wxInfo['unionid'] ?? '');
+            $unionid = $redis->hget(self::getUnionidCacheKey(), $openId);
+        }
+        SimpleLogger::info("getUnionid", [$openId, $unionid, $wxInfo ?? []]);
+        return !empty($unionid) ? $unionid : '';
+    }
+
+    /**
+     * 获取小程序openid对应的unionid
+     * @param $openId
+     * @return string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function getMiniAppUnionid($openId)
+    {
+        if (empty($openId)) {
+            return "";
+        }
+        $unionid = RedisDB::getConn()->hget(self::getUnionidCacheKey(), $openId);
+        SimpleLogger::info("getMiniAppUnionid", [$openId, $unionid]);
+        return !empty($unionid) ? $unionid : '';
+    }
+
+
+    /**
+     * 获取记录openid对应的unionid的缓存的key
+     * @param $appId
+     * @return string
+     */
+    public function getUnionidCacheKey()
+    {
+        return self::WX_UNIONID_KEY_PRIFIX . '_' . $this->busiId . '_' . $this->busiType;
     }
 }

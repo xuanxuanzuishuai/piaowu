@@ -125,6 +125,7 @@ class Student extends ControllerBase
                 'new_user'     => intval($info['is_new']),    // 0老用户，1新用户
                 'anonymous_id' => $request->getHeader('anonymous_id')[0] ?? '',   // 埋点匿名id, 投放页有
                 'mobile'       => $params['mobile'],
+                'union_id'     => WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_WX_SERVICE)->getUnionid($data['openid'] ?? ''),
             ])->publish();
         } catch (\Exception $e) {
             SimpleLogger::info('push_login_err', ['msg' => 'wx_student_register', 'err' => $e->getMessage()]);
@@ -172,6 +173,7 @@ class Student extends ControllerBase
                 'uuid'         => $student['uuid'] ?? '',
                 'new_user'     => 0,    // 0老用户，1新用户
                 'anonymous_id' => $request->getHeader('anonymous_id')[0] ?? '',   // 埋点匿名id, 投放页有
+                'union_id'     => WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_WX_SERVICE)->getUnionid($openId),
             ])->publish();
         } catch (\Exception $e) {
             SimpleLogger::info('push_login_err', ['msg' => 'wx_student_login', 'err' => $e->getMessage()]);

@@ -124,7 +124,7 @@ class Landing extends ControllerBase
                     'no_need_check_activity_id' => true,
                 ]
             ];
-            $shareScene = QrInfoService::getQrIdList(Constants::SMART_APP_ID, Constants::REAL_MINI_BUSI_TYPE, $createShareSceneData)[0]['qr_id'] ?? '';
+            $shareScene = QrInfoService::getQrIdList(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE, $createShareSceneData)[0]['qr_id'] ?? '';
             SimpleLogger::info("referral_mini_register", [$shareScene, $lastId, $createShareSceneData]);
             // 上报设备信息
             try {
@@ -136,6 +136,7 @@ class Landing extends ControllerBase
                     'new_user'     => $isNew,    // 0老用户，1新用户
                     'anonymous_id' => $request->getHeader('anonymous_id')[0] ?? '',   // 埋点匿名id, 投放页有
                     'mobile'       => $params['mobile'] ?? '',
+                    'union_id'     => WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE)->getMiniAppUnionid($openid),
                 ])->publish();
             } catch (\Exception $e) {
                 SimpleLogger::info('push_login_err', ['msg' => 'landing_mini_app_register', 'err' => $e->getMessage()]);

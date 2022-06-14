@@ -921,7 +921,7 @@ class ReferralService
                     'no_need_check_activity_id' => true,
                 ]
             ];
-            $shareScene = QrInfoService::getQrIdList(Constants::SMART_APP_ID, Constants::REAL_MINI_BUSI_TYPE, $createShareSceneData)[0]['qr_id'] ?? '';
+            $shareScene = QrInfoService::getQrIdList(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE, $createShareSceneData)[0]['qr_id'] ?? '';
             SimpleLogger::info("referral_mini_landing_index", [$shareScene, $mobile, $createShareSceneData]);
         }
 
