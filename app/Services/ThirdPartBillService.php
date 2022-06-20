@@ -81,7 +81,9 @@ class ThirdPartBillService
             // 检查所有的手机号/订单号/实付金额是否合法, 并返回所有错误的记录
             $invalidMobiles = $invalidTradeNo = $invalidDssAmount = [];
             foreach ($data as &$v) {
-                if ($v['country_code'] == CommonServiceForApp::DEFAULT_COUNTRY_CODE) {
+                if (empty($v['country_code'])) {
+                    $invalidCountryCode[] = $v;
+                } elseif ($v['country_code'] == CommonServiceForApp::DEFAULT_COUNTRY_CODE) {
                     if (!Util::isChineseMobile($v['mobile'])) {
                         $invalidMobiles[] = $v;
                     }
@@ -115,6 +117,9 @@ class ThirdPartBillService
         }
         if (count($invalidTradeNo) > 0) {
             throw new RunTimeException(['trade_no_can_not_be_empty', 'import'], ['list' => $invalidTradeNo]);
+        }
+        if (!empty($invalidCountryCode)) {
+            throw new RunTimeException(['country_code_is_required', 'import'], ['list' => $invalidCountryCode]);
         }
         // 检查数据是否为空
         if (count($data) == 0) {
@@ -322,7 +327,7 @@ class ThirdPartBillService
         //检测学生数据是否存在：不存在时注册新用户
         $student = DssStudentModel::getRecord(['mobile' => $data['mobile']]);
         if (empty($student)) {
-            $result = UserService::studentRegisterBound($appId, $data['mobile'], $data['channel_id'], null, null, null, $paramMapInfo['qr_ticket']);
+            $result = UserService::studentRegisterBound($appId, $data['mobile'], $data['channel_id'], null, null, null, $paramMapInfo['qr_ticket'], $data['country_code']);
             if (empty($result)) {
                 $data['status'] = ThirdPartBillModel::STATUS_FAIL;
                 $data['reason'] = 'register student failed';
