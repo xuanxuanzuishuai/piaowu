@@ -134,19 +134,21 @@ class UserService
      * @param null $busiType
      * @param null $userType
      * @param null $refereeId
+     * @param string $countryCode
      * @return mixed|null
      * @throws \App\Libs\Exceptions\RunTimeException
      */
-    public static function studentRegisterBound($appId, $mobile, $channelId, $openId = NULL, $busiType = NULL, $userType = NULL, $refereeId = NULL)
+    public static function studentRegisterBound($appId, $mobile, $channelId, $openId = NULL, $busiType = NULL, $userType = NULL, $refereeId = NULL, $countryCode = '')
     {
         if ($appId == Constants::SMART_APP_ID) {
-           return (new Dss())->studentRegisterBound([
-                'mobile' => (string)$mobile,
-                'channel_id' => $channelId,
-                'open_id' => $openId,
-                'busi_type' => $busiType,
-                'user_type' => $userType,
-                'referee_id' => $refereeId
+            return (new Dss())->studentRegisterBound([
+                'mobile'       => (string)$mobile,
+                'country_code' => (string)$countryCode,
+                'channel_id'   => $channelId,
+                'open_id'      => $openId,
+                'busi_type'    => $busiType,
+                'user_type'    => $userType,
+                'referee_id'   => $refereeId
             ]);
         }
     }

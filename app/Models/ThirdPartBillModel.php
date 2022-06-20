@@ -80,6 +80,7 @@ class ThirdPartBillModel extends Model
                         s.uuid,
                         s.name,
                         s.mobile,
+                        s.country_code,
                         t.trade_no,
                         t.is_new,
                         t.pay_time,

@@ -54,18 +54,20 @@ class ThirdPartBillService
                 $B = trim($v['B']);
                 $C = trim($v['C']);
                 $D = trim($v['D']);
+                $E = trim($v['E']);
                 //四项必填数据全部为空，忽略不处理
-                if (empty($A) && empty($B) && empty($C) && empty($D)) {
+                if (empty($A) && empty($B) && empty($C) && empty($D) && empty($E)) {
                     continue;
                 }
-                if ($D != ThirdPartBillModel::IGNORE) {
+                if ($E != ThirdPartBillModel::IGNORE) {
                     $data[] = [
-                        'mobile' => $A,
-                        'trade_no' => $B,
-                        'operator_id' => $operatorId,
-                        'pay_time' => $now,
-                        'create_time' => $now,
-                        'dss_amount' => ($C == '') ? '' : $C,
+                        'country_code' => $A,
+                        'mobile'       => $B,
+                        'trade_no'     => $C,
+                        'operator_id'  => $operatorId,
+                        'pay_time'     => $now,
+                        'create_time'  => $now,
+                        'dss_amount'   => ($D == '') ? '' : $D,
                     ];
                 }
             }
@@ -79,9 +81,16 @@ class ThirdPartBillService
             // 检查所有的手机号/订单号/实付金额是否合法, 并返回所有错误的记录
             $invalidMobiles = $invalidTradeNo = $invalidDssAmount = [];
             foreach ($data as &$v) {
-                if (!Util::isChineseMobile($v['mobile'])) {
-                    $invalidMobiles[] = $v;
+                if ($v['country_code'] == CommonServiceForApp::DEFAULT_COUNTRY_CODE) {
+                    if (!Util::isChineseMobile($v['mobile'])) {
+                        $invalidMobiles[] = $v;
+                    }
+                } else {
+                    if (!Util::validPhoneNumber($v['mobile'], $v['country_code'])) {
+                        $invalidMobiles[] = $v;
+                    }
                 }
+
                 if (empty($v['trade_no'])) {
                     $invalidTradeNo[] = $v;
                 }
@@ -269,7 +278,7 @@ class ThirdPartBillService
             $statusDict = DictConstants::getSet(DictConstants::THIRD_PART_BILL_STATUS);
             foreach ($billList['records'] as $k => &$v) {
                 $v['status_zh'] = $statusDict[$v['status']];
-                $v['mobile']    = Util::hideUserMobile($v['mobile']);
+                $v['mobile'] = $v['country_code'] . '-' . Util::hideUserMobile($v['mobile']);
                 $records[$k] = $v;
             }
         }
@@ -289,6 +298,7 @@ class ThirdPartBillService
         $appId = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
         //基础数据
         $data = [
+            'country_code' => $params['country_code'],
             'mobile' => $params['mobile'],
             'trade_no' => $params['trade_no'],
             'pay_time' => $params['pay_time'],
