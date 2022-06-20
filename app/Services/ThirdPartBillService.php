@@ -322,7 +322,7 @@ class ThirdPartBillService
         //检测学生数据是否存在：不存在时注册新用户
         $student = DssStudentModel::getRecord(['mobile' => $data['mobile']]);
         if (empty($student)) {
-            $result = UserService::studentRegisterBound($appId, $data['mobile'], $data['channel_id'], null, null, null, $paramMapInfo['qr_ticket']);
+            $result = UserService::studentRegisterBound($appId, $data['mobile'], $data['channel_id'], null, null, null, $paramMapInfo['qr_ticket'], $data['country_code']);
             if (empty($result)) {
                 $data['status'] = ThirdPartBillModel::STATUS_FAIL;
                 $data['reason'] = 'register student failed';
