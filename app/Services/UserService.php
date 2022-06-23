@@ -204,6 +204,26 @@ class UserService
         AppTokenService::delUserTokenByUserId($student['id'], Constants::SMART_APP_ID);
     }
 
+    /**用户修改登录手机号 清除登录信息
+     * @param $data
+     */
+    public static function userChangeMobile($data)
+    {
+        $appIdArray = [Constants::SMART_APP_ID, Constants::REAL_APP_ID];
+        foreach ($data as $value) {
+            $student = DssStudentModel::getRecord(['uuid' => $value['uuid']]);
+            if (empty($student)) {
+                SimpleLogger::info('not found student', []);
+                continue;
+            }
+            //清除微信登录信息
+            WechatTokenService::delTokenByUserId($student['id'], DssUserWeiXinModel::USER_TYPE_STUDENT, $appIdArray);
+
+            //清除app登录信息
+            AppTokenService::delUserTokenByUserId($student['id'], Constants::SMART_APP_ID);
+        }
+    }
+
     /**
      * @param $studentId
      * @return bool
