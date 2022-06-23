@@ -90,11 +90,6 @@ class APIRouter extends RouterBase
             'call' => Consumer::class . ':changeMobile',
             'middles' => [],
         ],
-        '/api/consumer/change_login_mobile' => [
-            'method' => ['post'],
-            'call' => Consumer::class . ':changeLoginMobile',
-            'middles' => [],
-        ],
         '/api/consumer/real_referral' => [
             'method' => ['post'],
             'call' => Consumer::class . ':realReferral',
