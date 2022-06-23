@@ -163,6 +163,12 @@ class LotteryCoreService
                 continue;
             }
 
+            //移除中奖概率为0的奖品
+            if (!($award['weight'] > 0)) {
+                unset($awardInfo[$key]);
+                continue;
+            }
+
             //移除不在可抽中时间的奖品
             $inTime = false;
             foreach ($award['hit_times'] as $ht) {
