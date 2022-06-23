@@ -286,7 +286,6 @@ class LotteryAdminService
         }
         foreach ($formatParams['win_prize_rule'] as &$fwv) {
             $fwv['op_activity_id'] = $opActivityId;
-            $fwv['award_level'] .= ','.$awardCount;
         }
         foreach ($formatParams['lottery_times_rule'] as &$flv) {
             $flv['op_activity_id'] = $opActivityId;
