@@ -75,7 +75,7 @@ class MessagePushRulesModel extends Model
     {
         $limit      = Util::limitation($page, $count);
         $countField = "count(id) as total";
-        $field      = "`id`,`name`,`type`,`target`,`is_active`,time->>'$.desc' as `display_time`,`update_time`,`remark`";
+        $field      = "`id`,`name`,`type`,`target`,`is_active`,time->>'$.desc' as `display_time`,`update_time`,`remark`,`app_id`";
         $sql        = "SELECT %s FROM ".self::$table." WHERE ";
 
         $db    = MysqlDB::getDB();

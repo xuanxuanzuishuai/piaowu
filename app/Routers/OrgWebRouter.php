@@ -430,5 +430,11 @@ class OrgWebRouter extends RouterBase
         '/op_web/limit_time_activity/list' => ['method' => ['get'], 'call' => LimitTimeActivity::class . ':list'],
         '/op_web/limit_time_activity/detail' => ['method' => ['get'], 'call' => LimitTimeActivity::class . ':detail'],
         '/op_web/limit_time_activity/enable_status' => ['method' => ['post'], 'call' => LimitTimeActivity::class . ':editEnableStatus'],
+
+        /** 清晨转介绍管理 start */
+        '/op_web/morning/push_message_list'          => ['method' => ['get'], 'call' => Message::class . ':rulesList'],
+        '/op_web/morning/push_message_detail'        => ['method' => ['get'], 'call' => Message::class . ':ruleDetail'],
+        '/op_web/morning/push_message_update_status' => ['method' => ['post'], 'call' => Message::class . ':ruleUpdateStatus'],
+        '/op_web/morning/push_message_update'        => ['method' => ['post'], 'call' => Message::class . ':ruleUpdate'],
     ];
 }

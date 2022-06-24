@@ -197,4 +197,12 @@ class Constants
         // 10003:主课赠课50分钟, 10004:主课赠课25分钟
         self::REAL_REFEREE_BUY_FORMAL_GIVE         => [10003, 10004],
     ];    // 推荐人购课情况对
+
+    // 清晨学生状态
+    const MORNING_STUDENT_STATUS_CANCEL        = -1;   // 注册
+    const MORNING_STUDENT_STATUS_REGISTE       = 1;   // 注册
+    const MORNING_STUDENT_STATUS_TRAIL         = 2;   // 体验课
+    const MORNING_STUDENT_STATUS_TRAIL_EXPIRE  = 3;   // 体验课过期
+    const MORNING_STUDENT_STATUS_NORMAL        = 4;   // 系统课
+    const MORNING_STUDENT_STATUS_NORMAL_EXPIRE = 5;   // 系统课过期
 }
