@@ -111,9 +111,10 @@ class LotteryCoreService
         for ($i = 0; $i < count($readyAwardList); $i++) {
             $length += $readyAwardList[$i]['weight'];
         }
-        foreach ($readyAwardList as $key => $value) {
-            $readyAwardList[$key]['weight_rate'] = number_format($value['weight'] / $length, 2);
-        }
+        //此段代码为测试阶段使用，正式环境注释
+//        foreach ($readyAwardList as $key => $value) {
+//            $readyAwardList[$key]['weight_rate'] = number_format($value['weight'] / $length, 2);
+//        }
         SimpleLogger::info('LotteryCore ready award rate', $readyAwardList);
         for ($i = 0; $i < count($readyAwardList); $i++) {
             $random = rand(1, $length);
