@@ -211,9 +211,13 @@ class UserService
      */
     public static function judgeUserValidPay($studentId)
     {
-        $canExchangeNum = (new Dss())->getUserCanExchangeNum(['student_id' => $studentId])['can_exchange_num'];
-        if ($canExchangeNum <= 0) {
-            SimpleLogger::info('not valid pay user', ['student_id' => $studentId, 'can_exchange_num' => $canExchangeNum]);
+        $canExchangeNum = (new Dss())->getUserCanExchangeNum(['student_id' => $studentId]);
+        SimpleLogger::info('valid pay user', ['student_id' => $studentId, 'can_exchange_num' => $canExchangeNum]);
+        // 2022.06.27 改为有剩余课时即可，参与月月有奖以及可以得到转介绍奖励（如果后端勾选的推荐人身份包含年卡未过期）
+        if ($canExchangeNum['has_review_course'] != DssStudentModel::REVIEW_COURSE_1980) {
+            return false;
+        }
+        if (empty($canExchangeNum['sub_end_date']) || $canExchangeNum['sub_end_date'] < date("Ymd")) {
             return false;
         }
         return true;

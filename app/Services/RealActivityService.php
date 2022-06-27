@@ -151,14 +151,15 @@ class RealActivityService
             'can_upload' => false,
 
         ];
-        $studentIdAttribute = UserService::getStudentIdentityAttributeById(Constants::REAL_APP_ID, $studentId, '');
-        if (UserService::checkRealStudentIdentityIsNormal($studentId, $studentIdAttribute)) {
-            $data['can_upload'] = true;
-        }
         //获取学生信息
         $studentDetail = ErpStudentModel::getStudentInfoById($studentId);
         if (empty($studentDetail)) {
             throw new RunTimeException(['student_not_exist']);
+        }
+        $studentIdAttribute = ErpStudentService::getStudentCourseData($studentDetail['uuid']);
+        if (!empty($studentIdAttribute['course_count_num'])){
+            // 有剩余课程才参加月月有奖
+            $data['can_upload'] = true;
         }
         //状态获取
         $checkRes = ErpUserService::getStudentStatus($studentId);
