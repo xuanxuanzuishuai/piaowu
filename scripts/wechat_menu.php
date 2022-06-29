@@ -28,7 +28,7 @@ $wechat = WeChatMiniPro::factory(Constants::SMART_APP_ID, Constants::SMART_WX_SE
 $menuList = [
     'button' => [
         [
-            'name' => '福利活动',
+            'name' => '兑换时长',
             'sub_button' => [
                 [
                     "type" => "view",
@@ -44,16 +44,16 @@ $menuList = [
                     "type" => "view",
                     "name" => "🎉金叶子商城",
                     "url"  => "https://dss-weixin.xiongmaopeilian.com/Student/goldLeaf/index"
-                ],
-                [
-                    "type" => "view",
-                    "name" => "0元钢琴课",
-                    "url" => "https://referral.xiaoyezi.com/operation/landing/mainCourse?uuid=&c=4303"
-                ],
+                ]
             ],
         ],
         [
-            "name" => "个人中心",
+            "type" => "view",
+            "name" => "练琴日报",
+            "url"  => "https://dss-weixin.xiongmaopeilian.com/student/calendar",
+        ],
+        [
+            "name" => "我的账户",
             "sub_button" => [
                 [
                     "type" => "view",
@@ -62,8 +62,8 @@ $menuList = [
                 ],
                 [
                     "type" => "view",
-                    "name" => "练琴日报",
-                    "url" => "https://dss-weixin.xiongmaopeilian.com/student/calendar"
+                    "name" => "学员故事",
+                    "url" => "https://mp.weixin.qq.com/mp/homepage?__biz=MzU2MjMxNTc5Mw==&hid=2&sn=1884b772776ab74b77312fb4178bd5e1"
                 ],
                 [
                     "type" => "view",
@@ -72,13 +72,9 @@ $menuList = [
                 ],
                 [
                     "type" => "view",
-                    "name" => "郎朗测评",
-                    "url" => "http://mp.weixin.qq.com/s?__biz=MzU1NTkxNzY3MQ==&mid=100000231&idx=1&sn=d11c0cfa5a19418dab0c99c1d8b9b77a&chksm=7bcc49ef4cbbc0f9f923570f89f7389933ee84750cd1751f8be23084d4311f740aff1d9c8775&scene=18#rd"
-                ],
-                [
-                    "type" => "view",
                     "name" => "联系客服",
-                    "url" => "https://ceshi10.sobot.com/chat/h5/v2/index.html?sysnum=4a24039fb3cd4bce89f738a341a3e93a&channelid=10&uname=用户"
+                   // "url" => "https://ceshi10.sobot.com/chat/h5/v2/index.html?sysnum=4a24039fb3cd4bce89f738a341a3e93a&channelid=10&uname=用户"
+                    "url" => "https://xiaoyezi2.sobot.com/chat/h5/v2/index.html?sysnum=4a24039fb3cd4bce89f738a341a3e93a&channelid=5&uname=用户"
                 ]
             ]
         ],
