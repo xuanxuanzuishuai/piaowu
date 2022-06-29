@@ -68,7 +68,7 @@ $menuList = [
                 [
                     "type" => "view",
                     "name" => "使用指南",
-                    "url" => "http://mp.weixin.qq.com/s?__biz=MzU1NTkxNzY3MQ==&mid=100000105&idx=1&sn=a4f83bf34750e86f3902241f8560ad85&chksm=7bcc49614cbbc0770b398c4b0711b2515efde07bfe866db7ba17e930176e6c2c26df66e1f459&scene=18#wechat_redirect"
+                    "url" => "https://mp.weixin.qq.com/mp/homepage?__biz=MzU2MjMxNTc5Mw==&hid=1&sn=2c284d2fb07e1cfde9ef5fe9543c62e6&scene=18"
                 ],
                 [
                     "type" => "view",
