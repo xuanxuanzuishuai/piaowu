@@ -8,7 +8,6 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\RealDictConstants;
 use App\Libs\SimpleLogger;
 use App\Models\Erp\ErpStudentModel;
-use App\Services\UserService;
 
 class ErpStudentService
 {
@@ -41,8 +40,10 @@ class ErpStudentService
             $orderCourseData = (new Erp())->getStudentCourses($studentUUID);
             $orderCourseList = $orderCourseData['courses'] ?? [];
             $otherCourses = !empty($orderCourseData['other_courses']) ? array_column($orderCourseData['other_courses'], null, 'student_course_type') : [];
-            $giveAdderPlayerCourse = $otherCourses[Constants::REAL_REFEREE_BUY_LADDER_PLAYER_GIVE] ?? [];
-            $giveFormalCourse = $otherCourses[Constants::REAL_REFEREE_BUY_FORMAL_GIVE] ?? [];
+            // 陪练课-没有订单课程数量
+            $giveAdderPlayerCourse = $otherCourses[2] ?? [];
+            // 主课-没有订单课程数量
+            $giveFormalCourse = $otherCourses[1] ?? [];
             SimpleLogger::info("getStudentCourseData", ['msg' => 'erp_student_course_data', $studentUUID, $orderCourseData]);
             if (empty($orderCourseList)) {
                 // 没有查到用户身份订单
@@ -66,18 +67,17 @@ class ErpStudentService
             // 主课-赠课剩余数量
             $giveFormalCourseNum = !empty($giveFormalCourse) ? ($giveFormalCourse['remain_num'] + $giveFormalCourse['free_num']) : 0;
             $returnData['remain_num'][Constants::REAL_REFEREE_BUY_FORMAL_GIVE] += $giveFormalCourseNum;
+            // 所有剩余课程数量需要加上没有订单的数量
+            $returnData['course_count_num'] += $giveAdderPlayerCourseNum + $giveFormalCourseNum;
             /** 有订单号的课包 */
             foreach ($orderCourseList as $_orderId => $_orderList) {
                 foreach ($_orderList as $item) {
-                    // 退费的不算
-                    if ($item['is_refund'] != 1) {
-                        continue;
-                    }
                     // 过滤不需要的sub_type
                     if (!in_array($item['sub_type'], array_merge(...array_values(Constants::REAL_REFEREE_ID_CONTRAST_SUB_TYPE)))) {
                         continue;
                     }
-                    // 剩余有效课程总数量包含赠送
+                    /** 不关心是否退费 */
+                    // 剩余有效课程总数量包含赠送 - 不关系是不是退费， 退费的剩余课程应该也是0
                     $returnData['course_count_num'] += $item['remain_num'] + ($item['free_num'] ?? 0);
                     // 陪练课-赠课剩余数量
                     $returnData['remain_num'][Constants::REAL_REFEREE_BUY_LADDER_PLAYER_GIVE] += self::getSubTypeRemainNum(Constants::REAL_REFEREE_BUY_LADDER_PLAYER_GIVE, $item);
@@ -89,27 +89,36 @@ class ErpStudentService
                     $returnData['remain_num'][Constants::REAL_REFEREE_BUY_LADDER_PLAYER] += self::getSubTypeRemainNum(Constants::REAL_REFEREE_BUY_LADDER_PLAYER, $item);
                     // 主课剩余数量
                     $returnData['remain_num'][Constants::REAL_REFEREE_BUY_FORMAL] += self::getSubTypeRemainNum(Constants::REAL_REFEREE_BUY_FORMAL, $item);
-                    // 付费课包 （赠课和体验课不算付费订单）
                     if ($item['pay_source'] == Constants::REAL_COURSE_YES_PAY) {
-                        // 已付费
+                        // 已付费 - 不关心是不是退费
                         $returnData['is_real_person_paid'] = Erp::USER_IS_PAY_YES;
-                        // 剩余有效付费课程数量
-                        $returnData['paid_course_remainder_num'] += $item['remain_num'];
                     }
                     // 首次付费时间
                     ($item['create_time'] < $returnData['first_pay_time'] || $returnData['first_pay_time'] <= 0) && $returnData['first_pay_time'] = $item['create_time'];
-                    // 检查2021。10.26零点前订单是否有未消耗完的订单
+                    // 检查是否是2021。10.26零点前订单的订单
                     if ($item['create_time'] < $firstPayTimeNode20211025) {
-                        $returnData['is_first_pay_time_20211025'] = true;        // 2021.10.26零点前付费并且未消耗完的订单id
-                        // 非退费订单才计算有效剩余课程数量和订单
-                        $item['is_refund'] == 1 && $returnData['first_pay_time_20211025_remainder_num'] += $item['remain_num'];   // 2021.10.26零点前付费并且未消耗完的订单剩余课程总数
+                        $returnData['is_first_pay_time_20211025'] = true;        // 代表用户是2021.10.26零点前的付费用户
                     }
+                    // 退费的不算
+                    if ($item['is_refund'] != 1) {
+                        continue;
+                    }
+                    /** 关心退费 */
+                    if ($item['pay_source'] == Constants::REAL_COURSE_YES_PAY) {
+                        // 剩余有效付费课程数量
+                        $returnData['paid_course_remainder_num'] += $item['remain_num'];
+                    }
+                    // 非退费订单才计算有效剩余课程数量和订单
+                    $item['create_time'] < $firstPayTimeNode20211025 && $returnData['first_pay_time_20211025_remainder_num'] += $item['remain_num'];   // 2021.10.26零点前付费并且未消耗完的订单剩余课程总数
                 }
                 unset($item);
             }
             unset($_orderId, $_orderList);
             // 确定用户购课身份 和 是否是 付费有效
-            list($returnData['buy_course_type'], $returnData['is_valid_pay']) = self::getUserIdentity($returnData['remain_num'], $returnData['is_real_person_paid']);
+            list($returnData['buy_course_type']) = self::getUserIdentity($returnData['remain_num']);
+            if ($returnData['paid_course_remainder_num']) {
+                $returnData['is_valid_pay'] = Erp::USER_IS_PAY_YES;
+            }
             // 课包清理过 0 未清理过
             $returnData['is_cleaned'] = $orderCourseData['is_cleaned'] ?? 0;
             // 清理时间，is_cleaned = 1 时，该值有意义且一定>0，is_cleaned = 0 时，该值 = 0，该值覆盖了 is_cleaned 含义，为了兼容保留原来 is_cleaned
@@ -144,14 +153,13 @@ class ErpStudentService
      * 双重身份：有主课，有陪练课 不区分课包类型都认为是双重身份
      * 付费有效：必须是购买了主课或陪练课不包括赠课和体验课
      * @param $remainNumList
-     * @param $isRealPersonPaid
      * @return array
      */
-    protected static function getUserIdentity($remainNumList, $isRealPersonPaid)
+    protected static function getUserIdentity($remainNumList)
     {
-        $userIdentity = $isValidPay = 0;
+        $userIdentity = 0;
         if (empty($remainNumList)) {
-            return [$userIdentity, $isValidPay];
+            return [$userIdentity];
         }
         $hasIdList = array_keys(array_diff($remainNumList, [0]));
         $formalCourse = $ladderPlayerCourse = [];
@@ -161,10 +169,6 @@ class ErpStudentService
             }
             if (in_array($item, [Constants::REAL_REFEREE_BUY_FORMAL, Constants::REAL_REFEREE_BUY_FORMAL_GIVE])) {
                 $formalCourse[] = $item;
-            }
-            // 购买了付费主课或付费陪练课认为是付费有效
-            if (!empty($isRealPersonPaid) && in_array($item, [Constants::REAL_REFEREE_BUY_LADDER_PLAYER, Constants::REAL_REFEREE_BUY_FORMAL])) {
-                $isValidPay = Erp::USER_IS_PAY_YES;
             }
         }
         unset($item);
@@ -178,6 +182,6 @@ class ErpStudentService
             // 主课身份
             $userIdentity = Constants::REAL_REFEREE_BUY_FORMAL;
         }
-        return [$userIdentity, $isValidPay];
+        return [$userIdentity];
     }
 }
