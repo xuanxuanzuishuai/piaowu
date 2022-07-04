@@ -8,7 +8,6 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\RealDictConstants;
 use App\Libs\SimpleLogger;
 use App\Models\Erp\ErpStudentModel;
-use App\Services\UserService;
 
 class ErpStudentService
 {
@@ -51,7 +50,7 @@ class ErpStudentService
                 return [];
             }
             $returnData = [
-                'first_pay_time'                        => 0,  // 首次付费时间
+                'first_pay_time'                        => $orderCourseData['first_pay_time_min'] ?? 0,  // 首次付费时间
                 'is_real_person_paid'                   => 0,  // 付费情况 - 未付费
                 'paid_course_remainder_num'             => 0,  // 剩余有效付费课程数量
                 'course_count_num'                      => 0,  // 剩余有效课程总数量包含赠送
@@ -90,17 +89,16 @@ class ErpStudentService
                     $returnData['remain_num'][Constants::REAL_REFEREE_BUY_LADDER_PLAYER] += self::getSubTypeRemainNum(Constants::REAL_REFEREE_BUY_LADDER_PLAYER, $item);
                     // 主课剩余数量
                     $returnData['remain_num'][Constants::REAL_REFEREE_BUY_FORMAL] += self::getSubTypeRemainNum(Constants::REAL_REFEREE_BUY_FORMAL, $item);
+                    // 付费订单
                     if ($item['pay_source'] == Constants::REAL_COURSE_YES_PAY) {
                         // 已付费 - 不关心是不是退费
                         $returnData['is_real_person_paid'] = Erp::USER_IS_PAY_YES;
-                    }
-                    // 首次付费时间
-                    ($item['create_time'] < $returnData['first_pay_time'] || $returnData['first_pay_time'] <= 0) && $returnData['first_pay_time'] = $item['create_time'];
-                    // 检查2021。10.26零点前订单是否有未消耗完的订单
-                    if ($item['create_time'] < $firstPayTimeNode20211025) {
-                        $returnData['is_first_pay_time_20211025'] = true;        // 2021.10.26零点前付费并且未消耗完的订单id
-                        // 非退费订单才计算有效剩余课程数量和订单
-                        $item['is_refund'] == 1 && $returnData['first_pay_time_20211025_remainder_num'] += $item['remain_num'];   // 2021.10.26零点前付费并且未消耗完的订单剩余课程总数
+                        // 首次付费时间
+                        // ($item['create_time'] < $returnData['first_pay_time'] || $returnData['first_pay_time'] <= 0) && $returnData['first_pay_time'] = $item['create_time'];
+                        // 检查是否是2021。10.26零点前订单的订单
+                        if ($item['create_time'] < $firstPayTimeNode20211025) {
+                            $returnData['is_first_pay_time_20211025'] = true;        // 代表用户是2021.10.26零点前的付费用户
+                        }
                     }
                     // 退费的不算
                     if ($item['is_refund'] != 1) {
@@ -111,12 +109,14 @@ class ErpStudentService
                         // 剩余有效付费课程数量
                         $returnData['paid_course_remainder_num'] += $item['remain_num'];
                     }
+                    // 非退费订单才计算有效剩余课程数量和订单
+                    $item['create_time'] < $firstPayTimeNode20211025 && $returnData['first_pay_time_20211025_remainder_num'] += $item['remain_num'];   // 2021.10.26零点前付费并且未消耗完的订单剩余课程总数
                 }
                 unset($item);
             }
             unset($_orderId, $_orderList);
             // 确定用户购课身份 和 是否是 付费有效
-            list($returnData['buy_course_type']) = self::getUserIdentity($returnData['remain_num'], $returnData['is_real_person_paid']);
+            list($returnData['buy_course_type']) = self::getUserIdentity($returnData['remain_num']);
             if ($returnData['paid_course_remainder_num']) {
                 $returnData['is_valid_pay'] = Erp::USER_IS_PAY_YES;
             }
