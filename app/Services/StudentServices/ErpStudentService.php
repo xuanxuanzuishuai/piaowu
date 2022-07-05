@@ -108,9 +108,9 @@ class ErpStudentService
                     if ($item['pay_source'] == Constants::REAL_COURSE_YES_PAY) {
                         // 剩余有效付费课程数量
                         $returnData['paid_course_remainder_num'] += $item['remain_num'];
+                        // 非退费订单才计算有效剩余课程数量和订单
+                        $item['create_time'] < $firstPayTimeNode20211025 && $returnData['first_pay_time_20211025_remainder_num'] += $item['remain_num'];   // 2021.10.26零点前付费并且未消耗完的订单剩余课程总数
                     }
-                    // 非退费订单才计算有效剩余课程数量和订单
-                    $item['create_time'] < $firstPayTimeNode20211025 && $returnData['first_pay_time_20211025_remainder_num'] += $item['remain_num'];   // 2021.10.26零点前付费并且未消耗完的订单剩余课程总数
                 }
                 unset($item);
             }
