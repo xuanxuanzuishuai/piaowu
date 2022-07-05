@@ -1059,7 +1059,7 @@ class Consumer extends ControllerBase
     }
 
     /**
-     * 用户修改登录手机号
+     * 用户修改登录手机号(纯新号更换)
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -1094,7 +1094,12 @@ class Consumer extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        UserService::userChangeLoginMobile($params['msg_body']);
+
+        if ($params['event_type']  == 'exchange') {
+            UserService::userChangeMobile($params['msg_body']);
+        } else {
+            UserService::userChangeLoginMobile($params['msg_body']);
+        }
         return HttpHelper::buildResponse($response, []);
     }
     
