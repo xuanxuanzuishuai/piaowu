@@ -75,7 +75,8 @@ class Erp
     const API_GRANT_COURSE = '/referee/student/giftCourse';
     //赠送金叶子或音符
     const API_GRANT_GOLD_LEAF_NOTE = '/ai_dss/account/enter';
-
+    //产品包列表
+    const API_ERP_PACKAGE_LIST = '/pri/v1/package/list';
 
     // 账户
     const API_STUDENT_ACCOUNTS = '/ai_dss/account/detail';
@@ -1030,6 +1031,17 @@ class Erp
     public function orderSearch($params)
     {
         $response = HttpHelper::requestJson($this->host . self::API_ORDER_SEARCH, $params, 'GET');
+        return $response ?? [];
+    }
+
+    /**
+     * 查询支付成功订单信息
+     * @param $params
+     * @return array|bool
+     */
+    public function erpPackageList($params)
+    {
+        $response = HttpHelper::requestJson($this->host . self::API_ERP_PACKAGE_LIST, $params, 'GET');
         return $response ?? [];
     }
 

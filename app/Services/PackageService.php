@@ -9,7 +9,9 @@
 namespace App\Services;
 
 use App\Libs\AliOSS;
+use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Erp;
 use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Erp\ErpGiftGroupV1Model;
 use App\Models\Erp\ErpPackageGoodsV1Model;
@@ -182,5 +184,44 @@ class PackageService
         }
 
         return $package;
+    }
+
+
+    /**
+     * 查询产品包信息
+     * @param $params
+     * @return array
+     */
+    public static function importReady($params)
+    {
+        switch ($params['app_id']) {
+            case Constants::QC_APP_ID;
+                $requestParams = [
+                    'sale_shop'        => 8,
+                    'exclude_sub_type' => 11001,
+                    'package_name'=>$params['package_name'],
+                    'count' => 100,
+                ];
+                break;
+            default:
+                return [];
+        }
+        $res = (new Erp())->erpPackageList($requestParams);
+        if (!empty($res['data'])) {
+            foreach ($res['data']['packages'] as $value) {
+                $priceRate = array_column($value['price_v1']['rate'], 'rate', 'currency_id');
+                $single = [
+                    'id'         => $value['id'],
+                    'name'       => $value['name'],
+                    'price_info' => $value['price_v1']['price'][0],
+                ];
+                if (!empty($priceRate)) {
+                    $single['price_info']['rate'] = $priceRate[$value['price_v1']['price'][0]['currency_id']] ?? 0;
+                    $single['price_money'] = $single['price_info']['amount'] * $single['price_info']['rate'] / 10000 / 100;
+                }
+                $data[] = $single;
+            }
+        }
+        return $data ?? [];
     }
 }

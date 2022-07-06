@@ -77,6 +77,7 @@ class ThirdPartBillModel extends Model
                         t.id,
                         t.student_id,
                         t.business_id,
+                        t.target_business_id,
                         s.uuid,
                         s.name,
                         s.mobile,
