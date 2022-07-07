@@ -14,7 +14,7 @@ use Slim\Http\StatusCode;
 class QingChen
 {
     //根据手机号（批量）检查是否购买过体验课
-    const API_qc_ddd = '/api/logistics/list';
+    const API_QC_STUDENT_HAVE_TRIAL = '/api/op/student/is_have_trial';
     //注册用户并购买体验课
     const API_QC_REGISTER_ORDER = '/api/student/create_order';
 
@@ -51,7 +51,7 @@ class QingChen
             $res = json_decode($body, true);
             SimpleLogger::info(__FILE__ . ':' . __LINE__, [print_r($res, true)]);
 
-            if (($status != StatusCode::HTTP_OK) || !isset($res['code']) || $res['code'] != Valid::CODE_SUCCESS) {
+            if (($status != StatusCode::HTTP_OK) || !isset($res['code'])) {
                 return false;
             }
             return $res;
@@ -63,6 +63,17 @@ class QingChen
         return false;
     }
 
+
+    /**
+     * 批量检查是否购买过体验课
+     * @param $mobiles
+     * @return false|mixed
+     */
+    public function isHaveTrial($mobiles)
+    {
+        $res = self::commonAPI(self::API_QC_STUDENT_HAVE_TRIAL, $mobiles, 'POST');
+        return $res['data'] ?? [];
+    }
 
     /**
      * 创建学生&订单

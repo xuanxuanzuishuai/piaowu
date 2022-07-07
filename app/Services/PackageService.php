@@ -199,9 +199,11 @@ class PackageService
                 $requestParams = [
                     'sale_shop'        => 8,
                     'exclude_sub_type' => 11001,
-                    'package_name'=>$params['package_name'],
-                    'count' => 100,
+                    'count'            => 10000,
                 ];
+                if (!empty($params['package_name'])) {
+                    $requestParams['package_name'] = $params['package_name'];
+                }
                 break;
             default:
                 return [];

@@ -123,9 +123,19 @@ class ThirdPartBillService
         if (!empty($invalidCountryCode)) {
             throw new RunTimeException(['country_code_is_required', 'import'], ['list' => $invalidCountryCode]);
         }
+
+        $recordNum = count($data);
         // 检查数据是否为空
-        if (count($data) == 0) {
+        if ($recordNum == 0) {
             throw new RunTimeException(['data_can_not_be_empty', 'import']);
+        } else {
+            $maxRecord = [
+                Constants::SMART_APP_ID => 100,
+                Constants::QC_APP_ID    => 200,
+            ];
+            if ($recordNum > $maxRecord[$params['target_business_id']]) {
+                throw new RunTimeException(['over_max_allow_num', 'import']);
+            }
         }
 
         //针对不同业务线的条件检查
@@ -135,7 +145,7 @@ class ThirdPartBillService
             throw new RunTimeException(['bill_dss_amount_error', 'import'], ['list' => $invalidDssAmount]);
         }
         // 学生手机号重复
-        if (count($data) != count(array_unique(array_column($data, 'mobile')))) {
+        if ($recordNum != count(array_unique(array_column($data, 'mobile')))) {
             throw new RunTimeException(['mobile_repeat', 'import']);
         }
 
@@ -214,9 +224,15 @@ class ThirdPartBillService
      * 根据手机号（批量）检查是否购买过体验课
      * @param $recordData
      * @return bool
+     * @throws RunTimeException
      */
     public static function qcCondition($recordData)
     {
+        $mobiles = array_column($recordData, 'mobile');
+        $data = (new QingChen())->isHaveTrial($mobiles);
+        if (!empty($data['have_trial'])){
+            throw new RunTimeException(['has_trialed_records', 'import'], ['list' => $data['have_trial']]);
+        }
         return true;
     }
 
@@ -334,7 +350,7 @@ class ThirdPartBillService
         $billList = ThirdPartBillModel::list($where, $map, $page, $count, $thirdIdentityTableName);
         if (!empty($billList['records'])) {
             $statusDict = DictConstants::getSet(DictConstants::THIRD_PART_BILL_STATUS);
-            $appIdDict = DictConstants::getSet(DictConstants::APP_ID);
+            $appIdDict = DictService::getTypeMap('import_target_app_id');
             foreach ($billList['records'] as $k => &$v) {
                 $v['status_zh'] = $statusDict[$v['status']];
                 $v['mobile'] = $v['country_code'] . '-' . Util::hideUserMobile($v['mobile']);
@@ -502,7 +518,11 @@ class ThirdPartBillService
 
         $result = (new QingChen())->registerAndOrder($params);
         if ($result['code'] == 1) {
-            $data['reason'] = $result['error']['description'];
+            if ($result['error']['type'] == 'SERVER_ERROR'){
+                $data['reason'] = '清晨系统异常';
+            }else{
+                $data['reason'] = $result['error']['description'];
+            }
             $data['status'] = ThirdPartBillModel::STATUS_FAIL;
         } else {
             $data['uuid'] = $result['data']['uuid'] ?? '';
