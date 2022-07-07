@@ -49,6 +49,6 @@ class RealStudent extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
 
-        return $response->withJson(['code' => Valid::CODE_SUCCESS, []], StatusCode::HTTP_OK);
+        return $response->withJson(['code' => Valid::CODE_SUCCESS], StatusCode::HTTP_OK);
     }
 }
