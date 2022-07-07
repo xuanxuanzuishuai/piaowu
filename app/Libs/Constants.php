@@ -169,13 +169,26 @@ class Constants
     const REAL_STUDENT_LOGIN_TYPE_TAKE_LESSON_OFFICIAL_WEB = 5;
     const REAL_STUDENT_LOGIN_TYPE_MAIN_LESSON_H5 = 6;
 
+    // 课程-付费状态
+    const REAL_COURSE_YES_PAY = 1;   // 付费课包
     //推荐人生成奖励时买课情况， 0不是有效用户，1仅购买了陪练课并且有剩余课时，2仅购买了正式课并且有剩余课时，3购买了陪练课和正式课并且都有剩余课时
-    const REFEREE_BUY_LADDER_PLAYER = 1;   // 仅购买了陪练课并且有剩余课时
-    const REFEREE_BUY_FORMAL = 2;   // 仅购买了正式课并且有剩余课时
-    const REFEREE_BUY_FORMAL_AND_LADDER_PLAYER = 3;   // 购买了陪练课和正式课并且都有剩余课时
-    // 推荐身份对应的几种sub_type 枚举备注: 1001: 陪练正式课 25分钟 1002: 陪练正式课 50分钟 1005:陪练正式课 60分钟  10001：主课正式课 50分钟 10002：主课正式课25分钟
-    const REFEREE_ID_CONTRAST_SUB_TYPE = [
-        self::REFEREE_BUY_LADDER_PLAYER => [1001, 1002, 1005],
-        self::REFEREE_BUY_FORMAL        => [10001, 10002],
+    const REAL_REFEREE_BUY_LADDER_PLAYER            = 1;   // 仅购买了陪练课并且有剩余课时  陪练课 - 付费课
+    const REAL_REFEREE_BUY_FORMAL                   = 2;   // 仅购买了正式课并且有剩余课时  主课 - 付费课
+    const REAL_REFEREE_BUY_FORMAL_AND_LADDER_PLAYER = 3;   // 购买了陪练课和正式课并且都有剩余课时  陪练/主课（包含赠课）
+    const REAL_REFEREE_BUY_LADDER_PLAYER_GIVE       = 4;   // 陪练课- 赠课
+    const REAL_REFEREE_BUY_LADDER_PLAYER_TRAIL      = 6;   // 陪练课- 体验课
+    const REAL_REFEREE_BUY_FORMAL_GIVE              = 5;   // 主课 - 赠课
+    // 推荐身份对应的几种sub_type
+    const REAL_REFEREE_ID_CONTRAST_SUB_TYPE = [
+        // 1001: 陪练正式课 25分钟 1002: 陪练正式课 50分钟 1005:陪练正式课 60分钟
+        self::REAL_REFEREE_BUY_LADDER_PLAYER       => [1001, 1002, 1005],
+        // 10001：主课正式课 50分钟 10002：主课正式课25分钟
+        self::REAL_REFEREE_BUY_FORMAL              => [10001, 10002],
+        // 1007:赠送陪练课-25分钟, 1008:赠送陪练课-50分钟
+        self::REAL_REFEREE_BUY_LADDER_PLAYER_GIVE  => [1007, 1008],
+        // 1003:体验陪练课-25分钟, 1004:体验陪练课-50分钟, 1006:体验陪练课-30分钟
+        self::REAL_REFEREE_BUY_LADDER_PLAYER_TRAIL => [1003, 1004, 1006],
+        // 10003:主课赠课50分钟, 10004:主课赠课25分钟
+        self::REAL_REFEREE_BUY_FORMAL_GIVE         => [10003, 10004],
     ];    // 推荐人购课情况对
 }

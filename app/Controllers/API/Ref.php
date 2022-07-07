@@ -11,6 +11,7 @@ use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Services\RealSharePosterService;
 use App\Services\StudentService;
+use App\Services\StudentServices\ErpStudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -74,6 +75,35 @@ class Ref extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $result = StudentService::studentLoginActivePushQueue(Constants::REAL_APP_ID, $params['student_id'], $params['active_type'], $params['channel_id'] ?? 0);
+        return HttpHelper::buildResponse($response, $result);
+    }
+
+    /**
+     * 获取学生身份
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function studentIdentity(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'student_uuid',
+                'type' => 'required',
+                'error_code' => 'student_uuid_is_required'
+            ],
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+            $result = ErpStudentService::getStudentCourseData($params['student_uuid']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
         return HttpHelper::buildResponse($response, $result);
     }
 }

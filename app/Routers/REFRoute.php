@@ -12,5 +12,6 @@ class REFRoute extends RouterBase
     protected $uriConfig = [
         '/ref/poster/get_qr_path' => ['method' => ['post'], 'call' => Ref::class . ':getQrPath'],
         '/ref/student/active' => ['method' => ['post'], 'call' => Ref::class . ':studentActive'],
+        '/ref/student/identity' => ['method' => ['post'], 'call' => Ref::class . ':studentIdentity'],
     ];
 }
