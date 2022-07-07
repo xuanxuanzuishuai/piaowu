@@ -59,7 +59,6 @@ class RouterBase
 
             /** @var Response $response */
             $response = $next($request, $response);
-
             $endTime = Util::microtime_float();
             $body = (string)$response->getBody();
             $duration = $endTime - $startTime;

@@ -12,6 +12,13 @@ class Constants
     const REAL_APP_ID = 1;
     //清晨项目应用id
     const QC_APP_ID = 26;
+    //客户端平台类型,区分请求来源
+    const FROM_TYPE_SMART_STUDENT_APP = 'smart_student_app';//智能学生app
+    const FROM_TYPE_SMART_STUDENT_WX = 'smart_student_wx';//智能学生微信公众号
+    const FROM_TYPE_SMART_STUDENT_H5 = 'smart_student_h5';//智能学生h5页面
+    const FROM_TYPE_REAL_STUDENT_APP = 'real_student_app'; //真人学生app
+    const FROM_TYPE_REAL_STUDENT_WX = 'real_student_wx'; //真人学生微信公众号
+    const FROM_TYPE_REAL_STUDENT_H5 = 'real_student_h5'; //真人学生h5页面
     //智能陪练获客小程序的busi_type
     const SMART_MINI_BUSI_TYPE = 8;
     //智能陪练服务号的busi_type
@@ -114,9 +121,7 @@ class Constants
     // 奖励发送人身份
     const STUDENT_ID_INVITER = 1;   // 邀请人
     const STUDENT_ID_INVITEE = 2;  // 受邀人
-    // 客户端类型，区分请求来源
-    const FROM_TYPE_REAL_STUDENT_APP = 'real_student_app'; //真人app
-    const FROM_TYPE_REAL_STUDENT_WX = 'real_student_wx'; //真人学生微信
+
     // op运营平台发货单前缀：格式共14位,前4位的1001是平台标识,后10位是系统统一生成=》10010000000000
     const UNIQUE_ID_PREFIX = 1001;
     // 发货单状态:0废除 1待发货 2已发货 3发货中 4无需发货 -1发货失败 -2取消发货 -10 因库存不足导致待发货且不发货

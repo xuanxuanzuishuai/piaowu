@@ -42,31 +42,33 @@ class RouterFactory
     const CLIENT_REAL_STUDENT_WEB = 'real_student_web'; // 真人业务线学生web端
     const CLIENT_REAL_STUDENT_COMMON = 'real_student_common'; // 真人业务线学生公共接口路由
     const CLIENT_REF_API = 'ref'; // 真人业务线学生app端
+    const CLIENT_ROUTING = 'client'; // 真人/智能业务线客户端请求路由
 
 
     /**
      * client_type 对应的 Router class
      */
     const ROUTER_CLASSES = [
-        self::CLIENT_STUDENT_APP => StudentAppRouter::class, // AI练琴APP
-        self::CLIENT_ORG_WEB => OrgWebRouter::class, // 机构后台
-        self::CLIENT_API => APIRouter::class, // 外部api调用
-        self::CLIENT_STUDENT_WX => StudentWXRouter::class, // 家长微信
-        self::CLIENT_DSS => DSSRouter::class, // 家长微信
-//        self::CLIENT_AGENT_MINI => AgentMiniAppRouter::class, // 代理小程序禁止使用2022-1-8
-        self::CLIENT_SHOW_MINI => ShowMiniAppRouter::class, // 测评分享小程序
-        self::CLIENT_STUDENT_WEB => StudentWebRouter::class, // WEB端
-        self::CLIENT_ERP_API => ErpRouter::class, // ERP
-        self::CLIENT_CRM_API => CrmRouter::class, // CRM
-        self::CLIENT_GATEWAY_API => GatewayRouter::class, //gateway
-        self::CLIENT_REFERRAL_MINI_APP => ReferralMinAppRouter::class, // 体验营小程序
-        self::CLIENT_AI_PLAY_MINI_APP => AIPlayMiniAppRouter::class, // 上音社合作-小叶子AI智能陪练小程序
+        self::CLIENT_STUDENT_APP            => StudentAppRouter::class, // AI练琴APP
+        self::CLIENT_ORG_WEB                => OrgWebRouter::class, // 机构后台
+        self::CLIENT_API                    => APIRouter::class, // 外部api调用
+        self::CLIENT_STUDENT_WX             => StudentWXRouter::class, // 家长微信
+        self::CLIENT_DSS                    => DSSRouter::class, // 家长微信
+        //        self::CLIENT_AGENT_MINI => AgentMiniAppRouter::class, // 代理小程序禁止使用2022-1-8
+        self::CLIENT_SHOW_MINI              => ShowMiniAppRouter::class, // 测评分享小程序
+        self::CLIENT_STUDENT_WEB            => StudentWebRouter::class, // WEB端
+        self::CLIENT_ERP_API                => ErpRouter::class, // ERP
+        self::CLIENT_CRM_API                => CrmRouter::class, // CRM
+        self::CLIENT_GATEWAY_API            => GatewayRouter::class, //gateway
+        self::CLIENT_REFERRAL_MINI_APP      => ReferralMinAppRouter::class, // 体验营小程序
+        self::CLIENT_AI_PLAY_MINI_APP       => AIPlayMiniAppRouter::class, // 上音社合作-小叶子AI智能陪练小程序
         self::CLIENT_REAL_REFERRAL_MINI_APP => RealReferralMinAppRouter::class, // 真人转介绍小程序
-        self::CLIENT_REAL_STUDENT_WX => RealStudentWXRouter::class, // 真人业务线学生微信端
-        self::CLIENT_REAL_STUDENT_APP => RealStudentAppRouter::class, // 真人业务线学生app端
-        self::CLIENT_REAL_STUDENT_WEB => RealStudentWebRouter::class, // 真人业务线学生web端
-        self::CLIENT_REAL_STUDENT_COMMON => RealStudentCommonRouter::class, // 真人业务线学生公共接口路由
-        self::CLIENT_REF_API => REFRoute::class, // referral_backend
+        self::CLIENT_REAL_STUDENT_WX        => RealStudentWXRouter::class, // 真人业务线学生微信端
+        self::CLIENT_REAL_STUDENT_APP       => RealStudentAppRouter::class, // 真人业务线学生app端
+        self::CLIENT_REAL_STUDENT_WEB       => RealStudentWebRouter::class, // 真人业务线学生web端
+        self::CLIENT_REAL_STUDENT_COMMON    => RealStudentCommonRouter::class, // 真人业务线学生公共接口路由
+        self::CLIENT_REF_API                => REFRoute::class, // referral_backend
+        self::CLIENT_ROUTING                => ClientRouter::class, // 客户端路由
 
     ];
 
@@ -76,12 +78,12 @@ class RouterFactory
      */
     const URI_CLIENT_TYPES = [
         '/user/auth/get_user_id' => self::CLIENT_STUDENT_APP,
-        '/api/qiniu/token' => self::CLIENT_ORG_WEB,
-        '/api/qiniu/callback' => self::CLIENT_ORG_WEB,
-        '/api/uictl/dropdown' => self::CLIENT_ORG_WEB,
-        '/api/oss/signature' => self::CLIENT_ORG_WEB,
-        '/api/oss/callback' => self::CLIENT_ORG_WEB,
-        '/sm/customer/upload' => self::CLIENT_SALES_MASTER,
+        '/api/qiniu/token'       => self::CLIENT_ORG_WEB,
+        '/api/qiniu/callback'    => self::CLIENT_ORG_WEB,
+        '/api/uictl/dropdown'    => self::CLIENT_ORG_WEB,
+        '/api/oss/signature'     => self::CLIENT_ORG_WEB,
+        '/api/oss/callback'      => self::CLIENT_ORG_WEB,
+        '/sm/customer/upload'    => self::CLIENT_SALES_MASTER,
     ];
 
     /**
@@ -98,7 +100,6 @@ class RouterFactory
         $path = explode('/', $uriPath);
         $clientType = $path[1];
         $allTypes = array_keys(self::ROUTER_CLASSES);
-
         if (!in_array($clientType, $allTypes)) {
             $clientType = self::CLIENT_ORG_WEB;
         }
@@ -125,6 +126,10 @@ class RouterFactory
         /** @var RouterBase $router */
         $class = self::ROUTER_CLASSES[$clientType];
         $router = new $class();
+        if (!empty($router->prefix)) {
+            $uriPath = str_replace($router->prefix, '', $uriPath);
+            $_SERVER['REQUEST_URI'] = $uriPath;
+        }
         $router->load($uriPath, $app, $alias ?? null);
     }
 }
