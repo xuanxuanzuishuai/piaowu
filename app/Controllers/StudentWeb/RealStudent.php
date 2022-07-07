@@ -44,7 +44,7 @@ class RealStudent extends ControllerBase
             if (empty($studentData)) {
                 throw new RunTimeException(['uuid_not_found']);
             }
-            StudentService::studentLoginActivePushQueue(Constants::REAL_APP_ID, $studentData['id'], Constants::REAL_STUDENT_LOGIN_TYPE_REFERRAL_MINI, $params['channel_id']);
+            StudentService::studentLoginActivePushQueue(Constants::REAL_APP_ID, $studentData['id'], Constants::REAL_STUDENT_LOGIN_TYPE_REAL_LESSON_H5, $params['channel_id']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
