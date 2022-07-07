@@ -71,7 +71,10 @@ class QingChen
      */
     public function isHaveTrial($mobiles)
     {
-        $res = self::commonAPI(self::API_QC_STUDENT_HAVE_TRIAL, $mobiles, 'POST');
+        $requestParams = [
+            'mobile' => $mobiles
+        ];
+        $res = self::commonAPI(self::API_QC_STUDENT_HAVE_TRIAL, $requestParams, 'POST');
         return $res['data'] ?? [];
     }
 
