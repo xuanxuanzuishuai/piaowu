@@ -161,13 +161,14 @@ class Constants
     const DSS_STUDENT_LOGIN_TYPE_CALLBACK_H5 = 6;
 
 
-    //真人业务线账户登陆类型：1: app登录 2：公众号登录 3：真人转介绍小程序 4：领课小程序 5：官网领课 6:H5
+    //真人业务线账户登陆类型：1: app登录 2：公众号登录 3：真人转介绍小程序 4：领课小程序 5：官网领课 6:H5 7:真人激活
     const REAL_STUDENT_LOGIN_TYPE_APP = 1;
     const REAL_STUDENT_LOGIN_TYPE_WX = 2;
     const REAL_STUDENT_LOGIN_TYPE_REFERRAL_MINI = 3;
     const REAL_STUDENT_LOGIN_TYPE_TAKE_LESSON_MINI = 4;
     const REAL_STUDENT_LOGIN_TYPE_TAKE_LESSON_OFFICIAL_WEB = 5;
     const REAL_STUDENT_LOGIN_TYPE_MAIN_LESSON_H5 = 6;
+    const REAL_STUDENT_LOGIN_TYPE_REAL_LESSON_H5 = 7;
 
     // 课程-付费状态
     const REAL_COURSE_YES_PAY = 1;   // 付费课包

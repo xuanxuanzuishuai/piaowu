@@ -11,6 +11,7 @@ namespace App\Routers;
 use App\Controllers\Real\LandingPromotion;
 use App\Controllers\RealStudentOverseas\Delivery;
 use App\Controllers\Real\StudentAuth;
+use App\Controllers\StudentWeb\RealStudent;
 
 class RealStudentWebRouter extends RouterBase
 {
@@ -25,5 +26,8 @@ class RealStudentWebRouter extends RouterBase
 
         //海外：H5推广落地页路由
         '/real_student_web/landing_overseas/delivery_v1' => ['method' => ['post'], 'call' => Delivery::class . ':deliveryV1', 'middles' => []],
+
+        //激活例子
+        '/real_student_web/landing/active_leads' => ['method' => ['post'], 'call' => RealStudent::class . ':activeLeads', 'middles' => []],
     ];
 }
