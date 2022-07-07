@@ -42,7 +42,7 @@ class RealStudent extends ControllerBase
         try {
             $studentData = ErpStudentModel::getRecord(['uuid' => $params['uuid']], ['id']);
             if (empty($studentData)) {
-                throw new RunTimeException(['uuid_not_found']);
+                throw new RunTimeException(['uuid_not_exist']);
             }
             StudentService::studentLoginActivePushQueue(Constants::REAL_APP_ID, $studentData['id'], Constants::REAL_STUDENT_LOGIN_TYPE_REAL_LESSON_H5, $params['channel_id'] ?: 0);
         } catch (RunTimeException $e) {
