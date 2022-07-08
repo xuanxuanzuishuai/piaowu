@@ -9,6 +9,7 @@ use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\Erp\ErpStudentModel;
 use App\Models\Erp\ErpUserWeiXinModel;
 use App\Services\WechatTokenService;
 use Slim\Http\Request;
@@ -36,11 +37,13 @@ class RealReferralMinAppAuthCheckMiddleware extends MiddlewareBase
             // 根据open id 获取用户信息
             $userInfo = ErpUserWeiXinModel::getUserInfoByOpenId($data['openid'], $busiType);
             $userId   = $userInfo['user_id'] ?? '';
+            $studentInfo = ErpStudentModel::getById($userId);
             $token    = WechatTokenService::generateToken(
                 $userId,
                 $userType,
                 $appId,
-                $data['openid']
+                $data['openid'],
+                $studentInfo['uuid']
             );
             //返回token
             return HttpHelper::buildResponse($response, [

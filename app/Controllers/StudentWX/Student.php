@@ -110,7 +110,8 @@ class Student extends ControllerBase
                 $info['student_id'],
                 DssUserWeiXinModel::USER_TYPE_STUDENT,
                 $appId,
-                $data['openid']
+                $data['openid'],
+                $info['uuid']
             );
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
@@ -157,9 +158,10 @@ class Student extends ControllerBase
         if (empty($boundInfo)) {
             return $response->withJson(Valid::addAppErrors([], 'need_bound'), StatusCode::HTTP_OK);
         }
-
+        //获取学生信息
+        $studentInfo = DssStudentModel::getById($boundInfo["user_id"]);
         $token = WechatTokenService::generateToken($boundInfo["user_id"], $this->ci['user_type'],
-            $this->ci["app_id"], $openId);
+            $this->ci["app_id"], $openId,$studentInfo['uuid']);
         $params = $request->getParams();
         $channelId = $params['channel_id'] ?? 0;
         StudentService::studentLoginActivePushQueue($this->ci["app_id"], $boundInfo['user_id'], Constants::DSS_STUDENT_LOGIN_TYPE_WX, $channelId);

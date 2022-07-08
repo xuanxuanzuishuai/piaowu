@@ -9,6 +9,8 @@
 namespace App\Routers;
 
 
+use App\Routers\Client\ClientRouter;
+
 class RouterFactory
 {
     /**
@@ -125,7 +127,7 @@ class RouterFactory
 
         /** @var RouterBase $router */
         $class = self::ROUTER_CLASSES[$clientType];
-        $router = new $class();
+        $router = new $class($uriPath);
         if (!empty($router->prefix)) {
             $uriPath = str_replace($router->prefix, '', $uriPath);
             $_SERVER['REQUEST_URI'] = $uriPath;

@@ -30,9 +30,10 @@ class WechatTokenService
      * @param $user_type
      * @param $app_id
      * @param $open_id
+     * @param $uuid
      * @return string
      */
-    public static function generateToken($user_id, $user_type, $app_id, $open_id)
+    public static function generateToken($user_id, $user_type, $app_id, $open_id, $uuid)
     {
         $redis = RedisDB::getConn();
         $cacheKey = self::getUserTokenKey($user_id, $user_type, $app_id, $open_id);
@@ -47,7 +48,8 @@ class WechatTokenService
             "user_id" => $user_id,
             "user_type" => $user_type,
             "app_id" => $app_id,
-            "open_id" => $open_id
+            "open_id" => $open_id,
+            "uuid" => $uuid,
         ]));
         $redis->setex($cacheKey, self::$redisExpire, $token);
         return $token;

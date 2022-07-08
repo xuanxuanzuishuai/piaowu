@@ -52,6 +52,7 @@ class ClientAuthMiddleware extends MiddlewareBase
                 self::realStudentWxAuthCheck($request);
                 break;
         }
+        $this->container['app_id'] = $appId;
         $this->container['from_type'] = $fromType;
         if (!isset($this->container['user_info']) || empty($this->container['user_info'])) {
             throw new RunTimeException(['user_invalid']);

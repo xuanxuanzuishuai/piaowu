@@ -105,7 +105,7 @@ class RealReferralService
         }
         */
         //生成token
-        $token  = WechatTokenService::generateToken($studentInfo['student_id'], $userType, $appId, $openid);
+        $token  = WechatTokenService::generateToken($studentInfo['student_id'], $userType, $appId, $openid,$studentInfo['uuid']);
         $result = [
             'is_new'     => $isNew,
             'openid'     => $openid,

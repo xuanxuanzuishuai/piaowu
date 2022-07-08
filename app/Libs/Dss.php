@@ -35,7 +35,8 @@ class Dss
 
     public function __construct()
     {
-        $this->host = DictConstants::get(DictConstants::SERVICE, "dss_host");
+//        $this->host = DictConstants::get(DictConstants::SERVICE, "dss_host");
+        $this->host = 'http://dss-pre.xiaoyezi.com';
     }
 
     private function commonAPI($api, $data = [], $method = 'GET')
