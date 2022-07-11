@@ -6,17 +6,13 @@
 namespace App\Controllers\OrgWeb\Activity;
 
 use App\Controllers\ControllerBase;
-use App\Libs\Erp;
+use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
-use App\Models\Erp\ErpEventModel;
 use App\Models\OperationActivityModel;
 use App\Services\Activity\LimitTimeActivity\LimitTimeActivityAdminService;
-use App\Services\SharePosterDesignateUuidService;
-use App\Services\UserService;
-use App\Services\WeekActivityService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -83,11 +79,6 @@ class LimitTimeActivity extends ControllerBase
                 'key'        => 'award_type',
                 'type'       => 'required',
                 'error_code' => 'award_type_is_required'
-            ],
-            [
-                'key'        => 'award_prize_type',
-                'type'       => 'required',
-                'error_code' => 'award_prize_type_is_required'
             ],
             [
                 'key'        => 'award_prize_type',
@@ -192,11 +183,10 @@ class LimitTimeActivity extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $employeeId = $this->getEmployeeId();
-        if (!empty($params['activity_id'])) {
-            $data = WeekActivityService::edit($params, $employeeId);
-        } else {
-            $data = LimitTimeActivityAdminService::add($params, $employeeId);
+        if (empty($params['award_prize_type'])) {
+            $params['award_prize_type'] = OperationActivityModel::AWARD_PRIZE_TYPE_IN_TIME;
         }
+        $data = LimitTimeActivityAdminService::save($params, $employeeId);
         return HttpHelper::buildResponse($response, $data);
     }
 
@@ -226,15 +216,19 @@ class LimitTimeActivity extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         list($page, $limit) = Util::formatPageCount($params);
+        if (empty($params['app_id'])) {
+            $params['app_id'] = Constants::SMART_APP_ID;
+        }
         $data = LimitTimeActivityAdminService::searchList($params, $page, $limit);
         return HttpHelper::buildResponse($response, $data);
     }
 
     /**
-     * 获取周周领奖详情
+     * 获取活动详情
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws RunTimeException
      */
     public function detail(Request $request, Response $response)
     {
@@ -255,19 +249,12 @@ class LimitTimeActivity extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        try {
-            $data = WeekActivityService::getDetailById($params['activity_id']);
-            if (isset($data['ab_test']['allocation_mode'])) {
-                unset($data['ab_test']['allocation_mode']);
-            }
-        } catch (RunTimeException $e) {
-            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
-        }
+        $data = LimitTimeActivityAdminService::getActivityDetail($params['activity_id']);
         return HttpHelper::buildResponse($response, $data);
     }
 
     /**
-     * 周周领奖的活动 启用和禁用
+     * 领奖的活动 启用和禁用
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -301,12 +288,8 @@ class LimitTimeActivity extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        try {
-            $employeeId = $this->getEmployeeId();
-            WeekActivityService::editEnableStatus($params['activity_id'], $params['enable_status'], $employeeId);
-        } catch (RunTimeException $e) {
-            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
-        }
+        $employeeId = $this->getEmployeeId();
+        LimitTimeActivityAdminService::editEnableStatus($params['activity_id'], $params['enable_status'], $employeeId);
         return HttpHelper::buildResponse($response, []);
     }
 

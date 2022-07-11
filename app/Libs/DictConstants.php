@@ -1280,20 +1280,27 @@ class DictConstants {
             OperationActivityModel::ACTIVITY_TYPE_SHARE,
         ]
     ];
-    // 限时活动奖励最大限额
-    const LIMIT_TIME_ACTIVITY_AWARD_MAX = [
-        'type' => 'limit_time_activity_award_max',
-        'keys' => [
-            Constants::AWARD_TYPE_TIME,
-            Constants::AWARD_TYPE_GOLD_LEAF,
-            Constants::AWARD_TYPE_MAGIC_STONE,
-        ]
-    ];
+    // 限时活动配置
     const LIMIT_TIME_ACTIVITY_CONFIG = [
         'type' => 'limit_time_activity_config',
         'keys' => [
             'limit_time_activity_award_max',
             'send_award_base_delay_second',
+        ]
+    ];
+    // 限时活动智能奖励类型
+    const LIMIT_TIME_ACTIVITY_AI_AWARD_TYPE = [
+        'type' => 'limit_time_activity_ai_award_t',
+        'keys' => [
+            Constants::AWARD_TYPE_GOLD_LEAF,
+            Constants::AWARD_TYPE_TIME,
+        ]
+    ];
+    // 限时活动真人奖励类型
+    const LIMIT_TIME_ACTIVITY_REAL_AWARD_TYPE = [
+        'type' => 'limit_time_activity_real_award_t',
+        'keys' => [
+            Constants::AWARD_TYPE_MAGIC_STONE,
         ]
     ];
 
