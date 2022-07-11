@@ -14,7 +14,7 @@ use App\Models\Dss\DssChannelModel;
 use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssErpPackageModel;
 use App\Models\Dss\DssErpPackageV1Model;
-use App\Models\Dss\DssStudentModel;
+use App\Models\Erp\ErpStudentModel;
 
 class ThirdPartBillModel extends Model
 {
@@ -46,7 +46,7 @@ class ThirdPartBillModel extends Model
         //获取数据表名
         $opThirdPartBillTable = self::getTableNameWithDb();
         $opEmployeeTable = EmployeeModel::getTableNameWithDb();
-        $dssStudentTable = DssStudentModel::getTableNameWithDb();
+        $erpStudentModel = ErpStudentModel::getTableNameWithDb();
         $dssEmployeeTable = DssEmployeeModel::getTableNameWithDb();
         $dssErpPackageTable = DssErpPackageModel::getTableNameWithDb();
         $dssErpPackageV1Table = DssErpPackageV1Model::getTableNameWithDb();
@@ -65,7 +65,7 @@ class ThirdPartBillModel extends Model
         //数据总量
         $countSql = "SELECT count(t.id) as total_count
                    FROM " . $opThirdPartBillTable . " t
-                   LEFT JOIN " . $dssStudentTable . " s ON t.student_id = s.id 
+                   LEFT JOIN " . $erpStudentModel . " s ON t.student_id = s.id 
                    WHERE " . $where;
         $countData = $db->queryAll($countSql, $map);
         if (empty($countData[0]['total_count'])) {
@@ -105,7 +105,7 @@ class ThirdPartBillModel extends Model
                         end package_name,
                         c.name channel_name
                     FROM " . $opThirdPartBillTable . " t
-                       LEFT JOIN " . $dssStudentTable . " s on t.student_id = s.id
+                       LEFT JOIN " . $erpStudentModel . " s on t.uuid = s.uuid
                        LEFT JOIN " . $dssChannelTable . " c on c.id = t.channel_id
                        " . $thirdJoinWhere . "
                     WHERE " . $where . "

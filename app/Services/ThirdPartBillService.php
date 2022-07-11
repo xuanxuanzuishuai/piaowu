@@ -421,14 +421,17 @@ class ThirdPartBillService
                 $data['status'] = ThirdPartBillModel::STATUS_FAIL;
                 $data['reason'] = 'register student failed';
                 $data['student_id'] = 0;
+                $data['uuid'] = '';
                 return ThirdPartBillModel::insertRecord($data);
             } else {
                 $data['student_id'] = $result['student_id'];
+                $data['uuid'] = $result['uuid'];
                 $data['is_new'] = $result['is_new'] ? ThirdPartBillModel::IS_NEW : ThirdPartBillModel::NOT_NEW;
                 $student = DssStudentModel::getById($result['student_id']);
             }
         } else {
             $data['student_id'] = $student['id'];
+            $data['uuid'] = $student['uuid'];
         }
         //如果从库数据没有同步成功，使用接口返回值替代
         if (empty($student)) {

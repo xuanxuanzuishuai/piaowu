@@ -9,6 +9,7 @@
 namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
@@ -54,6 +55,13 @@ class Package extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $data = PackageService::getPackageBySubType($params['sub_type']);
+
+        //多条业务线渠道混合
+        if (!empty($params['all_business']) == true) {
+            $res = PackageService::importReady(['app_id' => Constants::QC_APP_ID]);
+            $data = array_merge($data, $res);
+        }
+
         return HttpHelper::buildResponse($response, $data);
     }
 
