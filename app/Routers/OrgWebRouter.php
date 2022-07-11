@@ -422,7 +422,9 @@ class OrgWebRouter extends RouterBase
         // 真人渠道线索录入
         '/op_web/channel_leads/add' => ['method' =>['post'], 'call' => ChannelLeads::class . ':add'],
 
-        /** 限时活动 */
+        /********************************************************************************************************************************************************
+         * 限时活动
+         ********************************************************************************************************************************************************/
         '/op_web/limit_time_activity/save' => ['method' => ['post'], 'call' => LimitTimeActivity::class . ':save'],
         '/op_web/limit_time_activity/list' => ['method' => ['get'], 'call' => LimitTimeActivity::class . ':list'],
         '/op_web/limit_time_activity/detail' => ['method' => ['get'], 'call' => LimitTimeActivity::class . ':detail'],

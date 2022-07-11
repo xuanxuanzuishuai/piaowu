@@ -25,6 +25,7 @@ use App\Models\RtActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\UserPointsExchangeOrderWxModel;
 use App\Models\WeChatAwardCashDealModel;
+use App\Services\Activity\LimitTimeActivity\LimitTimeActivityAdminService;
 use App\Services\BillMapService;
 use App\Services\DssDictService;
 use App\Services\ErpUserEventTaskAwardGoldLeafService;
@@ -1706,6 +1707,73 @@ class Dss extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 智能 - 限时活动搜索列表中经过过滤后的活动列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function limitTimeActivityFilterAfterActivityList(Request $request, Response $response): Response
+    {
+        $params = $request->getParams();
+        list($page, $count) = Util::formatPageCount($params);
+        $params['app_id'] = Constants::SMART_APP_ID;
+        $data = LimitTimeActivityAdminService::getFilterAfterActivityList($params, $page, $count);
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 智能 - 获取审核截图列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function limitTimeActivitySharePosterList(Request $request, Response $response): Response
+    {
+        $params = $request->getParams();
+        try {
+            if (empty($params['activity_id'])) {
+                throw new RunTimeException(['activity_id_is_request']);
+            }
+            list($page, $count) = Util::formatPageCount($params);
+            $params['app_id'] = Constants::SMART_APP_ID;
+            $data = LimitTimeActivityAdminService::getFilterAfterActivityList($params, $page, $count);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 智能 - 截图审核通过
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function limitTimeActivitySharePosterApproval(Request $request, Response $response): Response
+    {
+        $params = $request->getParams();
+        list($page, $count) = Util::formatPageCount($params);
+        $params['app_id'] = Constants::SMART_APP_ID;
+        $data = LimitTimeActivityAdminService::getFilterAfterActivityList($params, $page, $count);
+        return HttpHelper::buildResponse($response, $data);
+    }
+
+    /**
+     * 智能 - 截图审核拒绝
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function limitTimeActivitySharePosterRefused(Request $request, Response $response): Response
+    {
+        $params = $request->getParams();
+        list($page, $count) = Util::formatPageCount($params);
+        $params['app_id'] = Constants::SMART_APP_ID;
+        $data = LimitTimeActivityAdminService::getFilterAfterActivityList($params, $page, $count);
+        return HttpHelper::buildResponse($response, $data);
     }
 }
 

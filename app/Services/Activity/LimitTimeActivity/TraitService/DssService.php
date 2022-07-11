@@ -10,7 +10,7 @@ use App\Services\StudentService;
 /**
  * 智能用户在分享活动中特殊逻辑服务类
  */
-class DssService implements BaseInterface
+class DssService extends LimitTimeActivityBaseAbstract
 {
     public $studentId = 0;
 

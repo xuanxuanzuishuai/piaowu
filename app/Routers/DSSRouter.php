@@ -104,6 +104,16 @@ class DSSRouter extends RouterBase
         '/dss/student/account_survey' => ['method' => ['get'], 'call' => Dss::class . ':getStudentAccountSurveyData'],
         '/dss/push/app_push' => ['method' => ['post'], 'call' => Dss::class . ':appPush'],
 
-
+        /********************************************************************************************************************************************************
+         * 限时领奖活动
+         ********************************************************************************************************************************************************/
+        // 搜索页面经过筛选后的活动列表
+        '/dss/limit_time_activity/filter_after_activity_list' => ['method' => ['get'], 'call' => Dss::class . ':limitTimeActivityFilterAfterActivityList'],
+        // 参与记录列表
+        '/dss/limit_time_activity/share_poster_list'          => ['method' => ['get'], 'call' => Dss::class . ':limitTimeActivitySharePosterList'],
+        // 审核通过
+        '/dss/limit_time_activity/share_poster_approval'      => ['method' => ['post'], 'call' => Dss::class . ':limitTimeActivitySharePosterApproval'],
+        // 审核拒绝
+        '/dss/limit_time_activity/share_poster_refused'       => ['method' => ['post'], 'call' => Dss::class . ':limitTimeActivitySharePosterRefused'],
     ];
 }
