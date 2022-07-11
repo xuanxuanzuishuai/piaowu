@@ -73,6 +73,18 @@ class OperationActivityModel extends Model
     const ALLOCATION_MODE_AUTO = 1; // 平均分配
     const ALLOCATION_MODE_HAND = 2; // 手动分配
 
+    /** 目标用户类型 */
+    const TARGET_USER_ALL  = 1;  // 有效付费用户范围 - 所有
+    const TARGET_USER_PART = 2; // 有效付费用户范围 - 部分
+    /** 活动类型  */
+    const ACTIVITY_TYPE_FULL_ATTENDANCE = 1;  // 全勤活动
+    const ACTIVITY_TYPE_SHARE           = 2;  // 分享活动
+    /** 奖励发放状态 */
+    const SEND_AWARD_STATUS_NO_CREATE = 0;  // 奖励未创建
+    const SEND_AWARD_STATUS_SUCCESS   = 1;  // 奖励已发放
+    const SEND_AWARD_STATUS_CANNEL    = 2;  // 奖励已作废
+    const SEND_AWARD_STATUS_WAIT      = 3;  // 奖励已生成等待发放
+
     /**
      * 当前阶段为付费正式课且未参加当前活动的学员手微信open_id
      * @param $activityId

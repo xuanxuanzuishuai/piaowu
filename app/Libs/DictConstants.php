@@ -9,6 +9,7 @@
 namespace App\Libs;
 
 use App\Models\Erp\ErpDictModel;
+use App\Models\OperationActivityModel;
 use App\Services\DictService;
 
 class DictConstants {
@@ -1268,6 +1269,32 @@ class DictConstants {
     const MESSAGE_REMINDER_TYPE = [
         'type' => 'message_reminder_type',
         'keys' => [1, 2, 3, 4, 5, 6, 7]
+    ];
+
+    /** 限时活动相关配置 */
+    // 限时活动活动类型
+    const LIMIT_TIME_ACTIVITY_TYPE = [
+        'type' => 'limit_time_activity_type',
+        'keys' => [
+            OperationActivityModel::ACTIVITY_TYPE_FULL_ATTENDANCE,
+            OperationActivityModel::ACTIVITY_TYPE_SHARE,
+        ]
+    ];
+    // 限时活动奖励最大限额
+    const LIMIT_TIME_ACTIVITY_AWARD_MAX = [
+        'type' => 'limit_time_activity_award_max',
+        'keys' => [
+            Constants::AWARD_TYPE_TIME,
+            Constants::AWARD_TYPE_GOLD_LEAF,
+            Constants::AWARD_TYPE_MAGIC_STONE,
+        ]
+    ];
+    const LIMIT_TIME_ACTIVITY_CONFIG = [
+        'type' => 'limit_time_activity_config',
+        'keys' => [
+            'limit_time_activity_award_max',
+            'send_award_base_delay_second',
+        ]
     ];
 
     /**
