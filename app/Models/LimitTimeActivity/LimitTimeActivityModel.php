@@ -42,6 +42,12 @@ class LimitTimeActivityModel extends Model
         if (!empty($params['start_time_e'])) {
             $where['a.start_time[<=]'] = $params['start_time_e'];
         }
+        if (!empty($params['end_time_s'])) {
+            $where['a.end_time[>=]'] = $params['end_time_s'];
+        }
+        if (!empty($params['end_time_e'])) {
+            $where['a.end_time[<=]'] = $params['end_time_e'];
+        }
         if (!empty($params['app_id'])) {
             $where['a.app_id'] = (int)$params['app_id'];
         }

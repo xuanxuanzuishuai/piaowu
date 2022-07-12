@@ -25,7 +25,7 @@ class LimitTimeActivityAwardRuleModel extends Model
         $data = $db->select(self::$table, ['id','activity_id', 'task_num', 'award_amount', 'award_type'],
             ['activity_id' => $activityId]);
         foreach ($data as $v) {
-            $groupData[$v['activity_id']][] = $v;
+            $groupData[$v['activity_id']][$v['task_num']] = $v;
         }
         return $groupData;
     }

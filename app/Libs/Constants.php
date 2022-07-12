@@ -100,15 +100,6 @@ class Constants
 
     //ERP nsq配置
     const DICT_KEY_NSQ_TOPIC_PREFIX = "NSQ_TOPIC_PREFIX";
-
-    // 积分账户类型 erp_dict表里的type
-    const ERP_DICT_ACCOUNT_NAME_TYPE = 'student_account_app_type';
-    // 积分账户类型  - 现金
-    const ERP_ACCOUNT_NAME_CASH = '8_1001';
-    const ERP_ACCOUNT_NAME_CASH_CODE = '1001';  // 学生现金账户；配合app_id:  8_1001现金
-    const ERP_ACCOUNT_NAME_MAGIC = '3001';  // 魔法石；配合app_id:  1_3001=魔法石
-    const ERP_ACCOUNT_NAME_GOLD_LEFT = '3002';  // 金叶子；配合app_id:  8_3001=金叶子
-
     // 版权区域代码
     const DICT_COPYRIGHT_CODE_CN = 'CN'; // 大陆版权
     const DICT_COPYRIGHT_CODE_CN_GAT = 'CN:GAT'; // 港澳台版权
@@ -141,14 +132,32 @@ class Constants
     const LOGISTICS_STATUS_SIGN = 4;
 
 
-    //奖励类型
-    const AWARD_TYPE_EMPTY=0;//空奖品
-    const AWARD_TYPE_TIME=1;//智能业务线：时长
-    const AWARD_TYPE_GOLD_LEAF=2;//智能业务线：金叶子
-    const AWARD_TYPE_MAGIC_STONE=3;//真人业务线：魔法石
-    const AWARD_TYPE_TYPE_ENTITY=4;//智能业务线：实物
-    const AWARD_TYPE_TYPE_LESSON=5;//真人业务线：课程
-    const AWARD_TYPE_TYPE_NOTE=6;//智能业务线：音符
+    //erp系统积分账户类型 erp_dict表里的type
+    const ERP_DICT_ACCOUNT_NAME_TYPE = 'student_account_app_type';
+    //奖励类型：erp系统积分账户类型
+    const ERP_ACCOUNT_NAME_CASH      = '8_1001';//现金
+    const ERP_ACCOUNT_NAME_CASH_CODE = 1001;  // 学生现金账户；配合app_id:  8_1001现金
+    const ERP_ACCOUNT_NAME_MAGIC     = 3001;  // 魔法石：配合app_id:  1_3001=魔法石 8_3001=音符
+    const ERP_ACCOUNT_NAME_GOLD_LEFT = 3002;  // 金叶子
+
+    //奖励类型：op系统存储使用
+    const AWARD_TYPE_EMPTY       = 0;//空奖品
+    const AWARD_TYPE_TIME        = 1;//智能业务线：时长
+    const AWARD_TYPE_GOLD_LEAF   = 2;//智能业务线：金叶子
+    const AWARD_TYPE_TYPE_NOTE   = 6;//智能业务线：音符
+    const AWARD_TYPE_TYPE_ENTITY = 4;//智能业务线：实物
+    const AWARD_TYPE_TYPE_LESSON = 5;//真人业务线：课程
+    const AWARD_TYPE_MAGIC_STONE = 3;//真人业务线：魔法石
+    //op系统客户端奖品类型对外映射关系
+    const AWARD_TYPE_MAP = [
+        self::AWARD_TYPE_TIME        => self::AWARD_TYPE_TIME,
+        self::AWARD_TYPE_GOLD_LEAF   => self::ERP_ACCOUNT_NAME_GOLD_LEFT,
+        self::AWARD_TYPE_TYPE_NOTE   => self::AWARD_TYPE_TYPE_NOTE,
+        self::AWARD_TYPE_TYPE_ENTITY => self::AWARD_TYPE_TYPE_ENTITY,
+        self::AWARD_TYPE_TYPE_LESSON  => self::AWARD_TYPE_TYPE_LESSON,
+        self::AWARD_TYPE_MAGIC_STONE  => self::ERP_ACCOUNT_NAME_MAGIC,
+    ];
+
     // 转介绍奖励规则配置身份
     const REFERRAL_INVITER_ROOT                 = 1;    // 身份状态跟节点
     const REFERRAL_INVITER_STATUS_REGISTER      = self::REFERRAL_INVITER_ROOT; // 注册

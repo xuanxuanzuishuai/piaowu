@@ -23,14 +23,17 @@ class LimitTimeActivitySharePosterModel extends Model
      * @return array
      */
     public static function searchJoinRecords(
-        int   $appId,
+        int $appId,
         array $studentUuId,
         array $params,
-        int   $page = 1,
-        int   $limit = 10,
+        int $page = 1,
+        int $limit = 10,
         array $fields = []
-    ): array
-    {
+    ): array {
+        $where = [];
+        if (!empty($params['id'])) {
+            $where['sp.id'] = $params['id'];
+        }
         if (!empty($appId)) {
             $where['sp.app_id'] = $appId;
         }
@@ -52,6 +55,9 @@ class LimitTimeActivitySharePosterModel extends Model
         if (!empty($params['end_time'])) {
             $where['sp.create_time[<=]'] = strtotime($params['end_time']);
         }
+        if (!empty($params['task_num'])) {
+            $where['sp.task_num'] = $params['task_num'];
+        }
         if (!empty($params['order'])) {
             $where['ORDER'] = $params['order'];
         }
@@ -66,7 +72,7 @@ class LimitTimeActivitySharePosterModel extends Model
             return [[], 0];
         }
         //获取数据
-        $db = MysqlDB::getDB();
+        $db    = MysqlDB::getDB();
         $total = $db->count(self::$table . '(sp)', $where);
         if ($total <= 0) {
             return [[], 0];
@@ -76,11 +82,14 @@ class LimitTimeActivitySharePosterModel extends Model
                 'sp.id',
                 'sp.activity_id',
                 'sp.image_path',
-                'sp.image_path',
                 'sp.student_uuid',
                 'sp.verify_status',
                 'sp.verify_time',
                 'sp.verify_user',
+                'sp.verify_reason',
+                'sp.task_num',
+                'sp.create_time',
+                'sp.send_award_status',
             ],
             $fields
         );

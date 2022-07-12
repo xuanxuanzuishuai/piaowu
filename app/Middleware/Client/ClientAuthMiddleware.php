@@ -7,7 +7,9 @@ use App\Libs\Dss;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Middleware\MiddlewareBase;
+use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpStudentAppModel;
+use App\Services\StudentService;
 use App\Services\UserService;
 use App\Services\WechatTokenService;
 use Slim\Http\Request;
@@ -30,7 +32,7 @@ class ClientAuthMiddleware extends MiddlewareBase
     public function __invoke(Request $request, Response $response, $next): Response
     {
         //header头中携带业务线AppId和FromType参数，依据不同业务线和不同平台类型获取登陆验证标识
-        $appId = (int)$request->getHeader('AppId')[0];
+        $appId    = (int)$request->getHeader('AppId')[0];
         $fromType = $request->getHeader('FromType')[0];
         if (empty($appId) || empty($fromType)) {
             throw new RunTimeException(['app_id_or_from_type_miss']);
@@ -52,7 +54,7 @@ class ClientAuthMiddleware extends MiddlewareBase
                 self::realStudentWxAuthCheck($request);
                 break;
         }
-        $this->container['app_id'] = $appId;
+        $this->container['app_id']    = $appId;
         $this->container['from_type'] = $fromType;
         if (!isset($this->container['user_info']) || empty($this->container['user_info'])) {
             throw new RunTimeException(['user_invalid']);
@@ -109,7 +111,10 @@ class ClientAuthMiddleware extends MiddlewareBase
             throw new RunTimeException(['user_id_required']);
         }
         //设置账户ID到全局容器中
-        $userData = ErpStudentAppModel::getRecord(['student_id' => $userId, 'app_id' => Constants::REAL_APP_ID],
+        $userData                     = ErpStudentAppModel::getRecord([
+            'student_id' => $userId,
+            'app_id'     => Constants::REAL_APP_ID
+        ],
             ['student_id(user_id)', 'status', 'first_pay_time']);
         $this->container['user_info'] = $userData;
     }
@@ -133,7 +138,7 @@ class ClientAuthMiddleware extends MiddlewareBase
             throw new RunTimeException(['token_expired']);
         }
         //当前系统对应的应用busi_type
-        $arr = [
+        $arr      = [
             Constants::SMART_APP_ID => Constants::SMART_WX_SERVICE
         ];
         $busiType = $arr[$userInfo['app_id']] ?? Constants::SMART_WX_SERVICE;
@@ -154,7 +159,10 @@ class ClientAuthMiddleware extends MiddlewareBase
             }
             SimpleLogger::info('UserInfo: ', ["token" => $token, "userInfo" => $userInfo]);
         }
+        //获取学生基础信息
+        $studentBaseInfo = DssStudentModel::getById($userInfo['user_id']);
+        $studentBaseInfo['thumb_oss_url'] = StudentService::getStudentThumb($studentBaseInfo['thumb']);
         WechatTokenService::refreshToken($token);
-        $this->container['user_info'] = $userInfo;
+        $this->container['user_info'] = array_merge($userInfo, $studentBaseInfo);
     }
 }

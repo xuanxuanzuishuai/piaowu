@@ -14,6 +14,7 @@ use App\Libs\MysqlDB;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpStudentModel;
+use App\Services\DictService;
 
 class OperationActivityModel extends Model
 {
@@ -227,7 +228,6 @@ WHERE
         }
         return $timeStatus;
     }
-
     /**
      * 获取学生周周领奖活动投放区域
      * @param $studentInfo

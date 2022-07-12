@@ -1311,4 +1311,38 @@ class SharePosterService
         }
         return $returnData;
     }
+
+    /**
+     * 格式化处理海报审核结果
+     * @param array $data
+     * @param array $statusDict
+     * @param array $reasonDict
+     * @return mixed
+     */
+    public static function formatPosterVerifyResult(array $data, array $statusDict = [], array $reasonDict = []): array
+    {
+        //原因映射关系
+        if (empty($reasonDict)) {
+            $reasonDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);
+        }
+        //状态映射关系
+        if (empty($statusDict)) {
+            $statusDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS);
+        }
+        //图片大小配置
+        $imgSizeH = DictConstants::get(DictConstants::ALI_OSS_CONFIG, 'img_size_h');
+        //格式化数据
+        $data['status_name'] = $statusDict[$data['verify_status']];
+        $data['reason_str']  = self::reasonToStr($data['verify_reason'], $reasonDict);
+        $data['create_time'] = date('Y-m-d H:i', $data['create_time']);
+        $data['check_time']  = Util::formatTimestamp($data['verify_time'], '');
+        $data['img_url']     = AliOSS::signUrls($data['image_path'], "", "", "", false, "", $imgSizeH);
+        if (!empty($data['remark'])) {
+            $data['reason_str'][] = $data['remark'];
+        }
+        $data['reason_str'] = implode('/', $data['reason_str']);
+        //奖励数据
+        $data['award_type'] = Constants::AWARD_TYPE_MAP[$data['award_type']];
+        return $data;
+    }
 }
