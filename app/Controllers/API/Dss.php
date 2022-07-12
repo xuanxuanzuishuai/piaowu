@@ -1739,7 +1739,7 @@ class Dss extends ControllerBase
             }
             list($page, $count) = Util::formatPageCount($params);
             $params['app_id'] = Constants::SMART_APP_ID;
-            $data = LimitTimeActivityAdminService::getFilterAfterActivityList($params, $page, $count);
+            $data = LimitTimeActivityAdminService::getActivitySharePosterList($params, $page, $count);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
@@ -1769,11 +1769,31 @@ class Dss extends ControllerBase
      */
     public function limitTimeActivitySharePosterRefused(Request $request, Response $response): Response
     {
+        $rules = [
+            [
+                'key' => 'record_id',
+                'type' => 'required',
+                'error_code' => 'record_id_is_required'
+            ],
+            [
+                'key' => 'employee_id',
+                'type' => 'required',
+                'error_code' => 'employee_id_is_required'
+            ]
+        ];
         $params = $request->getParams();
-        list($page, $count) = Util::formatPageCount($params);
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
         $params['app_id'] = Constants::SMART_APP_ID;
-        $data = LimitTimeActivityAdminService::getFilterAfterActivityList($params, $page, $count);
-        return HttpHelper::buildResponse($response, $data);
+        try {
+            $result = LimitTimeActivityAdminService::refusedPoster($params['record_id'], $params);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, []);
     }
 }
 

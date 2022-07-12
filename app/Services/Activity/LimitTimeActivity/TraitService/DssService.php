@@ -26,6 +26,42 @@ class DssService extends LimitTimeActivityBaseAbstract
     }
 
     /**
+     * 根据uuid批量获取用户信息
+     * @param array $uuids
+     * @param array $fields
+     * @return array
+     */
+    public static function getStudentInfoByUUID(array $uuids, array $fields = []): array
+    {
+        $list = DssStudentModel::getRecords(['uuid' => $uuids], $fields);
+        return is_array($list) ? $list : [];
+    }
+
+    /**
+     * 根据手机号获取用户信息
+     * @param array $mobiles
+     * @param array $fields
+     * @return array
+     */
+    public static function getStudentInfoByMobile(array $mobiles, array $fields = []): array
+    {
+        $list = DssStudentModel::getRecords(['mobile' => $mobiles], $fields);
+        return is_array($list) ? $list : [];
+    }
+
+    /**
+     * 根据uuid批量获取用户信息
+     * @param string $name
+     * @param array $fields
+     * @return array
+     */
+    public static function getStudentInfoByName(string $name, array $fields = []): array
+    {
+        $list = DssStudentModel::getRecords(['name[~]' => $name], $fields);
+        return is_array($list) ? $list : [];
+    }
+
+    /**
      * 获取活动数据
      * @param $data
      * @return array|void

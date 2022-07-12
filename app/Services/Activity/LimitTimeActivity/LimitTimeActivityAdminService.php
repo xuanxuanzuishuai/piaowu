@@ -2,17 +2,25 @@
 
 namespace App\Services\Activity\LimitTimeActivity;
 
+use App\Libs\AliOSS;
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssTemplatePosterModel;
+use App\Models\EmployeeModel;
 use App\Models\LimitTimeActivity\LimitTimeActivityAwardRuleModel;
+use App\Models\LimitTimeActivity\LimitTimeActivityHtmlConfigModel;
 use App\Models\LimitTimeActivity\LimitTimeActivityModel;
+use App\Models\LimitTimeActivity\LimitTimeActivitySharePosterModel;
 use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\TemplatePosterModel;
+use App\Services\Activity\LimitTimeActivity\TraitService\DssService;
 use App\Services\Activity\LimitTimeActivity\TraitService\LimitTimeActivityBaseAbstract;
+use App\Services\DictService;
+use App\Services\Queue\QueueService;
 
 /**
  * 限时有奖活动后台管理功能服务类
@@ -350,7 +358,7 @@ class LimitTimeActivityAdminService
         ];
         $searchWhere = [
             'enable_status' => [OperationActivityModel::ENABLE_STATUS_ON, OperationActivityModel::ENABLE_STATUS_OFF],
-            'app_id' => $params['app_id'],
+            'app_id'        => $params['app_id'],
         ];
         // 根据名称模糊(不支持分词) 、 活动id
         $searchName = $params['search_name'] ?? '';
@@ -372,5 +380,211 @@ class LimitTimeActivityAdminService
         (!empty($page) && !empty($count)) && $searchWhere['LIMIT'] = [($page - 1) * $count, $count];
         list($returnData['total_count'], $returnData['list']) = LimitTimeActivityModel::getFilterAfterActivityList($searchWhere);
         return $returnData;
+    }
+
+    /**
+     * 获取审核截图列表
+     * @param $params
+     * @param $page
+     * @param $count
+     * @return array
+     */
+    public static function getActivitySharePosterList($params, $page, $count)
+    {
+        $returnData = [
+            'total_count' => 0,
+            'list'        => [],
+        ];
+        $appId = $params['app_id'];
+        // 如果存在学员名称和手机号，用名称和手机号换取uuid
+        $mobileUUID = self::getStudentInfoByMobile($appId, !empty($params['student_mobile']) ? [$params['student_mobile']] : []);
+        $studentNameUUID = self::getStudentInfoByName($appId, $params['student_name'] ?? '');
+        // 如果传入的uuid不为空和传入的uuid取交集，交集为空认为不会有数据， 不为空直接用交集作为条件
+        $searchUUID = [];
+        if (!empty($params['uuid'])) $searchUUID[] = $params['uuid'];
+        if (!empty($params['student_mobile'])) {
+            $_mobileUUIDS = array_column($mobileUUID, 'uuid');
+            $searchUUID = empty($searchUUID) ? $_mobileUUIDS : array_intersect($searchUUID, $_mobileUUIDS);
+        }
+        if (!empty($params['student_name'])) {
+            $_nameUUIDS = array_column($studentNameUUID, 'uuid');
+            $searchUUID = empty($searchUUID) ? $_nameUUIDS : array_intersect($searchUUID, $_nameUUIDS);
+        }
+        $searchUUID = array_unique(array_diff($searchUUID, ['']));
+        if (!empty($mobileUUID) || !empty($studentNameUUID) || !empty($params['student_uuid'])) {
+            if (empty($searchUUID)) return $returnData;
+        }
+        // 搜索数据
+        list($returnData['list'], $returnData['total_count']) = LimitTimeActivitySharePosterModel::searchJoinRecords(
+            $params['app_id'],
+            $searchUUID,
+            $params,
+            $page,
+            $count,
+            [
+                'a.activity_name',
+            ]
+        );
+        // 如果没有查到数据，不需要再做后续处理
+        if (empty($returnData['list'])) {
+            return $returnData;
+        }
+        $uuids = $operatorIds = [];
+        foreach ($returnData['list'] as $item) {
+            $uuids[] = $item['student_uuid'];
+            $operatorIds[] = $item['operator_id'];
+        }
+        unset($item);
+        $uuids = array_unique($uuids);
+        $operatorIds = array_unique($operatorIds);
+        if (!empty($uuids)) $studentList = array_column(self::getStudentInfoByUUID($params['app_id'], $uuids), null, 'uuid');
+        if (!empty($operatorIds)) $operatorList = array_column(EmployeeModel::getRecords(['id' => $operatorIds]) ?: [], null, 'id');
+        $statusDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS);
+        $reasonDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);
+        foreach ($returnData['list'] as &$item) {
+            $_student = $studentList[$item['student_uuid']] ?? [];
+            $_operator = $operatorList[$item['operator_id']] ?? [];
+            $item['format_share_poster_url'] = AliOSS::replaceCdnDomainForDss($item['poster_path']);
+            $item['mobile'] = Util::hideUserMobile($_student['mobile']);
+            $item['student_name'] = Util::hideUserMobile($_student['name']);
+            $item['format_verify_status'] = $statusDict[$item['verify_status']] ?? $item['verify_status'];
+            $item['format_create_time'] = date('Y-m-d H:i', $item['create_time']);
+            $item['format_verify_time'] = !empty($item['verify_time']) ? date('Y-m-d H:i', $item['verify_time']) : '';
+            $item['reason_str'] = self::reasonToStr(explode(',', $item['reason']), $reasonDict);
+            $item['format_verify_user'] = $item['verify_user'] == EmployeeModel::SYSTEM_EMPLOYEE_ID ? EmployeeModel::SYSTEM_EMPLOYEE_NAME : ($_operator['name'] ?? '');
+        }
+        unset($item);
+        return $returnData;
+    }
+
+    /**
+     * 根据uuid获取学生信息列表
+     * @param $appId
+     * @param array $uuids
+     * @param $fields
+     * @return array
+     */
+    public static function getStudentInfoByUUID($appId, array $uuids, $fields = [])
+    {
+        if (empty($uuids)) {
+            return [];
+        }
+        if ($appId == Constants::SMART_APP_ID) {
+            $studentList = DssService::getStudentInfoByUUID($uuids, $fields);
+        }
+        return $studentList ?? [];
+    }
+
+    /**
+     * 根据手机号获取学生信息列表
+     * @param $appId
+     * @param array $mobiles
+     * @param array $fields
+     * @return array
+     */
+    public static function getStudentInfoByMobile($appId, array $mobiles, $fields = [])
+    {
+        if (empty($mobiles)) {
+            return [];
+        }
+        if ($appId == Constants::SMART_APP_ID) {
+            $studentList = DssService::getStudentInfoByMobile($mobiles, $fields);
+        }
+        return $studentList ?? [];
+    }
+
+    /**
+     * 获取学生信息列表
+     * @param $appId
+     * @param string $studentName
+     * @param array $fields
+     * @return array
+     */
+    public static function getStudentInfoByName($appId, string $studentName, $fields = [])
+    {
+        if (empty($studentName)) {
+            return [];
+        }
+        if ($appId == Constants::SMART_APP_ID) {
+            $studentList = DssService::getStudentInfoByName($studentName, $fields);
+        }
+        return $studentList ?? [];
+    }
+
+    /**
+     * 审核失败原因解析
+     * @param $reason
+     * @param $dict
+     * @return string
+     */
+    public static function reasonToStr($reason, $dict = [])
+    {
+        if (is_string($reason)) {
+            $reason = explode(',', $reason);
+        }
+        if (empty($reason)) {
+            return '';
+        }
+        if (empty($dict)) {
+            $dict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);
+        }
+        $str = [];
+        foreach ($reason as $item) {
+            $str[] = $dict[$item] ?? $item;
+        }
+        return implode('/', $str);
+    }
+
+    /**
+     * 更新审核状态 （不通过，以及等待审核-自动审核不通过的情况下会是等待审核）
+     * 不支持批量
+     * @param $recordId
+     * @param array $params
+     * @param int $status
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function refusedPoster($recordId, $params = [], $status = SharePosterModel::VERIFY_STATUS_UNQUALIFIED)
+    {
+        $reason = $params['reason'] ?? [];
+        $remark = $params['remark'] ?? '';
+        $appId = $params['app_id'];
+        if (empty($reason) && empty($remark)) {
+            throw new RunTimeException(['please_select_reason']);
+        }
+        $poster = LimitTimeActivitySharePosterModel::getRecord(['id' => $recordId, 'verify_status' => SharePosterModel::VERIFY_STATUS_WAIT]);
+        if (empty($poster)) {
+            throw new RunTimeException(['get_share_poster_error']);
+        }
+        $time = time();
+        $update = LimitTimeActivitySharePosterModel::updateRecord($poster['id'], [
+            'verify_status' => $status,
+            'verify_time'   => $time,
+            'verify_user'   => $params['employee_id'],
+            'verify_reason' => implode(',', $reason),
+            'update_time'   => $time,
+            'remark'        => $remark,
+        ]);
+        // 审核不通过, 发送模版消息
+        if ($update > 0 && $status == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
+            $studentInfo = self::getStudentInfoByUUID($appId, [$poster['student_uuid']], ['id']);
+            $msgId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'send_award_gold_left_wx_msg_id');
+            $jumpUrl = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'limit_time_activity_record_list');
+            $activityInfo = LimitTimeActivityModel::getRecord(['activity_id' => $poster['activity_Id']]);
+            $activityHtmlConfigInfo = LimitTimeActivityHtmlConfigModel::getRecord(['activity_id' => $poster['activity_Id']], ['share_poster', 'first_poster_type_order']);
+            $posterList = json_decode($activityHtmlConfigInfo['share_poster'], true);
+            $posterId = $posterList[$activityHtmlConfigInfo['first_poster_type_order']][0] ?? 0;
+            // 发送消息
+            QueueService::sendUserWxMsg($appId, $studentInfo['id'], $msgId, [
+                'replace_params' => [
+                    'activity_name' => $activityInfo['activity_name'] . '-' . $poster['task_num'],
+                    'jump_url'      => LimitTimeActivityBaseAbstract::getMsgJumpUrl($jumpUrl, [
+                        'activity_id' => $poster['activity_Id'],
+                        'poster_id'   => $posterId,
+                    ]),
+                ],
+            ]);
+        }
+        return $update > 0;
     }
 }
