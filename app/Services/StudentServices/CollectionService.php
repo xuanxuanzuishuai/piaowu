@@ -5,9 +5,8 @@ namespace App\Services\StudentServices;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Dss;
-use App\Libs\NewSMS;
 use App\Libs\Util;
-use App\Services\CommonServiceForApp;
+use App\Services\SendSmsService;
 
 class CollectionService
 {
@@ -37,10 +36,8 @@ class CollectionService
             Util::errorCapture("qing chen divide into classes message params error",
                 ['wx_number' => $wxNumber, 'content' => $content]);
         }
-        $smsObj = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
         $shortUrl = ((new Dss())->getShortUrl($_ENV['REFERRAL_FRONT_DOMAIN'] . '/morningMarket/pay_succeed?uuid=' . $studentData['uuid']))['data']['short_url'];
-        $res = $smsObj->sendCommonSms(Util::pregReplaceTargetStr($content, ['content1' => $shortUrl]), $studentData['mobile'],
-            CommonServiceForApp::SIGN_STUDENT_QC_APP, NewSMS::SMS_TYPE_MARKETING);
+        $res = SendSmsService::sendQcDistributeClass($studentData['mobile'], $shortUrl);
         if (empty($res)) {
             Util::errorCapture("qing chen divide into classes message send fail",
                 ['mobile' => $studentData['mobile'], 'content' => $content]);
