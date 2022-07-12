@@ -1230,6 +1230,20 @@ class DictConstants {
         'type' => 'award_level',
         'keys' => [1, 2, 3, 4, 5, 6, 7, 8],
     ];
+
+    // 奖励发放状态对应的文字
+    const SEND_AWARD_STATUS = [
+        'type' => 'send_award_status',
+        'keys' => [
+            OperationActivityModel::SEND_AWARD_STATUS_NOT_OWN,
+            OperationActivityModel::SEND_AWARD_STATUS_DISABLED,
+            OperationActivityModel::SEND_AWARD_STATUS_WAITING,
+            OperationActivityModel::SEND_AWARD_STATUS_REVIEWING,
+            OperationActivityModel::SEND_AWARD_STATUS_GIVE,
+            OperationActivityModel::SEND_AWARD_STATUS_GIVE_ING,
+            OperationActivityModel::SEND_AWARD_STATUS_GIVE_FAIL,
+        ]
+    ];
     //抽奖奖品课程id
     const LESSON_ID = [
         'type' => 'lesson_id',
@@ -1286,21 +1300,8 @@ class DictConstants {
         'keys' => [
             'limit_time_activity_award_max',
             'send_award_base_delay_second',
-        ]
-    ];
-    // 限时活动智能奖励类型
-    const LIMIT_TIME_ACTIVITY_AI_AWARD_TYPE = [
-        'type' => 'limit_time_activity_ai_award_t',
-        'keys' => [
-            Constants::AWARD_TYPE_GOLD_LEAF,
-            Constants::AWARD_TYPE_TIME,
-        ]
-    ];
-    // 限时活动真人奖励类型
-    const LIMIT_TIME_ACTIVITY_REAL_AWARD_TYPE = [
-        'type' => 'limit_time_activity_real_award_t',
-        'keys' => [
-            Constants::AWARD_TYPE_MAGIC_STONE,
+            'smart_student_app_channel_id',
+            'smart_student_wx_channel_id',
         ]
     ];
 

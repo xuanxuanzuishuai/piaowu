@@ -74,19 +74,20 @@ class OperationActivityModel extends Model
     const ALLOCATION_MODE_HAND = 2; // 手动分配
 
     /** 目标用户类型 */
-    const TARGET_USER_ALL  = 1;  // 有效付费用户范围 - 所有
+    const TARGET_USER_ALL = 1;  // 有效付费用户范围 - 所有
     const TARGET_USER_PART = 2; // 有效付费用户范围 - 部分
     /** 活动类型  */
     const ACTIVITY_TYPE_FULL_ATTENDANCE = 1;  // 全勤活动
-    const ACTIVITY_TYPE_SHARE           = 2;  // 分享活动
+    const ACTIVITY_TYPE_SHARE = 2;  // 分享活动
     /** 奖励发放状态 */
-    const SEND_AWARD_STATUS_NOT_OWN   = -1;  // 未参与
-    const SEND_AWARD_STATUS_DISABLED  = 0; // 不发放-已作废
-    const SEND_AWARD_STATUS_WAITING   = 1; // 待发放
+    const SEND_AWARD_STATUS_NOT_OWN = -1;  // 未获取
+    const SEND_AWARD_STATUS_DISABLED = 0; // 不发放
+    const SEND_AWARD_STATUS_WAITING = 1; // 待发放
     const SEND_AWARD_STATUS_REVIEWING = 2; // 审核中
-    const SEND_AWARD_STATUS_GIVE      = 3; // 发放成功
-    const SEND_AWARD_STATUS_GIVE_ING  = 4; // 发放中/已发放待领取
+    const SEND_AWARD_STATUS_GIVE = 3; // 发放成功
+    const SEND_AWARD_STATUS_GIVE_ING = 4; // 发放中/已发放待领取
     const SEND_AWARD_STATUS_GIVE_FAIL = 5; // 发放失败
+
 
     /**
      * 当前阶段为付费正式课且未参加当前活动的学员手微信open_id

@@ -24,9 +24,10 @@ class LimitTimeActivityModel extends Model
      * @param $params
      * @param $limit
      * @param array $order
+     * @param array $fields
      * @return array
      */
-    public static function searchList($params, $limit, $order = [])
+    public static function searchList($params, $limit, array $order = [], array $fields = []): array
     {
         $where = [];
         if (!empty($params['activity_name'])) {
@@ -40,6 +41,12 @@ class LimitTimeActivityModel extends Model
         }
         if (!empty($params['start_time_e'])) {
             $where['a.start_time[<=]'] = $params['start_time_e'];
+        }
+        if (!empty($params['app_id'])) {
+            $where['a.app_id'] = (int)$params['app_id'];
+        }
+        if (!empty($params['activity_country_code'])) {
+            $where['a.activity_country_code'] = $params['activity_country_code'];
         }
         if (isset($params['id']) && !Util::emptyExceptZero($params['id'])) {
             $where['a.id'] = $params['id'];
@@ -63,21 +70,22 @@ class LimitTimeActivityModel extends Model
             $order = ['a.id' => 'DESC'];
         }
         $where['ORDER'] = $order;
-
+        //查询字段
+        $fields = array_unique(array_merge([
+            'a.activity_id',
+            'a.activity_name',
+            'a.start_time',
+            'a.end_time',
+            'a.enable_status',
+            'a.create_time',
+            'c.remark',
+        ], $fields));
         $list = $db->select(
             self::$table . '(a)',
             [
                 "[>]" . LimitTimeActivityHtmlConfigModel::$table . '(c)' => ['a.activity_id' => 'activity_id']
             ],
-            [
-                'a.activity_id',
-                'a.activity_name',
-                'a.start_time',
-                'a.end_time',
-                'a.enable_status',
-                'a.create_time',
-                'c.remark',
-            ],
+            $fields,
             $where
         );
         return [$list, $total];

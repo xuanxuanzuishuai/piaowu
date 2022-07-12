@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services;
 
 use App\Libs\AliOSS;
@@ -22,6 +23,7 @@ use App\Models\TemplatePosterModel;
 class PosterService
 {
     private static $checkActivityData = [];
+
     /**
      * 生成带用户QR码海报
      * @param $posterPath
@@ -51,7 +53,8 @@ class PosterService
             return $emptyRes;
         }
         //用户二维码
-        $userQrUrl = DssUserQrTicketModel::getUserQrURL($userId, $type, $channelId, DssUserQrTicketModel::LANDING_TYPE_MINIAPP, $extParams);
+        $userQrUrl = DssUserQrTicketModel::getUserQrURL($userId, $type, $channelId,
+            DssUserQrTicketModel::LANDING_TYPE_MINIAPP, $extParams);
         if (empty($userQrUrl)) {
             SimpleLogger::info('user qr make fail', [$userId, $type, $channelId]);
             return $emptyRes;
@@ -114,10 +117,10 @@ class PosterService
 
         //返回数据
         return [
-            'poster_save_full_path' => $resImageUrl,
-            'unique' => md5($userId . $posterPath . $userQrUrl) . ".jpg",
-            'poster_id' => $extParams['p'] ?? 0,
-            'user_current_status' => $user_current_status,
+            'poster_save_full_path'  => $resImageUrl,
+            'unique'                 => md5($userId . $posterPath . $userQrUrl) . ".jpg",
+            'poster_id'              => $extParams['p'] ?? 0,
+            'user_current_status'    => $user_current_status,
             'user_current_status_zh' => DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$user_current_status] ?? '',
         ];
     }
@@ -132,7 +135,7 @@ class PosterService
         if (!empty($landingType)) {
             return $landingType;
         }
-        $landingType      = DssUserQrTicketModel::LANDING_TYPE_NORMAL;
+        $landingType = DssUserQrTicketModel::LANDING_TYPE_NORMAL;
         $posterQrcodeType = DictService::getKeyValue(Constants::DICT_TYPE_POSTER_QRCODE_TYPE, 'qr_code_type');
         // 配置：非空时为小程序码
         if (!empty($posterQrcodeType)) {
@@ -149,11 +152,14 @@ class PosterService
      * @return array|string
      * @throws \App\Libs\Exceptions\RunTimeException
      */
-    public static function getMiniappQrImage($appId, $params = [], $busiType = DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP)
-    {
+    public static function getMiniappQrImage(
+        $appId,
+        $params = [],
+        $busiType = DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP
+    ) {
         $params['app_id'] = $params['app_id'] ?? $appId;
-        $ticket    = $params['r'] ?? '';
-        $wechat    = WeChatMiniPro::factory($appId, $busiType);
+        $ticket = $params['r'] ?? '';
+        $wechat = WeChatMiniPro::factory($appId, $busiType);
         $imagePath = [];
         if (empty($wechat)) {
             SimpleLogger::error('wechat create fail', ['getMiniappQrImage', $appId, $params]);
@@ -175,7 +181,7 @@ class PosterService
             SimpleLogger::error('save miniapp code image file error', [$ticket]);
             return $imagePath;
         }
-        $imagePath = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_MINIAPP_CODE . '/' . md5($ticket.$paramId) . ".png";
+        $imagePath = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_MINIAPP_CODE . '/' . md5($ticket . $paramId) . ".png";
         AliOSS::uploadFile($imagePath, $tmpFileFullPath);
         unlink($tmpFileFullPath);
         return [$imagePath, $paramId];
@@ -194,7 +200,7 @@ class PosterService
         list($filePath, $fileName) = QRCodeModel::genImage($content, time());
         chmod($filePath, 0755);
         //上传二维码到阿里oss
-        $envName  = $_ENV['ENV_NAME'] ?? 'dev';
+        $envName = $_ENV['ENV_NAME'] ?? 'dev';
         $imagePath = $envName . '/' . AliOSS::DIR_REFERRAL . '/' . $fileName;
         AliOSS::uploadFile($imagePath, $filePath);
         //删除临时二维码文件
@@ -210,7 +216,7 @@ class PosterService
     public static function getAgentLandingPageUrl($params = [])
     {
         $link = DictConstants::get(DictConstants::AGENT_CONFIG, 'package_buy_page_url');
-        return $link . "?". http_build_query($params);
+        return $link . "?" . http_build_query($params);
     }
 
     /**
@@ -227,13 +233,13 @@ class PosterService
         $paramId = ReferralActivityService::getParamsId($params);
         $params = [
             'package_id' => $packageId,
-            'param_id' => $paramId
+            'param_id'   => $paramId
         ];
         $content = self::getAgentLandingPageUrl($params);
         list($filePath, $fileName) = QRCodeModel::genImage($content, time());
         chmod($filePath, 0755);
         //上传二维码到阿里oss
-        $envName  = $_ENV['ENV_NAME'] ?? 'dev';
+        $envName = $_ENV['ENV_NAME'] ?? 'dev';
         $imagePath = $envName . '/' . AliOSS::DIR_REFERRAL . '/' . $fileName;
         AliOSS::uploadFile($imagePath, $filePath);
         //删除临时二维码文件
@@ -276,7 +282,17 @@ class PosterService
         if (empty($allPosterIds)) {
             return [];
         }
-        $field = ['id', 'name', 'poster_id', 'poster_path', 'example_id', 'example_path', 'order_num', 'practise','type'];
+        $field = [
+            'id',
+            'name',
+            'poster_id',
+            'poster_path',
+            'example_id',
+            'example_path',
+            'order_num',
+            'practise',
+            'type'
+        ];
         $where = [
             'id' => array_column($allPosterIds, 'poster_id'),
         ];
@@ -306,8 +322,15 @@ class PosterService
      * @param array $userQrInfo
      * @return array
      */
-    public static function generateQrPoster($posterPath, $config, $userId, $type, $channelId, array $extParams = [], $userQrInfo= [])
-    {
+    public static function generateQrPoster(
+        $posterPath,
+        $config,
+        $userId,
+        $type,
+        $channelId,
+        array $extParams = [],
+        $userQrInfo = []
+    ) {
         SimpleLogger::info('generateQrPoster start', []);
         //通过oss合成海报并保存
         //海报资源
@@ -319,7 +342,8 @@ class PosterService
         }
         //用户二维码
         if (empty($userQrInfo)) {
-            $userQrInfo = MiniAppQrService::getUserMiniAppQr(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE, $userId, $type, $channelId, DssUserQrTicketModel::LANDING_TYPE_MINIAPP, $extParams);
+            $userQrInfo = MiniAppQrService::getUserMiniAppQr(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE,
+                $userId, $type, $channelId, DssUserQrTicketModel::LANDING_TYPE_MINIAPP, $extParams);
         }
         if (empty($userQrInfo['qr_path'])) {
             SimpleLogger::info('user qr make fail', [$userId, $type, $channelId, $userQrInfo]);
@@ -401,10 +425,10 @@ class PosterService
         SimpleLogger::info('generateQrPoster end', []);
         //返回数据
         return [
-            'poster_save_full_path' => $resImageUrl,
-            'unique' => $userQrInfo['qr_id'] . ".jpg",
-            'poster_id' => $extParams['poster_id'] ?? ($extParams['p'] ?? 0),
-            'user_current_status' => $user_current_status,
+            'poster_save_full_path'  => $resImageUrl,
+            'unique'                 => $userQrInfo['qr_id'] . ".jpg",
+            'poster_id'              => $extParams['poster_id'] ?? ($extParams['p'] ?? 0),
+            'user_current_status'    => $user_current_status,
             'user_current_status_zh' => DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$user_current_status] ?? '',
         ];
     }
@@ -417,7 +441,7 @@ class PosterService
      */
     public static function getQrPath($request)
     {
-        $studentId  = $request['student_id'];
+        $studentId = $request['student_id'];
         $userDetail = StudentService::dssStudentStatusCheck($studentId, false, null);
         $qrData = [
             'poster_id'           => $request['poster_id'],
@@ -427,7 +451,8 @@ class PosterService
         ];
         $userType = DssUserQrTicketModel::STUDENT_TYPE;
         $landingType = DssUserQrTicketModel::LANDING_TYPE_MINIAPP;
-        $userQrArr = MiniAppQrService::getUserMiniAppQr(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE, $studentId, $userType, $request['channel_id'], $landingType, $qrData);
+        $userQrArr = MiniAppQrService::getUserMiniAppQr(Constants::SMART_APP_ID, Constants::SMART_MINI_BUSI_TYPE,
+            $studentId, $userType, $request['channel_id'], $landingType, $qrData);
         if (empty($userQrArr['qr_path'])) {
             throw new RunTimeException(['invalid_data']);
         }
@@ -452,7 +477,7 @@ class PosterService
         $extParams = []
     ) {
         $posterPath = $item['path'];
-        $posterId   = $item['poster_id'];
+        $posterId = $item['poster_id'];
         //通过oss合成海报并保存
         //海报资源
         $emptyRes = ['poster_save_full_path' => '', 'unique' => ''];
@@ -468,7 +493,7 @@ class PosterService
             'poster_id'     => $posterId,
             'channel_id'    => $channelId,
             'from_service'  => $extParams['from_service'] ?? '',
-            'activity_id'  => $extParams['activity_id'] ?? 0,
+            'activity_id'   => $extParams['activity_id'] ?? 0,
             'employee_uuid' => $extParams['employee_uuid'] ?? '',
         ];
         $userQrData = RealSharePosterService::getQrPath($params);
@@ -550,8 +575,8 @@ class PosterService
         //返回数据
         return [
             'poster_save_full_path' => $resImageUrl,
-            'unique' => md5($userId . $posterPath . $userQrUrl) . ".jpg",
-            'poster_id' => $extParams['p'] ?? 0,
+            'unique'                => md5($userId . $posterPath . $userQrUrl) . ".jpg",
+            'poster_id'             => $extParams['p'] ?? 0,
         ];
     }
 
@@ -568,7 +593,8 @@ class PosterService
             $studentInfo['student_id'] = $studentInfo['id'] ?? 0;
             self::$checkActivityData[$key] = RealWeekActivityService::getStudentCanPartakeWeekActivityList($studentInfo)[0] ?? [];
         } elseif ($appId == Constants::SMART_APP_ID) {
-            self::$checkActivityData[$key] = WeekActivityService::getDssStudentCanPartakeWeekActivityList($studentId, '', '')[0] ?? [];
+            self::$checkActivityData[$key] = WeekActivityService::getDssStudentCanPartakeWeekActivityList($studentId,
+                    '', '')[0] ?? [];
         }
         return self::$checkActivityData[$key]['activity_id'] ?? 0;
     }
@@ -631,5 +657,94 @@ class PosterService
         //生成cdn访问地址
         $cdnDomain = DictConstants::get(DictConstants::ALI_OSS_CONFIG, 'dss_cdn_domain');
         return $cdnDomain . '/' . ($imagePath) . '?' . $options;
+    }
+
+    /**
+     * 海报批量打水印
+     * @param array $posterList
+     * @param int $opActivityId
+     * @param int $studentId
+     * @param int $studentStatus
+     * @param int $channel
+     * @param bool $isOpenAbTest
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function posterFormatDealWaterMark(
+        int $appId,
+        int $busiesType,
+        int $landingType,
+        array $posterList,
+        int $opActivityId,
+        int $studentId,
+        int $studentStatus,
+        int $channel,
+        bool $isOpenAbTest = false
+    ): array {
+        //组合生成海报数据
+        $userQrParams = [];
+        foreach ($posterList as $item) {
+            $_tmp['user_current_status'] = $studentStatus;
+            $_tmp['activity_id'] = $opActivityId;
+            $_tmp['poster_id'] = $item['poster_id'];
+            $_tmp['user_id'] = $studentId;
+            $_tmp['user_type'] = Constants::USER_TYPE_STUDENT;
+            $_tmp['channel_id'] = $channel;
+            $_tmp['landing_type'] = $landingType;
+            $_tmp['date'] = date('Y-m-d', time());
+            $userQrParams[] = $_tmp;
+        }
+        // 获取小程序码
+        $userQrArr = MiniAppQrService::batchCreateUserMiniAppQr($appId, $busiesType, $userQrParams);
+        //海报配置数据
+        $posterConfig = PosterService::getPosterConfig();
+        // 获取AB测海报，和对照组海报id
+        $abPosterIsNormal = $abTestPosterInfo = [];
+        if ($isOpenAbTest === true) {
+            list($abPosterIsNormal, $abTestPosterInfo) = WeekActivityService::getStudentTestAbPoster($studentId,
+                $opActivityId, [
+                    'channel_id'      => $channel,
+                    'user_type'       => DssUserQrTicketModel::STUDENT_TYPE,
+                    'landing_type'    => $landingType,
+                    'user_status'     => $studentStatus,
+                    'is_create_qr_id' => true,
+                ]);
+        }
+        $firstStandardPoster = true;
+        foreach ($posterList as $key => &$item) {
+            // 如果是对照组标准海报，不用重新生成海报二维码
+            if (!empty($abTestPosterInfo) && $item['type'] == TemplatePosterModel::STANDARD_POSTER && $firstStandardPoster) {
+                if (!$abPosterIsNormal) {
+                    unset($posterList[$key]);
+                } else {
+                    $item = $abTestPosterInfo;
+                }
+                $firstStandardPoster = false;
+                continue;
+            }
+            $extParams['poster_id'] = $item['poster_id'];
+            $item = PosterTemplateService::formatPosterInfo($item);
+            if ($item['type'] == TemplatePosterModel::INDIVIDUALITY_POSTER) {
+                $item['qr_code_url'] = AliOSS::replaceCdnDomainForDss($userQrArr[$key]['qr_path']);
+                $word = [
+                    'qr_id' => $userQrArr[$key]['qr_id'],
+                    'date'  => date('m.d', time()),
+                ];
+                $item['poster_url'] = PosterService::addAliOssWordWaterMark($item['poster_path'], $word, $posterConfig);
+                continue;
+            }
+            // 海报图：
+            $poster = PosterService::generateQRPoster(
+                $item['poster_path'],
+                $posterConfig,
+                $studentId,
+                DssUserQrTicketModel::STUDENT_TYPE,
+                $channel,
+                $extParams,
+                $userQrArr[$key] ?? []
+            );
+            $item['poster_url'] = $poster['poster_save_full_path'];
+        }
+        return $userQrParams;
     }
 }
