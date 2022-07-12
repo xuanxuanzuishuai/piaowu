@@ -17,6 +17,31 @@ use App\Services\DictService;
 abstract class LimitTimeActivityBaseAbstract
 {
     /**
+     * 根据uuid批量获取用户信息
+     * @param array $uuids
+     * @param array $fields
+     * @return array
+     */
+    abstract public static function getStudentInfoByUUID(array $uuids, array $fields = []): array;
+
+    /**
+     * 根据手机号获取用户信息
+     * @param array $mobiles
+     * @param array $fields
+     * @return array
+     */
+    abstract public static function getStudentInfoByMobile(array $mobiles, array $fields = []): array;
+
+    /**
+     * 根据学生名称模糊搜索用户信息
+     * @param string $name
+     * @param array $fields
+     * @return array
+     */
+    abstract public static function getStudentInfoByName(string $name, array $fields = []): array;
+
+
+    /**
      * 获取海报列表
      * @param $shaPosterList
      * @return array
@@ -124,5 +149,20 @@ abstract class LimitTimeActivityBaseAbstract
         $conflictData = LimitTimeActivityModel::getRecords($conflictWhere);
         SimpleLogger::info("LimitTimeActivityBaseAbstract:getRangeTimeEnableActivity", [$conflictWhere, $conflictData]);
         return $conflictData;
+    }
+
+    /**
+     * 替换url中的参数
+     * @param $url
+     * @param $params
+     * @return mixed|string|string[]
+     */
+    public static function getMsgJumpUrl($url, $params)
+    {
+        foreach ($params as $key => $item) {
+            $url = str_replace('{{' . $key . '}}', $item, $url);
+        }
+        unset($key, $item);
+        return $url;
     }
 }
