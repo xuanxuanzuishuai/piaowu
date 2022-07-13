@@ -11,6 +11,7 @@ use App\Libs\Util;
 use App\Models\Dss\DssTemplatePosterModel;
 use App\Models\EmployeeModel;
 use App\Models\LimitTimeActivity\LimitTimeActivityAwardRuleModel;
+use App\Models\LimitTimeActivity\LimitTimeActivityAwardRuleVersionModel;
 use App\Models\LimitTimeActivity\LimitTimeActivityHtmlConfigModel;
 use App\Models\LimitTimeActivity\LimitTimeActivityModel;
 use App\Models\LimitTimeActivity\LimitTimeActivitySharePosterModel;
@@ -46,6 +47,10 @@ class LimitTimeActivityAdminService
         if ($startTime >= $endTime) {
             throw new RunTimeException(['start_time_eq_end_time']);
         }
+        // 开始时间不能小于等于当前时间
+        if ($startTime <= time()) {
+            throw new RunTimeException(['activity_start_time_error']);
+        }
 
         // 检查奖励规则 - 不能为空， 去掉html标签以及emoji表情后不能大于1000个字符
         if (empty($data['award_rule'])) {
@@ -57,6 +62,10 @@ class LimitTimeActivityAdminService
         }
         if (count($data['task_list']) > LimitTimeActivityModel::MAX_TASK_NUM) {
             throw new RunTimeException(['task_list_max_ten']);
+        }
+        $taskList = self::parseTaskList(0, $data);
+        if (max(array_column($taskList, 'task_num')) > LimitTimeActivityModel::MAX_TASK_JOIN_NUM) {
+            throw new RunTimeException(['task_num_max']);
         }
         self::checkAwardNum($data['activity_type'], $data['award_type'], $data['task_list']);
         return true;
@@ -80,7 +89,7 @@ class LimitTimeActivityAdminService
         $errMsg = '';
         $max = $awardMaxData[$activityType][$awardType];
         foreach ($taskList as $item) {
-            if ($max > $item['award_amount']) {
+            if ($max < $item['award_amount']) {
                 $errMsg = 'award_amount_max';
                 break;
             }
@@ -123,6 +132,8 @@ class LimitTimeActivityAdminService
     public static function parseTargetUser($data)
     {
         $targetUser = $data['target_user'] ?? [];
+        if (!empty($targetUser['target_user_first_pay_time_start'])) $targetUser['target_user_first_pay_time_start'] = strtotime($targetUser['target_user_first_pay_time_start']);
+        if (!empty($targetUser['target_user_first_pay_time_end'])) $targetUser['target_user_first_pay_time_end'] = strtotime($targetUser['target_user_first_pay_time_end']);
         return [
             'target_user_first_pay_time_start' => $targetUser['target_user_first_pay_time_start'] ?? 0, // 目标用户首次付费时间开始时间
             'target_user_first_pay_time_end'   => $targetUser['target_user_first_pay_time_end'] ?? 0, // 目标用户首次付费时间截止时间
@@ -208,7 +219,6 @@ class LimitTimeActivityAdminService
             'activity_id' => 0,
         ];
         self::checkAllowAdd($data);
-
         $time = time();
         $operationActivityData = [
             'name'   => $data['activity_name'],
@@ -219,22 +229,22 @@ class LimitTimeActivityAdminService
         $activityEndTime = Util::getDayLastSecondUnix($data['end_time']);
         $delaySendAwardTimeData = self::getActivityDelaySendAwardTime($activityEndTime, $data['award_prize_type'], $data['delay_day']);
         $activityData = [
-            'app_id'                          => $data['app_id'],
-            'activity_name'                   => $data['activity_name'],
-            'activity_id'                     => 0,
-            'activity_type'                   => $data['activity_type'],
-            'start_time'                      => Util::getDayFirstSecondUnix($data['start_time']),
-            'end_time'                        => Util::getDayLastSecondUnix($data['end_time']),
-            'enable_status'                   => OperationActivityModel::ENABLE_STATUS_OFF,
-            'operator_id'                     => $employeeId,
-            'target_user_type'                => intval($data['target_user_type']),
-            'activity_country_code'           => intval($data['activity_country_code']),    // 0代表全部
-            'target_user'                     => json_encode($targetUser),
-            'target_use_first_pay_time_start' => $targetUser['target_use_first_pay_time_start'],
-            'target_use_first_pay_time_end'   => $targetUser['target_use_first_pay_time_end'],
-            'award_prize_type'                => $data['award_prize_type'],
-            'delay_second'                    => $delaySendAwardTimeData['delay_second'],
-            'send_award_time'                 => $delaySendAwardTimeData['send_award_time'],
+            'app_id'                           => $data['app_id'],
+            'activity_name'                    => $data['activity_name'],
+            'activity_id'                      => 0,
+            'activity_type'                    => $data['activity_type'],
+            'start_time'                       => Util::getDayFirstSecondUnix($data['start_time']),
+            'end_time'                         => Util::getDayLastSecondUnix($data['end_time']),
+            'enable_status'                    => OperationActivityModel::ENABLE_STATUS_OFF,
+            'operator_id'                      => $employeeId,
+            'target_user_type'                 => intval($data['target_user_type']),
+            'activity_country_code'            => intval($data['activity_country_code']),    // 0代表全部
+            'target_user'                      => json_encode($targetUser),
+            'target_user_first_pay_time_start' => $targetUser['target_user_first_pay_time_start'],
+            'target_user_first_pay_time_end'   => $targetUser['target_user_first_pay_time_end'],
+            'award_prize_type'                 => $data['award_prize_type'],
+            'delay_second'                     => $delaySendAwardTimeData['delay_second'],
+            'send_award_time'                  => $delaySendAwardTimeData['send_award_time'],
         ];
         $htmlConfig = [
             'activity_id'                   => 0,
@@ -291,7 +301,7 @@ class LimitTimeActivityAdminService
     /**
      * 获取活动详情
      * @param $activityId
-     * @return mixed
+     * @return array
      * @throws RunTimeException
      */
     public static function getActivityDetail($activityId)
@@ -307,6 +317,7 @@ class LimitTimeActivityAdminService
         $activityInfo['personality_poster'] = $sharePosterList[TemplatePosterModel::INDIVIDUALITY_POSTER] ?? [];
         // 获取奖励
         $activityInfo['task_list'] = LimitTimeActivityAwardRuleModel::getActivityAwardRule($activityId);
+        $activityInfo['award_type'] = $activityInfo['task_list'][0]['award_type'];
         return $activityInfo;
     }
 
@@ -333,7 +344,10 @@ class LimitTimeActivityAdminService
         }
         if ($enableStatus == OperationActivityModel::ENABLE_STATUS_ON) {
             // 如果是启用活动 - 校验活动是否允许启动
-            LimitTimeActivityBaseAbstract::getRangeTimeEnableActivity($activityInfo['app_id'], $activityInfo['start_time'], $activityInfo['end_time'], $activityInfo['activity_country_code']);
+            $conflictData = LimitTimeActivityBaseAbstract::getRangeTimeEnableActivity($activityInfo['app_id'], $activityInfo['start_time'], $activityInfo['end_time'], $activityInfo['activity_country_code']);
+            if (!empty($conflictData)) {
+                throw new RunTimeException(['activity_time_conflict']);
+            }
         }
         // 修改启用状态
         $res = LimitTimeActivityModel::updateRecord($activityInfo['id'], ['enable_status' => $enableStatus, 'operator_id' => $employeeId, 'update_time' => time()]);
@@ -556,6 +570,7 @@ class LimitTimeActivityAdminService
         if (empty($poster)) {
             throw new RunTimeException(['get_share_poster_error']);
         }
+        $awardRule = LimitTimeActivityAwardRuleModel::getRecord(['activity_id' => $poster['activity_Id'], 'task_num' => $poster['task_num']]);
         $time = time();
         $update = LimitTimeActivitySharePosterModel::updateRecord($poster['id'], [
             'verify_status' => $status,
@@ -564,11 +579,16 @@ class LimitTimeActivityAdminService
             'verify_reason' => implode(',', $reason),
             'update_time'   => $time,
             'remark'        => $remark,
+            'award_type'    => $awardRule['award_type'],
         ]);
+        if ($awardRule['award_type'] == Constants::AWARD_TYPE_GOLD_LEAF) {
+            $msgId = DictConstants::get(DictConstants::LIMIT_TIME_ACTIVITY_CONFIG, 'ai_gold_leaf_verify_refused_wx_msg_id');
+        } elseif ($awardRule['award_type'] == Constants::AWARD_TYPE_TIME) {
+            $msgId = DictConstants::get(DictConstants::LIMIT_TIME_ACTIVITY_CONFIG, 'ai_time_verify_refused_wx_msg_id');
+        }
         // 审核不通过, 发送模版消息
-        if ($update > 0 && $status == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
+        if ($update > 0 && $status == SharePosterModel::VERIFY_STATUS_UNQUALIFIED && !empty($msgId)) {
             $studentInfo = self::getStudentInfoByUUID($appId, [$poster['student_uuid']], ['id']);
-            $msgId = DictConstants::get(DictConstants::DSS_WEEK_ACTIVITY_CONFIG, 'send_award_gold_left_wx_msg_id');
             $jumpUrl = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'limit_time_activity_record_list');
             $activityInfo = LimitTimeActivityModel::getRecord(['activity_id' => $poster['activity_Id']]);
             $activityHtmlConfigInfo = LimitTimeActivityHtmlConfigModel::getRecord(['activity_id' => $poster['activity_Id']], ['share_poster', 'first_poster_type_order']);
@@ -586,5 +606,120 @@ class LimitTimeActivityAdminService
             ]);
         }
         return $update > 0;
+    }
+
+    /**
+     * 分享截图审核通过
+     * @param $recordIds
+     * @param array $params
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function approvalPoster($recordIds, $params = [])
+    {
+        $logTitle = 'LimitTimeActivity_approvalPoster';
+        $posters = LimitTimeActivitySharePosterModel::getRecords(['id' => $recordIds, 'verify_status' => SharePosterModel::VERIFY_STATUS_WAIT]);
+        if (count($posters) != count($recordIds)) {
+            throw new RunTimeException(['get_share_poster_error']);
+        }
+        $activityInfo = LimitTimeActivityModel::getRecord(['activity_id' => $params['activity_id']]);
+        if (empty($activityInfo)) {
+            throw new RunTimeException(['activity_not_found']);
+        }
+        $now = time();
+        // 读取奖励规则，计算奖励
+        $awardRules = LimitTimeActivityAwardRuleModel::getActivityAwardRule($activityInfo['activity_id'], 'task_num');
+        // 读取奖励版本
+        $awardVersion = LimitTimeActivityAwardRuleVersionModel::getActivityAwardRuleVersion($activityInfo['activity_id']);
+        /**
+         * 读取奖励规则
+         * 加锁
+         * 读取现有通过数量
+         * 通过数量+1
+         * 计算奖励
+         * 更新奖励数据 where 条件 award_task_num=0, 防止同时修改同一条数据
+         * 检查是同一个活动同一个用户是否存在相同的award_task_num ,如果存在抛异常并报警
+         * 如果是即时发奖，投递奖励信息
+         * 如果是统一发奖，后续逻辑，后续处理
+         */
+        //开始处理数据
+        foreach ($posters as $key => $poster) {
+            $studentInfo = self::getStudentInfoByUUID($params['app_id'], [$poster['student_uuid']]);
+            // 审核数据操作锁，解决并发导致的重复审核和发奖
+            $lockKey = LimitTimeActivityBaseAbstract::VERIFY_SHARE_POSTER_LOCK_KEY_PREFIX . $poster['id'];
+            try {
+                if (!Util::setLock($lockKey, 60)) {
+                    continue;
+                }
+                // 读取现有通过数量
+                $passNum = LimitTimeActivitySharePosterModel::getActivityVerifyPassNum($poster['student_uuid'], $poster['activity_id']);
+                // 计算奖励
+                $awardTaskNum = $passNum + 1;
+                $award = $awardRules[$awardTaskNum];
+                // 组装更新数据
+                $updateData = [
+                    'verify_status'      => SharePosterModel::VERIFY_STATUS_QUALIFIED,
+                    'verify_time'        => $now,
+                    'verify_user'        => $params['employee_id'],
+                    'remark'             => $params['remark'] ?? '',
+                    'update_time'        => $now,
+                    'award_task_num'     => $awardTaskNum,
+                    'award_amount'       => $award['award_amount'],
+                    'award_type'         => $award['award_type'],
+                    'send_award_status'  => OperationActivityModel::SEND_AWARD_STATUS_WAITING,
+                    'send_award_version' => $awardVersion,
+                ];
+                $update = SharePosterModel::batchUpdateRecord($updateData, [
+                    'id'             => $poster['id'],
+                    'verify_status'  => $poster['verify_status'],
+                    'award_task_num' => 0,
+                ]);
+                // 影响行数是0 ，说明没有执行成功，不做后续处理
+                if (empty($update)) {
+                    SimpleLogger::info("$logTitle update zero", [$poster, $update]);
+                    continue;
+                }
+                // 如果是全勤打卡， 获取距离下一个节点的次数
+                $awardNode = $activityInfo['activity_type'] == OperationActivityModel::ACTIVITY_TYPE_FULL_ATTENDANCE ? self::getNextAwardNodeStep($awardTaskNum, $awardRules) : 0;
+                // 组装微信消息需要的参数
+                $replaceParams = [
+                    'activity_name' => $activityInfo['activity_name'] . '-' . $poster['task_num'],
+                    'jump_url'      => DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'limit_time_activity_detail'),
+                    'passes_num'    => $awardNode,
+                    'award_num'     => $award['award_amount'],
+                ];
+                $msgId = LimitTimeActivityBaseAbstract::getWxMsgId($params['app_id'], $activityInfo['activity_type'], $award['award_type'], SharePosterModel::VERIFY_STATUS_QUALIFIED, $awardNode);
+                if ($activityInfo['award_prize_type'] == OperationActivityModel::AWARD_PRIZE_TYPE_IN_TIME) {
+                    // TODO qingfeng.lian  , 发送发奖消息，以及投递发放奖励消息
+                    // 发送消息
+                    QueueService::sendUserWxMsg($params['app_id'], $studentInfo['id'], $msgId, [
+                        'replace_params' => $replaceParams,
+                    ]);
+                }
+            } finally {
+                $res = Util::unLock($lockKey);
+                SimpleLogger::info("$logTitle try finally lock", [$poster, $lockKey, $res]);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 获取全勤活动距离下个奖励节点还差几步
+     * @param $taskNum
+     * @param $taskList
+     * @return int
+     */
+    public static function getNextAwardNodeStep($taskNum, $taskList)
+    {
+        $nextTask = [];
+        foreach ($taskList as $key => $item) {
+            if ($item['task_num'] == $taskNum) {
+                $nextTask = $taskList[$key + 1] ?? [];
+            }
+        }
+        unset($key, $item);
+        $nextTaskNum = $nextTask['task_num'] ?? 0;
+        return !empty($nextTaskNum) ? $nextTaskNum - $taskNum : 0;
     }
 }

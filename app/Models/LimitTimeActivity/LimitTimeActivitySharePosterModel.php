@@ -7,6 +7,8 @@ namespace App\Models\LimitTimeActivity;
 
 use App\Libs\MysqlDB;
 use App\Models\Model;
+use App\Models\OperationActivityModel;
+use App\Models\SharePosterModel;
 
 class LimitTimeActivitySharePosterModel extends Model
 {
@@ -101,5 +103,33 @@ class LimitTimeActivitySharePosterModel extends Model
             $fields,
             $where);
         return [$list, $total];
+    }
+
+    /**
+     * 获取活动中用户审核通过数量
+     * @param $studentUUID
+     * @param $activityId
+     * @return int|number
+     */
+    public static function getActivityVerifyPassNum($studentUUID, $activityId)
+    {
+        return self::getCount([
+            'student_uuid'    => $studentUUID,
+            'activity_id'   => $activityId,
+            'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
+        ]);
+    }
+
+    /**
+     * 更新发送状态为奖励发放成功
+     * @param $recordId
+     * @return int|null
+     */
+    public static function updateSendAwardStatusIsSuccess($recordId)
+    {
+        return self::updateRecord($recordId, [
+            'send_award_status' => OperationActivityModel::SEND_AWARD_STATUS_GIVE,
+            'send_award_time' => time(),
+        ]);
     }
 }

@@ -18,6 +18,7 @@ class LimitTimeActivityModel extends Model
     public static $table = 'limit_time_activity';
 
     const MAX_TASK_NUM = 10;    // 最大分享任务数量
+    const MAX_TASK_JOIN_NUM = 30;    // 最大活动可参与数
 
     /**
      * 获取周周领奖活动列表和总数

@@ -8,13 +8,16 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\EmployeeModel;
 use App\Models\LimitTimeActivity\LimitTimeActivitySharePosterModel;
+use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
+use App\Services\Activity\Lottery\LotteryServices\LotteryGrantAwardService;
 use App\Services\AutoCheckPicture;
 
 class LimitTimeAwardConsumerService
 {
-    private $autoCheckStatusCacheKey = 'lta_stop_auto_check';
+    private $autoCheckStatusCacheKey            = 'lta_stop_auto_check';
     private $sharePosterCheckLockCacheKeyPrefix = 'lta_auto_check_lock';
 
     /**
@@ -25,7 +28,7 @@ class LimitTimeAwardConsumerService
     public function sharePosterAutoCheck($paramsData): bool
     {
         //检测自动审核功能是否开启
-        $redis           = RedisDB::getConn();
+        $redis = RedisDB::getConn();
         $autoCheckStatus = $redis->get($this->autoCheckStatusCacheKey);
         if ($autoCheckStatus === 'no') {
             return false;
@@ -68,4 +71,69 @@ class LimitTimeAwardConsumerService
         }
         return true;
     }
+
+    /**
+     * 发奖
+     * @param $paramsData
+     * @return bool
+     */
+    public function sendAward($paramsData): bool
+    {
+        $logTitle = 'limit time award send award';
+        $time = time();
+        SimpleLogger::info("$logTitle params:", $paramsData);
+        $recordId = $paramsData['record_id'] ?? 0;
+        if (empty($recordId)) {
+            return false;
+        }
+        $sharePosterRecordInfo = LimitTimeActivitySharePosterModel::getRecord(['id' => $recordId]);
+        SimpleLogger::info("$logTitle share poster record info:", [$sharePosterRecordInfo]);
+        if (empty($sharePosterRecordInfo)) {
+            return false;
+        }
+        if ($sharePosterRecordInfo['verify_status'] != SharePosterModel::VERIFY_STATUS_QUALIFIED) {
+            return false;
+        }
+        if ($sharePosterRecordInfo['send_award_time'] >= $time) {
+            return false;
+        }
+        if ($sharePosterRecordInfo['send_award_status'] != OperationActivityModel::SEND_AWARD_STATUS_WAITING) {
+            return false;
+        }
+        SimpleLogger::info("$logTitle send award start:", [$sharePosterRecordInfo]);
+        switch ($sharePosterRecordInfo['award_type']) {
+            case Constants::AWARD_TYPE_TIME:
+                $sendData = [
+                    'common_award_amount' => $sharePosterRecordInfo['award_amount'],
+                ];
+                break;
+            case Constants::AWARD_TYPE_GOLD_LEAF:
+                $sendData = [
+                    'student_uuid'  => $sharePosterRecordInfo['student_uuid'],
+                    'num'           => $sharePosterRecordInfo['award_amount'],
+                    'remark'        => '限时活动',
+                    'batch_id'      => substr(md5(uniqid()), 0, 6),
+                    'operator_type' => 0,
+                    'operator_id'   => EmployeeModel::SYSTEM_EMPLOYEE_ID,
+                ];
+                break;
+            default:
+                $sendData = [];
+                break;
+        }
+        if (empty($sendData)) {
+            SimpleLogger::info("$logTitle send award send data is empty:", []);
+            return false;
+        }
+        $sendRes = LotteryGrantAwardService::sendAward($sendData);
+        SimpleLogger::info("$logTitle send award request:", [$sendData, $sendRes]);
+        if (!$sendRes) {
+            return false;
+        }
+        LimitTimeActivitySharePosterModel::updateSendAwardStatusIsSuccess($sharePosterRecordInfo['id']);
+        SimpleLogger::info("$logTitle send award success:", [$sharePosterRecordInfo]);
+        return true;
+    }
+
+
 }
