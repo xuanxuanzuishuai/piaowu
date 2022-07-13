@@ -33,10 +33,12 @@ class LimitTimeActivityAwardRuleModel extends Model
     /**
      * 获取奖励规则
      * @param $activityId
+     * @param string $key
      * @return array
      */
-    public static function getActivityAwardRule($activityId)
+    public static function getActivityAwardRule($activityId, $key = '')
     {
-        return self::getRecords(['activity_id' => $activityId]);
+        $list = self::getRecords(['activity_id' => $activityId]);
+        return empty($list) ? $list : array_column($list, null, $key);
     }
 }

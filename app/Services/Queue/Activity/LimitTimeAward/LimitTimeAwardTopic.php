@@ -9,8 +9,9 @@ use Exception;
 
 class LimitTimeAwardTopic extends BaseTopic
 {
-    const TOPIC_NAME                   = "limit_time_award";
+    const TOPIC_NAME                         = "limit_time_award";
     const EVENT_TYPE_SHARE_POSTER_AUTO_CHECK = 'share_poster_auto_check'; //自动审核海报
+    const EVENT_TYPE_SEND_AWARD              = 'send_award'; // 发放奖励
 
     /**
      * 构造函数

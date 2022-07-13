@@ -20,28 +20,7 @@ class LotteryGrantAwardService
 {
     public static function grantAward($params)
     {
-        switch ($params['type']) {
-            case Constants::AWARD_TYPE_TIME:
-                $res = self::grantTime($params);
-                break;
-            case Constants::AWARD_TYPE_GOLD_LEAF:
-                $res = self::grantGoldLeaf($params);
-                break;
-            case Constants::AWARD_TYPE_MAGIC_STONE:
-                $res = self::grantMagicStone($params);
-                break;
-            case Constants::AWARD_TYPE_TYPE_ENTITY:
-                $res = self::grantEntity($params);
-                break;
-            case Constants::AWARD_TYPE_TYPE_LESSON:
-                $res = self::grantLesson($params);
-                break;
-            case Constants::AWARD_TYPE_TYPE_NOTE:
-                $res = self::grantNote($params);
-                break;
-            default:
-                return false;
-        }
+        $res = self::sendAward($params);
         if ($res) {
             $update = [
                 'batch_id'    => $params['batch_id'] ?? '',
@@ -197,5 +176,37 @@ class LotteryGrantAwardService
             return false;
         }
         return true;
+    }
+
+    /**
+     * 发送奖励
+     * @param $params
+     * @return bool
+     */
+    public static function sendAward($params)
+    {
+        switch ($params['type']) {
+            case Constants::AWARD_TYPE_TIME:
+                $res = self::grantTime($params);
+                break;
+            case Constants::AWARD_TYPE_GOLD_LEAF:
+                $res = self::grantGoldLeaf($params);
+                break;
+            case Constants::AWARD_TYPE_MAGIC_STONE:
+                $res = self::grantMagicStone($params);
+                break;
+            case Constants::AWARD_TYPE_TYPE_ENTITY:
+                $res = self::grantEntity($params);
+                break;
+            case Constants::AWARD_TYPE_TYPE_LESSON:
+                $res = self::grantLesson($params);
+                break;
+            case Constants::AWARD_TYPE_TYPE_NOTE:
+                $res = self::grantNote($params);
+                break;
+            default:
+                return false;
+        }
+        return $res;
     }
 }

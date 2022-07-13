@@ -1754,11 +1754,32 @@ class Dss extends ControllerBase
      */
     public function limitTimeActivitySharePosterApproval(Request $request, Response $response): Response
     {
+        $rules = [
+            [
+                'key' => 'record_ids',
+                'type' => 'required',
+                'error_code' => 'record_id_is_required'
+            ],
+            [
+                'key' => 'activity_id',
+                'type' => 'required',
+                'error_code' => 'activity_id_is_required'
+            ],
+            [
+                'key' => 'employee_id',
+                'type' => 'required',
+                'error_code' => 'employee_id_is_required'
+            ],
+        ];
         $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
         list($page, $count) = Util::formatPageCount($params);
         $params['app_id'] = Constants::SMART_APP_ID;
-        $data = LimitTimeActivityAdminService::getFilterAfterActivityList($params, $page, $count);
-        return HttpHelper::buildResponse($response, $data);
+        LimitTimeActivityAdminService::approvalPoster($params, $page, $count);
+        return HttpHelper::buildResponse($response, []);
     }
 
     /**
