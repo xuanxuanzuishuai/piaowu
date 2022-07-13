@@ -12,23 +12,25 @@ use App\Models\EmployeeModel;
 use App\Models\LimitTimeActivity\LimitTimeActivitySharePosterModel;
 use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
+use App\Services\Activity\LimitTimeActivity\LimitTimeActivityAdminService;
 use App\Services\Activity\Lottery\LotteryServices\LotteryGrantAwardService;
 use App\Services\AutoCheckPicture;
 
 class LimitTimeAwardConsumerService
 {
-    private $autoCheckStatusCacheKey            = 'lta_stop_auto_check';
+    private $autoCheckStatusCacheKey = 'lta_stop_auto_check';
     private $sharePosterCheckLockCacheKeyPrefix = 'lta_auto_check_lock';
 
     /**
      * 分享海报自动审核
      * @param $paramsData
      * @return bool
+     * @throws RunTimeException
      */
     public function sharePosterAutoCheck($paramsData): bool
     {
         //检测自动审核功能是否开启
-        $redis = RedisDB::getConn();
+        $redis           = RedisDB::getConn();
         $autoCheckStatus = $redis->get($this->autoCheckStatusCacheKey);
         if ($autoCheckStatus === 'no') {
             return false;
@@ -55,6 +57,7 @@ class LimitTimeAwardConsumerService
             [
                 'image_path',
                 'activity_id',
+                'app_id',
             ]);
         if (empty($sharePosterData)) {
             Util::sendFsWaringText('限时有奖活动，自动审核消费者接收了无效的海报上传记录ID', $_ENV["FEISHU_DEVELOPMENT_TECHNOLOGY_ALERT_ROBOT"]);
@@ -64,10 +67,28 @@ class LimitTimeAwardConsumerService
         list($status, $errCode) = AutoCheckPicture::checkByOcr($imagePath, $paramsData['msg_body']);
         if ($status > 0) {
             //自动识别通过
-            //todo
+            LimitTimeActivityAdminService::approvalPoster(
+                [$paramsData['msg_body']['share_poster_id']],
+                [
+                    'app_id'      => $sharePosterData['app_id'],
+                    'activity_id' => $sharePosterData['activity_id'],
+                    'employee_id' => EmployeeModel::SYSTEM_EMPLOYEE_ID,
+                    'remark'      => ''
+                ]);
         } elseif (!empty($errCode)) {
+            //识别失败
             $reasonArr = AutoCheckPicture::formatAutoCheckErrorCodeMapToSystemErrorCode($errCode);
-            //todo
+            LimitTimeActivityAdminService::refusedPoster(
+                $paramsData['msg_body']['share_poster_id'],
+                [
+                    'app_id'      => $sharePosterData['app_id'],
+                    'activity_id' => $sharePosterData['activity_id'],
+                    'employee_id' => EmployeeModel::SYSTEM_EMPLOYEE_ID,
+                    'reason'      => $reasonArr,
+                    'remark'      => ''
+                ],
+                SharePosterModel::VERIFY_STATUS_WAIT
+            );
         }
         return true;
     }
@@ -80,7 +101,7 @@ class LimitTimeAwardConsumerService
     public function sendAward($paramsData): bool
     {
         $logTitle = 'limit time award send award';
-        $time = time();
+        $time     = time();
         SimpleLogger::info("$logTitle params:", $paramsData);
         $recordId = $paramsData['record_id'] ?? 0;
         if (empty($recordId)) {

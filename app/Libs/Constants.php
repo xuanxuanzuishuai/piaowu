@@ -148,15 +148,6 @@ class Constants
     const AWARD_TYPE_TYPE_ENTITY = 4;//智能业务线：实物
     const AWARD_TYPE_TYPE_LESSON = 5;//真人业务线：课程
     const AWARD_TYPE_MAGIC_STONE = 3;//真人业务线：魔法石
-    //op系统客户端奖品类型对外映射关系
-    const AWARD_TYPE_MAP = [
-        self::AWARD_TYPE_TIME        => self::AWARD_TYPE_TIME,
-        self::AWARD_TYPE_GOLD_LEAF   => self::ERP_ACCOUNT_NAME_GOLD_LEFT,
-        self::AWARD_TYPE_TYPE_NOTE   => self::AWARD_TYPE_TYPE_NOTE,
-        self::AWARD_TYPE_TYPE_ENTITY => self::AWARD_TYPE_TYPE_ENTITY,
-        self::AWARD_TYPE_TYPE_LESSON  => self::AWARD_TYPE_TYPE_LESSON,
-        self::AWARD_TYPE_MAGIC_STONE  => self::ERP_ACCOUNT_NAME_MAGIC,
-    ];
 
     // 转介绍奖励规则配置身份
     const REFERRAL_INVITER_ROOT                 = 1;    // 身份状态跟节点

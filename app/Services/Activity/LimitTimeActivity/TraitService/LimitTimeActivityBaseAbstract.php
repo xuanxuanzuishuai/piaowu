@@ -4,10 +4,10 @@ namespace App\Services\Activity\LimitTimeActivity\TraitService;
 
 use App\Libs\AliOSS;
 use App\Libs\DictConstants;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\LimitTimeActivity\LimitTimeActivityModel;
-use App\Models\LimitTimeActivity\LimitTimeActivitySharePosterModel;
 use App\Models\OperationActivityModel;
 use App\Models\TemplatePosterModel;
 use App\Services\DictService;
@@ -66,12 +66,13 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
     }
 
     /**
-     * 获取活动基础数据
-     * @param int $appId
+     * 获取活动数据，并检测活动参与条件
      * @param int $countryCode
+     * @param int $firstPayVipTime
      * @return array
+     * @throws RunTimeException
      */
-    public function getActivityBaseData(int $appId, int $countryCode): array
+    public function getActivity(int $countryCode, int $firstPayVipTime): array
     {
         //查询活动
         $nowTime = time();
@@ -79,14 +80,26 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
             'start_time_e'          => $nowTime,
             'end_time_s'            => $nowTime,
             'enable_status'         => OperationActivityModel::ENABLE_STATUS_ON,
-            'app_id'                => $appId,
+            'app_id'                => $this->appId,
             'activity_country_code' => OperationActivityModel::getWeekActivityCountryCode($countryCode),
         ];
-        $activityInfo = LimitTimeActivityModel::searchList($where, [0, 1], [], self::RETURN_ACTIVITY_BASE_DATA_FIELDS);
-        if (empty($activityInfo[0])) {
-            return [];
+        $activityList = LimitTimeActivityModel::searchList($where, [0, 1], [], self::RETURN_ACTIVITY_BASE_DATA_FIELDS);
+        if (empty($activityList[0])) {
+            throw new RunTimeException(['no_in_progress_activity']);
         }
-        return $activityInfo[0][0];
+        $activityInfo= $activityList[0][0];
+        //部分付费
+        if ($activityInfo['target_user_type'] == OperationActivityModel::TARGET_USER_PART) {
+            $filterWhere   = json_decode($activityInfo['target_user'], true);
+            $invitationNum = $this->getStudentReferralOrBuyTrailCount();
+            //首次付费时间校验/邀请人数量检验
+            if ($firstPayVipTime < $filterWhere['target_user_first_pay_time_start'] ||
+                $firstPayVipTime > $filterWhere['target_user_first_pay_time_end'] ||
+                $invitationNum < $filterWhere['invitation_num']) {
+                throw new RunTimeException(['no_in_progress_activity']);
+            }
+        }
+        return $activityInfo;
     }
 
     /**

@@ -9,6 +9,7 @@ use App\Libs\MysqlDB;
 use App\Models\Model;
 use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
+use Medoo\Medoo;
 
 class LimitTimeActivitySharePosterModel extends Model
 {
@@ -60,22 +61,21 @@ class LimitTimeActivitySharePosterModel extends Model
         if (!empty($params['task_num'])) {
             $where['sp.task_num'] = $params['task_num'];
         }
-        if (!empty($params['order'])) {
-            $where['ORDER'] = $params['order'];
-        }
         if (!empty($params['group'])) {
             $where['GROUP'] = $params['group'];
-        }
-        if ($page > 0) {
-            $where['LIMIT'] = [($page - 1) * $limit, $limit];
+            $countCol       = Medoo::raw("COUNT(DISTINCT " . implode(',', $params['group']) . ")");
         }
         // 搜索条件不能为空
         if (empty($where)) {
             return [[], 0];
         }
         //获取数据
-        $db    = MysqlDB::getDB();
-        $total = $db->count(self::$table . '(sp)', $where);
+        $db = MysqlDB::getDB();
+        if (!empty($countCol)) {
+            $total = (int)$db->get(self::$table . '(sp)', ['count' => $countCol], $where)['count'];
+        } else {
+            $total = $db->count(self::$table . '(sp)', $where);
+        }
         if ($total <= 0) {
             return [[], 0];
         }
@@ -95,6 +95,12 @@ class LimitTimeActivitySharePosterModel extends Model
             ],
             $fields
         );
+        if (!empty($params['order'])) {
+            $where['ORDER'] = $params['order'];
+        }
+        if ($page > 0) {
+            $where['LIMIT'] = [($page - 1) * $limit, $limit];
+        }
         $list = $db->select(
             self::$table . '(sp)',
             [
@@ -114,7 +120,7 @@ class LimitTimeActivitySharePosterModel extends Model
     public static function getActivityVerifyPassNum($studentUUID, $activityId)
     {
         return self::getCount([
-            'student_uuid'    => $studentUUID,
+            'student_uuid'  => $studentUUID,
             'activity_id'   => $activityId,
             'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
         ]);
@@ -129,7 +135,7 @@ class LimitTimeActivitySharePosterModel extends Model
     {
         return self::updateRecord($recordId, [
             'send_award_status' => OperationActivityModel::SEND_AWARD_STATUS_GIVE,
-            'send_award_time' => time(),
+            'send_award_time'   => time(),
         ]);
     }
 }

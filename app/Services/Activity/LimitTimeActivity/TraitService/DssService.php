@@ -4,8 +4,9 @@ namespace App\Services\Activity\LimitTimeActivity\TraitService;
 
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\SimpleLogger;
 use App\Models\Dss\DssStudentModel;
-use App\Models\OperationActivityModel;
+use App\Models\StudentReferralStudentStatisticsModel;
 use App\Services\StudentService;
 
 /**
@@ -64,37 +65,22 @@ class DssService extends LimitTimeActivityBaseAbstract
     public function studentPayStatusCheck(): array
     {
         //学生信息
-        $userDetail                   = StudentService::dssStudentStatusCheck($this->studentInfo['user_id'], false,
+        $userDetail = StudentService::dssStudentStatusCheck($this->studentInfo['user_id'], false,
             null);
-        $userDetail['student_status'] = 2;
         if ($userDetail['student_status'] != DssStudentModel::STATUS_BUY_NORMAL_COURSE) {
+            SimpleLogger::error('student status no satisfy', [$userDetail]);
             throw new RunTimeException(['no_in_progress_activity']);
         }
         return $userDetail;
     }
 
     /**
-     * 获取活动数据，并检测活动参与条件
-     * @param int $countryCode
-     * @param int $firstPayVipTime
-     * @return array
-     * @throws RunTimeException
+     * 获取智能账户邀请购买体验卡并且创建转介绍关系的学生数量
+     * @return int
      */
-    public function getActivity(int $countryCode, int $firstPayVipTime): array
+    public function getStudentReferralOrBuyTrailCount(): int
     {
-        //查询活动
-        $activityInfo = self::getActivityBaseData($this->appId, $countryCode);
-        if (empty($activityInfo)) {
-            throw new RunTimeException(['no_in_progress_activity']);
-        }
-        //部分付费
-        if ($activityInfo['target_user_type'] == OperationActivityModel::TARGET_USER_PART) {
-            $filterWhere = json_decode($activityInfo[0]['target_user'], true);
-            if ($firstPayVipTime < $filterWhere['target_use_first_pay_time_start'] ||
-                $firstPayVipTime > $filterWhere['target_use_first_pay_time_end']) {
-                throw new RunTimeException(['no_in_progress_activity']);
-            }
-        }
-        return $activityInfo;
+        return StudentReferralStudentStatisticsModel::getReferralCountGroupByStage($this->studentInfo['user_id'],
+            StudentReferralStudentStatisticsModel::STAGE_TRIAL);
     }
 }

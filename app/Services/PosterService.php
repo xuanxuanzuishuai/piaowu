@@ -660,7 +660,7 @@ class PosterService
     }
 
     /**
-     * 海报批量打水印
+     * 批量合成海报和二维码
      * @param int $appId
      * @param int $busiesType
      * @param int $landingType
@@ -673,7 +673,7 @@ class PosterService
      * @return array
      * @throws RunTimeException
      */
-    public static function posterFormatDealWaterMark(
+    public static function batchSynthesizePosterAndQr(
         int $appId,
         int $busiesType,
         int $landingType,
@@ -748,6 +748,6 @@ class PosterService
             );
             $item['poster_url'] = $poster['poster_save_full_path'];
         }
-        return $userQrParams;
+        return $posterList;
     }
 }

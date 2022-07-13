@@ -1341,8 +1341,6 @@ class SharePosterService
             $data['reason_str'][] = $data['remark'];
         }
         $data['reason_str'] = implode('/', $data['reason_str']);
-        //奖励数据
-        $data['award_type'] = Constants::AWARD_TYPE_MAP[$data['award_type']];
         return $data;
     }
 }

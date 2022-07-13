@@ -80,7 +80,7 @@ class LimitTimeActivityClientService
             $sharePosterList = array_merge($sharePosterList, $pv);
         }, $sharePosterGroupList);
         //海报打水印
-        $data['list'] = PosterService::posterFormatDealWaterMark(
+        $data['list'] = PosterService::batchSynthesizePosterAndQr(
             $serviceObj->appId,
             DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP,
             DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
@@ -105,8 +105,8 @@ class LimitTimeActivityClientService
             //学生状态检测
             $userDetail = $serviceObj->studentPayStatusCheck();
             //获取活动数据
-            $activityData        = $serviceObj->getActivity($userDetail['student_info']['country_code'],
-                $userDetail['student_info']['pay_vip_time']);
+            $activityData        = $serviceObj->getActivity($serviceObj->studentInfo['country_code'],
+                $serviceObj->studentInfo['pay_vip_time']);
             $activityData['ext'] = [
                 'award_rule' => Util::textDecode($activityData['award_rule']),
                 'remark'     => Util::textDecode($activityData['remark']),
@@ -137,7 +137,7 @@ class LimitTimeActivityClientService
         ];
         $records       = LimitTimeActivitySharePosterModel::searchJoinRecords($serviceObj->appId,
             [$serviceObj->studentInfo['uuid']],
-            ['group' => ['activity_id'], 'order' => ['id' => 'DESC']], $page,
+            ['group' => ['sp.activity_id'], 'order' => ['sp.id' => 'DESC']], $page,
             $limit);
         if (empty($records[0])) {
             return $recordsResult;
@@ -179,6 +179,7 @@ class LimitTimeActivityClientService
             //活动基础数据
             $recordsResult['list'][] = [
                 'activity_id'        => $info['activity_id'],
+                'activity_type'      => $info['activity_type'],
                 'task_num_count'     => count($activityAwardRuleData[$info['activity_id']]),
                 'activity_name'      => $info['activity_name'] . '(' . date('m.d',
                         $info['start_time']) . '-' . date('m.d', $info['end_time']) . ')',
@@ -213,7 +214,7 @@ class LimitTimeActivityClientService
                 DictConstants::ACTIVITY_ENABLE_STATUS['type'],
             ]);
         $formatTaskList      = [];
-        $awardType           = $taskList[0]['award_type'];
+        $awardType           = next($taskList)['award_type'];
         $maxTaskNum          = max(array_column($taskList, 'task_num'));
         $tmpTotalAwardAmount = 0;
         for ($i = 1; $i <= $maxTaskNum; $i++) {
@@ -251,8 +252,9 @@ class LimitTimeActivityClientService
         if (empty($activityData)) {
             return $result;
         }
-        $taskList = LimitTimeActivityAwardRuleModel::getActivityAwardRule($activityData['activity_id']);
-        foreach ($taskList as $tv) {
+        $taskList       = LimitTimeActivityAwardRuleModel::getActivityAwardRule($activityData['activity_id']);
+        $formatTaskList = self::formatActivityTaskListData($activityData, $taskList, []);
+        foreach ($formatTaskList as $tv) {
             $result['list'][] = [
                 'activity_id' => $activityData['activity_id'],
                 'task_num'    => $tv['task_num'],
