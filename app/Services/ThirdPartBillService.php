@@ -231,7 +231,11 @@ class ThirdPartBillService
         $mobiles = array_column($recordData, 'mobile');
         $data = (new QingChen())->isHaveTrial($mobiles);
         if (!empty($data['have_trial'])){
-            throw new RunTimeException(['has_trialed_records', 'import'], ['list' => $data['have_trial']]);
+            $mobileArr = [];
+            foreach ($data['have_trial'] as $value) {
+                $mobileArr[] = ['mobile' => $value];
+            }
+            throw new RunTimeException(['has_trialed_records', 'import'], ['list' => $mobileArr]);
         }
         return true;
     }
@@ -275,7 +279,7 @@ class ThirdPartBillService
             $map[':mobile'] = $params['mobile'];
         }
         if (!empty($params['uuid'])) {
-            $where .= ' and s.uuid = :uuid ';
+            $where .= ' and t.uuid = :uuid ';
             $map[':uuid'] = $params['uuid'];
         }
         if (!empty($params['trade_no'])) {
@@ -439,7 +443,11 @@ class ThirdPartBillService
         }
 
         //去重检测
-        $checkIsExists = ThirdPartBillModel::getRecord(['student_id' => $data['student_id'], 'trade_no' => $params['trade_no'], 'status' => ThirdPartBillModel::STATUS_SUCCESS], ['id']);
+        $checkIsExists = ThirdPartBillModel::getRecord(['student_id'         => $data['student_id'],
+                                                        'trade_no'           => $params['trade_no'],
+                                                        'status'             => ThirdPartBillModel::STATUS_SUCCESS,
+                                                        'target_business_id' => Constants::SMART_APP_ID
+        ], ['id']);
         if (!empty($checkIsExists)) {
             SimpleLogger::error('third part bill have exists', ['data' => $checkIsExists]);
             return true;
@@ -513,7 +521,11 @@ class ThirdPartBillService
         ];
 
         //去重检测
-        $checkIsExists = ThirdPartBillModel::getRecord(['mobile' => $data['mobile'], 'trade_no' => $params['trade_no'], 'status' => ThirdPartBillModel::STATUS_SUCCESS], ['id']);
+        $checkIsExists = ThirdPartBillModel::getRecord(['mobile'             => $data['mobile'],
+                                                        'trade_no'           => $params['trade_no'],
+                                                        'status'             => ThirdPartBillModel::STATUS_SUCCESS,
+                                                        'target_business_id' => Constants::QC_APP_ID
+        ], ['id']);
         if (!empty($checkIsExists)) {
             SimpleLogger::error('qc third part bill have exists', ['data' => $checkIsExists]);
             return false;

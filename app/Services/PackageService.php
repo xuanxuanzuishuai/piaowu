@@ -198,7 +198,7 @@ class PackageService
             case Constants::QC_APP_ID;
                 $requestParams = [
                     'sale_shop'        => 8,
-                    'exclude_sub_type' => 11001,
+                    'exclude_sub_type' => '3001,4010,2001,2002,2003,1001,1002,1003,1004,5001,3002,3003,3004,6001,1007,1008,7001,1005,1006,8001,8002,8002,8002,9001,10001,10002,10003,10004,5002,5003,5004,11001,11003,3005,5005',
                     'count'            => 10000,
                 ];
                 if (!empty($params['package_name'])) {
