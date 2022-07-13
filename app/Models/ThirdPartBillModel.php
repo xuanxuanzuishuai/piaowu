@@ -78,10 +78,8 @@ class ThirdPartBillModel extends Model
                         t.student_id,
                         t.business_id,
                         t.target_business_id,
-                        s.uuid,
-                        s.name,
-                        s.mobile,
-                        s.country_code,
+                        t.uuid,
+                        t.mobile,
                         t.trade_no,
                         t.is_new,
                         t.pay_time,
@@ -105,13 +103,39 @@ class ThirdPartBillModel extends Model
                         end package_name,
                         c.name channel_name
                     FROM " . $opThirdPartBillTable . " t
-                       LEFT JOIN " . $erpStudentModel . " s on t.uuid = s.uuid
                        LEFT JOIN " . $dssChannelTable . " c on c.id = t.channel_id
                        " . $thirdJoinWhere . "
                     WHERE " . $where . "
                     ORDER BY t.id DESC
                     LIMIT " . $offset . "," . $count;
         $data['records'] = $db->queryAll($listSql, $map);
+        //拼接用户信息
+        $data['records'] = self::getUserInfo($data['records']);
         return $data;
+    }
+
+    /**
+     * 因为erp_student与订单导入表字符集不同，无法使用索引，且存在跨库操作
+     * 为加快检索速度，用户数据单独查询，并进行组装
+     * @param $records
+     * @return mixed
+     */
+    public static function getUserInfo($records)
+    {
+        if (empty($records)) {
+            return $records;
+        }
+
+        $uuidArr = array_column($records, 'uuid');
+        $studentInfo = ErpStudentModel::getRecords(['uuid' => $uuidArr], ['uuid', 'name', 'country_code']);
+        $studentInfoKeyUuid = array_column($studentInfo, null, 'uuid');
+        if (empty($studentInfoKeyUuid)) {
+            return $records;
+        }
+        foreach ($records as $key => $value) {
+            $records[$key]['name'] = $studentInfoKeyUuid[$value['uuid']]['name'] ?? '';
+            $records[$key]['country_code'] = $studentInfoKeyUuid[$value['uuid']]['country_code'] ?? '';
+        }
+        return $records;
     }
 }
