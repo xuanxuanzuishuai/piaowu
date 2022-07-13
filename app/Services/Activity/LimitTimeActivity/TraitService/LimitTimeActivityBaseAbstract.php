@@ -157,8 +157,20 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
         $info['format_target_user_first_pay_time_end']   = !empty($activityInfo['target_user_first_pay_time_end']) ? date("Y-m-d H:i:s",
             $activityInfo['target_user_first_pay_time_end']) : '';
         $info['award_rule']                              = Util::textDecode($info['award_rule']);
-        $info['format_target_user']                      = json_decode($activityInfo['target_user'], true);
+        $info['format_target_user']                      = self::formatTargetUser(json_decode($activityInfo['target_user'], true));
         return $info;
+    }
+
+    /**
+     * 格式化目标用户信息
+     * @param $targetUser
+     * @return mixed
+     */
+    public static function formatTargetUser($targetUser)
+    {
+        !empty($targetUser['target_user_first_pay_time_start']) && $targetUser['format_target_user_first_pay_time_start'] = date("Y-m-d H:i:s", $targetUser['target_user_first_pay_time_start']);
+        !empty($targetUser['target_user_first_pay_time_end']) && $targetUser['format_target_user_first_pay_time_end'] = date("Y-m-d H:i:s", $targetUser['target_user_first_pay_time_end']);
+        return $targetUser;
     }
 
     /**
