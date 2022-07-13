@@ -51,7 +51,12 @@ class Bill extends ControllerBase
                 'key' => 'business_id',
                 'type' => 'required',
                 'error_code' => 'business_id_is_required'
-            ]
+            ],
+            [
+                'key' => 'target_business_id',
+                'type' => 'required',
+                'error_code' => 'target_business_id_is_required'
+            ],
         ];
         $params = $request->getParams();
         $result = Valid::validate($params, $rules);

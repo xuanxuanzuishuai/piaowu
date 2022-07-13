@@ -9,7 +9,9 @@
 namespace App\Services;
 
 use App\Libs\AliOSS;
+use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Erp;
 use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Erp\ErpGiftGroupV1Model;
 use App\Models\Erp\ErpPackageGoodsV1Model;
@@ -182,5 +184,46 @@ class PackageService
         }
 
         return $package;
+    }
+
+
+    /**
+     * 查询产品包信息
+     * @param $params
+     * @return array
+     */
+    public static function importReady($params)
+    {
+        switch ($params['app_id']) {
+            case Constants::QC_APP_ID;
+                $requestParams = [
+                    'sale_shop'        => 8,
+                    'exclude_sub_type' => '3001,4010,2001,2002,2003,1001,1002,1003,1004,5001,3002,3003,3004,6001,1007,1008,7001,1005,1006,8001,8002,8002,8002,9001,10001,10002,10003,10004,5002,5003,5004,11001,11003,3005,5005',
+                    'count'            => 10000,
+                ];
+                if (!empty($params['package_name'])) {
+                    $requestParams['package_name'] = $params['package_name'];
+                }
+                break;
+            default:
+                return [];
+        }
+        $res = (new Erp())->erpPackageList($requestParams);
+        if (!empty($res['data'])) {
+            foreach ($res['data']['packages'] as $value) {
+                $priceRate = array_column($value['price_v1']['rate'], 'rate', 'currency_id');
+                $single = [
+                    'id'         => $value['id'],
+                    'name'       => $value['name'],
+                    'price_info' => $value['price_v1']['price'][0],
+                ];
+                if (!empty($priceRate)) {
+                    $single['price_info']['rate'] = $priceRate[$value['price_v1']['price'][0]['currency_id']] ?? 0;
+                    $single['price_money'] = $single['price_info']['amount'] * $single['price_info']['rate'] / 10000 / 100;
+                }
+                $data[] = $single;
+            }
+        }
+        return $data ?? [];
     }
 }

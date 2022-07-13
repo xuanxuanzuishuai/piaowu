@@ -8,9 +8,11 @@
 
 namespace App\Services;
 
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\QingChen;
 use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
@@ -67,7 +69,7 @@ class ThirdPartBillService
                         'operator_id'  => $operatorId,
                         'pay_time'     => $now,
                         'create_time'  => $now,
-                        'dss_amount'   => ($D == '') ? '' : $D,
+                        'dss_amount'   => ($D == '') ? 0 : $D,
                     ];
                 }
             }
@@ -121,29 +123,29 @@ class ThirdPartBillService
         if (!empty($invalidCountryCode)) {
             throw new RunTimeException(['country_code_is_required', 'import'], ['list' => $invalidCountryCode]);
         }
+
+        $recordNum = count($data);
         // 检查数据是否为空
-        if (count($data) == 0) {
+        if ($recordNum == 0) {
             throw new RunTimeException(['data_can_not_be_empty', 'import']);
-        }
-        $package = ErpPackageV1Model::packageDetail($params['package_id']);
-        if ($package['sub_type'] != DssCategoryV1Model::DURATION_TYPE_NORMAL) {
-            // 检查是否已经有发货记录
-            $records = PayServices::trialedUserByMobile(array_column($data, 'mobile'));
-            if (!empty($records)) {
-                throw new RunTimeException(['has_trialed_records', 'import'], ['list' => $records]);
-            }
-            //检查用户是否已是年卡用户
-            $mobiles = DssStudentModel::getRecords(['mobile' => array_column($data, 'mobile'),'has_review_course'=> DssStudentModel::REVIEW_COURSE_1980], ['mobile']);
-            if (!empty($mobiles)) {
-                throw new RunTimeException(['has_vip_student', 'import'], ['list' => $mobiles]);
+        } else {
+            $maxRecord = [
+                Constants::SMART_APP_ID => 100,
+                Constants::QC_APP_ID    => 200,
+            ];
+            if ($recordNum > $maxRecord[$params['target_business_id']]) {
+                throw new RunTimeException(['over_max_allow_num', 'import']);
             }
         }
+
+        //针对不同业务线的条件检查
+        self::checkoutBusinessCondition($params,$data);
 
         if (count($invalidDssAmount) > 0) {
             throw new RunTimeException(['bill_dss_amount_error', 'import'], ['list' => $invalidDssAmount]);
         }
         // 学生手机号重复
-        if (count($data) != count(array_unique(array_column($data, 'mobile')))) {
+        if ($recordNum != count(array_unique(array_column($data, 'mobile')))) {
             throw new RunTimeException(['mobile_repeat', 'import']);
         }
 
@@ -163,6 +165,7 @@ class ThirdPartBillService
             $v['channel_id'] = $params['channel_id'];
             $v['package_id'] = $params['package_id'];
             $v['business_id'] = $params['business_id'];
+            $v['target_business_id'] = $params['target_business_id'];
             $v['third_identity_id'] = $params['third_identity_id'];
             $v['third_identity_type'] = $params['third_identity_type'];
             $v['package_v1'] = ThirdPartBillModel::PACKAGE_V1;
@@ -171,6 +174,70 @@ class ThirdPartBillService
         // 表格内容发送至消息队列
         self::thirdBillPush($data);
         return $data;
+    }
+
+    /**
+     * 业务线特殊检查要求
+     * @param $params
+     * @param $recordData
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function checkoutBusinessCondition($params,$recordData)
+    {
+        switch ($params['target_business_id']){
+            case Constants::SMART_APP_ID:
+                return self::smartCondition($params['package_id'],$recordData);
+            case Constants::QC_APP_ID:
+                return self::qcCondition($recordData);
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * 智能陪练检查
+     * @param $packageId
+     * @param $recordData
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function smartCondition($packageId,$recordData)
+    {
+        $package = ErpPackageV1Model::packageDetail($packageId);
+        if ($package['sub_type'] != DssCategoryV1Model::DURATION_TYPE_NORMAL) {
+            // 检查是否已经有发货记录
+            $records = PayServices::trialedUserByMobile(array_column($recordData, 'mobile'));
+            if (!empty($records)) {
+                throw new RunTimeException(['has_trialed_records', 'import'], ['list' => $records]);
+            }
+            //检查用户是否已是年卡用户
+            $mobiles = DssStudentModel::getRecords(['mobile' => array_column($recordData, 'mobile'),'has_review_course'=> DssStudentModel::REVIEW_COURSE_1980], ['mobile']);
+            if (!empty($mobiles)) {
+                throw new RunTimeException(['has_vip_student', 'import'], ['list' => $mobiles]);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 根据手机号（批量）检查是否购买过体验课
+     * @param $recordData
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function qcCondition($recordData)
+    {
+        $mobiles = array_column($recordData, 'mobile');
+        $data = (new QingChen())->isHaveTrial($mobiles);
+        if (!empty($data['have_trial'])){
+            $mobileArr = [];
+            foreach ($data['have_trial'] as $value) {
+                $mobileArr[] = ['mobile' => $value];
+            }
+            throw new RunTimeException(['has_trialed_records', 'import'], ['list' => $mobileArr]);
+        }
+        return true;
     }
 
     /**
@@ -212,7 +279,7 @@ class ThirdPartBillService
             $map[':mobile'] = $params['mobile'];
         }
         if (!empty($params['uuid'])) {
-            $where .= ' and s.uuid = :uuid ';
+            $where .= ' and t.uuid = :uuid ';
             $map[':uuid'] = $params['uuid'];
         }
         if (!empty($params['trade_no'])) {
@@ -267,6 +334,12 @@ class ThirdPartBillService
             $map[':business_id'] = $params['business_id'];
         }
 
+        //订单导入-目标业务线ID
+        if (!empty($params['target_business_id'])) {
+            $where .= ' and t.target_business_id = :target_business_id ';
+            $map[':target_business_id'] = $params['target_business_id'];
+        }
+
         //根据第三方角色搜索
         $thirdIdentityTableName = '';
         if (!empty($params['third_identity_id']) && !empty($params['third_identity_type'])) {
@@ -281,9 +354,11 @@ class ThirdPartBillService
         $billList = ThirdPartBillModel::list($where, $map, $page, $count, $thirdIdentityTableName);
         if (!empty($billList['records'])) {
             $statusDict = DictConstants::getSet(DictConstants::THIRD_PART_BILL_STATUS);
+            $appIdDict = DictService::getTypeMap('import_target_app_id');
             foreach ($billList['records'] as $k => &$v) {
                 $v['status_zh'] = $statusDict[$v['status']];
                 $v['mobile'] = $v['country_code'] . '-' . Util::hideUserMobile($v['mobile']);
+                $v['target_business_name'] = $appIdDict[$v['target_business_id']] ?? '未知';
                 $records[$k] = $v;
             }
         }
@@ -298,6 +373,23 @@ class ThirdPartBillService
      * @throws RunTimeException
      */
     public static function handleImport($params)
+    {
+        switch ($params['target_business_id']){
+            case Constants::SMART_APP_ID;
+                return self::handleSmartImport($params);
+            case Constants::QC_APP_ID;
+                return self::handleQcImport($params);
+        }
+        return true;
+    }
+
+    /**
+     * 智能订单导入消费逻辑
+     * @param $params
+     * @return bool|int|mixed|string|null
+     * @throws RunTimeException
+     */
+    public static function handleSmartImport($params)
     {
         //应用ID
         $appId = UserCenter::AUTH_APP_ID_AIPEILIAN_STUDENT;
@@ -315,6 +407,7 @@ class ThirdPartBillService
             'is_new' => ThirdPartBillModel::NOT_NEW,
             'create_time' => time(),
             'business_id' => empty($params['business_id']) ? $appId : $params['business_id'],
+            'target_business_id' => empty($params['target_business_id']) ? 0 : $params['target_business_id'],
             'third_identity_id' => (int)$params['third_identity_id'],
             'third_identity_type' => (int)$params['third_identity_type'],
             'paid_in_price' => $params['dss_amount'],
@@ -332,14 +425,17 @@ class ThirdPartBillService
                 $data['status'] = ThirdPartBillModel::STATUS_FAIL;
                 $data['reason'] = 'register student failed';
                 $data['student_id'] = 0;
+                $data['uuid'] = '';
                 return ThirdPartBillModel::insertRecord($data);
             } else {
                 $data['student_id'] = $result['student_id'];
+                $data['uuid'] = $result['uuid'];
                 $data['is_new'] = $result['is_new'] ? ThirdPartBillModel::IS_NEW : ThirdPartBillModel::NOT_NEW;
                 $student = DssStudentModel::getById($result['student_id']);
             }
         } else {
             $data['student_id'] = $student['id'];
+            $data['uuid'] = $student['uuid'];
         }
         //如果从库数据没有同步成功，使用接口返回值替代
         if (empty($student)) {
@@ -347,7 +443,11 @@ class ThirdPartBillService
         }
 
         //去重检测
-        $checkIsExists = ThirdPartBillModel::getRecord(['student_id' => $data['student_id'], 'trade_no' => $params['trade_no'], 'status' => ThirdPartBillModel::STATUS_SUCCESS], ['id']);
+        $checkIsExists = ThirdPartBillModel::getRecord(['student_id'         => $data['student_id'],
+                                                        'trade_no'           => $params['trade_no'],
+                                                        'status'             => ThirdPartBillModel::STATUS_SUCCESS,
+                                                        'target_business_id' => Constants::SMART_APP_ID
+        ], ['id']);
         if (!empty($checkIsExists)) {
             SimpleLogger::error('third part bill have exists', ['data' => $checkIsExists]);
             return true;
@@ -389,6 +489,62 @@ class ThirdPartBillService
                 UserRefereeService::buyDeal($student, $packageInfo, $appId, $result['data']['order_id']);
             }
         }
+        return ThirdPartBillModel::insertRecord($data);
+    }
+
+    /**
+     * 清晨订单导入消费逻辑
+     * @param $params
+     * @return false|int|mixed|string|null
+     */
+    public static function handleQcImport($params)
+    {
+        //应用ID
+        $appId = Constants::SELF_APP_ID;
+        $data = [
+            'country_code' => $params['country_code'],
+            'mobile' => $params['mobile'],
+            'trade_no' => $params['trade_no'],
+            'pay_time' => $params['pay_time'],
+            'package_id' => $params['package_id'],
+            'parent_channel_id' => $params['parent_channel_id'],
+            'channel_id' => $params['channel_id'],
+            'operator_id' => $params['operator_id'],
+            'package_v1' => $params['package_v1'],
+            'is_new' => ThirdPartBillModel::NOT_NEW,
+            'create_time' => time(),
+            'business_id' => empty($params['business_id']) ? $appId : $params['business_id'],
+            'target_business_id' => empty($params['target_business_id']) ? 0 : $params['target_business_id'],
+            'third_identity_id' => (int)$params['third_identity_id'],
+            'third_identity_type' => (int)$params['third_identity_type'],
+            'paid_in_price' => $params['dss_amount'],
+        ];
+
+        //去重检测
+        $checkIsExists = ThirdPartBillModel::getRecord(['mobile'             => $data['mobile'],
+                                                        'trade_no'           => $params['trade_no'],
+                                                        'status'             => ThirdPartBillModel::STATUS_SUCCESS,
+                                                        'target_business_id' => Constants::QC_APP_ID
+        ], ['id']);
+        if (!empty($checkIsExists)) {
+            SimpleLogger::error('qc third part bill have exists', ['data' => $checkIsExists]);
+            return false;
+        }
+
+        $result = (new QingChen())->registerAndOrder($params);
+        if ($result['code'] == 1) {
+            if ($result['error']['type'] == 'SERVER_ERROR'){
+                $data['reason'] = '清晨系统异常';
+            }else{
+                $data['reason'] = $result['error']['description'];
+            }
+            $data['status'] = ThirdPartBillModel::STATUS_FAIL;
+        } else {
+            $data['uuid'] = $result['data']['uuid'] ?? '';
+            $data['status'] = ThirdPartBillModel::STATUS_SUCCESS;
+        }
+
+        //数据写入数据表
         return ThirdPartBillModel::insertRecord($data);
     }
 }

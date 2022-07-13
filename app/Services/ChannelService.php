@@ -24,7 +24,7 @@ class ChannelService
         $where['status'] = (string)Constants::STATUS_TRUE;
         //业务线ID
         if (!empty($params['app_id'])) {
-            $where['app_id'] = (int)$params['app_id'];
+            $where['app_id'] = $params['app_id'];
         }
         if (!empty($params['name'])) {
             $where['name[~]'] = $params['name'];
