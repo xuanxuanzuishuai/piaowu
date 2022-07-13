@@ -7,6 +7,7 @@ use App\Libs\DictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\LimitTimeActivity\LimitTimeActivityModel;
+use App\Models\LimitTimeActivity\LimitTimeActivitySharePosterModel;
 use App\Models\OperationActivityModel;
 use App\Models\TemplatePosterModel;
 use App\Services\DictService;
@@ -14,14 +15,13 @@ use App\Services\DictService;
 /**
  * 活动客户端管理基础服务接口类：定义一些方法，由子类去实现
  */
-abstract class LimitTimeActivityBaseAbstract
+abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInterface
 {
     public $studentInfo = [];
     public $fromType = '';
     public $appId = 0;
     //上传截图缓存锁key前缀
     const UPLOAD_LOCK_KEY_PREFIX = "limit_time_award_upload_lock_";
-
     //活动基础字段
     const RETURN_ACTIVITY_BASE_DATA_FIELDS = [
         'a.activity_name',
@@ -54,6 +54,15 @@ abstract class LimitTimeActivityBaseAbstract
     ];
 
     /**
+     * 根据不同类型的客户端获取注册渠道ID
+     * @return array|mixed|null
+     */
+    public function getChannelByFromType()
+    {
+        return DictConstants::get(DictConstants::LIMIT_TIME_ACTIVITY_CONFIG, $this->fromType . '_channel_id');
+    }
+
+    /**
      * 获取活动基础数据
      * @param int $appId
      * @param int $countryCode
@@ -76,40 +85,6 @@ abstract class LimitTimeActivityBaseAbstract
         }
         return $activityInfo[0][0];
     }
-
-    /**
-     * 根据不同类型的客户端获取注册渠道ID
-     * @return array|mixed|null
-     */
-    public function getChannelByFromType()
-    {
-        return DictConstants::get(DictConstants::LIMIT_TIME_ACTIVITY_CONFIG, $this->fromType . '_channel_id');
-    }
-
-    /**
-     * 根据uuid批量获取用户信息
-     * @param array $uuids
-     * @param array $fields
-     * @return array
-     */
-    abstract public static function getStudentInfoByUUID(array $uuids, array $fields = []): array;
-
-    /**
-     * 根据手机号获取用户信息
-     * @param array $mobiles
-     * @param array $fields
-     * @return array
-     */
-    abstract public static function getStudentInfoByMobile(array $mobiles, array $fields = []): array;
-
-    /**
-     * 根据学生名称模糊搜索用户信息
-     * @param string $name
-     * @param array $fields
-     * @return array
-     */
-    abstract public static function getStudentInfoByName(string $name, array $fields = []): array;
-
 
     /**
      * 获取海报列表

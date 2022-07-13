@@ -469,7 +469,7 @@ class RealActivityService
             throw new RunTimeException(['share_poster_add_fail']);
         }
         //系统自动审核
-        QueueService::checkPoster(['id' => $res, 'app_id' => Constants::REAL_APP_ID]);
+        QueueService::checkPoster(['id' => $res, 'app_id' => Constants::REAL_APP_ID, 'activity_type'=>AutoCheckPicture::SHARE_POSTER_TYPE_REAL_WEEK]);
         return $res;
     }
 

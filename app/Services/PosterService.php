@@ -661,6 +661,9 @@ class PosterService
 
     /**
      * 海报批量打水印
+     * @param int $appId
+     * @param int $busiesType
+     * @param int $landingType
      * @param array $posterList
      * @param int $opActivityId
      * @param int $studentId

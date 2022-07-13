@@ -5,6 +5,7 @@ namespace App\Services\Activity\LimitTimeActivity;
 use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
@@ -17,6 +18,7 @@ use App\Models\SharePosterModel;
 use App\Services\Activity\LimitTimeActivity\TraitService\DssService;
 use App\Services\ActivityService;
 use App\Services\PosterService;
+use App\Services\Queue\Activity\LimitTimeAward\LimitTimeAwardProducerService;
 use App\Services\SharePosterService;
 use App\Services\WeekActivityService;
 
@@ -66,12 +68,17 @@ class LimitTimeActivityClientService
         ];
         //获取活动数据
         $data['activity'] = self::getStudentCanJoinActivityList($serviceObj, $studentStatus);
-        if (!empty($data['activity'])) {
-            $data['is_have_activity'] = true;
+        if (empty($data['activity'])) {
+            return $data;
         }
+        $data['is_have_activity'] = true;
         //格式化活动数据
-        $data['activity'] = ActivityService::formatData($data['activity']);
-        $sharePosterList  = $serviceObj->getSharePosterList(json_decode($data['activity']['share_poster'], true));
+        $data['activity']     = ActivityService::formatData($data['activity']);
+        $sharePosterGroupList = $serviceObj->getSharePosterList(json_decode($data['activity']['share_poster'], true));
+        $sharePosterList      = [];
+        array_map(function ($pv) use (&$sharePosterList) {
+            $sharePosterList = array_merge($sharePosterList, $pv);
+        }, $sharePosterGroupList);
         //海报打水印
         $data['list'] = PosterService::posterFormatDealWaterMark(
             $serviceObj->appId,
@@ -91,23 +98,28 @@ class LimitTimeActivityClientService
      * @param DssService $serviceObj
      * @param $studentStatus
      * @return array
-     * @throws RunTimeException
      */
     private static function getStudentCanJoinActivityList(DssService $serviceObj, &$studentStatus): array
     {
-        //学生状态检测
-        $userDetail = $serviceObj->studentPayStatusCheck();
-        //获取活动数据
-        $activityData        = $serviceObj->getActivity($userDetail['student_info']['country_code'],
-            $userDetail['student_info']['pay_vip_time']);
-        $activityData['ext'] = [
-            'award_rule' => Util::textDecode($activityData['award_rule']),
-            'remark'     => Util::textDecode($activityData['remark']),
-        ];
-        unset($activityData['award_rule']);
-        unset($activityData['remark']);
-        $studentStatus = $userDetail['student_status'];
-        return $activityData;
+        try {
+            //学生状态检测
+            $userDetail = $serviceObj->studentPayStatusCheck();
+            //获取活动数据
+            $activityData        = $serviceObj->getActivity($userDetail['student_info']['country_code'],
+                $userDetail['student_info']['pay_vip_time']);
+            $activityData['ext'] = [
+                'award_rule' => Util::textDecode($activityData['award_rule']),
+                'remark'     => Util::textDecode($activityData['remark']),
+            ];
+            unset($activityData['award_rule']);
+            unset($activityData['remark']);
+            $studentStatus = $userDetail['student_status'];
+            return $activityData;
+        } catch (RunTimeException $e) {
+            SimpleLogger::error('activity condition check error', [$e->getMessage()]);
+            return [];
+        }
+
     }
 
     /**
@@ -228,7 +240,6 @@ class LimitTimeActivityClientService
      * 获取可参与活动的任务列表
      * @param DssService $serviceObj
      * @return array|array[]
-     * @throws RunTimeException
      */
     public static function activityTaskList(DssService $serviceObj): array
     {
@@ -236,7 +247,7 @@ class LimitTimeActivityClientService
             'list' => [],
         ];
         //获取参与记录
-        $activityData = self::getStudentCanJoinActivityList($serviceObj);
+        $activityData = self::getStudentCanJoinActivityList($serviceObj, $studentStatus);
         if (empty($activityData)) {
             return $result;
         }
@@ -376,7 +387,7 @@ class LimitTimeActivityClientService
         }
         //加锁防止并发操作
         $lockRes = Util::setLock($serviceObj::UPLOAD_LOCK_KEY_PREFIX . $serviceObj->studentInfo['uuid'] . $activityId . $taskNum,
-            10, 0);
+            5, 0);
         if (empty($lockRes)) {
             throw new RunTimeException(['frequent_operation']);
         }
@@ -401,15 +412,18 @@ class LimitTimeActivityClientService
         //不存在或审核不通过：写入数据
         if (empty($recordsDetail[0][0]) || $recordsDetail[0][0]['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
             $data['create_time'] = $time;
-            $affectRows          = LimitTimeActivitySharePosterModel::insertRecord($data);
+            $insertId            = $affectRows = LimitTimeActivitySharePosterModel::insertRecord($data);
         } else {
             //已存在：待审核修改数据
             $data['update_time'] = $time;
             $affectRows          = LimitTimeActivitySharePosterModel::updateRecord($recordsDetail[0][0]['id'], $data);
+            $insertId            = $recordsDetail[0][0]['id'];
         }
         if (empty($affectRows)) {
             throw new RunTimeException(['share_poster_add_fail']);
         }
+        //系统自动审核
+        LimitTimeAwardProducerService::autoCheckProducer($insertId, $serviceObj->studentInfo['user_id'], 0);
         return $affectRows;
     }
 }

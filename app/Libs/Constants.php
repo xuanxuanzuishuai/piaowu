@@ -13,12 +13,12 @@ class Constants
     //清晨项目应用id
     const QC_APP_ID = 26;
     //客户端平台类型,区分请求来源
-    const FROM_TYPE_SMART_STUDENT_APP = 'smart_student_app';//智能学生app
+    const FROM_TYPE_SMART_STUDENT_APP = 'smart_student_app';//smart_student_app智能学生app
     const FROM_TYPE_SMART_STUDENT_WX = 'smart_student_wx';//智能学生微信公众号
-    const FROM_TYPE_SMART_STUDENT_H5 = 'smart_student_h5';//智能学生h5页面
-    const FROM_TYPE_REAL_STUDENT_APP = 'real_student_app'; //真人学生app
-    const FROM_TYPE_REAL_STUDENT_WX = 'real_student_wx'; //真人学生微信公众号
-    const FROM_TYPE_REAL_STUDENT_H5 = 'real_student_h5'; //真人学生h5页面
+    const FROM_TYPE_SMART_STUDENT_H5 = 'smart_student_h5';//smart_student_h5智能学生h5页面
+    const FROM_TYPE_REAL_STUDENT_APP = 'real_student_app'; //real_student_app真人学生app
+    const FROM_TYPE_REAL_STUDENT_WX = 'real_student_wx'; //real_student_wx真人学生微信公众号
+    const FROM_TYPE_REAL_STUDENT_H5 = 'real_student_h5'; //real_student_h5真人学生h5页面
     //智能陪练获客小程序的busi_type
     const SMART_MINI_BUSI_TYPE = 8;
     //智能陪练服务号的busi_type

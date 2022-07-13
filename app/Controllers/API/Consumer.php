@@ -43,6 +43,7 @@ use App\Services\MessageService;
 use App\Services\MiniAppQrService;
 use App\Services\PushMessageService;
 use App\Services\QrInfoService;
+use App\Services\Queue\Activity\LimitTimeAward\LimitTimeAwardConsumerService;
 use App\Services\Queue\AgentTopic;
 use App\Services\Queue\CheckPosterSyncTopic;
 use App\Services\Queue\DurationTopic;
@@ -1412,6 +1413,32 @@ class Consumer extends ControllerBase
         if (!$res) {
             SimpleLogger::info('record_dou_shop_order', ['msg' => 'save_bill_map_fail']);
             return HttpHelper::buildResponse($response, []);
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 限时有奖活动，消费者控制器入口
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public static function limitTimeAwardActivity(Request $request, Response $response): Response
+    {
+        $checkFormatParams = self::commonParamsCheck($request, $response);
+        if (is_object($checkFormatParams)) {
+            return $checkFormatParams;
+        }
+        $funName = Util::underlineToHump($checkFormatParams['event_type']);
+        try {
+            $consumerObj = new LimitTimeAwardConsumerService();
+            if (method_exists($consumerObj, $funName)) {
+                call_user_func(array($consumerObj, $funName), $checkFormatParams);
+            } else {
+                SimpleLogger::error('unknown event type', ['params' => $checkFormatParams]);
+            }
+        }catch (RunTimeException $e){
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, []);
     }
