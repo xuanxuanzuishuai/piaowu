@@ -11,4 +11,13 @@ class LimitTimeActivityAwardRuleVersionModel extends Model
 {
     public static $table = 'limit_time_activity_award_rule_version';
 
+    /**
+     * 获取奖励规则版本
+     * @param $activityId
+     * @return array
+     */
+    public static function getActivityAwardRuleVersion($activityId)
+    {
+        return self::getRecord(['activity_id' => $activityId, 'ORDER' => ['id' => 'DESC']]);
+    }
 }

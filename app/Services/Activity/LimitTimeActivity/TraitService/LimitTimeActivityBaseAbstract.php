@@ -18,10 +18,13 @@ use App\Services\DictService;
 abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInterface
 {
     public $studentInfo = [];
-    public $fromType = '';
-    public $appId = 0;
+    public $fromType    = '';
+    public $appId       = 0;
     //上传截图缓存锁key前缀
     const UPLOAD_LOCK_KEY_PREFIX = "limit_time_award_upload_lock_";
+    // 截图审核缓存锁key前缀
+    const VERIFY_SHARE_POSTER_LOCK_KEY_PREFIX = "limit_time_activity_verify_sp_lock_";
+
     //活动基础字段
     const RETURN_ACTIVITY_BASE_DATA_FIELDS = [
         'a.activity_name',
@@ -71,8 +74,8 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
     public function getActivityBaseData(int $appId, int $countryCode): array
     {
         //查询活动
-        $nowTime      = time();
-        $where        = [
+        $nowTime = time();
+        $where = [
             'start_time_e'          => $nowTime,
             'end_time_s'            => $nowTime,
             'enable_status'         => OperationActivityModel::ENABLE_STATUS_ON,
@@ -218,5 +221,24 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
         }
         unset($key, $item);
         return $url;
+    }
+
+    /**
+     * 获取推送消息id
+     * @param $appId
+     * @param $activityType
+     * @param $awardType
+     * @param $verifyStatus
+     * @param $awardNode
+     * @return array|mixed|null
+     */
+    public static function getWxMsgId($appId, $activityType, $awardType, $verifyStatus, $awardNode = 0)
+    {
+        $type = 'limit_time_activity_msg_' . $appId;
+        $keyCode = $verifyStatus . '-' . $activityType . '-' . $awardType;
+        if (!empty($awardNode)) {
+            $keyCode .= '-no-award-node';
+        }
+        return DictConstants::get($type, $keyCode);
     }
 }

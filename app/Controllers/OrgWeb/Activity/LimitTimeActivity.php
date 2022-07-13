@@ -258,6 +258,7 @@ class LimitTimeActivity extends ControllerBase
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws RunTimeException
      */
     public function editEnableStatus(Request $request, Response $response)
     {
