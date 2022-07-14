@@ -117,5 +117,10 @@ class APIRouter extends RouterBase
             'call' => Consumer::class . ':messageReminder',
             'middles' => [],
         ],
+        '/api/consumer/limit_time_award_activity' => [
+            'method' => ['post'],
+            'call' => Consumer::class . ':limitTimeAwardActivity',
+            'middles' => [],
+        ],
     ];
 }

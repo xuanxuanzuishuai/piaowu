@@ -849,6 +849,9 @@ class Util
      */
     public static function textDecode($str)
     {
+        if (empty($str)) {
+            return '';
+        }
         $text = json_encode($str); //暴露出unicode
         $text = preg_replace_callback('/\\\\\\\\/i', function ($str) {
             return '\\';

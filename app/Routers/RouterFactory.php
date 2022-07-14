@@ -128,10 +128,6 @@ class RouterFactory
         /** @var RouterBase $router */
         $class = self::ROUTER_CLASSES[$clientType];
         $router = new $class($uriPath);
-        if (!empty($router->prefix)) {
-            $uriPath = str_replace($router->prefix, '', $uriPath);
-            $_SERVER['REQUEST_URI'] = $uriPath;
-        }
         $router->load($uriPath, $app, $alias ?? null);
     }
 }

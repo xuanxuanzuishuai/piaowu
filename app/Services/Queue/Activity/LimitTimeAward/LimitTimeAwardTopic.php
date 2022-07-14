@@ -3,7 +3,6 @@
 namespace App\Services\Queue\Activity\LimitTimeAward;
 
 use App\Services\Queue\BaseTopic;
-use App\Services\Queue\MessageReminder\MessageReminderTopic;
 use App\Services\Queue\QueueService;
 use Exception;
 
@@ -21,19 +20,5 @@ class LimitTimeAwardTopic extends BaseTopic
     public function __construct($publishTime = null)
     {
         parent::__construct(self::TOPIC_NAME, $publishTime, QueueService::FROM_OP, true);
-    }
-
-
-    /**
-     * 消息设定
-     * @param $data
-     * @param $eventType
-     * @return $this
-     */
-    public function nsqDataSet($data, $eventType): LimitTimeAwardTopic
-    {
-        $this->setEventType($eventType);
-        $this->setMsgBody($data);
-        return $this;
     }
 }

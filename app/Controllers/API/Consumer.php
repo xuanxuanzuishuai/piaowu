@@ -1430,15 +1430,11 @@ class Consumer extends ControllerBase
             return $checkFormatParams;
         }
         $funName = Util::underlineToHump($checkFormatParams['event_type']);
-        try {
-            $consumerObj = new LimitTimeAwardConsumerService();
-            if (method_exists($consumerObj, $funName)) {
-                call_user_func(array($consumerObj, $funName), $checkFormatParams);
-            } else {
-                SimpleLogger::error('unknown event type', ['params' => $checkFormatParams]);
-            }
-        }catch (RunTimeException $e){
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        $consumerObj = new LimitTimeAwardConsumerService();
+        if (method_exists($consumerObj, $funName)) {
+            call_user_func(array($consumerObj, $funName), $checkFormatParams);
+        } else {
+            SimpleLogger::error('unknown event type', ['params' => $checkFormatParams]);
         }
         return HttpHelper::buildResponse($response, []);
     }

@@ -291,7 +291,7 @@ class LimitTimeActivityModel extends Model
                 'c.retention_copy',
                 'c.award_rule',
                 'c.remark',
-                'c.remark',
+                'c.poster_make_button_img',
             ],
             [
                 'a.activity_id' => $activityId

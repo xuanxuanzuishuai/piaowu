@@ -4,7 +4,6 @@ namespace App\Services\Activity\LimitTimeActivity\TraitService;
 
 use App\Libs\AliOSS;
 use App\Libs\DictConstants;
-use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\LimitTimeActivity\LimitTimeActivityModel;
@@ -18,8 +17,8 @@ use App\Services\DictService;
 abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInterface
 {
     public $studentInfo = [];
-    public $fromType    = '';
-    public $appId       = 0;
+    public $fromType = '';
+    public $appId = 0;
     //上传截图缓存锁key前缀
     const UPLOAD_LOCK_KEY_PREFIX = "limit_time_award_upload_lock_";
     // 截图审核缓存锁key前缀
@@ -66,48 +65,12 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
     }
 
     /**
-     * 获取活动数据，并检测活动参与条件
-     * @param int $countryCode
-     * @param int $firstPayVipTime
-     * @return array
-     * @throws RunTimeException
-     */
-    public function getActivity(int $countryCode, int $firstPayVipTime): array
-    {
-        //查询活动
-        $nowTime = time();
-        $where = [
-            'start_time_e'          => $nowTime,
-            'end_time_s'            => $nowTime,
-            'enable_status'         => OperationActivityModel::ENABLE_STATUS_ON,
-            'app_id'                => $this->appId,
-            'activity_country_code' => OperationActivityModel::getWeekActivityCountryCode($countryCode),
-        ];
-        $activityList = LimitTimeActivityModel::searchList($where, [0, 1], [], self::RETURN_ACTIVITY_BASE_DATA_FIELDS);
-        if (empty($activityList[0])) {
-            throw new RunTimeException(['no_in_progress_activity']);
-        }
-        $activityInfo= $activityList[0][0];
-        //部分付费
-        if ($activityInfo['target_user_type'] == OperationActivityModel::TARGET_USER_PART) {
-            $filterWhere   = json_decode($activityInfo['target_user'], true);
-            $invitationNum = $this->getStudentReferralOrBuyTrailCount();
-            //首次付费时间校验/邀请人数量检验
-            if ($firstPayVipTime < $filterWhere['target_user_first_pay_time_start'] ||
-                $firstPayVipTime > $filterWhere['target_user_first_pay_time_end'] ||
-                $invitationNum < $filterWhere['invitation_num']) {
-                throw new RunTimeException(['no_in_progress_activity']);
-            }
-        }
-        return $activityInfo;
-    }
-
-    /**
      * 获取海报列表
-     * @param $shaPosterList
+     * @param array $shaPosterList
+     * @param int $firstPosterTypeOrder
      * @return array
      */
-    public static function getSharePosterList($shaPosterList): array
+    public static function getSharePosterList(array $shaPosterList, int $firstPosterTypeOrder = 0): array
     {
         $returnData = [];
         if (empty($shaPosterList)) {
@@ -126,10 +89,11 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
             'practise',
             'type'
         ];
-        $templatePosterList   = TemplatePosterModel::getRecords([
-            'id' => array_merge($posterIds, $personalityPosterIds)
-        ],
-            $field);
+        $where['id']          = array_merge($posterIds, $personalityPosterIds);
+        if ($firstPosterTypeOrder == TemplatePosterModel::POSTER_ORDER) {
+            $where['ORDER'] = ['type' => 'DESC'];
+        }
+        $templatePosterList = TemplatePosterModel::getRecords($where, $field);
         foreach ($templatePosterList as $item) {
             $item['poster_url']          = AliOSS::replaceCdnDomainForDss($item['poster_path']);
             $item['example_url']         = !empty($item['example_path']) ? AliOSS::replaceCdnDomainForDss($item['example_path']) : '';
@@ -141,10 +105,10 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
 
     /**
      * 格式化数据
-     * @param $activityInfo
+     * @param array $activityInfo
      * @return array
      */
-    public static function formatActivityInfo($activityInfo)
+    public static function formatActivityInfo(array $activityInfo): array
     {
         $info                                            = self::formatActivityTimeStatus($activityInfo);
         $info['format_start_time']                       = date("Y-m-d H:i:s", $activityInfo['start_time']);
@@ -170,7 +134,8 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
         $info['format_target_user_first_pay_time_end']   = !empty($activityInfo['target_user_first_pay_time_end']) ? date("Y-m-d H:i:s",
             $activityInfo['target_user_first_pay_time_end']) : '';
         $info['award_rule']                              = Util::textDecode($info['award_rule']);
-        $info['format_target_user']                      = self::formatTargetUser(json_decode($activityInfo['target_user'], true));
+        $info['format_target_user']                      = self::formatTargetUser(json_decode($activityInfo['target_user'],
+            true));
         return $info;
     }
 
@@ -181,18 +146,20 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
      */
     public static function formatTargetUser($targetUser)
     {
-        !empty($targetUser['target_user_first_pay_time_start']) && $targetUser['format_target_user_first_pay_time_start'] = date("Y-m-d H:i:s", $targetUser['target_user_first_pay_time_start']);
-        !empty($targetUser['target_user_first_pay_time_end']) && $targetUser['format_target_user_first_pay_time_end'] = date("Y-m-d H:i:s", $targetUser['target_user_first_pay_time_end']);
+        !empty($targetUser['target_user_first_pay_time_start']) && $targetUser['format_target_user_first_pay_time_start'] = date("Y-m-d H:i:s",
+            $targetUser['target_user_first_pay_time_start']);
+        !empty($targetUser['target_user_first_pay_time_end']) && $targetUser['format_target_user_first_pay_time_end'] = date("Y-m-d H:i:s",
+            $targetUser['target_user_first_pay_time_end']);
         return $targetUser;
     }
 
     /**
      * 获取活动开始文字
-     * @param $activityInfo
-     * @param $time
+     * @param array $activityInfo
+     * @param int $time
      * @return array
      */
-    public static function formatActivityTimeStatus($activityInfo, $time = 0)
+    public static function formatActivityTimeStatus(array $activityInfo, int $time = 0): array
     {
         if (empty($time)) {
             $time = time();
@@ -211,20 +178,24 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
 
     /**
      * 获取指定时间内启用的活动列表
-     * @param $appId
-     * @param $startTime
-     * @param $endTime
+     * @param int $appId
+     * @param int $startTime
+     * @param int $endTime
      * @param string $activityCountryCode
      * @return array
      */
-    public static function getRangeTimeEnableActivity($appId, $startTime, $endTime, $activityCountryCode = '')
-    {
+    public static function getRangeTimeEnableActivity(
+        int $appId,
+        int $startTime,
+        int $endTime,
+        string $activityCountryCode = ''
+    ): array {
         $conflictWhere = [
             'start_time[<=]' => $endTime,
-            'end_time[>=]'   => $startTime,
-            'enable_status'  => OperationActivityModel::ENABLE_STATUS_ON,
-            'app_id'         => $appId,
-            'ORDER'          => ['activity_id' => 'DESC'],
+            'end_time[>=]' => $startTime,
+            'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
+            'app_id' => $appId,
+            'ORDER' => ['activity_id' => 'DESC'],
         ];
         // 如果活动指定了投放地区，搜索时需要区分投放地区
         $activityCountryCode && $conflictWhere['activity_country_code'] = OperationActivityModel::getWeekActivityCountryCode($activityCountryCode);
@@ -250,16 +221,21 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
 
     /**
      * 获取推送消息id
-     * @param $appId
-     * @param $activityType
-     * @param $awardType
-     * @param $verifyStatus
-     * @param $awardNode
+     * @param int $appId
+     * @param int $activityType
+     * @param int $awardType
+     * @param int $verifyStatus
+     * @param int $awardNode
      * @return array|mixed|null
      */
-    public static function getWxMsgId($appId, $activityType, $awardType, $verifyStatus, $awardNode = 0)
-    {
-        $type = 'limit_time_activity_msg_' . $appId;
+    public static function getWxMsgId(
+        int $appId,
+        int $activityType,
+        int $awardType,
+        int $verifyStatus,
+        int $awardNode = 0
+    ) {
+        $type    = 'limit_time_activity_msg_' . $appId;
         $keyCode = $verifyStatus . '-' . $activityType . '-' . $awardType;
         if (!empty($awardNode)) {
             $keyCode .= '-no-award-node';

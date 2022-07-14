@@ -20,7 +20,6 @@ use App\Services\ActivityService;
 use App\Services\PosterService;
 use App\Services\Queue\Activity\LimitTimeAward\LimitTimeAwardProducerService;
 use App\Services\SharePosterService;
-use App\Services\WeekActivityService;
 
 /**
  * 限时有奖活动客户端功能服务类
@@ -55,26 +54,28 @@ class LimitTimeActivityClientService
      */
     public static function baseData(DssService $serviceObj): array
     {
-        $data                 = [
-            'list'                  => [],// 海报列表
-            'activity'              => [],// 活动详情
-            'student_info'          => [],// 学生详情
-            "is_have_activity"      => false,//是否有可参与的活动
-            "no_re_activity_reason" => WeekActivityService::ACTIVITY_RETRY_UPLOAD_NO,//是否有补卡资格
-        ];
-        $data['student_info'] = [
-            'nickname'   => $serviceObj->studentInfo['name'],
-            'headimgurl' => $serviceObj->studentInfo['thumb_oss_url'],
+        $data = [
+            'list' => [],// 海报列表
+            'activity' => [],// 活动详情
+            'student_info' => [],// 学生详情
+            "is_have_activity" => false,//是否有可参与的活动
+            'student_status_zh' => '',//学生付费状态中文
         ];
         //获取活动数据
         $data['activity'] = self::getStudentCanJoinActivityList($serviceObj, $studentStatus);
         if (empty($data['activity'])) {
             return $data;
         }
-        $data['is_have_activity'] = true;
+        $data['student_info']      = [
+            'nickname' => $serviceObj->studentInfo['name'],
+            'headimgurl' => $serviceObj->studentInfo['thumb_oss_url'],
+        ];
+        $data['student_status_zh'] = $serviceObj->studentPayStatusZh($studentStatus);
+        $data['is_have_activity']  = true;
         //格式化活动数据
         $data['activity']     = ActivityService::formatData($data['activity']);
-        $sharePosterGroupList = $serviceObj->getSharePosterList(json_decode($data['activity']['share_poster'], true));
+        $sharePosterGroupList = $serviceObj->getSharePosterList(json_decode($data['activity']['share_poster'], true),
+            $data['activity']['first_poster_type_order']);
         $sharePosterList      = [];
         array_map(function ($pv) use (&$sharePosterList) {
             $sharePosterList = array_merge($sharePosterList, $pv);
@@ -94,7 +95,7 @@ class LimitTimeActivityClientService
     }
 
     /**
-     * 获取可参与活动
+     * 获取可参与活动,检测活动参与条件
      * @param DssService $serviceObj
      * @param $studentStatus
      * @return array
@@ -104,17 +105,40 @@ class LimitTimeActivityClientService
         try {
             //学生状态检测
             $userDetail = $serviceObj->studentPayStatusCheck();
-            //获取活动数据
-            $activityData        = $serviceObj->getActivity($serviceObj->studentInfo['country_code'],
-                $serviceObj->studentInfo['pay_vip_time']);
-            $activityData['ext'] = [
-                'award_rule' => Util::textDecode($activityData['award_rule']),
-                'remark'     => Util::textDecode($activityData['remark']),
+            //查询活动
+            $nowTime      = time();
+            $where        = [
+                'start_time_e' => $nowTime,
+                'end_time_s' => $nowTime,
+                'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
+                'app_id' => $serviceObj->appId,
+                'activity_country_code' => OperationActivityModel::getWeekActivityCountryCode($serviceObj->studentInfo['country_code']),
             ];
-            unset($activityData['award_rule']);
-            unset($activityData['remark']);
+            $activityList = LimitTimeActivityModel::searchList($where, [0, 1], [],
+                $serviceObj::RETURN_ACTIVITY_BASE_DATA_FIELDS);
+            if (empty($activityList[0])) {
+                throw new RunTimeException(['no_in_progress_activity']);
+            }
+            $activityInfo = $activityList[0][0];
+            //部分付费
+            if ($activityInfo['target_user_type'] == OperationActivityModel::TARGET_USER_PART) {
+                $filterWhere   = json_decode($activityInfo['target_user'], true);
+                $invitationNum = $serviceObj->getStudentReferralOrBuyTrailCount();
+                //首次付费时间校验/邀请人数量检验
+                if ($serviceObj->studentInfo['pay_vip_time'] < $filterWhere['target_user_first_pay_time_start'] ||
+                    $serviceObj->studentInfo['pay_vip_time'] > $filterWhere['target_user_first_pay_time_end'] ||
+                    $invitationNum < $filterWhere['invitation_num']) {
+                    throw new RunTimeException(['no_in_progress_activity']);
+                }
+            }
+            $activityInfo['ext'] = [
+                'award_rule' => Util::textDecode($activityInfo['award_rule']),
+                'remark' => Util::textDecode($activityInfo['remark']),
+            ];
+            unset($activityInfo['award_rule']);
+            unset($activityInfo['remark']);
             $studentStatus = $userDetail['student_status'];
-            return $activityData;
+            return $activityInfo;
         } catch (RunTimeException $e) {
             SimpleLogger::error('activity condition check error', [$e->getMessage()]);
             return [];
@@ -133,7 +157,7 @@ class LimitTimeActivityClientService
     {
         $recordsResult = [
             'total_count' => 0,
-            'list'        => [],
+            'list' => [],
         ];
         $records       = LimitTimeActivitySharePosterModel::searchJoinRecords($serviceObj->appId,
             [$serviceObj->studentInfo['uuid']],
@@ -178,19 +202,19 @@ class LimitTimeActivityClientService
                 $recordsDetailFormat[$info['activity_id']]);
             //活动基础数据
             $recordsResult['list'][] = [
-                'activity_id'        => $info['activity_id'],
-                'activity_type'      => $info['activity_type'],
-                'task_num_count'     => count($activityAwardRuleData[$info['activity_id']]),
-                'activity_name'      => $info['activity_name'] . '(' . date('m.d',
+                'activity_id' => $info['activity_id'],
+                'activity_type' => $info['activity_type'],
+                'activity_name' => $info['activity_name'] . '(' . date('m.d',
                         $info['start_time']) . '-' . date('m.d', $info['end_time']) . ')',
                 'activity_status_zh' => ($info['enable_status'] == OperationActivityModel::ENABLE_STATUS_DISABLE) ?
                     $dictData[OperationActivityModel::ENABLE_STATUS_DISABLE] :
                     $dictData[DictConstants::ACTIVITY_TIME_STATUS['type']][OperationActivityModel::dataMapToTimeStatus($info['start_time'],
                         $info['end_time'])]['value'],
-                'success'            => (int)$info['success'],
-                'fail'               => (int)$info['fail'],
-                'wait'               => (int)$info['wait'],
-                'task_list'          => array_values($tmpTaskList),
+                'success' => (int)$info['success'],
+                'fail' => (int)$info['fail'],
+                'wait' => (int)$info['wait'],
+                'task_list' => array_values($tmpTaskList),
+                'task_num_count' => count($tmpTaskList),
             ];
         }
         return $recordsResult;
@@ -224,12 +248,12 @@ class LimitTimeActivityClientService
             }
             $tmpAwardStatus     = isset($recordsDetailFormat[$i]) ? (int)$recordsDetailFormat[$i]['send_award_status'] : OperationActivityModel::SEND_AWARD_STATUS_NOT_OWN;
             $formatTaskList[$i] = [
-                'task_num'        => $i,
-                'award_amount'    => (isset($taskList[$i]['award_amount']) && $activityData['activity_type'] == OperationActivityModel::ACTIVITY_TYPE_FULL_ATTENDANCE)
+                'task_num' => $i,
+                'award_amount' => (isset($taskList[$i]['award_amount']) && $activityData['activity_type'] == OperationActivityModel::ACTIVITY_TYPE_FULL_ATTENDANCE)
                     ? $tmpTotalAwardAmount : (int)$taskList[$i]['award_amount'],
-                'award_type'      => (int)$awardType,
-                'verify_status'   => (int)$recordsDetailFormat[$i]['verify_status'],
-                'award_status'    => $tmpAwardStatus,
+                'award_type' => (int)$awardType,
+                'verify_status' => (int)$recordsDetailFormat[$i]['verify_status'],
+                'award_status' => $tmpAwardStatus,
                 'award_status_zh' => $dictData[DictConstants::SEND_AWARD_STATUS['type']][$tmpAwardStatus]['value'],
             ];
         }
@@ -257,8 +281,8 @@ class LimitTimeActivityClientService
         foreach ($formatTaskList as $tv) {
             $result['list'][] = [
                 'activity_id' => $activityData['activity_id'],
-                'task_num'    => $tv['task_num'],
-                'name'        => $activityData['activity_name'] . '-' . $tv['task_num'],
+                'task_num' => $tv['task_num'],
+                'name' => $activityData['activity_name'] . '-' . $tv['task_num'],
             ];
         }
         return $result;
@@ -276,7 +300,7 @@ class LimitTimeActivityClientService
     {
         $result = [
             'total_count' => 0,
-            'list'        => []
+            'list' => []
         ];
         //获取活动参与记录
         $recordsDetail = LimitTimeActivitySharePosterModel::searchJoinRecords(
@@ -406,10 +430,10 @@ class LimitTimeActivityClientService
         $time = time();
         $data = [
             'student_uuid' => $serviceObj->studentInfo['uuid'],
-            'activity_id'  => $activityId,
-            'task_num'     => $taskNum,
-            'image_path'   => $imagePath,
-            'app_id'       => $serviceObj->appId,
+            'activity_id' => $activityId,
+            'task_num' => $taskNum,
+            'image_path' => $imagePath,
+            'app_id' => $serviceObj->appId,
         ];
         //不存在或审核不通过：写入数据
         if (empty($recordsDetail[0][0]) || $recordsDetail[0][0]['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {

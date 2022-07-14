@@ -11,6 +11,13 @@ interface LimitTimeActivityBaseInterface
     public function studentPayStatusCheck(): array;
 
     /**
+     * 学生付费状态汉化
+     * @param int $studentStatus
+     * @return string
+     */
+    public function studentPayStatusZh(int $studentStatus): string;
+
+    /**
      * 学生邀请购买体验卡人数（智能）/创建转介绍关系数量（真人）
      * @return int
      */

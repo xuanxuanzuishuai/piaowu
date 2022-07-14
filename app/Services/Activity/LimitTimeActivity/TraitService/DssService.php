@@ -65,13 +65,23 @@ class DssService extends LimitTimeActivityBaseAbstract
     public function studentPayStatusCheck(): array
     {
         //学生信息
-        $userDetail = StudentService::dssStudentStatusCheck($this->studentInfo['user_id'], false,
-            null);
+        $userDetail = StudentService::dssStudentStatusCheck($this->studentInfo['user_id'], false, null);
         if ($userDetail['student_status'] != DssStudentModel::STATUS_BUY_NORMAL_COURSE) {
             SimpleLogger::error('student status no satisfy', [$userDetail]);
             throw new RunTimeException(['no_in_progress_activity']);
         }
         return $userDetail;
+    }
+
+    /**
+     * 学生状态汉化
+     * @param int $studentStatus
+     * @return string
+     */
+    public function studentPayStatusZh(int $studentStatus): string
+    {
+        return DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$studentStatus];
+
     }
 
     /**

@@ -19,7 +19,7 @@ use App\Services\AutoCheckPicture;
 class LimitTimeAwardConsumerService
 {
     private $autoCheckStatusCacheKey = 'lta_stop_auto_check';
-    private $sharePosterCheckLockCacheKeyPrefix = 'lta_auto_check_lock';
+    private $sharePosterCheckLockCacheKeyPrefix = 'lta_auto_check_lock_';
 
     /**
      * 分享海报自动审核
@@ -41,7 +41,7 @@ class LimitTimeAwardConsumerService
         if (empty($lockRes)) {
             LimitTimeAwardProducerService::autoCheckProducer($paramsData['msg_body']['share_poster_id'],
                 $paramsData['msg_body']['user_id'], 12);
-            SimpleLogger::error('limit time award share poster more times check', [$paramsData['msg_body']]);
+            SimpleLogger::error('limit time award share poster check lock add fail', [$paramsData['msg_body']]);
             return false;
         }
         if (empty($paramsData['msg_body']['share_poster_id'])) {
@@ -51,7 +51,7 @@ class LimitTimeAwardConsumerService
         //获取上传的海报数据
         $sharePosterData = LimitTimeActivitySharePosterModel::getRecord(
             [
-                'id'            => $paramsData['msg_body']['share_poster_id'],
+                'id' => $paramsData['msg_body']['share_poster_id'],
                 'verify_status' => SharePosterModel::VERIFY_STATUS_WAIT
             ],
             [
@@ -60,35 +60,28 @@ class LimitTimeAwardConsumerService
                 'app_id',
             ]);
         if (empty($sharePosterData)) {
-            Util::sendFsWaringText('限时有奖活动，自动审核消费者接收了无效的海报上传记录ID', $_ENV["FEISHU_DEVELOPMENT_TECHNOLOGY_ALERT_ROBOT"]);
+            Util::sendFsWaringText('限时有奖活动，自动审核消费者接收了无效的海报上传记录ID=' . $paramsData['msg_body']['share_poster_id'],
+                $_ENV["FEISHU_DEVELOPMENT_TECHNOLOGY_ALERT_ROBOT"]);
             return false;
         }
         $imagePath = AliOSS::replaceCdnDomainForDss($sharePosterData['image_path']);
         list($status, $errCode) = AutoCheckPicture::checkByOcr($imagePath, $paramsData['msg_body']);
+        //审核参数
+        $checkParams = [
+            'app_id' => $sharePosterData['app_id'],
+            'activity_id' => $sharePosterData['activity_id'],
+            'employee_id' => EmployeeModel::SYSTEM_EMPLOYEE_ID,
+            'remark' => ''
+        ];
         if ($status > 0) {
             //自动识别通过
-            LimitTimeActivityAdminService::approvalPoster(
-                [$paramsData['msg_body']['share_poster_id']],
-                [
-                    'app_id'      => $sharePosterData['app_id'],
-                    'activity_id' => $sharePosterData['activity_id'],
-                    'employee_id' => EmployeeModel::SYSTEM_EMPLOYEE_ID,
-                    'remark'      => ''
-                ]);
+            LimitTimeActivityAdminService::approvalPoster([$paramsData['msg_body']['share_poster_id']], $checkParams);
         } elseif (!empty($errCode)) {
             //识别失败
-            $reasonArr = AutoCheckPicture::formatAutoCheckErrorCodeMapToSystemErrorCode($errCode);
-            LimitTimeActivityAdminService::refusedPoster(
-                $paramsData['msg_body']['share_poster_id'],
-                [
-                    'app_id'      => $sharePosterData['app_id'],
-                    'activity_id' => $sharePosterData['activity_id'],
-                    'employee_id' => EmployeeModel::SYSTEM_EMPLOYEE_ID,
-                    'reason'      => $reasonArr,
-                    'remark'      => ''
-                ],
-                SharePosterModel::VERIFY_STATUS_WAIT
-            );
+            $reasonArr             = AutoCheckPicture::formatAutoCheckErrorCodeMapToSystemErrorCode($errCode);
+            $checkParams['reason'] = $reasonArr;
+            LimitTimeActivityAdminService::refusedPoster($paramsData['msg_body']['share_poster_id'], $checkParams,
+                SharePosterModel::VERIFY_STATUS_WAIT);
         }
         return true;
     }
@@ -130,12 +123,12 @@ class LimitTimeAwardConsumerService
                 break;
             case Constants::AWARD_TYPE_GOLD_LEAF:
                 $sendData = [
-                    'student_uuid'  => $sharePosterRecordInfo['student_uuid'],
-                    'num'           => $sharePosterRecordInfo['award_amount'],
-                    'remark'        => '限时活动',
-                    'batch_id'      => substr(md5(uniqid()), 0, 6),
+                    'student_uuid' => $sharePosterRecordInfo['student_uuid'],
+                    'num' => $sharePosterRecordInfo['award_amount'],
+                    'remark' => '限时活动',
+                    'batch_id' => substr(md5(uniqid()), 0, 6),
                     'operator_type' => 0,
-                    'operator_id'   => EmployeeModel::SYSTEM_EMPLOYEE_ID,
+                    'operator_id' => EmployeeModel::SYSTEM_EMPLOYEE_ID,
                 ];
                 break;
             default:
