@@ -63,13 +63,14 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
     /**
      * 获取示例话对象
      * @param $appId
-     * @param $initData
+     * @param array $initData
+     * @param bool $isNewObj
      * @return DssService
      * @throws RunTimeException
      */
-    public static function getAppObj($appId, $initData = [])
+    public static function getAppObj($appId, $initData = [], $isNewObj = false)
     {
-        if (isset(self::$objList[$appId])) {
+        if ($isNewObj == false && !empty(self::$objList[$appId])) {
             return self::$objList[$appId];
         }
         switch ($appId) {
@@ -79,7 +80,8 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
             default:
                 throw new RunTimeException(['app_id_invalid']);
         }
-        return $obj;
+        self::$objList[$appId] = $obj;
+        return self::$objList[$appId];
     }
 
     /**
