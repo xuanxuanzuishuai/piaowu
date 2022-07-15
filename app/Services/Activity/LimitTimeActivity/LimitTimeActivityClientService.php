@@ -450,6 +450,6 @@ class LimitTimeActivityClientService
         }
         //系统自动审核
         LimitTimeAwardProducerService::autoCheckProducer($insertId, $serviceObj->studentInfo['user_id'], 0);
-        return $affectRows;
+        return $insertId;
     }
 }

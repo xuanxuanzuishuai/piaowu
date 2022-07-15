@@ -21,7 +21,7 @@ use App\Services\Queue\QueueService;
 
 class LimitTimeAwardConsumerService
 {
-    private $autoCheckStatusCacheKey            = 'lta_stop_auto_check';
+    private $autoCheckStatusCacheKey = 'lta_stop_auto_check';
     private $sharePosterCheckLockCacheKeyPrefix = 'lta_auto_check_lock_';
 
     /**
@@ -38,23 +38,25 @@ class LimitTimeAwardConsumerService
         if ($autoCheckStatus === 'no') {
             return false;
         }
+        if (empty($paramsData['msg_body']['record_id'])) {
+            Util::sendFsWaringText('限时有奖活动，自动审核消费者必填参数海报ID缺失', $_ENV["FEISHU_DEVELOPMENT_TECHNOLOGY_ALERT_ROBOT"]);
+            return false;
+        }
+
         //加锁防止并发操作
-        $lockRes = Util::setLock($this->sharePosterCheckLockCacheKeyPrefix . $paramsData['msg_body']['share_poster_id'],
+        $lockRes = Util::setLock($this->sharePosterCheckLockCacheKeyPrefix . $paramsData['msg_body']['record_id'],
             10, 0);
         if (empty($lockRes)) {
-            LimitTimeAwardProducerService::autoCheckProducer($paramsData['msg_body']['share_poster_id'],
+            LimitTimeAwardProducerService::autoCheckProducer($paramsData['msg_body']['record_id'],
                 $paramsData['msg_body']['user_id'], 12);
             SimpleLogger::error('limit time award share poster check lock add fail', [$paramsData['msg_body']]);
             return false;
         }
-        if (empty($paramsData['msg_body']['share_poster_id'])) {
-            Util::sendFsWaringText('限时有奖活动，自动审核消费者必填参数海报ID缺失', $_ENV["FEISHU_DEVELOPMENT_TECHNOLOGY_ALERT_ROBOT"]);
-            return false;
-        }
+
         //获取上传的海报数据
         $sharePosterData = LimitTimeActivitySharePosterModel::getRecord(
             [
-                'id'            => $paramsData['msg_body']['share_poster_id'],
+                'id' => $paramsData['msg_body']['record_id'],
                 'verify_status' => SharePosterModel::VERIFY_STATUS_WAIT
             ],
             [
@@ -63,7 +65,7 @@ class LimitTimeAwardConsumerService
                 'app_id',
             ]);
         if (empty($sharePosterData)) {
-            Util::sendFsWaringText('限时有奖活动，自动审核消费者接收了无效的海报上传记录ID=' . $paramsData['msg_body']['share_poster_id'],
+            Util::sendFsWaringText('限时有奖活动，自动审核消费者接收了无效的海报上传记录ID=' . $paramsData['msg_body']['record_id'],
                 $_ENV["FEISHU_DEVELOPMENT_TECHNOLOGY_ALERT_ROBOT"]);
             return false;
         }
@@ -71,19 +73,19 @@ class LimitTimeAwardConsumerService
         list($status, $errCode) = AutoCheckPicture::checkByOcr($imagePath, $paramsData['msg_body']);
         //审核参数
         $checkParams = [
-            'app_id'      => $sharePosterData['app_id'],
+            'app_id' => $sharePosterData['app_id'],
             'activity_id' => $sharePosterData['activity_id'],
             'employee_id' => EmployeeModel::SYSTEM_EMPLOYEE_ID,
-            'remark'      => ''
+            'remark' => ''
         ];
         if ($status > 0) {
             //自动识别通过
-            LimitTimeActivityAdminService::approvalPoster([$paramsData['msg_body']['share_poster_id']], $checkParams);
+            LimitTimeActivityAdminService::approvalPoster([$paramsData['msg_body']['record_id']], $checkParams);
         } elseif (!empty($errCode)) {
             //识别失败
             $reasonArr = AutoCheckPicture::formatAutoCheckErrorCodeMapToSystemErrorCode($errCode);
             $checkParams['reason'] = $reasonArr;
-            LimitTimeActivityAdminService::refusedPoster($paramsData['msg_body']['share_poster_id'], $checkParams,
+            LimitTimeActivityAdminService::refusedPoster($paramsData['msg_body']['record_id'], $checkParams,
                 SharePosterModel::VERIFY_STATUS_WAIT);
         }
         return true;

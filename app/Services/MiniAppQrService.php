@@ -440,10 +440,17 @@ class MiniAppQrService
      * @param int $busiesType
      * @param array $qrParams
      * @param bool $isFullUrl
+     * @param bool $isUseCheckActiveId
      * @return array
      * @throws RunTimeException
      */
-    public static function batchCreateUserMiniAppQr($appId, $busiesType, array $qrParams = [], bool $isFullUrl = false): array
+    public static function batchCreateUserMiniAppQr(
+        int $appId,
+        int $busiesType,
+        array $qrParams = [],
+        bool $isFullUrl = false,
+        bool $isUseCheckActiveId = true
+    ): array
     {
         $returnQrSignArr = [];
         $saveQrData = [];
@@ -463,12 +470,13 @@ class MiniAppQrService
         // 根据小程序码主要信息，查询CH
         $qrImageArr = QrInfoOpCHModel::getQrInfoBySign(array_column($qrParams, 'qr_sign'), ['qr_path', 'qr_id', 'qr_sign']);
         $qrSignData = array_column($qrImageArr, null, 'qr_sign');
-
         // 获取qr_id
         SimpleLogger::info("getUserMiniAppQrList qrSignData", [$qrImageArr, $qrSignData]);
-
         //获取海报自动审核校验活动ID
-        $checkActiveId = PosterService::getCheckActivityId($appId, $qrParams[0]['user_id'] ?? 0);
+        $checkActiveId = 0;
+        if ($isUseCheckActiveId === true) {
+            $checkActiveId = PosterService::getCheckActivityId($appId, $qrParams[0]['user_id'] ?? 0);
+        }
         foreach ($qrParams as $_key => $_qrParam) {
             $_qrSign = $_qrParam['qr_sign'];
             if (isset($qrSignData[$_qrSign])) {
