@@ -17,11 +17,12 @@ use App\Services\Activity\LimitTimeActivity\LimitTimeActivityAdminService;
 use App\Services\Activity\LimitTimeActivity\TraitService\LimitTimeActivityBaseAbstract;
 use App\Services\Activity\Lottery\LotteryServices\LotteryGrantAwardService;
 use App\Services\AutoCheckPicture;
+use App\Services\Queue\ErpStudentAccountTopic;
 use App\Services\Queue\QueueService;
 
 class LimitTimeAwardConsumerService
 {
-    private $autoCheckStatusCacheKey = 'lta_stop_auto_check';
+    private $autoCheckStatusCacheKey            = 'lta_stop_auto_check';
     private $sharePosterCheckLockCacheKeyPrefix = 'lta_auto_check_lock_';
 
     /**
@@ -56,7 +57,7 @@ class LimitTimeAwardConsumerService
         //获取上传的海报数据
         $sharePosterData = LimitTimeActivitySharePosterModel::getRecord(
             [
-                'id' => $paramsData['msg_body']['record_id'],
+                'id'            => $paramsData['msg_body']['record_id'],
                 'verify_status' => SharePosterModel::VERIFY_STATUS_WAIT
             ],
             [
@@ -73,10 +74,10 @@ class LimitTimeAwardConsumerService
         list($status, $errCode) = AutoCheckPicture::checkByOcr($imagePath, $paramsData['msg_body']);
         //审核参数
         $checkParams = [
-            'app_id' => $sharePosterData['app_id'],
+            'app_id'      => $sharePosterData['app_id'],
             'activity_id' => $sharePosterData['activity_id'],
             'employee_id' => EmployeeModel::SYSTEM_EMPLOYEE_ID,
-            'remark' => ''
+            'remark'      => ''
         ];
         if ($status > 0) {
             //自动识别通过
@@ -95,13 +96,14 @@ class LimitTimeAwardConsumerService
      * 发奖
      * @param $paramsData
      * @return bool
+     * @throws RunTimeException
      */
     public function sendAward($paramsData): bool
     {
         $logTitle = 'limit time award send award';
         $time = time();
         SimpleLogger::info("$logTitle params:", $paramsData);
-        $recordId = $paramsData['record_id'] ?? 0;
+        $recordId = $paramsData['msg_body']['record_id'] ?? 0;
         if (empty($recordId)) {
             return false;
         }
@@ -125,17 +127,20 @@ class LimitTimeAwardConsumerService
         switch ($sharePosterRecordInfo['award_type']) {
             case Constants::AWARD_TYPE_TIME:
                 $sendData = [
+                    'type'                => Constants::AWARD_TYPE_TIME,
                     'common_award_amount' => $sharePosterRecordInfo['award_amount'],
                 ];
                 break;
             case Constants::AWARD_TYPE_GOLD_LEAF:
                 $sendData = [
-                    'student_uuid'  => $sharePosterRecordInfo['student_uuid'],
-                    'num'           => $sharePosterRecordInfo['award_amount'],
-                    'remark'        => '限时活动',
-                    'batch_id'      => substr(md5(uniqid()), 0, 6),
-                    'operator_type' => 0,
-                    'operator_id'   => EmployeeModel::SYSTEM_EMPLOYEE_ID,
+                    'type'                => Constants::AWARD_TYPE_GOLD_LEAF,
+                    'student_uuid'        => $sharePosterRecordInfo['student_uuid'],
+                    'common_award_amount' => $sharePosterRecordInfo['award_amount'],
+                    'remark'              => '限时活动',
+                    'batch_id'            => substr(md5(uniqid()), 0, 6),
+                    'operator_type'       => 0,
+                    'operator_id'         => EmployeeModel::SYSTEM_EMPLOYEE_ID,
+                    'source_type'         => ErpStudentAccountTopic::UPLOAD_POSTER_ACTION,
                 ];
                 break;
             default:
@@ -146,6 +151,7 @@ class LimitTimeAwardConsumerService
             SimpleLogger::info("$logTitle send award send data is empty:", []);
             return false;
         }
+        $sendData['uuid'] = $sharePosterRecordInfo['student_uuid'];
         $sendRes = LotteryGrantAwardService::sendAward($sendData);
         SimpleLogger::info("$logTitle send award request:", [$sendData, $sendRes]);
         if (!$sendRes) {
@@ -158,13 +164,13 @@ class LimitTimeAwardConsumerService
         $msgId = LimitTimeActivityBaseAbstract::getWxMsgId(
             $sharePosterRecordInfo['app_id'],
             $activityInfo['activity_type'],
-            $sharePosterRecordInfo['award_type'],
+            OperationActivityModel::SEND_AWARD_STATUS_GIVE,
             SharePosterModel::VERIFY_STATUS_QUALIFIED
         );
         $studentInfo = LimitTimeActivityBaseAbstract::getAppObj($appId)->getStudentInfoByUUID([$studentUUId])[$studentUUId];
         QueueService::sendUserWxMsg($appId, $studentInfo['id'], $msgId, [
             'replace_params' => [
-                'award_num'     => $sharePosterRecordInfo['award_amount'],
+                'award_num' => $sharePosterRecordInfo['award_amount'],
             ],
         ]);
         SimpleLogger::info("$logTitle send award success:", [$sharePosterRecordInfo]);

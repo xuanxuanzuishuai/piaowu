@@ -62,7 +62,7 @@ class LotteryGrantAwardService
             'app_id'        => Constants::SMART_APP_ID,
             'student_uuid'  => $params['uuid'],
             'sub_type'      => Constants::ERP_ACCOUNT_NAME_GOLD_LEFT,
-            'source_type'   => ErpStudentAccountModel::LOTTERY_ACTION,
+            'source_type'   => $params['source_type'] ?? ErpStudentAccountModel::LOTTERY_ACTION,
             'num'           => $params['common_award_amount'],
             'remark'        => $params['remark'],
             'batch_id'      => $params['batch_id'],
