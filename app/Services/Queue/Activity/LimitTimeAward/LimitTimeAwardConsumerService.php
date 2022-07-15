@@ -9,16 +9,19 @@ use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\EmployeeModel;
+use App\Models\LimitTimeActivity\LimitTimeActivityModel;
 use App\Models\LimitTimeActivity\LimitTimeActivitySharePosterModel;
 use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
 use App\Services\Activity\LimitTimeActivity\LimitTimeActivityAdminService;
+use App\Services\Activity\LimitTimeActivity\TraitService\LimitTimeActivityBaseAbstract;
 use App\Services\Activity\Lottery\LotteryServices\LotteryGrantAwardService;
 use App\Services\AutoCheckPicture;
+use App\Services\Queue\QueueService;
 
 class LimitTimeAwardConsumerService
 {
-    private $autoCheckStatusCacheKey = 'lta_stop_auto_check';
+    private $autoCheckStatusCacheKey            = 'lta_stop_auto_check';
     private $sharePosterCheckLockCacheKeyPrefix = 'lta_auto_check_lock_';
 
     /**
@@ -30,7 +33,7 @@ class LimitTimeAwardConsumerService
     public function sharePosterAutoCheck($paramsData): bool
     {
         //检测自动审核功能是否开启
-        $redis           = RedisDB::getConn();
+        $redis = RedisDB::getConn();
         $autoCheckStatus = $redis->get($this->autoCheckStatusCacheKey);
         if ($autoCheckStatus === 'no') {
             return false;
@@ -51,7 +54,7 @@ class LimitTimeAwardConsumerService
         //获取上传的海报数据
         $sharePosterData = LimitTimeActivitySharePosterModel::getRecord(
             [
-                'id' => $paramsData['msg_body']['share_poster_id'],
+                'id'            => $paramsData['msg_body']['share_poster_id'],
                 'verify_status' => SharePosterModel::VERIFY_STATUS_WAIT
             ],
             [
@@ -68,17 +71,17 @@ class LimitTimeAwardConsumerService
         list($status, $errCode) = AutoCheckPicture::checkByOcr($imagePath, $paramsData['msg_body']);
         //审核参数
         $checkParams = [
-            'app_id' => $sharePosterData['app_id'],
+            'app_id'      => $sharePosterData['app_id'],
             'activity_id' => $sharePosterData['activity_id'],
             'employee_id' => EmployeeModel::SYSTEM_EMPLOYEE_ID,
-            'remark' => ''
+            'remark'      => ''
         ];
         if ($status > 0) {
             //自动识别通过
             LimitTimeActivityAdminService::approvalPoster([$paramsData['msg_body']['share_poster_id']], $checkParams);
         } elseif (!empty($errCode)) {
             //识别失败
-            $reasonArr             = AutoCheckPicture::formatAutoCheckErrorCodeMapToSystemErrorCode($errCode);
+            $reasonArr = AutoCheckPicture::formatAutoCheckErrorCodeMapToSystemErrorCode($errCode);
             $checkParams['reason'] = $reasonArr;
             LimitTimeActivityAdminService::refusedPoster($paramsData['msg_body']['share_poster_id'], $checkParams,
                 SharePosterModel::VERIFY_STATUS_WAIT);
@@ -94,7 +97,7 @@ class LimitTimeAwardConsumerService
     public function sendAward($paramsData): bool
     {
         $logTitle = 'limit time award send award';
-        $time     = time();
+        $time = time();
         SimpleLogger::info("$logTitle params:", $paramsData);
         $recordId = $paramsData['record_id'] ?? 0;
         if (empty($recordId)) {
@@ -105,6 +108,8 @@ class LimitTimeAwardConsumerService
         if (empty($sharePosterRecordInfo)) {
             return false;
         }
+        $studentUUId = $sharePosterRecordInfo['student_uuid'];
+        $appId = $sharePosterRecordInfo['app_id'];
         if ($sharePosterRecordInfo['verify_status'] != SharePosterModel::VERIFY_STATUS_QUALIFIED) {
             return false;
         }
@@ -123,12 +128,12 @@ class LimitTimeAwardConsumerService
                 break;
             case Constants::AWARD_TYPE_GOLD_LEAF:
                 $sendData = [
-                    'student_uuid' => $sharePosterRecordInfo['student_uuid'],
-                    'num' => $sharePosterRecordInfo['award_amount'],
-                    'remark' => '限时活动',
-                    'batch_id' => substr(md5(uniqid()), 0, 6),
+                    'student_uuid'  => $sharePosterRecordInfo['student_uuid'],
+                    'num'           => $sharePosterRecordInfo['award_amount'],
+                    'remark'        => '限时活动',
+                    'batch_id'      => substr(md5(uniqid()), 0, 6),
                     'operator_type' => 0,
-                    'operator_id' => EmployeeModel::SYSTEM_EMPLOYEE_ID,
+                    'operator_id'   => EmployeeModel::SYSTEM_EMPLOYEE_ID,
                 ];
                 break;
             default:
@@ -145,6 +150,21 @@ class LimitTimeAwardConsumerService
             return false;
         }
         LimitTimeActivitySharePosterModel::updateSendAwardStatusIsSuccess($sharePosterRecordInfo['id']);
+
+        $activityInfo = LimitTimeActivityModel::getRecord(['activity_id' => $sharePosterRecordInfo['activity_id']]);
+        // 推送到账消息
+        $msgId = LimitTimeActivityBaseAbstract::getWxMsgId(
+            $sharePosterRecordInfo['app_id'],
+            $activityInfo['activity_type'],
+            $sharePosterRecordInfo['award_type'],
+            SharePosterModel::VERIFY_STATUS_QUALIFIED
+        );
+        $studentInfo = LimitTimeActivityBaseAbstract::getAppObj($appId)->getStudentInfoByUUID([$studentUUId])[$studentUUId];
+        QueueService::sendUserWxMsg($appId, $studentInfo['id'], $msgId, [
+            'replace_params' => [
+                'award_num'     => $sharePosterRecordInfo['award_amount'],
+            ],
+        ]);
         SimpleLogger::info("$logTitle send award success:", [$sharePosterRecordInfo]);
         return true;
     }

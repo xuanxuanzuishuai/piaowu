@@ -5,6 +5,7 @@ namespace App\Services\Activity\LimitTimeActivity\TraitService;
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
+use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\StudentReferralStudentStatisticsModel;
 use App\Services\StudentService;
@@ -27,10 +28,10 @@ class DssService extends LimitTimeActivityBaseAbstract
      * @param array $fields
      * @return array
      */
-    public static function getStudentInfoByUUID(array $uuids, array $fields = []): array
+    public function getStudentInfoByUUID(array $uuids, array $fields = []): array
     {
         $list = DssStudentModel::getRecords(['uuid' => $uuids], $fields);
-        return is_array($list) ? $list : [];
+        return is_array($list) ? array_column($list, null, 'uuid') : [];
     }
 
     /**
@@ -92,5 +93,15 @@ class DssService extends LimitTimeActivityBaseAbstract
     {
         return StudentReferralStudentStatisticsModel::getReferralCountGroupByStage($this->studentInfo['user_id'],
             StudentReferralStudentStatisticsModel::STAGE_TRIAL);
+    }
+
+    /**
+     * 获取员工信息
+     * @param array $employeeIds
+     * @return array
+     */
+    public function getEmployeeInfo(array $employeeIds): array
+    {
+        return array_column(DssEmployeeModel::getRecords(['id' => $employeeIds]) ?: [], null, 'id');
     }
 }

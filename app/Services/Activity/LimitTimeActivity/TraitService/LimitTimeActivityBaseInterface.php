@@ -29,7 +29,7 @@ interface LimitTimeActivityBaseInterface
      * @param array $fields
      * @return array
      */
-    public static function getStudentInfoByUUID(array $uuids, array $fields = []): array;
+    public function getStudentInfoByUUID(array $uuids, array $fields = []): array;
 
     /**
      * 根据手机号获取用户信息
@@ -47,4 +47,10 @@ interface LimitTimeActivityBaseInterface
      */
     public static function getStudentInfoByName(string $name, array $fields = []): array;
 
+    /**
+     * 根据员工id获取多个员工信息，并且以员工id为key
+     * @param array $employeeIds
+     * @return array
+     */
+    public function getEmployeeInfo(array $employeeIds): array;
 }

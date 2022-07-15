@@ -1778,7 +1778,7 @@ class Dss extends ControllerBase
         }
         list($page, $count) = Util::formatPageCount($params);
         $params['app_id'] = Constants::SMART_APP_ID;
-        LimitTimeActivityAdminService::approvalPoster($params, $page, $count);
+        LimitTimeActivityAdminService::approvalPoster($params['record_ids'], $params);
         return HttpHelper::buildResponse($response, []);
     }
 

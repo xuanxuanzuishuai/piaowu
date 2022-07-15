@@ -3,7 +3,9 @@
 namespace App\Services\Activity\LimitTimeActivity\TraitService;
 
 use App\Libs\AliOSS;
+use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\LimitTimeActivity\LimitTimeActivityModel;
@@ -17,8 +19,8 @@ use App\Services\DictService;
 abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInterface
 {
     public $studentInfo = [];
-    public $fromType = '';
-    public $appId = 0;
+    public $fromType    = '';
+    public $appId       = 0;
     //上传截图缓存锁key前缀
     const UPLOAD_LOCK_KEY_PREFIX = "limit_time_award_upload_lock_";
     // 截图审核缓存锁key前缀
@@ -54,6 +56,30 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
         'c.operator_id',
         'c.first_poster_type_order',
     ];
+    // 实例化对象列表
+    private static $objList = [];
+
+    /**
+     * 获取示例话对象
+     * @param $appId
+     * @param $initData
+     * @return DssService
+     * @throws RunTimeException
+     */
+    public static function getAppObj($appId, $initData = [])
+    {
+        if (isset(self::$objList[$appId])) {
+            return self::$objList[$appId];
+        }
+        switch ($appId) {
+            case Constants::SMART_APP_ID;
+                $obj = new DssService($initData['student_info'], $initData['from_type']);
+                break;
+            default:
+                throw new RunTimeException(['app_id_invalid']);
+        }
+        return $obj;
+    }
 
     /**
      * 根据不同类型的客户端获取注册渠道ID
@@ -76,9 +102,9 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
         if (empty($shaPosterList)) {
             return $returnData;
         }
-        $posterIds            = $shaPosterList[TemplatePosterModel::STANDARD_POSTER];
+        $posterIds = $shaPosterList[TemplatePosterModel::STANDARD_POSTER];
         $personalityPosterIds = $shaPosterList[TemplatePosterModel::INDIVIDUALITY_POSTER];
-        $field                = [
+        $field = [
             'id',
             'name',
             'poster_id',
@@ -89,14 +115,14 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
             'practise',
             'type'
         ];
-        $where['id']          = array_merge($posterIds, $personalityPosterIds);
+        $where['id'] = array_merge($posterIds, $personalityPosterIds);
         if ($firstPosterTypeOrder == TemplatePosterModel::POSTER_ORDER) {
             $where['ORDER'] = ['type' => 'DESC'];
         }
         $templatePosterList = TemplatePosterModel::getRecords($where, $field);
         foreach ($templatePosterList as $item) {
-            $item['poster_url']          = AliOSS::replaceCdnDomainForDss($item['poster_path']);
-            $item['example_url']         = !empty($item['example_path']) ? AliOSS::replaceCdnDomainForDss($item['example_path']) : '';
+            $item['poster_url'] = AliOSS::replaceCdnDomainForDss($item['poster_path']);
+            $item['example_url'] = !empty($item['example_path']) ? AliOSS::replaceCdnDomainForDss($item['example_path']) : '';
             $returnData[$item['type']][] = $item;
         }
         unset($item);
@@ -110,31 +136,31 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
      */
     public static function formatActivityInfo(array $activityInfo): array
     {
-        $info                                            = self::formatActivityTimeStatus($activityInfo);
-        $info['format_start_time']                       = date("Y-m-d H:i:s", $activityInfo['start_time']);
-        $info['format_end_time']                         = date("Y-m-d H:i:s", $activityInfo['end_time']);
-        $info['format_create_time']                      = date("Y-m-d H:i:s", $activityInfo['create_time']);
-        $info['enable_status_zh']                        = DictConstants::get(DictConstants::ACTIVITY_ENABLE_STATUS,
+        $info = self::formatActivityTimeStatus($activityInfo);
+        $info['format_start_time'] = date("Y-m-d H:i:s", $activityInfo['start_time']);
+        $info['format_end_time'] = date("Y-m-d H:i:s", $activityInfo['end_time']);
+        $info['format_create_time'] = date("Y-m-d H:i:s", $activityInfo['create_time']);
+        $info['enable_status_zh'] = DictConstants::get(DictConstants::ACTIVITY_ENABLE_STATUS,
             $activityInfo['enable_status']);
-        $info['banner_url']                              = AliOSS::replaceCdnDomainForDss($activityInfo['banner']);
-        $info['share_button_url']                        = AliOSS::replaceCdnDomainForDss($activityInfo['share_button_img']);
-        $info['award_detail_url']                        = AliOSS::replaceCdnDomainForDss($activityInfo['award_detail_img']);
-        $info['upload_button_url']                       = AliOSS::replaceCdnDomainForDss($activityInfo['upload_button_img']);
-        $info['strategy_url']                            = AliOSS::replaceCdnDomainForDss($activityInfo['strategy_img']);
-        $info['guide_word']                              = Util::textDecode($activityInfo['guide_word']);
-        $info['share_word']                              = Util::textDecode($activityInfo['share_word']);
-        $info['personality_poster_button_url']           = AliOSS::replaceCdnDomainForDss($activityInfo['personality_poster_button_img']);
-        $info['poster_prompt']                           = Util::textDecode($activityInfo['poster_prompt']);
-        $info['poster_make_button_url']                  = AliOSS::replaceCdnDomainForDss($activityInfo['poster_make_button_img']);
-        $info['share_poster_prompt']                     = Util::textDecode($activityInfo['share_poster_prompt']);
-        $info['retention_copy']                          = Util::textDecode($activityInfo['retention_copy']);
-        $info['delay_day']                               = $activityInfo['delay_second'] / Util::TIMESTAMP_ONEDAY;
+        $info['banner_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['banner']);
+        $info['share_button_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['share_button_img']);
+        $info['award_detail_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['award_detail_img']);
+        $info['upload_button_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['upload_button_img']);
+        $info['strategy_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['strategy_img']);
+        $info['guide_word'] = Util::textDecode($activityInfo['guide_word']);
+        $info['share_word'] = Util::textDecode($activityInfo['share_word']);
+        $info['personality_poster_button_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['personality_poster_button_img']);
+        $info['poster_prompt'] = Util::textDecode($activityInfo['poster_prompt']);
+        $info['poster_make_button_url'] = AliOSS::replaceCdnDomainForDss($activityInfo['poster_make_button_img']);
+        $info['share_poster_prompt'] = Util::textDecode($activityInfo['share_poster_prompt']);
+        $info['retention_copy'] = Util::textDecode($activityInfo['retention_copy']);
+        $info['delay_day'] = $activityInfo['delay_second'] / Util::TIMESTAMP_ONEDAY;
         $info['format_target_user_first_pay_time_start'] = !empty($activityInfo['target_user_first_pay_time_start']) ? date("Y-m-d H:i:s",
             $activityInfo['target_user_first_pay_time_start']) : '';
-        $info['format_target_user_first_pay_time_end']   = !empty($activityInfo['target_user_first_pay_time_end']) ? date("Y-m-d H:i:s",
+        $info['format_target_user_first_pay_time_end'] = !empty($activityInfo['target_user_first_pay_time_end']) ? date("Y-m-d H:i:s",
             $activityInfo['target_user_first_pay_time_end']) : '';
-        $info['award_rule']                              = Util::textDecode($info['award_rule']);
-        $info['format_target_user']                      = self::formatTargetUser(json_decode($activityInfo['target_user'],
+        $info['award_rule'] = Util::textDecode($info['award_rule']);
+        $info['format_target_user'] = self::formatTargetUser(json_decode($activityInfo['target_user'],
             true));
         return $info;
     }
@@ -185,17 +211,18 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
      * @return array
      */
     public static function getRangeTimeEnableActivity(
-        int $appId,
-        int $startTime,
-        int $endTime,
+        int    $appId,
+        int    $startTime,
+        int    $endTime,
         string $activityCountryCode = ''
-    ): array {
+    ): array
+    {
         $conflictWhere = [
             'start_time[<=]' => $endTime,
-            'end_time[>=]' => $startTime,
-            'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
-            'app_id' => $appId,
-            'ORDER' => ['activity_id' => 'DESC'],
+            'end_time[>=]'   => $startTime,
+            'enable_status'  => OperationActivityModel::ENABLE_STATUS_ON,
+            'app_id'         => $appId,
+            'ORDER'          => ['activity_id' => 'DESC'],
         ];
         // 如果活动指定了投放地区，搜索时需要区分投放地区
         $activityCountryCode && $conflictWhere['activity_country_code'] = OperationActivityModel::getWeekActivityCountryCode($activityCountryCode);
@@ -234,8 +261,9 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
         int $awardType,
         int $verifyStatus,
         int $awardNode = 0
-    ) {
-        $type    = 'limit_time_activity_msg_' . $appId;
+    )
+    {
+        $type = 'limit_time_activity_msg_' . $appId;
         $keyCode = $verifyStatus . '-' . $activityType . '-' . $awardType;
         if (!empty($awardNode)) {
             $keyCode .= '-no-award-node';

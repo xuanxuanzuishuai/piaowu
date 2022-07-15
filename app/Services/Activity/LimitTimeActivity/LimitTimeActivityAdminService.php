@@ -21,6 +21,7 @@ use App\Models\TemplatePosterModel;
 use App\Services\Activity\LimitTimeActivity\TraitService\DssService;
 use App\Services\Activity\LimitTimeActivity\TraitService\LimitTimeActivityBaseAbstract;
 use App\Services\DictService;
+use App\Services\Queue\Activity\LimitTimeAward\LimitTimeAwardProducerService;
 use App\Services\Queue\QueueService;
 
 /**
@@ -446,21 +447,21 @@ class LimitTimeActivityAdminService
         $uuids = $operatorIds = [];
         foreach ($returnData['list'] as $item) {
             $uuids[] = $item['student_uuid'];
-            $operatorIds[] = $item['operator_id'];
+            $operatorIds[] = $item['verify_user'];
         }
         unset($item);
         $uuids = array_unique($uuids);
         $operatorIds = array_unique($operatorIds);
-        if (!empty($uuids)) $studentList = array_column(self::getStudentInfoByUUID($params['app_id'], $uuids), null, 'uuid');
-        if (!empty($operatorIds)) $operatorList = array_column(EmployeeModel::getRecords(['id' => $operatorIds]) ?: [], null, 'id');
+        if (!empty($uuids)) $studentList = LimitTimeActivityBaseAbstract::getAppObj($appId)->getStudentInfoByUUID($uuids);
+        if (!empty($operatorIds)) $operatorList = LimitTimeActivityBaseAbstract::getAppObj($appId)->getEmployeeInfo($operatorIds);
         $statusDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS);
         $reasonDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);
         foreach ($returnData['list'] as &$item) {
             $_student = $studentList[$item['student_uuid']] ?? [];
-            $_operator = $operatorList[$item['operator_id']] ?? [];
+            $_operator = $operatorList[$item['verify_user']] ?? [];
             $item['format_share_poster_url'] = AliOSS::replaceCdnDomainForDss($item['poster_path']);
             $item['mobile'] = Util::hideUserMobile($_student['mobile']);
-            $item['student_name'] = Util::hideUserMobile($_student['name']);
+            $item['student_name'] = $_student['name'];
             $item['format_verify_status'] = $statusDict[$item['verify_status']] ?? $item['verify_status'];
             $item['format_create_time'] = date('Y-m-d H:i', $item['create_time']);
             $item['format_verify_time'] = !empty($item['verify_time']) ? date('Y-m-d H:i', $item['verify_time']) : '';
@@ -469,24 +470,6 @@ class LimitTimeActivityAdminService
         }
         unset($item);
         return $returnData;
-    }
-
-    /**
-     * 根据uuid获取学生信息列表
-     * @param $appId
-     * @param array $uuids
-     * @param $fields
-     * @return array
-     */
-    public static function getStudentInfoByUUID($appId, array $uuids, $fields = [])
-    {
-        if (empty($uuids)) {
-            return [];
-        }
-        if ($appId == Constants::SMART_APP_ID) {
-            $studentList = DssService::getStudentInfoByUUID($uuids, $fields);
-        }
-        return $studentList ?? [];
     }
 
     /**
@@ -574,18 +557,19 @@ class LimitTimeActivityAdminService
         $awardRule = LimitTimeActivityAwardRuleModel::getRecord(['activity_id' => $poster['activity_id'], 'task_num' => $poster['task_num']]);
         $time = time();
         $update = LimitTimeActivitySharePosterModel::updateRecord($poster['id'], [
-            'verify_status' => $status,
-            'verify_time'   => $time,
-            'verify_user'   => $params['employee_id'],
-            'verify_reason' => implode(',', $reason),
-            'update_time'   => $time,
-            'remark'        => $remark,
-            'award_type'    => $awardRule['award_type'],
+            'verify_status'     => $status,
+            'verify_time'       => $time,
+            'verify_user'       => $params['employee_id'],
+            'verify_reason'     => implode(',', $reason),
+            'update_time'       => $time,
+            'remark'            => $remark,
+            'award_type'        => $awardRule['award_type'],
+            'send_award_status' => OperationActivityModel::SEND_AWARD_STATUS_DISABLED,
         ]);
         $msgId = LimitTimeActivityBaseAbstract::getWxMsgId((int)$appId, (int)$activityInfo['activity_type'], (int)$awardRule['award_type'], (int)$status);
         // 审核不通过, 发送模版消息
         if ($update > 0 && $status == SharePosterModel::VERIFY_STATUS_UNQUALIFIED && !empty($msgId)) {
-            $studentInfo = self::getStudentInfoByUUID($appId, [$poster['student_uuid']], ['id'])[0];
+            $studentInfo = LimitTimeActivityBaseAbstract::getAppObj($appId)->getStudentInfoByUUID([$poster['student_uuid']], ['id'])[$poster['student_uuid']];
             $jumpUrl = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'limit_time_activity_record_list');
             $activityInfo = LimitTimeActivityModel::getRecord(['activity_id' => $poster['activity_id']]);
             $activityHtmlConfigInfo = LimitTimeActivityHtmlConfigModel::getRecord(['activity_id' => $poster['activity_id']], ['share_poster', 'first_poster_type_order']);
@@ -615,11 +599,17 @@ class LimitTimeActivityAdminService
     public static function approvalPoster($recordIds, $params = [])
     {
         $logTitle = 'LimitTimeActivity_approvalPoster';
-        $posters = LimitTimeActivitySharePosterModel::getRecords(['id' => $recordIds, 'verify_status' => SharePosterModel::VERIFY_STATUS_WAIT]);
+        $activityId = $params['activity_id'];
+        $appId = $params['app_id'];
+        SimpleLogger::info("$logTitle params", [$recordIds, $params]);
+        if (empty($activityId) || empty($appId)) {
+            throw new RunTimeException(['invalid_data']);
+        }
+        $posters = LimitTimeActivitySharePosterModel::getRecords(['id' => $recordIds, 'verify_status' => SharePosterModel::VERIFY_STATUS_WAIT, 'activity_id' => $activityId]);
         if (count($posters) != count($recordIds)) {
             throw new RunTimeException(['get_share_poster_error']);
         }
-        $activityInfo = LimitTimeActivityModel::getRecord(['activity_id' => $params['activity_id']]);
+        $activityInfo = LimitTimeActivityModel::getRecord(['activity_id' => $activityId]);
         if (empty($activityInfo)) {
             throw new RunTimeException(['activity_not_found']);
         }
@@ -640,12 +630,12 @@ class LimitTimeActivityAdminService
          * 如果是统一发奖，后续逻辑，后续处理
          */
         //开始处理数据
-        foreach ($posters as $key => $poster) {
-            $studentInfo = self::getStudentInfoByUUID($params['app_id'], [$poster['student_uuid']]);
+        foreach ($posters as $poster) {
+            $studentInfo = LimitTimeActivityBaseAbstract::getAppObj($appId)->getEmployeeInfo();
             // 审核数据操作锁，解决并发导致的重复审核和发奖
             $lockKey = LimitTimeActivityBaseAbstract::VERIFY_SHARE_POSTER_LOCK_KEY_PREFIX . $poster['id'];
             try {
-                if (!Util::setLock($lockKey, 60)) {
+                if (!Util::setLock($lockKey, 20)) {
                     continue;
                 }
                 // 读取现有通过数量
@@ -664,9 +654,9 @@ class LimitTimeActivityAdminService
                     'award_amount'       => $award['award_amount'],
                     'award_type'         => $award['award_type'],
                     'send_award_status'  => OperationActivityModel::SEND_AWARD_STATUS_WAITING,
-                    'send_award_version' => $awardVersion,
+                    'send_award_version' => $awardVersion['id'],
                 ];
-                $update = SharePosterModel::batchUpdateRecord($updateData, [
+                $update = LimitTimeActivitySharePosterModel::batchUpdateRecord($updateData, [
                     'id'             => $poster['id'],
                     'verify_status'  => $poster['verify_status'],
                     'award_task_num' => 0,
@@ -687,7 +677,8 @@ class LimitTimeActivityAdminService
                 ];
                 $msgId = LimitTimeActivityBaseAbstract::getWxMsgId($params['app_id'], $activityInfo['activity_type'], $award['award_type'], SharePosterModel::VERIFY_STATUS_QUALIFIED, $awardNode);
                 if ($activityInfo['award_prize_type'] == OperationActivityModel::AWARD_PRIZE_TYPE_IN_TIME) {
-                    // TODO qingfeng.lian  , 发送发奖消息，以及投递发放奖励消息
+                    // 投递发奖消息
+                    LimitTimeAwardProducerService::sendAwardProducer($poster['id']);
                     // 发送消息
                     QueueService::sendUserWxMsg($params['app_id'], $studentInfo['id'], $msgId, [
                         'replace_params' => $replaceParams,

@@ -33,4 +33,28 @@ class LimitTimeAwardProducerService
         }
         return true;
     }
+
+    /**
+     * 发奖生产者
+     * @param int $sharePosterRecordId
+     * @param array $params
+     * @return bool
+     */
+    public static function sendAwardProducer(int $sharePosterRecordId, array $params = []): bool
+    {
+        try {
+            $defTime = $params['def_time'] ?? 0;
+            $nsqObj = new LimitTimeAwardTopic();
+            $nsqObj->nsqDataSet(
+                [
+                    "record_id" => $sharePosterRecordId,
+                ],
+                $nsqObj::EVENT_TYPE_SEND_AWARD)
+                ->publish($defTime);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), []);
+            return false;
+        }
+        return true;
+    }
 }
