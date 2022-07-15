@@ -9,6 +9,7 @@ use App\Libs\SimpleLogger;
 use App\Middleware\MiddlewareBase;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpStudentAppModel;
+use App\Services\ErpUserService;
 use App\Services\StudentService;
 use App\Services\UserService;
 use App\Services\WechatTokenService;
@@ -107,15 +108,18 @@ class ClientAuthMiddleware extends MiddlewareBase
     {
         //获取header头中账户ID数据
         $userId = (int)$request->getHeader('UserId')[0];
-        if (empty($userId)) {
-            throw new RunTimeException(['user_id_required']);
-        }
         //设置账户ID到全局容器中
-        $userData                     = ErpStudentAppModel::getRecord([
-            'student_id' => $userId,
-            'app_id'     => Constants::REAL_APP_ID
-        ],
-            ['student_id(user_id)', 'status', 'first_pay_time']);
+        $userData = ErpStudentAppModel::getRecord(
+            [
+                'student_id' => $userId,
+                'app_id'     => Constants::REAL_APP_ID
+            ],
+            ['student_id(user_id)', 'status', 'first_pay_time(pay_vip_time)', 'uuid', 'thumb', 'name', 'mobile']);
+        if (empty($userData)) {
+            throw new RunTimeException(['user_invalid']);
+        }
+        $userData['name']             = !empty($userData['name']) ? $userData['name'] : ErpUserService::getStudentDefaultName($userData['mobile']);
+        $userData['thumb_oss_url']    = ErpUserService::getStudentThumbUrl([$userData['thumb']])[0];
         $this->container['user_info'] = $userData;
     }
 
@@ -160,7 +164,19 @@ class ClientAuthMiddleware extends MiddlewareBase
             SimpleLogger::info('UserInfo: ', ["token" => $token, "userInfo" => $userInfo]);
         }
         //获取学生基础信息
-        $studentBaseInfo = DssStudentModel::getById($userInfo['user_id']);
+        $studentBaseInfo                  = DssStudentModel::getRecord(
+            [
+                'id' => $userInfo['user_id']
+            ],
+            [
+                'id(user_id)',
+                'status',
+                'pay_vip_time',
+                'uuid',
+                'thumb',
+                'name',
+                'mobile'
+            ]);
         $studentBaseInfo['thumb_oss_url'] = StudentService::getStudentThumb($studentBaseInfo['thumb']);
         WechatTokenService::refreshToken($token);
         $this->container['user_info'] = array_merge($userInfo, $studentBaseInfo);

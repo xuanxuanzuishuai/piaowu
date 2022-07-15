@@ -682,23 +682,29 @@ class PosterService
         int $studentId,
         int $studentStatus,
         int $channel,
-        bool $isOpenAbTest = false
+        bool $isOpenAbTest = false,
+        bool $isUseCheckActiveId = false
     ): array {
         //组合生成海报数据
-        $userQrParams = [];
+        $userQrParams  = [];
+        $checkActiveId = 0;
+        if ($isUseCheckActiveId === true) {
+            $checkActiveId = PosterService::getCheckActivityId($appId, $qrData['user_id'] ?? 0);
+        }
         foreach ($posterList as $item) {
             $_tmp['user_current_status'] = $studentStatus;
-            $_tmp['activity_id'] = $opActivityId;
-            $_tmp['poster_id'] = $item['poster_id'];
-            $_tmp['user_id'] = $studentId;
-            $_tmp['user_type'] = Constants::USER_TYPE_STUDENT;
-            $_tmp['channel_id'] = $channel;
+            $_tmp['activity_id']         = $opActivityId;
+            $_tmp['poster_id']           = $item['poster_id'];
+            $_tmp['user_id']             = $studentId;
+            $_tmp['user_type']           = Constants::USER_TYPE_STUDENT;
+            $_tmp['channel_id']          = $channel;
             $_tmp['landing_type'] = $landingType;
+            $_tmp['check_active_id'] = $checkActiveId;
             $_tmp['date'] = date('Y-m-d', time());
             $userQrParams[] = $_tmp;
         }
         // 获取小程序码
-        $userQrArr = MiniAppQrService::batchCreateUserMiniAppQr($appId, $busiesType, $userQrParams, false, false);
+        $userQrArr = MiniAppQrService::batchCreateUserMiniAppQr($appId, $busiesType, $userQrParams);
         //海报配置数据
         $posterConfig = PosterService::getPosterConfig();
         // 获取AB测海报，和对照组海报id

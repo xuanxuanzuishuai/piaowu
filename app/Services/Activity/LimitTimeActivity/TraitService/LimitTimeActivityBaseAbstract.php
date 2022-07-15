@@ -77,6 +77,9 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
             case Constants::SMART_APP_ID;
                 $obj = new DssService($initData['student_info'], $initData['from_type']);
                 break;
+            case Constants::REAL_APP_ID;
+                $obj = new RealService($initData['student_info'], $initData['from_type']);
+                break;
             default:
                 throw new RunTimeException(['app_id_invalid']);
         }

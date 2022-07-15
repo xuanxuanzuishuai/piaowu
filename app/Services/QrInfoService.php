@@ -49,7 +49,7 @@ class QrInfoService
             'from_service'        => 'from_service',            // 请求来源服务
             'employee_uuid'       => 'employee_uuid',           // 员工uuid
         ];
-        $qrData['check_active_id'] = $onlyReferralBaseField ? 0 : PosterService::getCheckActivityId($appId, $qrData['user_id'] ?? 0);
+        $qrData['check_active_id'] = ($onlyReferralBaseField==false) ? 0 : PosterService::getCheckActivityId($appId, $qrData['user_id'] ?? 0);
         foreach ($signField as $paramsFiled => $createField) {
             if (isset($qrData[$paramsFiled]) && !Util::emptyExceptZero($qrData[$paramsFiled])) {
                 $createTicketData[$createField] = $qrData[$paramsFiled];
@@ -58,9 +58,6 @@ class QrInfoService
         if (empty($createTicketData)) {
             throw new RunTimeException(["create_sign_error"], [$qrData, $appId, $busiesType]);
         }
-        // $createTicketData['app_id']      = $appId;           // 业务id
-        // $createTicketData['busies_type'] = $busiesType; // 场景id
-
         ksort($createTicketData);
         $paramsStr = http_build_query($createTicketData);
         return md5($paramsStr . '_appId_' . $appId . '_busiesType_' . $busiesType);
