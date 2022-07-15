@@ -570,7 +570,8 @@ class LimitTimeActivityAdminService
         if (empty($poster)) {
             throw new RunTimeException(['get_share_poster_error']);
         }
-        $awardRule = LimitTimeActivityAwardRuleModel::getRecord(['activity_id' => $poster['activity_Id'], 'task_num' => $poster['task_num']]);
+        $activityInfo = LimitTimeActivityModel::getRecord(['activity_id' => $poster['activity_id']]);
+        $awardRule = LimitTimeActivityAwardRuleModel::getRecord(['activity_id' => $poster['activity_id'], 'task_num' => $poster['task_num']]);
         $time = time();
         $update = LimitTimeActivitySharePosterModel::updateRecord($poster['id'], [
             'verify_status' => $status,
@@ -581,17 +582,13 @@ class LimitTimeActivityAdminService
             'remark'        => $remark,
             'award_type'    => $awardRule['award_type'],
         ]);
-        if ($awardRule['award_type'] == Constants::AWARD_TYPE_GOLD_LEAF) {
-            $msgId = DictConstants::get(DictConstants::LIMIT_TIME_ACTIVITY_CONFIG, 'ai_gold_leaf_verify_refused_wx_msg_id');
-        } elseif ($awardRule['award_type'] == Constants::AWARD_TYPE_TIME) {
-            $msgId = DictConstants::get(DictConstants::LIMIT_TIME_ACTIVITY_CONFIG, 'ai_time_verify_refused_wx_msg_id');
-        }
+        $msgId = LimitTimeActivityBaseAbstract::getWxMsgId((int)$appId, (int)$activityInfo['activity_type'], (int)$awardRule['award_type'], (int)$status);
         // 审核不通过, 发送模版消息
         if ($update > 0 && $status == SharePosterModel::VERIFY_STATUS_UNQUALIFIED && !empty($msgId)) {
-            $studentInfo = self::getStudentInfoByUUID($appId, [$poster['student_uuid']], ['id']);
+            $studentInfo = self::getStudentInfoByUUID($appId, [$poster['student_uuid']], ['id'])[0];
             $jumpUrl = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'limit_time_activity_record_list');
-            $activityInfo = LimitTimeActivityModel::getRecord(['activity_id' => $poster['activity_Id']]);
-            $activityHtmlConfigInfo = LimitTimeActivityHtmlConfigModel::getRecord(['activity_id' => $poster['activity_Id']], ['share_poster', 'first_poster_type_order']);
+            $activityInfo = LimitTimeActivityModel::getRecord(['activity_id' => $poster['activity_id']]);
+            $activityHtmlConfigInfo = LimitTimeActivityHtmlConfigModel::getRecord(['activity_id' => $poster['activity_id']], ['share_poster', 'first_poster_type_order']);
             $posterList = json_decode($activityHtmlConfigInfo['share_poster'], true);
             $posterId = $posterList[$activityHtmlConfigInfo['first_poster_type_order']][0] ?? 0;
             // 发送消息
@@ -599,7 +596,7 @@ class LimitTimeActivityAdminService
                 'replace_params' => [
                     'activity_name' => $activityInfo['activity_name'] . '-' . $poster['task_num'],
                     'jump_url'      => LimitTimeActivityBaseAbstract::getMsgJumpUrl($jumpUrl, [
-                        'activity_id' => $poster['activity_Id'],
+                        'activity_id' => $poster['activity_id'],
                         'poster_id'   => $posterId,
                     ]),
                 ],

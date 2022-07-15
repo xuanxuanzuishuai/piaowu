@@ -186,6 +186,7 @@ class LimitTimeActivity extends ControllerBase
         if (empty($params['award_prize_type'])) {
             $params['award_prize_type'] = OperationActivityModel::AWARD_PRIZE_TYPE_IN_TIME;
         }
+        $params['activity_country_code'] = $params['country_code'];
         $data = LimitTimeActivityAdminService::save($params, $employeeId);
         return HttpHelper::buildResponse($response, $data);
     }

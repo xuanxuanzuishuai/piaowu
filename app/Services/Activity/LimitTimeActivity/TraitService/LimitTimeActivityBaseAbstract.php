@@ -240,6 +240,6 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
         if (!empty($awardNode)) {
             $keyCode .= '-no-award-node';
         }
-        return DictConstants::get($type, $keyCode);
+        return DictService::getKeyValue($type, $keyCode);
     }
 }
