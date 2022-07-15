@@ -327,9 +327,10 @@ class AutoCheckPicture
                 $composeInfo          = MiniAppQrService::getQrInfoById($word);
                 $composeUser          = $composeInfo['user_id'] ?? 0;
                 $composeCheckActivity = $composeInfo['check_active_id'] ?? 0;
+                $qrId = $composeInfo['id'] ?? '';
 
                 //根据不同活动类型的海报，查询海报数据
-                $checkRes = self::checkSharePosterUploadData($word, $msgBody);
+                $checkRes = self::checkSharePosterUploadData($qrId, $msgBody);
                 $errCode[] = $checkRes['error_code'];
                 if (!empty($checkRes['upload_info']['student_id']) && $composeUser == $checkRes['upload_info']['student_id']) {
                     $isSameUser = true;
@@ -518,27 +519,30 @@ class AutoCheckPicture
 
     /**
      * 检测海报上传记录数据
-     * @param string $word
+     * @param string $qrId
      * @param array $msgBody
      * @return array
      */
-    private static function checkSharePosterUploadData(string $word, array $msgBody): array
+    private static function checkSharePosterUploadData(string $qrId, array $msgBody): array
     {
         $checkRes = [
             'upload_info' => [],
-            'err_code'    => null,
+            'err_code' => null,
         ];
+        if (empty($qrId)) {
+            return $checkRes;
+        }
         switch ($msgBody['activity_type']) {
             case self::SHARE_POSTER_TYPE_REAL_WEEK:
                 //真人周周领奖
                 $checkRes['upload_info'] = RealSharePosterModel::getRecord(['id' => $msgBody['id']],
                     ['student_id', 'activity_id']);
                 $exist                   = RealSharePosterModel::getRecord([
-                    'unique_code'   => $word,
+                    'unique_code' => $qrId,
                     'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED
                 ], ['id']);
                 if (empty($exist)) {
-                    RealSharePosterModel::updateRecord($msgBody['id'], ['unique_code' => $word]);
+                    RealSharePosterModel::updateRecord($msgBody['id'], ['unique_code' => $qrId]);
                 } else {
                     $checkRes['err_code'] = -8;
                 }
@@ -548,25 +552,25 @@ class AutoCheckPicture
                 $checkRes['upload_info'] = SharePosterModel::getRecord(['id' => $msgBody['id']],
                     ['student_id', 'activity_id']);
                 $exist                   = SharePosterModel::getRecord([
-                    'unique_code'   => $word,
+                    'unique_code' => $qrId,
                     'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED
                 ], ['id']);
                 if (empty($exist)) {
-                    SharePosterModel::updateRecord($msgBody['id'], ['unique_code' => $word]);
+                    SharePosterModel::updateRecord($msgBody['id'], ['unique_code' => $qrId]);
                 } else {
                     $checkRes['err_code'] = -8;
                 }
                 break;
             case self::SHARE_POSTER_TYPE_LIMIT_TIME_AWARD:
                 //限时有奖
-                $checkRes['upload_info'] = LimitTimeActivitySharePosterModel::getRecord(['id' => $msgBody['id']],
+                $checkRes['upload_info'] = LimitTimeActivitySharePosterModel::getRecord(['id' => $msgBody['record_id']],
                     ['student_uuid', 'activity_id']);
                 $exist                   = LimitTimeActivitySharePosterModel::getRecord([
-                    'qr_id'         => $word,
+                    'qr_id' => $qrId,
                     'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED
                 ], ['id']);
                 if (empty($exist)) {
-                    SharePosterModel::updateRecord($msgBody['id'], ['qr_id' => $word]);
+                    LimitTimeActivitySharePosterModel::updateRecord($msgBody['record_id'], ['qr_id' => $qrId]);
                 } else {
                     $checkRes['err_code'] = -8;
                 }

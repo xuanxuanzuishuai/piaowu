@@ -698,7 +698,7 @@ class PosterService
             $userQrParams[] = $_tmp;
         }
         // 获取小程序码
-        $userQrArr = MiniAppQrService::batchCreateUserMiniAppQr($appId, $busiesType, $userQrParams);
+        $userQrArr = MiniAppQrService::batchCreateUserMiniAppQr($appId, $busiesType, $userQrParams, false, false);
         //海报配置数据
         $posterConfig = PosterService::getPosterConfig();
         // 获取AB测海报，和对照组海报id

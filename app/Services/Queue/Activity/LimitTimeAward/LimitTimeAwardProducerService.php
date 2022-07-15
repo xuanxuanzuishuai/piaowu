@@ -21,7 +21,7 @@ class LimitTimeAwardProducerService
             $nsqObj = new LimitTimeAwardTopic();
             $nsqObj->nsqDataSet(
                 [
-                    "share_poster_id" => $sharePosterId,
+                    "record_id" => $sharePosterId,
                     "user_id"         => $userId,
                     "activity_type"   => AutoCheckPicture::SHARE_POSTER_TYPE_LIMIT_TIME_AWARD,
                 ],

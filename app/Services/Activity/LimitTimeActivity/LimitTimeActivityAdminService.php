@@ -566,7 +566,12 @@ class LimitTimeActivityAdminService
             'award_type'        => $awardRule['award_type'],
             'send_award_status' => OperationActivityModel::SEND_AWARD_STATUS_DISABLED,
         ]);
-        $msgId = LimitTimeActivityBaseAbstract::getWxMsgId((int)$appId, (int)$activityInfo['activity_type'], (int)$awardRule['award_type'], (int)$status);
+        $msgId = LimitTimeActivityBaseAbstract::getWxMsgId(
+            (int)$appId,
+            (int)$activityInfo['activity_type'],
+            OperationActivityModel::SEND_AWARD_STATUS_DISABLED,
+            (int)$status
+        );
         // 审核不通过, 发送模版消息
         if ($update > 0 && $status == SharePosterModel::VERIFY_STATUS_UNQUALIFIED && !empty($msgId)) {
             $studentInfo = LimitTimeActivityBaseAbstract::getAppObj($appId)->getStudentInfoByUUID([$poster['student_uuid']], ['id'])[$poster['student_uuid']];
@@ -631,7 +636,7 @@ class LimitTimeActivityAdminService
          */
         //开始处理数据
         foreach ($posters as $poster) {
-            $studentInfo = LimitTimeActivityBaseAbstract::getAppObj($appId)->getEmployeeInfo();
+            $studentInfo = LimitTimeActivityBaseAbstract::getAppObj($appId)->getStudentInfoByUUID([$poster['student_uuid']])[$poster['student_uuid']];
             // 审核数据操作锁，解决并发导致的重复审核和发奖
             $lockKey = LimitTimeActivityBaseAbstract::VERIFY_SHARE_POSTER_LOCK_KEY_PREFIX . $poster['id'];
             try {
@@ -667,15 +672,21 @@ class LimitTimeActivityAdminService
                     continue;
                 }
                 // 如果是全勤打卡， 获取距离下一个节点的次数
-                $awardNode = $activityInfo['activity_type'] == OperationActivityModel::ACTIVITY_TYPE_FULL_ATTENDANCE ? self::getNextAwardNodeStep($awardTaskNum, $awardRules) : 0;
+                $nextAwardNodeStep = $activityInfo['activity_type'] == OperationActivityModel::ACTIVITY_TYPE_FULL_ATTENDANCE ? self::getNextAwardNodeStep($awardTaskNum, $awardRules) : 0;
                 // 组装微信消息需要的参数
                 $replaceParams = [
                     'activity_name' => $activityInfo['activity_name'] . '-' . $poster['task_num'],
                     'jump_url'      => DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'limit_time_activity_detail'),
-                    'passes_num'    => $awardNode,
+                    'passes_num'    => $nextAwardNodeStep,
                     'award_num'     => $award['award_amount'],
                 ];
-                $msgId = LimitTimeActivityBaseAbstract::getWxMsgId($params['app_id'], $activityInfo['activity_type'], $award['award_type'], SharePosterModel::VERIFY_STATUS_QUALIFIED, $awardNode);
+                $msgId = LimitTimeActivityBaseAbstract::getWxMsgId(
+                    $params['app_id'],
+                    $activityInfo['activity_type'],
+                    OperationActivityModel::SEND_AWARD_STATUS_WAITING,
+                    SharePosterModel::VERIFY_STATUS_QUALIFIED,
+                    $nextAwardNodeStep
+                );
                 if ($activityInfo['award_prize_type'] == OperationActivityModel::AWARD_PRIZE_TYPE_IN_TIME) {
                     // 投递发奖消息
                     LimitTimeAwardProducerService::sendAwardProducer($poster['id']);

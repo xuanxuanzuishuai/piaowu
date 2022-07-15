@@ -10,6 +10,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\LimitTimeActivity\LimitTimeActivityModel;
 use App\Models\OperationActivityModel;
+use App\Models\SharePosterModel;
 use App\Models\TemplatePosterModel;
 use App\Services\DictService;
 
@@ -250,23 +251,37 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
      * 获取推送消息id
      * @param int $appId
      * @param int $activityType
-     * @param int $awardType
+     * @param int $sendAwardStatus
      * @param int $verifyStatus
-     * @param int $awardNode
+     * @param int $nextAwardNodeStep
      * @return array|mixed|null
      */
     public static function getWxMsgId(
         int $appId,
         int $activityType,
-        int $awardType,
+        int $sendAwardStatus,
         int $verifyStatus,
-        int $awardNode = 0
+        int $nextAwardNodeStep = 0
     )
     {
         $type = 'limit_time_activity_msg_' . $appId;
-        $keyCode = $verifyStatus . '-' . $activityType . '-' . $awardType;
-        if (!empty($awardNode)) {
-            $keyCode .= '-no-award-node';
+        $keyCode = '';
+        if ($verifyStatus == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
+            // 审核拒绝通知
+            $keyCode = 'refused_poster';
+        } elseif ($verifyStatus == SharePosterModel::VERIFY_STATUS_QUALIFIED && $sendAwardStatus == OperationActivityModel::SEND_AWARD_STATUS_GIVE) {
+            // 奖励到账通知
+            $keyCode = 'send_award_success';
+        } elseif ($verifyStatus == SharePosterModel::VERIFY_STATUS_QUALIFIED) {
+            // 分享活动审核通过通知
+            $keyCode = $activityType . '-verify-pass';
+            if ($activityType == OperationActivityModel::ACTIVITY_TYPE_FULL_ATTENDANCE && empty($nextAwardNodeStep)) {
+                // 全勤活动审核通过没有奖励的节点通知
+                $keyCode .= '-no-award-node';
+            }
+        }
+        if (empty($keyCode)) {
+            return 0;
         }
         return DictService::getKeyValue($type, $keyCode);
     }
