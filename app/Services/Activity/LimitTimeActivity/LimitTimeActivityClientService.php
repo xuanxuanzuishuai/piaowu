@@ -295,7 +295,7 @@ class LimitTimeActivityClientService
             $serviceObj->appId,
             [$serviceObj->studentInfo['uuid']],
             ['activity_id' => $activityData['activity_id']],
-            0), null, 'task_num');
+            0)[0], null, 'task_num');
         $formatTaskList = self::formatActivityTaskListData($activityData, $taskList, $recordsDetail, false);
         foreach ($formatTaskList as $tv) {
             $result['list'][] = [
