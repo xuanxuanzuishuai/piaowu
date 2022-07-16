@@ -17,9 +17,9 @@ class DssService extends LimitTimeActivityBaseAbstract
 {
     public function __construct($studentInfo, $fromType)
     {
-        $this->appId       = Constants::SMART_APP_ID;
+        $this->appId = Constants::SMART_APP_ID;
         $this->studentInfo = $studentInfo;
-        $this->fromType    = $fromType;
+        $this->fromType = $fromType;
     }
 
     /**
@@ -30,6 +30,7 @@ class DssService extends LimitTimeActivityBaseAbstract
      */
     public function getStudentInfoByUUID(array $uuids, array $fields = []): array
     {
+        if (!empty($fields)) $fields = array_merge($fields, ['uuid']);
         $list = DssStudentModel::getRecords(['uuid' => $uuids], $fields);
         return is_array($list) ? array_column($list, null, 'uuid') : [];
     }
