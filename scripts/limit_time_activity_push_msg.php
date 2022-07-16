@@ -50,11 +50,11 @@ class ScriptLimitTimeActivityPush
 
     public function __construct($params)
     {
-        if (empty($params['1'])) {
+        if (empty($params[1])) {
             SimpleLogger::info(self::LogTitle . ' params error.', $params);
             return false;
         }
-        if ($params['1'] == self::IS_FIRST_DAY_PUSH) {
+        if ($params[1] == self::IS_FIRST_DAY_PUSH) {
             $this->isCurrentPush = self::IS_FIRST_DAY_PUSH;
         } else {
             $this->isCurrentPush = self::IS_LAST_DAY_PUSH;
@@ -78,7 +78,7 @@ class ScriptLimitTimeActivityPush
         if (empty($this->isCurrentPush)) {
             return false;
         }
-        if (in_array($this->isCurrentPush, [self::IS_LAST_DAY_PUSH, self::IS_FIRST_DAY_PUSH])) {
+        if (!in_array($this->isCurrentPush, [self::IS_LAST_DAY_PUSH, self::IS_FIRST_DAY_PUSH])) {
             return false;
         }
         return true;
@@ -116,12 +116,13 @@ class ScriptLimitTimeActivityPush
             'app_id'        => self::APP_LIST,
             'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
         ];
-        if ($this->isCurrentPush == self::IS_LAST_DAY_PUSH) {
-            $where['start_time[>=]'] = strtotime("Y-m-d 00:00:00");
-            $where['start_time[<=]'] = strtotime("Y-m-d 23:59:59");
+        $time = date("Y-m-d 00:00:00");
+        if ($this->isCurrentPush == self::IS_FIRST_DAY_PUSH) {
+            $where['start_time[>=]'] = strtotime($time);
+            $where['start_time[<=]'] = strtotime($time);
         } else {
-            $where['end_time[>=]'] = strtotime("Y-m-d 00:00:00");
-            $where['end_time[<=]'] = strtotime("Y-m-d 23:59:59");
+            $where['end_time[>=]'] = strtotime($time);
+            $where['end_time[<=]'] = strtotime($time);
         }
         return LimitTimeActivityModel::getRecords($where);
     }
@@ -131,23 +132,18 @@ class ScriptLimitTimeActivityPush
         if ($appId == Constants::SMART_APP_ID) {
             $db = MysqlDB::getDB(MysqlDB::CONFIG_SLAVE);
             $dssTable = DssStudentModel::getTableNameWithDb();
-            $studentIds = $db->get(
-                $dssTable . '(s)',
-                [
-                    '[><]' . DssUserWeiXinModel::getTableNameWithDb() . '(wx)' => ['wx.user_id' => 's.id'],
-                ],
-                [
-                    's.id',
-                ],
-                [
-                    's.id[>]'             => $this->last_student_id[$appId] ?? 0,
-                    's.has_review_course' => DssStudentModel::REVIEW_COURSE_1980,
-                    'wx.app_id'           => $appId,
-                    'wx.status'           => DssUserWeiXinModel::STATUS_NORMAL,
-                    'ORDER'               => ['s.id' => 'ASC'],
-                    'LIMIT'               => [0, 2000],
-                ]
-            );
+            $wxTable = DssUserWeiXinModel::getTableNameWithDb();
+            $lastId = $this->last_student_id[$appId] ?? 0;
+            $sql = 'SELECT s.id FROM ' .
+                ' ' . $dssTable . ' as s' .
+                ' INNER JOIN ' . $wxTable . ' as wx on wx.user_id=s.id' .
+                ' WHERE s.id >' . $lastId .
+                ' AND s.has_review_course=' . DssStudentModel::REVIEW_COURSE_1980 .
+                ' AND wx.app_id=' . $appId .
+                ' AND wx.status=' . DssUserWeiXinModel::STATUS_NORMAL .
+                ' ORDER BY s.id ASC' .
+                ' LIMIT 0, 2000';
+            $studentIds = $db->queryAll($sql);
         } elseif ($appId == Constants::REAL_APP_ID) {
             $db = MysqlDB::getDB(MysqlDB::CONFIG_ERP_SLAVE);
         }
@@ -157,6 +153,7 @@ class ScriptLimitTimeActivityPush
     public function pushData($appId, $activityList)
     {
         $studentIds = $this->getStudentIds($appId);
+
     }
 }
 
