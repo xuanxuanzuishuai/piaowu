@@ -121,10 +121,13 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
             'practise',
             'type'
         ];
-        $where['id'] = array_merge($posterIds, $personalityPosterIds);
-        if ($firstPosterTypeOrder == TemplatePosterModel::POSTER_ORDER) {
-            $where['ORDER'] = ['type' => 'DESC'];
-        }
+
+		$where['id'] = array_merge($posterIds, $personalityPosterIds);
+		if ($firstPosterTypeOrder == TemplatePosterModel::POSTER_ORDER) {
+			$where['ORDER'] = ['type' => 'DESC'];
+		} else {
+			$where['ORDER'] = ['type' => 'ASC'];
+		}
         $templatePosterList = TemplatePosterModel::getRecords($where, $field);
         foreach ($templatePosterList as $item) {
             $item['poster_url'] = AliOSS::replaceCdnDomainForDss($item['poster_path']);

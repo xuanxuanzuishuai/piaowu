@@ -9,6 +9,7 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Services\Activity\LimitTimeActivity\LimitTimeActivityClientService;
 use App\Services\Activity\LimitTimeActivity\TraitService\DssService;
+use App\Services\Activity\LimitTimeActivity\TraitService\LimitTimeActivityBaseAbstract;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -22,10 +23,13 @@ class LimitTimeActivityController extends ControllerBase
      */
     public function initServiceObj(array $studentInfo): DssService
     {
-        return LimitTimeActivityClientService::getServiceObj(
-            $this->ci['app_id'],
-            $this->ci['from_type'],
-            $studentInfo);
+		return LimitTimeActivityBaseAbstract::getAppObj(
+			$this->ci['app_id'],
+			[
+				'from_type'    => $this->ci['from_type'],
+				'student_info' => $studentInfo
+			]
+		);
     }
 
     /**

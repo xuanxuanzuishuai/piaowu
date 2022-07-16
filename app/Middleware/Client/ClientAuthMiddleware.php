@@ -195,21 +195,21 @@ class ClientAuthMiddleware extends MiddlewareBase
 	private function getStudentInfo(int $appId, int $userId): array
 	{
 		$studentBaseInfo = [];
+		$selectFields = [
+			'uuid',
+			'thumb',
+			'name',
+			'mobile',
+			'country_code',
+			'status',
+		];
 		switch ($appId) {
 			case Constants::SMART_APP_ID:
 				$studentBaseInfo = DssStudentModel::getRecord(
 					[
 						'id' => $userId
 					],
-					[
-						'id(user_id)',
-						'status',
-						'pay_vip_time',
-						'uuid',
-						'thumb',
-						'name',
-						'mobile'
-					]
+					array_merge($selectFields, ['id(user_id)', 'pay_vip_time'])
 				);
 				$studentBaseInfo['thumb_oss_url'] = StudentService::getStudentThumb($studentBaseInfo['thumb']);
 				break;
@@ -220,15 +220,8 @@ class ClientAuthMiddleware extends MiddlewareBase
 						'student_id' => $userId,
 						'app_id'     => Constants::REAL_APP_ID
 					],
-					[
-						'student_id(user_id)',
-						'status',
-						'first_pay_time(pay_vip_time)',
-						'uuid',
-						'thumb',
-						'name',
-						'mobile'
-					]);
+					array_merge($selectFields, ['student_id(user_id)', 'first_pay_time(pay_vip_time)'])
+				);
 				$studentBaseInfo['name'] = !empty($studentBaseInfo['name']) ? $studentBaseInfo['name'] : ErpUserService::getStudentDefaultName($studentBaseInfo['mobile']);
 				$studentBaseInfo['thumb_oss_url'] = ErpUserService::getStudentThumbUrl([$studentBaseInfo['thumb']])[0];
 				break;
