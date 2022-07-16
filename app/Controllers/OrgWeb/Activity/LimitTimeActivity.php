@@ -56,7 +56,7 @@ class LimitTimeActivity extends ControllerBase
                 'error_code' => 'end_time_is_required'
             ],
             [
-                'key'        => 'country_code',
+                'key'        => 'activity_country_code',
                 'type'       => 'required',
                 'error_code' => 'country_code_is_required'
             ],
@@ -186,7 +186,6 @@ class LimitTimeActivity extends ControllerBase
         if (empty($params['award_prize_type'])) {
             $params['award_prize_type'] = OperationActivityModel::AWARD_PRIZE_TYPE_IN_TIME;
         }
-        $params['activity_country_code'] = $params['country_code'];
         $data = LimitTimeActivityAdminService::save($params, $employeeId);
         return HttpHelper::buildResponse($response, $data);
     }

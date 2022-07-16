@@ -277,7 +277,7 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
         } elseif ($verifyStatus == SharePosterModel::VERIFY_STATUS_QUALIFIED) {
             // 分享活动审核通过通知
             $keyCode = $activityType . '-verify-pass';
-            if ($activityType == OperationActivityModel::ACTIVITY_TYPE_FULL_ATTENDANCE && empty($nextAwardNodeStep)) {
+            if ($activityType == OperationActivityModel::ACTIVITY_TYPE_FULL_ATTENDANCE && !empty($nextAwardNodeStep)) {
                 // 全勤活动审核通过没有奖励的节点通知
                 $keyCode .= '-no-award-node';
             }
@@ -291,15 +291,19 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
     /**
      * 获取奖励单位
      * @param $awardType
-     * @param $isMsg
+     * @param bool $isMsg
+     * @param int $verifyStatus
      * @return string
      */
-    public static function getAwardUnit($awardType, $isMsg = true): string
+    public static function getAwardUnit($awardType, $isMsg = true, $verifyStatus = SharePosterModel::VERIFY_STATUS_QUALIFIED): string
     {
         $awardUnit = '';
         switch ($awardType) {
             case Constants::AWARD_TYPE_TIME:
                 $awardUnit = $isMsg ? '天学习时长' : '天';
+                if ($verifyStatus == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
+                    $awardUnit = $isMsg ? '学习时长' : '';
+                }
                 break;
             case Constants::AWARD_TYPE_GOLD_LEAF:
                 $awardUnit = '金叶子';

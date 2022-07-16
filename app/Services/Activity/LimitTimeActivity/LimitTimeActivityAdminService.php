@@ -464,7 +464,7 @@ class LimitTimeActivityAdminService
             $_student = $studentList[$item['student_uuid']] ?? [];
             $_operator = $operatorList[$item['verify_user']] ?? [];
             $_uiconfig = $uiconfigList[$item['activity_id']] ?? [];
-            $item['format_share_poster_url'] = AliOSS::replaceCdnDomainForDss($item['poster_path']);
+            $item['format_share_poster_url'] = AliOSS::replaceCdnDomainForDss($item['image_path']);
             $item['mobile'] = Util::hideUserMobile($_student['mobile']);
             $item['student_name'] = $_student['name'];
             $item['student_id'] = $_student['id'];  // 对应各个业务线自己的学生id
@@ -550,7 +550,7 @@ class LimitTimeActivityAdminService
      */
     public static function refusedPoster($recordId, $params = [], $status = SharePosterModel::VERIFY_STATUS_UNQUALIFIED)
     {
-        $reason = $params['reason'] ?? [];
+        $reason = $params['reason'] ?? '';
         $remark = $params['remark'] ?? '';
         $appId = $params['app_id'];
         if (empty($reason) && empty($remark)) {
@@ -567,7 +567,7 @@ class LimitTimeActivityAdminService
             'verify_status'     => $status,
             'verify_time'       => $time,
             'verify_user'       => $params['employee_id'],
-            'verify_reason'     => implode(',', $reason),
+            'verify_reason'     => is_array($reason) ? implode(',', $reason) : $reason,
             'update_time'       => $time,
             'remark'            => $remark,
             'award_type'        => $awardRule['award_type'],
@@ -595,7 +595,7 @@ class LimitTimeActivityAdminService
                         'activity_id' => $poster['activity_id'],
                         'poster_id'   => $posterId,
                     ]),
-                    'award_unit'    => LimitTimeActivityBaseAbstract::getAwardUnit($poster['award_type']),
+                    'award_unit'    => LimitTimeActivityBaseAbstract::getAwardUnit($poster['award_type'], true, SharePosterModel::VERIFY_STATUS_UNQUALIFIED),
                 ],
             ]);
         }
@@ -655,7 +655,10 @@ class LimitTimeActivityAdminService
                 $passNum = LimitTimeActivitySharePosterModel::getActivityVerifyPassNum($poster['student_uuid'], $poster['activity_id']);
                 // 计算奖励
                 $awardTaskNum = $passNum + 1;
-                $award = $awardRules[$awardTaskNum];
+                // 如果是全勤打卡， 获取距离下一个节点的次数
+                list($nextAwardNodeStep, $nextAward) = $activityInfo['activity_type'] == OperationActivityModel::ACTIVITY_TYPE_FULL_ATTENDANCE ? self::getNextAwardNodeStep($awardTaskNum, $awardRules) : 0;
+                // 是奖励节点
+                $award = $awardRules[$awardTaskNum] ?? [];
                 // 组装更新数据
                 $updateData = [
                     'verify_status'      => SharePosterModel::VERIFY_STATUS_QUALIFIED,
@@ -664,8 +667,8 @@ class LimitTimeActivityAdminService
                     'remark'             => $params['remark'] ?? '',
                     'update_time'        => $now,
                     'award_task_num'     => $awardTaskNum,
-                    'award_amount'       => $award['award_amount'],
-                    'award_type'         => $award['award_type'],
+                    'award_amount'       => $award['award_amount'] ?? 0,
+                    'award_type'         => $award['award_type'] ?? 0,
                     'send_award_status'  => OperationActivityModel::SEND_AWARD_STATUS_WAITING,
                     'send_award_version' => $awardVersion['id'],
                 ];
@@ -679,15 +682,12 @@ class LimitTimeActivityAdminService
                     SimpleLogger::info("$logTitle update zero", [$poster, $update]);
                     continue;
                 }
-                // 如果是全勤打卡， 获取距离下一个节点的次数
-                $nextAwardNodeStep = $activityInfo['activity_type'] == OperationActivityModel::ACTIVITY_TYPE_FULL_ATTENDANCE ? self::getNextAwardNodeStep($awardTaskNum, $awardRules) : 0;
                 // 组装微信消息需要的参数
                 $replaceParams = [
                     'activity_name' => $activityInfo['activity_name'] . '-' . $poster['task_num'],
-                    'jump_url'      => DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'limit_time_activity_detail'),
                     'passes_num'    => $nextAwardNodeStep,
-                    'award_num'     => $award['award_amount'],
-                    'award_unit'    => LimitTimeActivityBaseAbstract::getAwardUnit($award['award_type']),
+                    'award_num'     => $activityInfo['activity_type'] == OperationActivityModel::ACTIVITY_TYPE_SHARE ? $award['award_amount'] : $nextAward['award_amount'],
+                    'award_unit'    => LimitTimeActivityBaseAbstract::getAwardUnit($award['award_type'] ?? 0),
                 ];
                 $msgId = LimitTimeActivityBaseAbstract::getWxMsgId(
                     $params['app_id'],
@@ -716,18 +716,22 @@ class LimitTimeActivityAdminService
      * 获取全勤活动距离下个奖励节点还差几步
      * @param $taskNum
      * @param $taskList
-     * @return int
+     * @return array
      */
     public static function getNextAwardNodeStep($taskNum, $taskList)
     {
         $nextTask = [];
-        foreach ($taskList as $key => $item) {
-            if ($item['task_num'] == $taskNum) {
-                $nextTask = $taskList[$key + 1] ?? [];
+        $nextTaskNum = 0;
+        $taskNumList = array_column($taskList, null, 'task_num');
+        ksort($taskNumList);
+        foreach ($taskNumList as $_taskNum => $_award) {
+            if ($_taskNum >= $taskNum) {
+                $nextTaskNum = $_taskNum;
+                $nextTask = $_award;
+                break;
             }
         }
-        unset($key, $item);
-        $nextTaskNum = $nextTask['task_num'] ?? 0;
-        return !empty($nextTaskNum) ? $nextTaskNum - $taskNum : 0;
+        $step = !empty($nextTaskNum) ? $nextTaskNum - $taskNum : 0;
+        return [$step, $nextTask];
     }
 }
