@@ -287,4 +287,27 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
         }
         return DictService::getKeyValue($type, $keyCode);
     }
+
+    /**
+     * 获取奖励单位
+     * @param $awardType
+     * @param $isMsg
+     * @return string
+     */
+    public static function getAwardUnit($awardType, $isMsg = true): string
+    {
+        $awardUnit = '';
+        switch ($awardType) {
+            case Constants::AWARD_TYPE_TIME:
+                $awardUnit = $isMsg ? '天学习时长' : '天';
+                break;
+            case Constants::AWARD_TYPE_GOLD_LEAF:
+                $awardUnit = '金叶子';
+                break;
+            case Constants::AWARD_TYPE_MAGIC_STONE:
+                $awardUnit = '魔法石';
+                break;
+        }
+        return $awardUnit;
+    }
 }

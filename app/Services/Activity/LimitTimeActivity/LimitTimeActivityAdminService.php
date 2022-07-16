@@ -444,29 +444,36 @@ class LimitTimeActivityAdminService
         if (empty($returnData['list'])) {
             return $returnData;
         }
-        $uuids = $operatorIds = [];
+        $uuids = $operatorIds = $activityIds = [];
         foreach ($returnData['list'] as $item) {
             $uuids[] = $item['student_uuid'];
             $operatorIds[] = $item['verify_user'];
+            $activityIds[] = $item['activity_id'];
         }
         unset($item);
         $uuids = array_unique($uuids);
         $operatorIds = array_unique($operatorIds);
         if (!empty($uuids)) $studentList = LimitTimeActivityBaseAbstract::getAppObj($appId)->getStudentInfoByUUID($uuids);
         if (!empty($operatorIds)) $operatorList = LimitTimeActivityBaseAbstract::getAppObj($appId)->getEmployeeInfo($operatorIds);
+        // 获取备注
+        $uiconfigList = array_column(LimitTimeActivityHtmlConfigModel::getRecords(['activity_id' => $activityIds]), null, 'activity_id');
+
         $statusDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS);
         $reasonDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);
         foreach ($returnData['list'] as &$item) {
             $_student = $studentList[$item['student_uuid']] ?? [];
             $_operator = $operatorList[$item['verify_user']] ?? [];
+            $_uiconfig = $uiconfigList[$item['activity_id']] ?? [];
             $item['format_share_poster_url'] = AliOSS::replaceCdnDomainForDss($item['poster_path']);
             $item['mobile'] = Util::hideUserMobile($_student['mobile']);
             $item['student_name'] = $_student['name'];
+            $item['student_id'] = $_student['id'];  // 对应各个业务线自己的学生id
             $item['format_verify_status'] = $statusDict[$item['verify_status']] ?? $item['verify_status'];
             $item['format_create_time'] = date('Y-m-d H:i', $item['create_time']);
             $item['format_verify_time'] = !empty($item['verify_time']) ? date('Y-m-d H:i', $item['verify_time']) : '';
             $item['reason_str'] = self::reasonToStr(explode(',', $item['reason']), $reasonDict);
             $item['format_verify_user'] = $item['verify_user'] == EmployeeModel::SYSTEM_EMPLOYEE_ID ? EmployeeModel::SYSTEM_EMPLOYEE_NAME : ($_operator['name'] ?? '');
+            $item['remark'] = Util::textDecode($_uiconfig['remark']);
         }
         unset($item);
         return $returnData;
@@ -588,6 +595,7 @@ class LimitTimeActivityAdminService
                         'activity_id' => $poster['activity_id'],
                         'poster_id'   => $posterId,
                     ]),
+                    'award_unit'    => LimitTimeActivityBaseAbstract::getAwardUnit($poster['award_type']),
                 ],
             ]);
         }
@@ -679,6 +687,7 @@ class LimitTimeActivityAdminService
                     'jump_url'      => DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'limit_time_activity_detail'),
                     'passes_num'    => $nextAwardNodeStep,
                     'award_num'     => $award['award_amount'],
+                    'award_unit'    => LimitTimeActivityBaseAbstract::getAwardUnit($award['award_type']),
                 ];
                 $msgId = LimitTimeActivityBaseAbstract::getWxMsgId(
                     $params['app_id'],
