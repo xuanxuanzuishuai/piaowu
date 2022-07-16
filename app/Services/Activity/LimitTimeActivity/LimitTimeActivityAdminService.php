@@ -265,7 +265,7 @@ class LimitTimeActivityAdminService
             'award_rule'                    => !empty($data['award_rule']) ? Util::textEncode($data['award_rule']) : '',
             'remark'                        => $data['remark'] ?? '',
             'share_poster'                  => json_encode(self::parseSharePoster($data)),
-            'first_poster_type_order'       => $data['first_poster_type_order'] ?? TemplatePosterModel::INDIVIDUALITY_POSTER,
+            'first_poster_type_order'       => !empty($data['first_poster_type_order']) ? $data['first_poster_type_order'] : TemplatePosterModel::INDIVIDUALITY_POSTER,
         ];
         $awardRuleData = self::parseTaskList(0, $data);
 
@@ -278,14 +278,13 @@ class LimitTimeActivityAdminService
                 throw new RunTimeException(['record_not_found']);
             }
             // 删掉创建时的不要参数
-            unset($operationActivityData['create_time'], $activityData['create_time'], $htmlConfig['create_time']);
+            unset($operationActivityData['create_time'], $activityData['create_time'], $activityData['enable_status'], $htmlConfig['create_time']);
             // 如果是非待启用状态 - 某些字段不能编辑
             // 一旦启用，不论是不是禁用了，都不能编辑奖励信息以及活动开始时间
             if ($activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_OFF) {
                 $activityData = [
                     'activity_name' => $activityData['activity_name'],
                     'end_time'      => $activityData['end_time'],
-                    'enable_status' => $activityData['enable_status'],
                     'update_time'   => $activityData['update_time'],
                     'operator_id'   => $activityData['operator_id'],
                 ];
@@ -345,7 +344,7 @@ class LimitTimeActivityAdminService
         }
         if ($enableStatus == OperationActivityModel::ENABLE_STATUS_ON) {
             // 如果是启用活动 - 校验活动是否允许启动
-            $conflictData = LimitTimeActivityBaseAbstract::getRangeTimeEnableActivity($activityInfo['app_id'], $activityInfo['start_time'], $activityInfo['end_time'], $activityInfo['activity_country_code']);
+            $conflictData = LimitTimeActivityBaseAbstract::getRangeTimeEnableActivity($activityInfo['app_id'], $activityInfo['start_time'], $activityInfo['end_time']);
             if (!empty($conflictData)) {
                 throw new RunTimeException(['activity_time_conflict']);
             }
@@ -403,6 +402,7 @@ class LimitTimeActivityAdminService
      * @param $page
      * @param $count
      * @return array
+     * @throws RunTimeException
      */
     public static function getActivitySharePosterList($params, $page, $count)
     {
@@ -471,7 +471,7 @@ class LimitTimeActivityAdminService
             $item['format_verify_status'] = $statusDict[$item['verify_status']] ?? $item['verify_status'];
             $item['format_create_time'] = date('Y-m-d H:i', $item['create_time']);
             $item['format_verify_time'] = !empty($item['verify_time']) ? date('Y-m-d H:i', $item['verify_time']) : '';
-            $item['reason_str'] = self::reasonToStr(explode(',', $item['reason']), $reasonDict);
+            $item['reason_str'] = self::reasonToStr(explode(',', $item['verify_reason']), $reasonDict);
             $item['format_verify_user'] = $item['verify_user'] == EmployeeModel::SYSTEM_EMPLOYEE_ID ? EmployeeModel::SYSTEM_EMPLOYEE_NAME : ($_operator['name'] ?? '');
             $item['remark'] = Util::textDecode($_uiconfig['remark']);
         }
@@ -563,7 +563,7 @@ class LimitTimeActivityAdminService
         $activityInfo = LimitTimeActivityModel::getRecord(['activity_id' => $poster['activity_id']]);
         $awardRule = LimitTimeActivityAwardRuleModel::getRecord(['activity_id' => $poster['activity_id'], 'task_num' => $poster['task_num']]);
         $time = time();
-        $update = LimitTimeActivitySharePosterModel::updateRecord($poster['id'], [
+        $updateData = [
             'verify_status'     => $status,
             'verify_time'       => $time,
             'verify_user'       => $params['employee_id'],
@@ -571,8 +571,9 @@ class LimitTimeActivityAdminService
             'update_time'       => $time,
             'remark'            => $remark,
             'award_type'        => $awardRule['award_type'],
-            'send_award_status' => OperationActivityModel::SEND_AWARD_STATUS_DISABLED,
-        ]);
+        ];
+        $status == SharePosterModel::VERIFY_STATUS_UNQUALIFIED && $updateData['send_award_status'] = OperationActivityModel::SEND_AWARD_STATUS_DISABLED;
+        $update = LimitTimeActivitySharePosterModel::updateRecord($poster['id'], $updateData);
         $msgId = LimitTimeActivityBaseAbstract::getWxMsgId(
             (int)$appId,
             (int)$activityInfo['activity_type'],
@@ -659,6 +660,8 @@ class LimitTimeActivityAdminService
                 list($nextAwardNodeStep, $nextAward) = $activityInfo['activity_type'] == OperationActivityModel::ACTIVITY_TYPE_FULL_ATTENDANCE ? self::getNextAwardNodeStep($awardTaskNum, $awardRules) : 0;
                 // 是奖励节点
                 $award = $awardRules[$awardTaskNum] ?? [];
+                // 距离下一个奖励节点不是0 说明当前不是奖励节点，所有推送消息会是距离x次
+                $awardType = !empty($nextAwardNodeStep) ? $nextAward['award_type'] : ($award['award_type'] ?? 0);
                 // 组装更新数据
                 $updateData = [
                     'verify_status'      => SharePosterModel::VERIFY_STATUS_QUALIFIED,
@@ -668,7 +671,7 @@ class LimitTimeActivityAdminService
                     'update_time'        => $now,
                     'award_task_num'     => $awardTaskNum,
                     'award_amount'       => $award['award_amount'] ?? 0,
-                    'award_type'         => $award['award_type'] ?? 0,
+                    'award_type'         => $awardType,
                     'send_award_status'  => OperationActivityModel::SEND_AWARD_STATUS_WAITING,
                     'send_award_version' => $awardVersion['id'],
                 ];
@@ -685,9 +688,9 @@ class LimitTimeActivityAdminService
                 // 组装微信消息需要的参数
                 $replaceParams = [
                     'activity_name' => $activityInfo['activity_name'] . '-' . $poster['task_num'],
-                    'passes_num'    => $nextAwardNodeStep,
-                    'award_num'     => $activityInfo['activity_type'] == OperationActivityModel::ACTIVITY_TYPE_SHARE ? $award['award_amount'] : $nextAward['award_amount'],
-                    'award_unit'    => LimitTimeActivityBaseAbstract::getAwardUnit($award['award_type'] ?? 0),
+                    'passes_num'    => !empty($nextAwardNodeStep) ? $nextAwardNodeStep : $awardTaskNum,
+                    'award_amount'  => $activityInfo['activity_type'] == OperationActivityModel::ACTIVITY_TYPE_SHARE ? $award['award_amount'] : $nextAward['award_amount'],
+                    'award_unit'    => LimitTimeActivityBaseAbstract::getAwardUnit($awardType),
                 ];
                 $msgId = LimitTimeActivityBaseAbstract::getWxMsgId(
                     $params['app_id'],
@@ -732,6 +735,6 @@ class LimitTimeActivityAdminService
             }
         }
         $step = !empty($nextTaskNum) ? $nextTaskNum - $taskNum : 0;
-        return [$step, $nextTask];
+        return [intval($step), $nextTask];
     }
 }

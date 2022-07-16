@@ -963,13 +963,14 @@ class Dss extends ControllerBase
         }
 
         try {
-           $data = RealSharePosterService::parseUnique($params['unique_code']);
+            $activityType = $params['activity_type'] ?? '';
+            $data = RealSharePosterService::parseUnique($params['unique_code'], Constants::SMART_APP_ID, $activityType);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, $data);
     }
-    
+
     /**
      * 转介绍专属售卖落地页 - 好友推荐专属奖励
      * @param Request $request

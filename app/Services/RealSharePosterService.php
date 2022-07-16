@@ -483,7 +483,7 @@ class RealSharePosterService
         return ['qr_path' => $qrPath, 'origin_qr_path' => $userQrArr['qr_path'], 'qr_id' => $userQrArr['qr_id']];
     }
 
-    public static function parseUnique($uniqueCode,$type = Constants::SMART_APP_ID)
+    public static function parseUnique($uniqueCode,$type = Constants::SMART_APP_ID, $activityType = '')
     {
         $qrInfo          = QrInfoOpCHModel::getQrInfoById($uniqueCode);
         if ($type == Constants::REAL_APP_ID){
@@ -493,8 +493,15 @@ class RealSharePosterService
         }
         $checkActivityId = json_decode($qrInfo['qr_data'],true);
 
-        if (empty($studentInfo['uuid']) || empty($checkActivityId['check_active_id'])){
-            throw new RunTimeException(['record_not_found']);
+        if (!empty($activityType)) {
+            // 限时活动
+            if (empty($studentInfo['uuid'])) {
+                throw new RunTimeException(['record_not_found']);
+            }
+        } else {
+            if (empty($studentInfo['uuid']) || empty($checkActivityId['check_active_id'])) {
+                throw new RunTimeException(['record_not_found']);
+            }
         }
         return [
             'uuid'        => $studentInfo['uuid'],
