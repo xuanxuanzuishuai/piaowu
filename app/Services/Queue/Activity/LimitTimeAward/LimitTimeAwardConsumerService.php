@@ -170,7 +170,8 @@ class LimitTimeAwardConsumerService
         $studentInfo = LimitTimeActivityBaseAbstract::getAppObj($appId)->getStudentInfoByUUID([$studentUUId])[$studentUUId];
         QueueService::sendUserWxMsg($appId, $studentInfo['id'], $msgId, [
             'replace_params' => [
-                'award_num' => $sharePosterRecordInfo['award_amount'],
+                'award_num'  => $sharePosterRecordInfo['award_amount'],
+                'award_unit' => LimitTimeActivityBaseAbstract::getAwardUnit($sharePosterRecordInfo['award_type']),
             ],
         ]);
         SimpleLogger::info("$logTitle send award success:", [$sharePosterRecordInfo]);
