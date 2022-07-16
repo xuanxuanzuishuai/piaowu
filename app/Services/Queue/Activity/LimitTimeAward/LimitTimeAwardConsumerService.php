@@ -182,4 +182,16 @@ class LimitTimeAwardConsumerService
         return true;
     }
 
+    /**
+     * 推送最后一天或者第一天消息
+     * @param $params
+     * @return bool
+     */
+    public function pushActivityMsg($params): bool
+    {
+        // 记录接收日志
+        // 学生ids 和 活动list
+        // 检查学生是否符合活动条件，符合发送消息，不符合不发送消息，记录日志
+        return true;
+    }
 }

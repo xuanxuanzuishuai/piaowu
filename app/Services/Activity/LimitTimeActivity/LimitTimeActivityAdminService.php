@@ -129,10 +129,18 @@ class LimitTimeActivityAdminService
      * 解析目标用户属性标签
      * @param $data
      * @return array
+     * @throws RunTimeException
      */
     public static function parseTargetUser($data)
     {
         $targetUser = $data['target_user'] ?? [];
+        if (empty($targetUser['target_user_first_pay_time_start']) && empty($targetUser['target_user_first_pay_time_end']) && empty($targetUser['invitation_num'])) {
+            throw new RunTimeException(['target_user_empty']);
+        } elseif (!empty($targetUser['target_user_first_pay_time_start']) && empty($targetUser['target_user_first_pay_time_end'])){
+            throw new RunTimeException(['target_user_first_pay_empty']);
+        } elseif (empty($targetUser['target_user_first_pay_time_start']) && !empty($targetUser['target_user_first_pay_time_end'])){
+            throw new RunTimeException(['target_user_first_pay_empty']);
+        }
         if (!empty($targetUser['target_user_first_pay_time_start'])) $targetUser['target_user_first_pay_time_start'] = strtotime($targetUser['target_user_first_pay_time_start']);
         if (!empty($targetUser['target_user_first_pay_time_end'])) $targetUser['target_user_first_pay_time_end'] = strtotime($targetUser['target_user_first_pay_time_end']);
         return [

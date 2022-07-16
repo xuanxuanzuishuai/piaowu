@@ -27,6 +27,7 @@ use App\Models\LimitTimeActivity\LimitTimeActivityModel;
 use App\Models\OperationActivityModel;
 use App\Models\WhiteGrantRecordModel;
 use App\Services\Activity\LimitTimeActivity\TraitService\LimitTimeActivityBaseAbstract;
+use App\Services\Queue\Activity\LimitTimeAward\LimitTimeAwardProducerService;
 use App\Services\Queue\QueueService;
 use App\Services\WhiteGrantRecordService;
 use Dotenv\Dotenv;
@@ -153,7 +154,14 @@ class ScriptLimitTimeActivityPush
     public function pushData($appId, $activityList)
     {
         $studentIds = $this->getStudentIds($appId);
-
+        $studentList = array_chunk($studentIds, 200);
+        foreach ($studentList as $item) {
+            LimitTimeAwardProducerService::pushWxMsgProducer([
+                'student_ids'   => $item,
+                'activity_list' => $activityList,
+            ]);
+        }
+        unset($item);
     }
 }
 
