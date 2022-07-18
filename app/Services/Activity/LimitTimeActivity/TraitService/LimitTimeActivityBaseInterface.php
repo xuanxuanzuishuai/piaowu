@@ -5,17 +5,16 @@ namespace App\Services\Activity\LimitTimeActivity\TraitService;
 interface LimitTimeActivityBaseInterface
 {
     /**
-     * 学生付费状态检测
+     * 学生付费是否有效状态检测
      * @return array
      */
     public function studentPayStatusCheck(): array;
 
     /**
-     * 学生付费状态汉化
-     * @param int $studentStatus
-     * @return string
+     * 学生状态
+     * @return array
      */
-    public function studentPayStatusZh(int $studentStatus): string;
+    public function getStudentStatus(): array;
 
     /**
      * 学生邀请购买体验卡人数（智能）/创建转介绍关系数量（真人）

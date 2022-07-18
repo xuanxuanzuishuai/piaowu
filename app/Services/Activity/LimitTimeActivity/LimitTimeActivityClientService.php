@@ -39,10 +39,12 @@ class LimitTimeActivityClientService
 			'activity'          => [],// 活动详情
 			'student_info'      => [],// 学生详情
 			"is_have_activity"  => false,//是否有可参与的活动
-			'student_status_zh' => '',//学生付费状态中文
+			'student_status_zh' => '',//学生付费状态
 		];
+		$studentStatusData = $serviceObj->getStudentStatus();
+		$data['student_status_zh'] = $studentStatusData['student_status_zh'];
 		//获取活动数据
-		$data['activity'] = self::getStudentCanJoinActivityList($serviceObj, $studentStatus);
+		$data['activity'] = self::getStudentCanJoinActivityList($serviceObj);
 		if (empty($data['activity'])) {
 			return $data;
 		}
@@ -50,7 +52,6 @@ class LimitTimeActivityClientService
 			'nickname'   => $serviceObj->studentInfo['name'],
 			'headimgurl' => $serviceObj->studentInfo['thumb_oss_url'],
 		];
-		$data['student_status_zh'] = $serviceObj->studentPayStatusZh($studentStatus);
 		$data['is_have_activity'] = true;
 		//格式化活动数据
 		$data['activity'] = ActivityService::formatData($data['activity']);
@@ -67,8 +68,9 @@ class LimitTimeActivityClientService
 			DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
 			$sharePosterList,
 			$data['activity']['activity_id'],
+			$data['activity']['activity_id'],
 			$serviceObj->studentInfo['user_id'],
-			$studentStatus,
+			$studentStatusData['student_status'],
 			$serviceObj->getChannelByFromType(),
 			false);
 		return $data;
@@ -77,14 +79,13 @@ class LimitTimeActivityClientService
 	/**
 	 * 获取可参与活动,检测活动参与条件
 	 * @param DssService $serviceObj
-	 * @param $studentStatus
 	 * @return array
 	 */
-	private static function getStudentCanJoinActivityList(DssService $serviceObj, &$studentStatus): array
+	private static function getStudentCanJoinActivityList(DssService $serviceObj): array
 	{
 		try {
 			//学生状态检测
-			$userDetail = $serviceObj->studentPayStatusCheck();
+			$serviceObj->studentPayStatusCheck();
 			//查询活动
 			$nowTime = time();
 			$where = [
@@ -117,7 +118,6 @@ class LimitTimeActivityClientService
 			];
 			unset($activityInfo['award_rule']);
 			unset($activityInfo['remark']);
-			$studentStatus = $userDetail['student_status'];
 			return $activityInfo;
 		} catch (RunTimeException $e) {
 			SimpleLogger::error('activity condition check error', [$e->getMessage()]);
@@ -260,7 +260,7 @@ class LimitTimeActivityClientService
 		$result = [
 			'list' => [],
 		];
-		$activityData = self::getStudentCanJoinActivityList($serviceObj, $studentStatus);
+		$activityData = self::getStudentCanJoinActivityList($serviceObj);
 		if (empty($activityData)) {
 			return $result;
 		}
@@ -402,7 +402,7 @@ class LimitTimeActivityClientService
 		string $imagePath
 	): int {
 		//获取活动数据
-		$activity = self::getStudentCanJoinActivityList($serviceObj, $studentStatus);
+		$activity = self::getStudentCanJoinActivityList($serviceObj);
 		if ($activityId != $activity['activity_id']) {
 			throw new RunTimeException(['no_in_progress_activity']);
 		}

@@ -49,7 +49,9 @@ class QrInfoService
             'from_service'        => 'from_service',            // 请求来源服务
             'employee_uuid'       => 'employee_uuid',           // 员工uuid
         ];
-        $qrData['check_active_id'] = ($onlyReferralBaseField==false) ? 0 : PosterService::getCheckActivityId($appId, $qrData['user_id'] ?? 0);
+        if(!isset($qrData['check_active_id'])){
+			$qrData['check_active_id'] = ($onlyReferralBaseField==false) ? 0 : PosterService::getCheckActivityId($appId, $qrData['user_id'] ?? 0);
+		}
         foreach ($signField as $paramsFiled => $createField) {
             if (isset($qrData[$paramsFiled]) && !Util::emptyExceptZero($qrData[$paramsFiled])) {
                 $createTicketData[$createField] = $qrData[$paramsFiled];
