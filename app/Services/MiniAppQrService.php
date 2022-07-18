@@ -498,7 +498,7 @@ class MiniAppQrService
                     'busies_type'     => $busiesType,
                     'user_status'     => $_qrParam['user_status'] ?? ($_qrParam['user_current_status'] ?? 0),
                     'qr_type'         => DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_mini'),
-                    'check_active_id' => $_qrParam['check_active_id'],
+                    'check_active_id' => (int)$_qrParam['check_active_id'],
                     'date'            => date('Y-m-d', time()),
                 ];
                 $returnQrSignArr[$_key] = [

@@ -881,7 +881,8 @@ class WeekActivityService
         $extParams = [
             'user_current_status' => $userDetail['student_status'] ?? 0,
             'activity_id' => $activityInfo['activity_id'],
-        ];
+            'check_active_id' => (int)PosterService::getCheckActivityId(Constants::SMART_APP_ID, $studentId),
+		];
 
         // 组合生成海报数据
         $userQrParams = [];

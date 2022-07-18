@@ -626,9 +626,11 @@ class RealActivityService
         }
         // 组合生成海报数据
         $userQrArr= [];
+		$checkActiveId = (int)PosterService::getCheckActivityId(Constants::REAL_APP_ID, $studentDetail['id']);
         foreach ($posterList as $item) {
             $_tmp['user_status'] = $studentDetail['status'];
             $_tmp['activity_id'] = $activityData['activity_id'];
+            $_tmp['check_active_id'] = $checkActiveId;
             $_tmp['poster_id'] = $item['poster_id'];
             $_tmp['user_id'] = $studentDetail['id'];
             $_tmp['user_type'] = DssUserQrTicketModel::STUDENT_TYPE;

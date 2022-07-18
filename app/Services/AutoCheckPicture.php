@@ -331,7 +331,10 @@ class AutoCheckPicture
 
                 //根据不同活动类型的海报，查询海报数据
                 $checkRes = self::checkSharePosterUploadData($qrId, $msgBody);
-                $errCode[] = $checkRes['error_code'];
+                if($checkRes['error_code']!=null){
+					$errCode[] = $checkRes['error_code'];
+				}
+				$uploadInfo = $checkRes['upload_info'];
                 if (!empty($checkRes['upload_info']['student_id']) && $composeUser == $checkRes['upload_info']['student_id']) {
                     $isSameUser = true;
                 }
@@ -527,7 +530,7 @@ class AutoCheckPicture
     {
         $checkRes = [
             'upload_info' => [],
-            'err_code' => null,
+            'error_code' => null,
         ];
         if (empty($qrId)) {
             return $checkRes;
@@ -544,7 +547,7 @@ class AutoCheckPicture
                 if (empty($exist)) {
                     RealSharePosterModel::updateRecord($msgBody['id'], ['unique_code' => $qrId]);
                 } else {
-                    $checkRes['err_code'] = -8;
+                    $checkRes['error_code'] = -8;
                 }
                 break;
             case self::SHARE_POSTER_TYPE_DSS_WEEK:
@@ -558,7 +561,7 @@ class AutoCheckPicture
                 if (empty($exist)) {
                     SharePosterModel::updateRecord($msgBody['id'], ['unique_code' => $qrId]);
                 } else {
-                    $checkRes['err_code'] = -8;
+                    $checkRes['error_code'] = -8;
                 }
                 break;
             case self::SHARE_POSTER_TYPE_LIMIT_TIME_AWARD:
@@ -572,7 +575,7 @@ class AutoCheckPicture
                 if (empty($exist)) {
                     LimitTimeActivitySharePosterModel::updateRecord($msgBody['record_id'], ['qr_id' => $qrId]);
                 } else {
-                    $checkRes['err_code'] = -8;
+                    $checkRes['error_code'] = -8;
                 }
                 $checkRes['upload_info']['student_id'] = $msgBody['user_id'];
                 break;
