@@ -325,4 +325,27 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
         }
         return $awardUnit;
     }
+
+	/**
+	 * 获取海报模版占用情况：用于海报下线判断使用
+	 * @param int $posterTemplateId		海报模板ID
+	 * @return array
+	 */
+	public static function getPosterTemplateOccupation(int $posterTemplateId): array
+	{
+		$activityIds = [];
+		$nowTime = time();
+		$activityList = LimitTimeActivityModel::searchList(['start_time_e' => $nowTime, 'end_time_s' => $nowTime], [], [], ['c.share_poster']);
+		if (empty($activityList[0])) {
+			return $activityIds;
+		}
+		foreach ($activityList[0] as $avl) {
+			foreach (json_decode($avl['share_poster'], true) as $sv) {
+				if (in_array($posterTemplateId, $sv)) {
+					$activityIds[] = $avl['activity_id'];
+				}
+			}
+		}
+		return $activityIds;
+	}
 }
