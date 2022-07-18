@@ -18,7 +18,6 @@ use App\Models\LimitTimeActivity\LimitTimeActivitySharePosterModel;
 use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\TemplatePosterModel;
-use App\Services\Activity\LimitTimeActivity\TraitService\DssService;
 use App\Services\Activity\LimitTimeActivity\TraitService\LimitTimeActivityBaseAbstract;
 use App\Services\DictService;
 use App\Services\Queue\Activity\LimitTimeAward\LimitTimeAwardProducerService;
@@ -47,10 +46,6 @@ class LimitTimeActivityAdminService
         $endTime = Util::getDayLastSecondUnix($data['end_time']);
         if ($startTime >= $endTime) {
             throw new RunTimeException(['start_time_eq_end_time']);
-        }
-        // 开始时间不能小于等于当前时间
-        if ($startTime <= time()) {
-            throw new RunTimeException(['activity_start_time_error']);
         }
 
         // 检查奖励规则 - 不能为空， 去掉html标签以及emoji表情后不能大于1000个字符
@@ -134,18 +129,22 @@ class LimitTimeActivityAdminService
     public static function parseTargetUser($data)
     {
         $targetUser = $data['target_user'] ?? [];
-        if (empty($targetUser['target_user_first_pay_time_start']) && empty($targetUser['target_user_first_pay_time_end']) && empty($targetUser['invitation_num'])) {
-            throw new RunTimeException(['target_user_empty']);
-        } elseif (!empty($targetUser['target_user_first_pay_time_start']) && empty($targetUser['target_user_first_pay_time_end'])){
-            throw new RunTimeException(['target_user_first_pay_empty']);
-        } elseif (empty($targetUser['target_user_first_pay_time_start']) && !empty($targetUser['target_user_first_pay_time_end'])){
-            throw new RunTimeException(['target_user_first_pay_empty']);
-        }
-        if (!empty($targetUser['target_user_first_pay_time_start'])) {
-            $targetUser['target_user_first_pay_time_start'] = Util::getDayFirstSecondUnix($targetUser['target_user_first_pay_time_end']);
-        }
-        if (!empty($targetUser['target_user_first_pay_time_end'])) {
-            $targetUser['target_user_first_pay_time_end'] = Util::getDayLastSecondUnix($targetUser['target_user_first_pay_time_end']);
+        if ($data['target_user_type'] == OperationActivityModel::TARGET_USER_PART) {
+            // 部分用户时校验部分用户指定条件
+            if (empty($targetUser['target_user_first_pay_time_start']) && empty($targetUser['target_user_first_pay_time_end']) && empty($targetUser['invitation_num'])) {
+                throw new RunTimeException(['target_user_empty']);
+            } elseif (!empty($targetUser['target_user_first_pay_time_start']) && empty($targetUser['target_user_first_pay_time_end'])){
+                throw new RunTimeException(['target_user_first_pay_empty']);
+            } elseif (empty($targetUser['target_user_first_pay_time_start']) && !empty($targetUser['target_user_first_pay_time_end'])){
+                throw new RunTimeException(['target_user_first_pay_empty']);
+            }
+            // 格式化付费时间  去掉时分秒
+            if (!empty($targetUser['target_user_first_pay_time_start'])) {
+                $targetUser['target_user_first_pay_time_start'] = Util::getDayFirstSecondUnix($targetUser['target_user_first_pay_time_end']);
+            }
+            if (!empty($targetUser['target_user_first_pay_time_end'])) {
+                $targetUser['target_user_first_pay_time_end'] = Util::getDayLastSecondUnix($targetUser['target_user_first_pay_time_end']);
+            }
         }
         return [
             'target_user_first_pay_time_start' => $targetUser['target_user_first_pay_time_start'] ?? 0, // 目标用户首次付费时间开始时间
@@ -445,6 +444,7 @@ class LimitTimeActivityAdminService
         if (!empty($params['student_mobile']) || !empty($params['student_name']) || !empty($params['student_uuid'])) {
             if (empty($searchUUID)) return $returnData;
         }
+        $params['order'] = ['id' => 'DESC'];
         // 搜索数据
         list($returnData['list'], $returnData['total_count']) = LimitTimeActivitySharePosterModel::searchJoinRecords(
             $params['app_id'],
