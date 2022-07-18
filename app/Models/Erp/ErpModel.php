@@ -74,4 +74,15 @@ class ErpModel
     {
         return $type.$pri;
     }
+
+	/**
+	 * 获取数据行数
+	 * @param $where
+	 * @return number
+	 */
+	public static function getCount($where): int
+	{
+		$count = self::dbRO()->count(static::$table, $where);
+		return (int)$count;
+	}
 }

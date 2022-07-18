@@ -7,7 +7,6 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpReferralUserRefereeModel;
 use App\Models\Erp\ErpStudentModel;
-use App\Models\StudentReferralStudentStatisticsModel;
 use App\Services\ErpUserService;
 use App\Services\StudentServices\ErpStudentService;
 
@@ -94,7 +93,7 @@ class RealService extends LimitTimeActivityBaseAbstract
 	 */
 	public function getStudentReferralOrBuyTrailCount(): int
 	{
-		return StudentReferralStudentStatisticsModel::getCount([
+		return ErpReferralUserRefereeModel::getCount([
 			'referee_id'   => $this->studentInfo['user_id'],
 			'referee_type' => ErpReferralUserRefereeModel::REFEREE_TYPE_STUDENT,
 			'app_id'       => Constants::REAL_APP_ID

@@ -1304,6 +1304,8 @@ class DictConstants {
             'send_award_base_delay_second',
             'smart_student_wx_channel_id',
             'smart_student_app_channel_id',
+			'real_student_wx_channel_id',
+			'real_student_app_channel_id',
             'push_wx_msg_every_time_limit',
         ]
     ];

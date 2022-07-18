@@ -74,6 +74,8 @@ class DssService extends LimitTimeActivityBaseAbstract
 		if ($studentIdentity[0] !== true) {
 			throw new RunTimeException(['no_in_progress_activity']);
 		}
+		//此处首次付费时间取dss接口提供的数据，因为存在白名单账户，数据表的first_pay_time有可能不是白名单中设置的first_pay_time
+		$this->studentInfo['first_pay_time'] = $studentIdentity[1]['first_pay_time'];
 		return $studentIdentity;
 	}
 

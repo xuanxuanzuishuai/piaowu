@@ -15,7 +15,7 @@ use App\Models\LimitTimeActivity\LimitTimeActivityModel;
 use App\Models\LimitTimeActivity\LimitTimeActivitySharePosterModel;
 use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
-use App\Services\Activity\LimitTimeActivity\TraitService\DssService;
+use App\Services\Activity\LimitTimeActivity\TraitService\LimitTimeActivityBaseAbstract;
 use App\Services\ActivityService;
 use App\Services\PosterService;
 use App\Services\Queue\Activity\LimitTimeAward\LimitTimeAwardProducerService;
@@ -26,13 +26,14 @@ use App\Services\SharePosterService;
  */
 class LimitTimeActivityClientService
 {
+
 	/**
 	 * 获取活动基础数据
-	 * @param DssService $serviceObj
+	 * @param LimitTimeActivityBaseAbstract $serviceObj
 	 * @return array
 	 * @throws RunTimeException
 	 */
-	public static function baseData(DssService $serviceObj): array
+	public static function baseData(LimitTimeActivityBaseAbstract $serviceObj): array
 	{
 		$data = [
 			'list'              => [],// 海报列表
@@ -78,10 +79,10 @@ class LimitTimeActivityClientService
 
 	/**
 	 * 获取可参与活动,检测活动参与条件
-	 * @param DssService $serviceObj
+	 * @param LimitTimeActivityBaseAbstract $serviceObj
 	 * @return array
 	 */
-	private static function getStudentCanJoinActivityList(DssService $serviceObj): array
+	private static function getStudentCanJoinActivityList(LimitTimeActivityBaseAbstract $serviceObj): array
 	{
 		try {
 			//学生状态检测
@@ -104,12 +105,17 @@ class LimitTimeActivityClientService
 			//部分付费
 			if ($activityInfo['target_user_type'] == OperationActivityModel::TARGET_USER_PART) {
 				$filterWhere = json_decode($activityInfo['target_user'], true);
-				$invitationNum = $serviceObj->getStudentReferralOrBuyTrailCount();
 				//首次付费时间校验/邀请人数量检验
-				if ($serviceObj->studentInfo['pay_vip_time'] < $filterWhere['target_user_first_pay_time_start'] ||
-					$serviceObj->studentInfo['pay_vip_time'] > $filterWhere['target_user_first_pay_time_end'] ||
-					$invitationNum < $filterWhere['invitation_num']) {
+				if (!empty($filterWhere['target_user_first_pay_time_start']) &&
+					($serviceObj->studentInfo['first_pay_time'] < $filterWhere['target_user_first_pay_time_start'] ||
+						$serviceObj->studentInfo['first_pay_time'] > $filterWhere['target_user_first_pay_time_end'])) {
 					throw new RunTimeException(['no_in_progress_activity']);
+				}
+				if (!empty((int)$filterWhere['invitation_num'])) {
+					$invitationNum = $serviceObj->getStudentReferralOrBuyTrailCount();
+					if ($invitationNum < $filterWhere['invitation_num']) {
+						throw new RunTimeException(['no_in_progress_activity']);
+					}
 				}
 			}
 			$activityInfo['ext'] = [
@@ -128,12 +134,12 @@ class LimitTimeActivityClientService
 
 	/**
 	 * 获取参与记录
-	 * @param DssService $serviceObj
+	 * @param LimitTimeActivityBaseAbstract $serviceObj
 	 * @param int $page
 	 * @param int $limit
 	 * @return array
 	 */
-	public static function joinRecords(DssService $serviceObj, int $page, int $limit): array
+	public static function joinRecords(LimitTimeActivityBaseAbstract $serviceObj, int $page, int $limit): array
 	{
 		$recordsResult = [
 			'total_count' => 0,
@@ -252,10 +258,10 @@ class LimitTimeActivityClientService
 
 	/**
 	 * 获取可参与活动的任务列表
-	 * @param DssService $serviceObj
+	 * @param LimitTimeActivityBaseAbstract $serviceObj
 	 * @return array|array[]
 	 */
-	public static function activityTaskList(DssService $serviceObj): array
+	public static function activityTaskList(LimitTimeActivityBaseAbstract $serviceObj): array
 	{
 		$result = [
 			'list' => [],
@@ -285,13 +291,13 @@ class LimitTimeActivityClientService
 
 	/**
 	 * 获取已参与活动的任务审核列表
-	 * @param DssService $serviceObj
+	 * @param LimitTimeActivityBaseAbstract $serviceObj
 	 * @param array $params
 	 * @param int $page
 	 * @param int $limit
 	 * @return array
 	 */
-	public static function activityTaskVerifyList(DssService $serviceObj, array $params, int $page, int $limit): array
+	public static function activityTaskVerifyList(LimitTimeActivityBaseAbstract $serviceObj, array $params, int $page, int $limit): array
 	{
 		$result = [
 			'total_count' => 0,
@@ -339,11 +345,11 @@ class LimitTimeActivityClientService
 
 	/**
 	 * 获取任务审核详情
-	 * @param DssService $serviceObj
+	 * @param LimitTimeActivityBaseAbstract $serviceObj
 	 * @param int $detailId
 	 * @return array|array[]
 	 */
-	public static function activityTaskVerifyDetail(DssService $serviceObj, int $detailId): array
+	public static function activityTaskVerifyDetail(LimitTimeActivityBaseAbstract $serviceObj, int $detailId): array
 	{
 		$result = [
 			'poster' => []
@@ -388,7 +394,7 @@ class LimitTimeActivityClientService
 
 	/**
 	 * 上传海报截图
-	 * @param DssService $serviceObj
+	 * @param LimitTimeActivityBaseAbstract $serviceObj
 	 * @param int $activityId
 	 * @param int $taskNum
 	 * @param string $imagePath
@@ -396,7 +402,7 @@ class LimitTimeActivityClientService
 	 * @throws RunTimeException
 	 */
 	public static function uploadSharePoster(
-		DssService $serviceObj,
+		LimitTimeActivityBaseAbstract $serviceObj,
 		int $activityId,
 		int $taskNum,
 		string $imagePath

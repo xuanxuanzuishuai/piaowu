@@ -8,7 +8,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Middleware\MiddlewareBase;
 use App\Models\Dss\DssStudentModel;
-use App\Models\Erp\ErpStudentAppModel;
+use App\Models\Erp\ErpStudentModel;
 use App\Services\AppTokenService;
 use App\Services\ErpUserService;
 use App\Services\StudentService;
@@ -215,13 +215,8 @@ class ClientAuthMiddleware extends MiddlewareBase
 				break;
 			case Constants::REAL_APP_ID:
 				//设置账户ID到全局容器中
-				$studentBaseInfo = ErpStudentAppModel::getRecord(
-					[
-						'student_id' => $userId,
-						'app_id'     => Constants::REAL_APP_ID
-					],
-					array_merge($selectFields, ['student_id(user_id)', 'first_pay_time(pay_vip_time)'])
-				);
+				$studentBaseInfo = ErpStudentModel::getStudentInfoById($userId);
+				$studentBaseInfo['user_id'] = $studentBaseInfo['id'];
 				$studentBaseInfo['name'] = !empty($studentBaseInfo['name']) ? $studentBaseInfo['name'] : ErpUserService::getStudentDefaultName($studentBaseInfo['mobile']);
 				$studentBaseInfo['thumb_oss_url'] = ErpUserService::getStudentThumbUrl([$studentBaseInfo['thumb']])[0];
 				break;
