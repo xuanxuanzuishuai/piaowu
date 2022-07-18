@@ -2,6 +2,11 @@
 
 /**
  * 限时领奖活动消息推送
+ * 15分钟执行一次，每次读取出指定数量，然后记录偏移量
+ * 当读到的数据为空时停止执行
+ * 每次处理数量 5000
+ * 预计处理量 500000
+ * 预计耗时  500000/(15*5000*4)
  */
 
 namespace App;
@@ -17,7 +22,9 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\MysqlDB;
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssStudentModel;
@@ -42,7 +49,12 @@ class ScriptLimitTimeActivityPush
     private $time            = 0;
     private $last_student_id = [];
     const LogTitle = 'ScriptLimitTimeActivityPush';
+    private $limit = 0;
 
+    /**
+     * 初始化参数
+     * @param $params
+     */
     public function __construct($params)
     {
         if (empty($params[1])) {
@@ -54,10 +66,12 @@ class ScriptLimitTimeActivityPush
         } else {
             $this->isCurrentPush = LimitTimeAwardConsumerService::IS_LAST_DAY_PUSH;
         }
+        $this->limit = DictConstants::get(DictConstants::LIMIT_TIME_ACTIVITY_CONFIG, 'push_wx_msg_every_time_limit');
         return true;
     }
 
     /**
+     * 保存日志
      * @param $msg
      * @param array $data
      * @param $errLevel
@@ -92,11 +106,12 @@ class ScriptLimitTimeActivityPush
         if (empty($activityList)) {
             return true;
         }
+        // 按照业务线区分活动
         $studentPushActivity = [];
         foreach ($activityList as $_activity) {
             $studentPushActivity[$_activity['app_id']][] = $_activity;
         }
-
+        // 推送活动
         foreach ($studentPushActivity as $key => $item) {
             $this->pushData($key, $item);
         }
@@ -104,7 +119,10 @@ class ScriptLimitTimeActivityPush
         return true;
     }
 
-    // 获取可参与活动列表
+    /**
+     * 获取可参与活动列表
+     * @return array
+     */
     public function getActivityList()
     {
         $where = [
@@ -122,22 +140,41 @@ class ScriptLimitTimeActivityPush
         return LimitTimeActivityModel::getRecords($where);
     }
 
+    public function getLastId($appId)
+    {
+        $id = RedisDB::getConn()->get('limit_time_activity_push_last_id_' . $appId . '_' . $this->isCurrentPush);
+        return intval($id);
+    }
+
+    public function setLastId($appId, $lastId)
+    {
+        return RedisDB::getConn()->set('limit_time_activity_push_last_id_' . $appId . '_' . $this->isCurrentPush, $lastId, 'EX', Util::TIMESTAMP_ONEDAY);
+    }
+
     public function getStudentIds($appId)
     {
+        // TODO qingfeng.lian  open test
+        $testUUIDS = [
+            10211, 713409, 713417, 710600
+        ];
         if ($appId == Constants::SMART_APP_ID) {
             $db = MysqlDB::getDB(MysqlDB::CONFIG_SLAVE);
             $dssTable = DssStudentModel::getTableNameWithDb();
             $wxTable = DssUserWeiXinModel::getTableNameWithDb();
-            $lastId = $this->last_student_id[$appId] ?? 0;
+            $lastId = $this->getLastId($appId);
             $sql = 'SELECT s.id as student_id FROM ' .
                 ' ' . $dssTable . ' as s' .
                 ' INNER JOIN ' . $wxTable . ' as wx on wx.user_id=s.id' .
                 ' WHERE s.id >' . $lastId .
                 ' AND s.has_review_course=' . DssStudentModel::REVIEW_COURSE_1980 .
                 ' AND wx.app_id=' . $appId .
-                ' AND wx.status=' . DssUserWeiXinModel::STATUS_NORMAL .
-                ' ORDER BY s.id ASC' .
-                ' LIMIT 0, 2000';
+                ' AND wx.status=' . DssUserWeiXinModel::STATUS_NORMAL;
+            // TODO qingfeng.lian  test user
+            if (!empty($testUUIDS)) {
+                $sql .= ' AND s.id in (' . implode(',', $testUUIDS) . ') ORDER BY s.id ASC  LIMIT 0, 3';
+            } else {
+                $sql .= ' ORDER BY s.id ASC  LIMIT 0,' . $this->limit;
+            }
             $studentIds = $db->queryAll($sql);
         } elseif ($appId == Constants::REAL_APP_ID) {
             // $db = MysqlDB::getDB(MysqlDB::CONFIG_ERP_SLAVE);
@@ -149,16 +186,23 @@ class ScriptLimitTimeActivityPush
     public function pushData($appId, $activityList)
     {
         $studentIds = $this->getStudentIds($appId);
+        if (empty($studentIds)) {
+            // 查不到学生退出
+            self::saveLog("student empty is app id : " . $appId);
+            return true;
+        }
+        $this->setLastId($appId, end($studentIds)['student_id']);
         foreach ($studentIds as $item) {
-            $this->last_student_id[$appId] = $item['id'];
-            LimitTimeAwardProducerService::pushWxMsgProducer([
+            $pushMsg = [
                 'student_info'  => $item,
                 'activity_list' => $activityList,
                 'push_type'     => $this->isCurrentPush,
                 'app_id'        => $appId,
-            ]);
+            ];
+            LimitTimeAwardProducerService::pushWxMsgProducer($pushMsg);
         }
         unset($item);
+        return true;
     }
 }
 

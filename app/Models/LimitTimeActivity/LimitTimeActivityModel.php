@@ -292,6 +292,7 @@ class LimitTimeActivityModel extends Model
                 'c.award_rule',
                 'c.remark',
                 'c.poster_make_button_img',
+                'c.first_poster_type_order',
             ],
             [
                 'a.activity_id' => $activityId

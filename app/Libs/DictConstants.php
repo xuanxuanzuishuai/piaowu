@@ -1304,6 +1304,7 @@ class DictConstants {
             'send_award_base_delay_second',
             'smart_student_wx_channel_id',
             'smart_student_app_channel_id',
+            'push_wx_msg_every_time_limit',
         ]
     ];
     // 限时活动智能奖励类型

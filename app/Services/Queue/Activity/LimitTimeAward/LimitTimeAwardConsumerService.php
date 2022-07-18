@@ -12,6 +12,7 @@ use App\Libs\Util;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpStudentAccountModel;
 use App\Models\LimitTimeActivity\LimitTimeActivityAwardRuleModel;
+use App\Models\LimitTimeActivity\LimitTimeActivityHtmlConfigModel;
 use App\Models\LimitTimeActivity\LimitTimeActivityModel;
 use App\Models\LimitTimeActivity\LimitTimeActivitySharePosterModel;
 use App\Models\OperationActivityModel;
@@ -193,6 +194,7 @@ class LimitTimeAwardConsumerService
      * 推送最后一天或者第一天消息
      * @param $params
      * @return bool
+     * @throws RunTimeException
      */
     public function pushActivityMsg($params): bool
     {
@@ -224,26 +226,29 @@ class LimitTimeAwardConsumerService
         foreach ($activityList as $item) {
             $awardRules = LimitTimeActivityAwardRuleModel::getRecords(['activity_id' => $item['activity_id']]);
             $awardType = $awardRules[0]['award_type'] ?? 0;
-            $targetUser = json_decode($item['target_user'], true);
-            if (!empty($targetUser['target_user_first_pay_time_start']) && !empty($targetUser['target_user_first_pay_time_end'])) {
-                if ($studentAttr['first_pay_time'] < $targetUser['target_user_first_pay_time_start'] || $studentAttr['first_pay_time'] > $targetUser['target_user_first_pay_time_end']) {
-                    SimpleLogger::info("$logTitle student first pay time error:", [$studentAttr, $targetUser]);
+            if ($item['target_user_type'] == OperationActivityModel::TARGET_USER_PART) {
+                // 部分付费有效判断条件
+                $targetUser = json_decode($item['target_user'], true);
+                if (!empty($targetUser['target_user_first_pay_time_start']) && !empty($targetUser['target_user_first_pay_time_end'])) {
+                    if ($studentAttr['first_pay_time'] < $targetUser['target_user_first_pay_time_start'] || $studentAttr['first_pay_time'] > $targetUser['target_user_first_pay_time_end']) {
+                        SimpleLogger::info("$logTitle student first pay time error:", [$studentAttr, $targetUser]);
+                        return false;
+                    }
+                }
+                if (!empty($targetUser['invitation_num']) && $inviteNum < $targetUser['invitation_num']) {
+                    SimpleLogger::info("$logTitle student invitation user num error:", [$inviteNum, $targetUser]);
                     return false;
                 }
             }
-            if (!empty($targetUser['invitation_num']) && $inviteNum < $targetUser['invitation_num']) {
-                SimpleLogger::info("$logTitle student invitation user num error:", [$inviteNum, $targetUser]);
-                return false;
-            }
-
             // 组装微信消息需要的参数
             $pushTypeDictKey = LimitTimeActivityBaseAbstract::getPushWxMsgAppType($appId);
             $msgId = DictService::getKeyValue($pushTypeDictKey, $pushType);
+            $jumpUrl = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'limit_time_activity_detail');
             // 发送消息
             QueueService::sendUserWxMsg($appId, $studentInfo['student_id'], $msgId, [
                 'replace_params' => [
-                    'jump_url' => DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'limit_time_activity_record_list'),
-                    'award_unit'    => LimitTimeActivityBaseAbstract::getAwardUnit($awardType, true, SharePosterModel::VERIFY_STATUS_UNQUALIFIED),
+                    'jump_url'   => LimitTimeActivityBaseAbstract::getMsgJumpUrl($jumpUrl, []),
+                    'award_unit' => LimitTimeActivityBaseAbstract::getAwardUnit($awardType, true, SharePosterModel::VERIFY_STATUS_UNQUALIFIED),
                 ],
             ]);
         }
