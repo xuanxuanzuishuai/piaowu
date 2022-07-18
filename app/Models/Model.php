@@ -270,6 +270,20 @@ class Model
         $count = $db->count(static::$table, $where);
         return (int)$count;
     }
+
+    /**
+     * 获取最大值
+     * @param $where
+     * @param $field
+     * @return number
+     */
+    public static function getMax($where, $field)
+    {
+        $db = MysqlDB::getDB();
+        $count = $db->max(static::$table, $field, $where);
+        return (int)$count;
+    }
+
     /**
      * 数据库名前缀的表
      * @return string

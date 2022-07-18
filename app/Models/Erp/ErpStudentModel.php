@@ -180,4 +180,19 @@ class ErpStudentModel extends ErpModel
                 ErpStudentAppModel::$table . '.app_id' => Constants::REAL_APP_ID,
             ]);
     }
+
+    /**
+     * 根据手机号查询用户注册业务线信息
+     * @param $mobile
+     * @return mixed
+     */
+    public static function getUserInfoByMobile($mobile)
+    {
+        $db = self::dbRO();
+        $sql = 'select es.mobile, es.uuid, ifnull(esa.app_id, 1) as app_id
+from ' . self::$table . ' as es
+         left join ' . ErpStudentAppModel::$table . ' as esa on es.id = esa.student_id
+where es.mobile = ' . $mobile;
+        return $db->queryAll($sql);
+    }
 }

@@ -28,6 +28,7 @@ use App\Controllers\OrgWeb\ChannelLeads;
 use App\Controllers\OrgWeb\CopyManage;
 use App\Controllers\OrgWeb\CountingActivity;
 use App\Controllers\OrgWeb\Dept;
+use App\Controllers\OrgWeb\ExchangeCourse;
 use App\Controllers\OrgWeb\InviteActivity;
 use App\Controllers\OrgWeb\LandingRecall;
 use App\Controllers\OrgWeb\Message;
@@ -430,5 +431,17 @@ class OrgWebRouter extends RouterBase
         '/op_web/limit_time_activity/list' => ['method' => ['get'], 'call' => LimitTimeActivity::class . ':list'],
         '/op_web/limit_time_activity/detail' => ['method' => ['get'], 'call' => LimitTimeActivity::class . ':detail'],
         '/op_web/limit_time_activity/enable_status' => ['method' => ['post'], 'call' => LimitTimeActivity::class . ':editEnableStatus'],
+
+        /******* 兑课相关 ********/
+        //导入操作
+        '/op_web/exchange_course/import' => ['method' => ['post'], 'call' => ExchangeCourse::class . ':import'],
+        //导入列表
+        '/op_web/exchange_course/list' => ['method' =>['get'], 'call' => ExchangeCourse::class . ':list'],
+        //删除指定用户导入记录
+        '/op_web/exchange_course/delete' => ['method' =>['post'], 'call' => ExchangeCourse::class . ':delete'],
+        //发送短信
+        '/op_web/exchange_course/activate_sms' => ['method' =>['post'], 'call' => ExchangeCourse::class . ':activateSms'],
+        //兑课excel模板下载
+        '/op_web/exchange_course/down_template' => ['method' =>['post'], 'call' => ExchangeCourse::class . ':downTemplate'],
     ];
 }

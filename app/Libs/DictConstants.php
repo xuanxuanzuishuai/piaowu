@@ -187,6 +187,7 @@ class DictConstants {
             'export_amount',
             'export_total',
             'lottery_import_user_template',
+            'import_exchange_template'
         ]
     ];
 
@@ -1286,7 +1287,6 @@ class DictConstants {
         'type' => 'message_reminder_type',
         'keys' => [1, 2, 3, 4, 5, 6, 7]
     ];
-
     /** 限时活动相关配置 */
     // 限时活动活动类型
     const LIMIT_TIME_ACTIVITY_TYPE = [
@@ -1317,11 +1317,18 @@ class DictConstants {
             Constants::AWARD_TYPE_TIME,
         ]
     ];
-    // 限时活动真人奖励类型
-    const LIMIT_TIME_ACTIVITY_REAL_AWARD_TYPE = [
-        'type' => 'limit_time_activity_real_award_t',
+	// 限时活动真人奖励类型
+	const LIMIT_TIME_ACTIVITY_REAL_AWARD_TYPE = [
+		'type' => 'limit_time_activity_real_award_t',
+		'keys' => [
+			Constants::AWARD_TYPE_MAGIC_STONE,
+		]
+	];
+    //兑课标签列表
+    const EXCHANGE_TAG = [
+        'type' => 'exchange_tag',
         'keys' => [
-           Constants::AWARD_TYPE_MAGIC_STONE,
+            28,29,30
         ]
     ];
 
