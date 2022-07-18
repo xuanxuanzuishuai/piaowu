@@ -4,12 +4,14 @@ namespace App\Services\Queue\Activity\LimitTimeAward;
 
 use App\Libs\AliOSS;
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpStudentAccountModel;
+use App\Models\LimitTimeActivity\LimitTimeActivityAwardRuleModel;
 use App\Models\LimitTimeActivity\LimitTimeActivityModel;
 use App\Models\LimitTimeActivity\LimitTimeActivitySharePosterModel;
 use App\Models\OperationActivityModel;
@@ -18,12 +20,17 @@ use App\Services\Activity\LimitTimeActivity\LimitTimeActivityAdminService;
 use App\Services\Activity\LimitTimeActivity\TraitService\LimitTimeActivityBaseAbstract;
 use App\Services\Activity\Lottery\LotteryServices\LotteryGrantAwardService;
 use App\Services\AutoCheckPicture;
+use App\Services\DictService;
 use App\Services\Queue\QueueService;
 
 class LimitTimeAwardConsumerService
 {
     private $autoCheckStatusCacheKey            = 'lta_stop_auto_check';
     private $sharePosterCheckLockCacheKeyPrefix = 'lta_auto_check_lock_';
+
+    // 活动推送，第一天推送和最后一天推送
+    const IS_FIRST_DAY_PUSH = 'first_day';
+    const IS_LAST_DAY_PUSH  = 'last_day';
 
     /**
      * 分享海报自动审核
@@ -182,4 +189,64 @@ class LimitTimeAwardConsumerService
         return true;
     }
 
+    /**
+     * 推送最后一天或者第一天消息
+     * @param $params
+     * @return bool
+     */
+    public function pushActivityMsg($params): bool
+    {
+        $pushType = $params['msg_body']['push_type'] ?? '';
+        $studentInfo = $params['msg_body']['student_info'] ?? [];
+        $activityList = $params['msg_body']['activity_list'] ?? [];
+        $appId = $params['msg_body']['app_id'] ?? 0;
+        // 记录接收日志
+        $logTitle = 'limit time award push msg';
+        $time = time();
+        SimpleLogger::info("$logTitle params:", $params);
+        if (empty($pushType) || empty($studentInfo) || empty($activityList) || empty($appId)) {
+            return true;
+        }
+        // 检查学生是否符合活动条件，符合发送消息，不符合不发送消息，记录日志
+        $serviceObj = LimitTimeActivityBaseAbstract::getAppObj($appId, [
+            'student_info' => [
+                'user_id' => $studentInfo['student_id'],
+            ],
+            'from_type'    => '',
+        ]);
+        try {
+            $studentAttr = $serviceObj->studentPayStatusCheck();
+        } catch (RunTimeException $e) {
+            SimpleLogger::info("$logTitle student attr error:", [$e->getData()]);
+            return true;
+        }
+        $inviteNum = $serviceObj->getStudentReferralOrBuyTrailCount();
+        foreach ($activityList as $item) {
+            $awardRules = LimitTimeActivityAwardRuleModel::getRecords(['activity_id' => $item['activity_id']]);
+            $awardType = $awardRules[0]['award_type'] ?? 0;
+            $targetUser = json_decode($item['target_user'], true);
+            if (!empty($targetUser['target_user_first_pay_time_start']) && !empty($targetUser['target_user_first_pay_time_end'])) {
+                if ($studentAttr['first_pay_time'] < $targetUser['target_user_first_pay_time_start'] || $studentAttr['first_pay_time'] > $targetUser['target_user_first_pay_time_end']) {
+                    SimpleLogger::info("$logTitle student first pay time error:", [$studentAttr, $targetUser]);
+                    return false;
+                }
+            }
+            if (!empty($targetUser['invitation_num']) && $inviteNum < $targetUser['invitation_num']) {
+                SimpleLogger::info("$logTitle student invitation user num error:", [$inviteNum, $targetUser]);
+                return false;
+            }
+
+            // 组装微信消息需要的参数
+            $pushTypeDictKey = LimitTimeActivityBaseAbstract::getPushWxMsgAppType($appId);
+            $msgId = DictService::getKeyValue($pushTypeDictKey, $pushType);
+            // 发送消息
+            QueueService::sendUserWxMsg($appId, $studentInfo['student_id'], $msgId, [
+                'replace_params' => [
+                    'jump_url' => DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'limit_time_activity_record_list'),
+                    'award_unit'    => LimitTimeActivityBaseAbstract::getAwardUnit($awardType, true, SharePosterModel::VERIFY_STATUS_UNQUALIFIED),
+                ],
+            ]);
+        }
+        return true;
+    }
 }

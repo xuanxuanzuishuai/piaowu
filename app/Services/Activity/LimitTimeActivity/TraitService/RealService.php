@@ -41,23 +41,24 @@ class RealService extends LimitTimeActivityBaseAbstract
 	 * @param array $fields
 	 * @return array
 	 */
-	public static function getStudentInfoByMobile(array $mobiles, array $fields = []): array
+	public function getStudentInfoByMobile(array $mobiles, array $fields = []): array
 	{
 		$list = ErpStudentModel::getRecords(['mobile' => $mobiles], $fields);
 		return is_array($list) ? $list : [];
 	}
 
-	/**
-	 * 根据name批量获取用户信息
-	 * @param string $name
-	 * @param array $fields
-	 * @return array
-	 */
-	public static function getStudentInfoByName(string $name, array $fields = []): array
-	{
-		$list = ErpStudentModel::getRecords(['name[~]' => $name], $fields);
-		return is_array($list) ? $list : [];
-	}
+    /**
+     * 根据name批量获取用户信息
+     * @param string $name
+     * @param array $fields
+     * @param int[] $limitArr
+     * @return array
+     */
+    public function getStudentInfoByName(string $name, array $fields = [], $limitArr = [0, 1000]): array
+    {
+        $list = ErpStudentModel::getRecords(['name[~]' => $name, 'ORDER' => $limitArr], $fields);
+        return is_array($list) ? $list : [];
+    }
 
 	/**
 	 * 学生付费是否有效状态检测

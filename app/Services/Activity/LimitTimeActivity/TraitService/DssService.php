@@ -43,23 +43,24 @@ class DssService extends LimitTimeActivityBaseAbstract
 	 * @param array $fields
 	 * @return array
 	 */
-	public static function getStudentInfoByMobile(array $mobiles, array $fields = []): array
+	public function getStudentInfoByMobile(array $mobiles, array $fields = []): array
 	{
 		$list = DssStudentModel::getRecords(['mobile' => $mobiles], $fields);
 		return is_array($list) ? $list : [];
 	}
 
-	/**
-	 * 根据uuid批量获取用户信息
-	 * @param string $name
-	 * @param array $fields
-	 * @return array
-	 */
-	public static function getStudentInfoByName(string $name, array $fields = []): array
-	{
-		$list = DssStudentModel::getRecords(['name[~]' => $name], $fields);
-		return is_array($list) ? $list : [];
-	}
+    /**
+     * 根据名字批量获取用户信息
+     * @param string $name
+     * @param array $fields
+     * @param int[] $limitArr
+     * @return array
+     */
+    public function getStudentInfoByName(string $name, array $fields = [], $limitArr = [0,1000]): array
+    {
+        $list = DssStudentModel::getRecords(['name[~]' => $name, 'LIMIT' => $limitArr], $fields);
+        return is_array($list) ? $list : [];
+    }
 
 	/**
 	 * 学生检测是否付费有效检测
