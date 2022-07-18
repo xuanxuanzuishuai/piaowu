@@ -13,6 +13,7 @@ use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\TemplatePosterModel;
 use App\Services\DictService;
+use App\Services\Queue\Activity\LimitTimeAward\LimitTimeAwardConsumerService;
 
 /**
  * 活动客户端管理基础服务接口类：定义一些方法，由子类去实现
@@ -272,7 +273,7 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
         int $nextAwardNodeStep = 0
     )
     {
-        $type = 'limit_time_activity_msg_' . $appId;
+        $type = self::getPushWxMsgAppType($appId);
         $keyCode = '';
         if ($verifyStatus == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
             // 审核拒绝通知
@@ -292,6 +293,10 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
             return 0;
         }
         return DictService::getKeyValue($type, $keyCode);
+    }
+
+    public static function getPushWxMsgAppType($appId) {
+        return 'limit_time_activity_msg_' . $appId;
     }
 
     /**

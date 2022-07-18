@@ -66,7 +66,7 @@ class LimitTimeAwardProducerService
     public static function pushWxMsgProducer($params): bool
     {
         try {
-            $defTime = $params['def_time'] ?? 0;
+            $defTime = $params['def_time'] ?? rand(0, 3600);
             $nsqObj = new LimitTimeAwardTopic();
             $nsqObj->nsqDataSet($params,
                 $nsqObj::EVENT_TYPE_PUSH_ACTIVITY_MSG)

@@ -141,8 +141,12 @@ class LimitTimeActivityAdminService
         } elseif (empty($targetUser['target_user_first_pay_time_start']) && !empty($targetUser['target_user_first_pay_time_end'])){
             throw new RunTimeException(['target_user_first_pay_empty']);
         }
-        if (!empty($targetUser['target_user_first_pay_time_start'])) $targetUser['target_user_first_pay_time_start'] = strtotime($targetUser['target_user_first_pay_time_start']);
-        if (!empty($targetUser['target_user_first_pay_time_end'])) $targetUser['target_user_first_pay_time_end'] = strtotime($targetUser['target_user_first_pay_time_end']);
+        if (!empty($targetUser['target_user_first_pay_time_start'])) {
+            $targetUser['target_user_first_pay_time_start'] = Util::getDayFirstSecondUnix($targetUser['target_user_first_pay_time_end']);
+        }
+        if (!empty($targetUser['target_user_first_pay_time_end'])) {
+            $targetUser['target_user_first_pay_time_end'] = Util::getDayLastSecondUnix($targetUser['target_user_first_pay_time_end']);
+        }
         return [
             'target_user_first_pay_time_start' => $targetUser['target_user_first_pay_time_start'] ?? 0, // 目标用户首次付费时间开始时间
             'target_user_first_pay_time_end'   => $targetUser['target_user_first_pay_time_end'] ?? 0, // 目标用户首次付费时间截止时间
@@ -401,6 +405,10 @@ class LimitTimeActivityAdminService
         // 分页
         (!empty($page) && !empty($count)) && $searchWhere['LIMIT'] = [($page - 1) * $count, $count];
         list($returnData['total_count'], $returnData['list']) = LimitTimeActivityModel::getFilterAfterActivityList($searchWhere);
+        foreach ($returnData['list'] as &$item) {
+            $item = LimitTimeActivityBaseAbstract::formatActivityTimeStatus($item);
+        }
+        unset($item);
         return $returnData;
     }
 
@@ -421,7 +429,7 @@ class LimitTimeActivityAdminService
         $appId = $params['app_id'];
         // 如果存在学员名称和手机号，用名称和手机号换取uuid
         $mobileUUID = self::getStudentInfoByMobile($appId, !empty($params['student_mobile']) ? [$params['student_mobile']] : []);
-        $studentNameUUID = self::getStudentInfoByName($appId, $params['student_name'] ?? '');
+        $studentNameUUID = LimitTimeActivityBaseAbstract::getAppObj($appId)->getStudentInfoByName($params['student_name'] ?? '', ['id', 'uuid', 'name']);
         // 如果传入的uuid不为空和传入的uuid取交集，交集为空认为不会有数据， 不为空直接用交集作为条件
         $searchUUID = [];
         if (!empty($params['uuid'])) $searchUUID[] = $params['uuid'];
@@ -434,7 +442,7 @@ class LimitTimeActivityAdminService
             $searchUUID = empty($searchUUID) ? $_nameUUIDS : array_intersect($searchUUID, $_nameUUIDS);
         }
         $searchUUID = array_unique(array_diff($searchUUID, ['']));
-        if (!empty($mobileUUID) || !empty($studentNameUUID) || !empty($params['student_uuid'])) {
+        if (!empty($params['student_mobile']) || !empty($params['student_name']) || !empty($params['student_uuid'])) {
             if (empty($searchUUID)) return $returnData;
         }
         // 搜索数据
@@ -501,24 +509,6 @@ class LimitTimeActivityAdminService
         }
         if ($appId == Constants::SMART_APP_ID) {
             $studentList = DssService::getStudentInfoByMobile($mobiles, $fields);
-        }
-        return $studentList ?? [];
-    }
-
-    /**
-     * 获取学生信息列表
-     * @param $appId
-     * @param string $studentName
-     * @param array $fields
-     * @return array
-     */
-    public static function getStudentInfoByName($appId, string $studentName, $fields = [])
-    {
-        if (empty($studentName)) {
-            return [];
-        }
-        if ($appId == Constants::SMART_APP_ID) {
-            $studentList = DssService::getStudentInfoByName($studentName, $fields);
         }
         return $studentList ?? [];
     }

@@ -17,19 +17,14 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\Constants;
-use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
-use App\Libs\Util;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\LimitTimeActivity\LimitTimeActivityModel;
 use App\Models\OperationActivityModel;
-use App\Models\WhiteGrantRecordModel;
-use App\Services\Activity\LimitTimeActivity\TraitService\LimitTimeActivityBaseAbstract;
+use App\Services\Queue\Activity\LimitTimeAward\LimitTimeAwardConsumerService;
 use App\Services\Queue\Activity\LimitTimeAward\LimitTimeAwardProducerService;
-use App\Services\Queue\QueueService;
-use App\Services\WhiteGrantRecordService;
 use Dotenv\Dotenv;
 
 $dotenv = new Dotenv(PROJECT_ROOT, '.env');
@@ -42,8 +37,6 @@ class ScriptLimitTimeActivityPush
         Constants::SMART_APP_ID,
         Constants::REAL_APP_ID,
     ];
-    const IS_FIRST_DAY_PUSH = 'first_day';
-    const IS_LAST_DAY_PUSH  = 'last_day';
     private $isCurrentPush   = '';
     private $time            = 0;
     private $last_student_id = [];
@@ -55,10 +48,10 @@ class ScriptLimitTimeActivityPush
             SimpleLogger::info(self::LogTitle . ' params error.', $params);
             return false;
         }
-        if ($params[1] == self::IS_FIRST_DAY_PUSH) {
-            $this->isCurrentPush = self::IS_FIRST_DAY_PUSH;
+        if ($params[1] == LimitTimeAwardConsumerService::IS_FIRST_DAY_PUSH) {
+            $this->isCurrentPush = LimitTimeAwardConsumerService::IS_FIRST_DAY_PUSH;
         } else {
-            $this->isCurrentPush = self::IS_LAST_DAY_PUSH;
+            $this->isCurrentPush = LimitTimeAwardConsumerService::IS_LAST_DAY_PUSH;
         }
         return true;
     }
@@ -79,7 +72,7 @@ class ScriptLimitTimeActivityPush
         if (empty($this->isCurrentPush)) {
             return false;
         }
-        if (!in_array($this->isCurrentPush, [self::IS_LAST_DAY_PUSH, self::IS_FIRST_DAY_PUSH])) {
+        if (!in_array($this->isCurrentPush, [LimitTimeAwardConsumerService::IS_LAST_DAY_PUSH, LimitTimeAwardConsumerService::IS_FIRST_DAY_PUSH])) {
             return false;
         }
         return true;
@@ -117,8 +110,8 @@ class ScriptLimitTimeActivityPush
             'app_id'        => self::APP_LIST,
             'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
         ];
-        $time = date("Y-m-d 00:00:00");
-        if ($this->isCurrentPush == self::IS_FIRST_DAY_PUSH) {
+        $time = date("Y-m-d 00:00:00", $this->time);
+        if ($this->isCurrentPush == LimitTimeAwardConsumerService::IS_FIRST_DAY_PUSH) {
             $where['start_time[>=]'] = strtotime($time);
             $where['start_time[<=]'] = strtotime($time);
         } else {
@@ -135,7 +128,7 @@ class ScriptLimitTimeActivityPush
             $dssTable = DssStudentModel::getTableNameWithDb();
             $wxTable = DssUserWeiXinModel::getTableNameWithDb();
             $lastId = $this->last_student_id[$appId] ?? 0;
-            $sql = 'SELECT s.id FROM ' .
+            $sql = 'SELECT s.id as student_id FROM ' .
                 ' ' . $dssTable . ' as s' .
                 ' INNER JOIN ' . $wxTable . ' as wx on wx.user_id=s.id' .
                 ' WHERE s.id >' . $lastId .
@@ -146,7 +139,8 @@ class ScriptLimitTimeActivityPush
                 ' LIMIT 0, 2000';
             $studentIds = $db->queryAll($sql);
         } elseif ($appId == Constants::REAL_APP_ID) {
-            $db = MysqlDB::getDB(MysqlDB::CONFIG_ERP_SLAVE);
+            // $db = MysqlDB::getDB(MysqlDB::CONFIG_ERP_SLAVE);
+            // TODO 读取erp 年卡绑定用户的列表 （这里现在貌似没有直接读取年卡用户的列表，是否需要erp配合出接口？）
         }
         return $studentIds ?? [];
     }
@@ -154,11 +148,13 @@ class ScriptLimitTimeActivityPush
     public function pushData($appId, $activityList)
     {
         $studentIds = $this->getStudentIds($appId);
-        $studentList = array_chunk($studentIds, 200);
-        foreach ($studentList as $item) {
+        foreach ($studentIds as $item) {
+            $this->last_student_id[$appId] = $item['id'];
             LimitTimeAwardProducerService::pushWxMsgProducer([
-                'student_ids'   => $item,
+                'student_info'  => $item,
                 'activity_list' => $activityList,
+                'push_type'     => $this->isCurrentPush,
+                'app_id'        => $appId,
             ]);
         }
         unset($item);

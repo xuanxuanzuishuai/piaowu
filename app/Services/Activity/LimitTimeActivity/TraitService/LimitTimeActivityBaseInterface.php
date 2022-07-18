@@ -43,9 +43,10 @@ interface LimitTimeActivityBaseInterface
      * 根据学生名称模糊搜索用户信息
      * @param string $name
      * @param array $fields
+     * @param $limitArr
      * @return array
      */
-    public static function getStudentInfoByName(string $name, array $fields = []): array;
+    public function getStudentInfoByName(string $name, array $fields = [], $limitArr = [0,1000]): array;
 
     /**
      * 根据员工id获取多个员工信息，并且以员工id为key

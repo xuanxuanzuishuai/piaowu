@@ -19,9 +19,9 @@ class RealService extends LimitTimeActivityBaseAbstract
 {
     public function __construct($studentInfo, $fromType)
     {
-        $this->appId       = Constants::REAL_APP_ID;
+        $this->appId = Constants::REAL_APP_ID;
         $this->studentInfo = $studentInfo;
-        $this->fromType    = $fromType;
+        $this->fromType = $fromType;
     }
 
     /**
@@ -52,11 +52,12 @@ class RealService extends LimitTimeActivityBaseAbstract
      * 根据name批量获取用户信息
      * @param string $name
      * @param array $fields
+     * @param int[] $limitArr
      * @return array
      */
-    public static function getStudentInfoByName(string $name, array $fields = []): array
+    public function getStudentInfoByName(string $name, array $fields = [], $limitArr = [0, 1000]): array
     {
-        $list = ErpStudentModel::getRecords(['name[~]' => $name], $fields);
+        $list = ErpStudentModel::getRecords(['name[~]' => $name, 'ORDER' => $limitArr], $fields);
         return is_array($list) ? $list : [];
     }
 

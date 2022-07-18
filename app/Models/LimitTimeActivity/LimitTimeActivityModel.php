@@ -351,7 +351,7 @@ class LimitTimeActivityModel extends Model
         if (empty($res[0]['total_count'])) {
             return [0, []];
         }
-        $columns = 'a.activity_id,a.activity_name';
+        $columns = 'a.activity_id,a.activity_name,a.enable_status,a.start_time,a.end_time';
         $sql .= ' GROUP BY a.activity_id ORDER BY a.id DESC ';
         !empty($where['LIMIT']) && $sql .= ' LIMIT ' . $where['LIMIT'][0] . ',' . $where['LIMIT'][1];
         $listSql = str_replace(['{{columns}}', "{{join}}"], [$columns, $join], $sql);

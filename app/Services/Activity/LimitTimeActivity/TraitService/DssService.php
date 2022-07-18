@@ -48,14 +48,15 @@ class DssService extends LimitTimeActivityBaseAbstract
     }
 
     /**
-     * 根据uuid批量获取用户信息
+     * 根据名字批量获取用户信息
      * @param string $name
      * @param array $fields
+     * @param int[] $limitArr
      * @return array
      */
-    public static function getStudentInfoByName(string $name, array $fields = []): array
+    public function getStudentInfoByName(string $name, array $fields = [], $limitArr = [0,1000]): array
     {
-        $list = DssStudentModel::getRecords(['name[~]' => $name], $fields);
+        $list = DssStudentModel::getRecords(['name[~]' => $name, 'LIMIT' => $limitArr], $fields);
         return is_array($list) ? $list : [];
     }
 
