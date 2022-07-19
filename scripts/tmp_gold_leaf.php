@@ -21,19 +21,26 @@ $dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();
 $dotenv->overload();
 
+$needStart = $argv[1];
+$needEnd = $argv[2];
+
+if (empty($needStart) || empty($needEnd)) {
+    echo '参数错误';
+}
+
+
 // 全量智能用户自己的 最近90天的金叶子获得 和 金叶子余额
 $timeDiff = 7776000; // 86400 * 90
 $endTime = strtotime(date('Ymd'));
 $startTime = $endTime - $timeDiff;
 
-$totalCount = DssStudentModel::getRecord(['ORDER' => ['id' => 'DESC']], 'id');
 $limit = 10000;
-$ceil = ceil($totalCount / $limit);
+
 $erp = new Erp();
 
-for($i = 0; $i < $ceil; $i++) {
+for($i = $needStart; $i < $needEnd; $i+=$limit) {
     SimpleLogger::info('total execute start', ['i' => $i]);
-    $idMin = $i * $limit;
+    $idMin = $i;
     $idMAx = $idMin + $limit;
     $dssStudent = DssStudentModel::getRecords(['id[>]' => $idMin, 'id[<=]' => $idMAx], ['uuid']);
     if (!empty($dssStudent)) {
