@@ -144,20 +144,26 @@ class ScriptLimitTimeActivityPush
 
     public function getLastId($appId)
     {
-        $id = RedisDB::getConn()->get('limit_time_activity_push_last_id_' . $appId . '_' . $this->isCurrentPush);
+        $id = RedisDB::getConn()->get($this->getKey($appId));
         return intval($id);
     }
 
     public function setLastId($appId, $lastId)
     {
-        return RedisDB::getConn()->set('limit_time_activity_push_last_id_' . $appId . '_' . $this->isCurrentPush, $lastId, 'EX', Util::TIMESTAMP_ONEDAY);
+        return RedisDB::getConn()->set($this->getKey($appId), $lastId, 'EX', Util::TIMESTAMP_ONEWEEK);
+    }
+
+    public function getKey($appId)
+    {
+        $day = date("Ymd");
+        return 'limit_time_activity_push_last_id_' . $appId . '_' . $this->isCurrentPush . '_' . $day;
     }
 
     public function getStudentIds($appId)
     {
         // TODO qingfeng.lian  open test
         $testUUIDS = [
-            10211, 713409, 713417, 710600
+            // 10211, 713409, 713417, 710600
         ];
         if ($appId == Constants::SMART_APP_ID) {
             $db = MysqlDB::getDB(MysqlDB::CONFIG_SLAVE);
@@ -213,7 +219,7 @@ class ScriptLimitTimeActivityPush
 
     public function computeDefTime($sendNum)
     {
-        return intval($sendNum/$this->secondSendNum);
+        return intval($sendNum / $this->secondSendNum);
     }
 }
 

@@ -140,7 +140,7 @@ class LimitTimeActivityAdminService
             }
             // 格式化付费时间  去掉时分秒
             if (!empty($targetUser['target_user_first_pay_time_start'])) {
-                $targetUser['target_user_first_pay_time_start'] = Util::getDayFirstSecondUnix($targetUser['target_user_first_pay_time_end']);
+                $targetUser['target_user_first_pay_time_start'] = Util::getDayFirstSecondUnix($targetUser['target_user_first_pay_time_start']);
             }
             if (!empty($targetUser['target_user_first_pay_time_end'])) {
                 $targetUser['target_user_first_pay_time_end'] = Util::getDayLastSecondUnix($targetUser['target_user_first_pay_time_end']);
