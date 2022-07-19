@@ -9,6 +9,7 @@ define('PROJECT_ROOT', realpath(__DIR__ . '/..'));
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\Erp;
+use App\Libs\SimpleLogger;
 use App\Models\CHModel\StudentAccountDetailModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpStudentAccountDetail;
@@ -29,7 +30,9 @@ $totalCount = DssStudentModel::getRecord(['ORDER' => ['id' => 'DESC']], 'id');
 $limit = 1000;
 $ceil = ceil($totalCount / $limit);
 $erp = new Erp();
+
 for($i = 0; $i < $ceil; $i++) {
+    SimpleLogger::info('total execute start', ['i' => $i]);
     $idMin = $i * $limit;
     $idMAx = $idMin + $limit;
     $dssStudent = DssStudentModel::getRecords(['id[>]' => $idMin, 'id[<=]' => $idMAx], ['uuid']);

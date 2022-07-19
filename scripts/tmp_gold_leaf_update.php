@@ -9,6 +9,7 @@ define('PROJECT_ROOT', realpath(__DIR__ . '/..'));
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\Erp;
+use App\Libs\SimpleLogger;
 use App\Models\CHModel\StudentAccountDetailModel;
 use App\Models\Erp\ErpStudentAccountDetail;
 use App\Models\Erp\ErpStudentModel;
@@ -43,6 +44,7 @@ $needUpdateStudentId = array_unique(array_merge(array_column($totalNumChangeStud
 
 $needUpdateStudent = array_column(ErpStudentModel::getRecords(['id' => $needUpdateStudentId], ['id', 'uuid']), 'uuid', 'id');
 
+SimpleLogger::info('today execute ', ['total_num' => count($needUpdateStudent)]);
 
 $endTime = strtotime(date('Ymd'));
 $startTime = $endTime - $timeDiff;
@@ -51,6 +53,7 @@ $ckData = array_column(StudentAccountDetailModel::timeRangeOnlyAdd(array_keys($n
 
 $erp = new Erp();
 foreach ($needUpdateStudent as $erpStudentId => $uuid) {
+    SimpleLogger::info('today execute start', ['uuid' => $uuid]);
     $lastGet = $ckData[$erpStudentId] ?? 0;
     $totalNum = array_column($erp->studentAccount($uuid)['data'], 'total_num', 'sub_type')[ErpStudentAccountDetail::SUB_TYPE_GOLD_LEAF] ?? 0;
     $info = UuidCreditModel::getRecord(['uuid' => $uuid]);
