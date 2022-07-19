@@ -246,13 +246,15 @@ class ExchangeCourseService
     /**
      * 消息通知结束
      * @param $batchId
+     * @param int $times
      * @return bool
      * @throws RunTimeException
      */
-    public static function exchangePushFinish($batchId)
+    public static function exchangePushFinish($batchId, $times = 0)
     {
         $data = [
-            'batch_id' => $batchId
+            'batch_id' => $batchId,
+            'times'    => $times
         ];
         try {
             $queue = new ThirdPartBillTopic();
@@ -329,6 +331,10 @@ class ExchangeCourseService
      */
     public static function checkPay($uuid, $existAppId)
     {
+        if (empty($uuid) || empty($existAppId)) {
+            return [];
+        }
+
         //查询智能的付费情况
         if (in_array(Constants::SMART_APP_ID, $existAppId)) {
             $payStatus = [24, 25, 26, 27];
@@ -386,20 +392,20 @@ class ExchangeCourseService
             'update_time' => time()
         ];
         if (empty($existAppId)) {
-            $update['result_desc'] = '新学员';
+            $update['result_desc'] = '新学员，已导入';
             return ExchangeCourseModel::updateRecord($id, $update);
         }
 
         if (!empty($payInfo['is_pay']) && $payInfo['is_pay'] == true) {
             $update['status'] = ExchangeCourseModel::STATUS_EXCHANGE_FAIL;
-            $update['result_desc'] = '在{$业务线名称}已付费，不可导入';
+            $update['result_desc'] = '在'.$payInfo['app_name'].'已付费，不可导入';
             return ExchangeCourseModel::updateRecord($id, $update);
         }
 
         if (in_array(Constants::SMART_APP_ID, $existAppId)) {
-            $update['result_desc'] = '未付费学员';
+            $update['result_desc'] = '未付费学员，已导入';
         } else {
-            $update['result_desc'] = '非智能业务线未付费学员';
+            $update['result_desc'] = '非智能业务线未付费学员，已导入';
         }
         ExchangeCourseModel::updateRecord($id, $update);
     }
@@ -412,12 +418,18 @@ class ExchangeCourseService
      */
     public static function handleExchangePushFinish($msg)
     {
-        $maxUpdateTime = ExchangeCourseModel::getMax(['batch_id' => $msg['batch_id']], ['update_time']);
-        if ($maxUpdateTime - time() > 180) {
+        $exist = ExchangeCourseModel::getRecord([
+            'batch_id' => $msg['batch_id'],
+            'status'   => ExchangeCourseModel::STATUS_READY_HANDLE
+        ], ['id']);
+        if (empty($exist)) {
             //发送邮件
             self::sentResultEmail($msg['batch_id']);
         } else {
-            self::exchangePushFinish($msg['batch_id']);
+            if ($msg['times'] > 2) {
+                return false;
+            }
+            self::exchangePushFinish($msg['batch_id'], $msg['times']++);
         }
         return true;
     }
@@ -431,15 +443,15 @@ class ExchangeCourseService
     {
         $importUuid = ExchangeCourseModel::getRecord(['batch_id' => $batchId], ['import_uuid']);
         $importInfo = self::getImportOperatorInfo($importUuid['import_uuid']);
-        if (empty($importInfo['import_email'])) {
+        if (empty($importInfo['email'])) {
             SimpleLogger::info('email is empty', ['batch_id' => $batchId]);
             return false;
         }
+        $fileName = $importInfo['name'] . '-' . date('Y年m月d日H:i:s');
         // 发放结果的数据保存到excel
-        $excelLocalPath = '/tmp/result_exchange_' . md5(rand() . time()) . '.' . 'csv';
+        $excelLocalPath = '/tmp/' . $fileName . '.csv';
         try {
-            $fileName = $importInfo['import_name'] . '-' . date('Y年m月d日 H:i:s');
-            $excelTitle[] = $fileName;
+            $excelTitle = ['手机号区号', '手机号', 'UUID', '渠道号', '处理结果'];
             $resultData = ExchangeCourseModel::getRecords(['batch_id' => $batchId],
                 ['country_code', 'mobile', 'uuid', 'channel_id', 'result_desc']);
             Spreadsheet::createXml($excelLocalPath, $excelTitle, $resultData);
@@ -583,5 +595,68 @@ class ExchangeCourseService
     public static function activateSms()
     {
 
+    }
+
+    /**
+     * 确认兑换
+     * @param $params
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function exchangeConfirm($params)
+    {
+        $where = [
+            'mobile'=>$params['mobile'],
+            'status'=>ExchangeCourseModel::STATUS_READY_EXCHANGE,
+            'ORDER'=>[
+                'id'=>'DESC'
+            ],
+        ];
+        $record = ExchangeCourseModel::getRecord($where, ['id','status']);
+        if (empty($record)) {
+            throw new RuntimeException(['exchange_no_qualification']);
+        }
+
+        //再次检查任意渠道是否付费
+        $userInfo = ErpStudentModel::getUserInfoByMobile($params['mobile']);
+        $existAppId = array_column($userInfo, 'app_id');
+        $uuid = $userInfo[0]['uuid'];
+        $payInfo = self::checkPay($uuid, $existAppId);
+        if (!empty($payInfo)) {
+            throw new RuntimeException(['exchange_payed_user']);
+        }
+
+        //创建订单
+        $update['exchange_time'] = time();
+        list($result,$body) =  self::exchangeCreateBill($uuid);
+        //记录请求结果
+        if ($result === false) {
+            $update['status'] = ExchangeCourseModel::STATUS_EXCHANGE_FAIL;
+            ExchangeCourseModel::updateRecord($record['id'],$update);
+            throw new RuntimeException(['exchange_create_bill_fail']);
+        } else {
+            $update['status'] = ExchangeCourseModel::STATUS_EXCHANGE_SUCCESS;
+            ExchangeCourseModel::updateRecord($record['id'],$update);
+        }
+        return true;
+    }
+
+    /**
+     * 确认兑换创建订单
+     * @param $uuid
+     * @return array
+     */
+    public static function exchangeCreateBill($uuid)
+    {
+        $packageId = DictConstants::get(DictConstants::EXCHANGE_CONFIG,'package_id');
+         return (new Erp())->manCreateDeliverBillV1([
+            'uuid' => $uuid,
+            'package_id' => $packageId,
+            'pay_time' => time(),
+            'description' => '兑课赠送',
+            'trade_no' => 'virtual',
+            'app_id' => Constants::SMART_APP_ID,
+            'sub_type' => 4026
+        ]);
     }
 }

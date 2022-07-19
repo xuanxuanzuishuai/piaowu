@@ -1324,6 +1324,15 @@ class DictConstants {
 			Constants::AWARD_TYPE_MAGIC_STONE,
 		]
 	];
+
+    //兑课配置
+    const EXCHANGE_CONFIG = [
+        'type' => 'exchange_config',
+        'keys' => [
+            'package_id'
+        ]
+    ];
+
     //兑课标签列表
     const EXCHANGE_TAG = [
         'type' => 'exchange_tag',

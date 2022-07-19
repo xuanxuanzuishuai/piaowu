@@ -11,10 +11,13 @@ namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
 use App\Libs\AliOSS;
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Libs\NewSMS;
 use App\Libs\Util;
+use App\Services\CommonServiceForApp;
 use App\Services\ExchangeCourseService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -164,5 +167,55 @@ class ExchangeCourse extends ControllerBase
             'code' => Valid::CODE_SUCCESS,
             'data' => ['url' => $ossUrl]
         ]);
+    }
+
+    /**
+     * 兑课确认接口
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function exchangeConfirm(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'country_code',
+                'type'       => 'required',
+                'error_code' => 'country_code_required'
+            ],
+            [
+                'key'        => 'mobile',
+                'type'       => 'required',
+                'error_code' => 'mobile_is_required'
+            ],
+            [
+                'key'        => 'mobile',
+                'type'       => 'regex',
+                'value'      => Constants::MOBILE_REGEX,
+                'error_code' => 'student_mobile_format_is_error'
+            ],
+            [
+                'key'        => 'code',
+                'type'       => 'required',
+                'error_code' => 'code_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        // 验证手机验证码
+        if (!empty($params['code']) && !CommonServiceForApp::checkValidateCode($params['mobile'], $params['code'],
+                $params['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE)) {
+            return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
+        }
+        try {
+            ExchangeCourseService::exchangeConfirm($params);
+        } catch (RuntimeException $e) {
+            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
+        }
+        return HttpHelper::buildResponse($response, []);
     }
 }
