@@ -27,7 +27,7 @@ $endTime = strtotime(date('Ymd'));
 $startTime = $endTime - $timeDiff;
 
 $totalCount = DssStudentModel::getRecord(['ORDER' => ['id' => 'DESC']], 'id');
-$limit = 1000;
+$limit = 10000;
 $ceil = ceil($totalCount / $limit);
 $erp = new Erp();
 
