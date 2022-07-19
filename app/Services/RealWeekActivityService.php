@@ -610,7 +610,7 @@ class RealWeekActivityService
             }
 
             if ($i >= 200) {
-                $result = SendSmsService::sendOpJoinActivity($startTime);
+                $result = SendSmsService::sendOpJoinActivity($mobiles, $startTime);
                 if ($result) {
                     $successNum += count($mobiles);
                 }
@@ -621,7 +621,7 @@ class RealWeekActivityService
 
         // 剩余数量小于200
         if (!empty($mobiles)) {
-            $result = SendSmsService::sendOpJoinActivity($startTime);
+            $result = SendSmsService::sendOpJoinActivity($mobiles, $startTime);
             if ($result) {
                 $successNum += count($mobiles);
             }
