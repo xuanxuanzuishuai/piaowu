@@ -56,6 +56,8 @@ for($i = $needStart; $i < $needEnd; $i+=$limit) {
 
                 $info = UuidCreditModel::getRecord(['uuid' => $uuid]);
 
+                $lastGet = intval($lastGet);
+                $totalNum = intval($totalNum);
                 if (!empty($info)) {
                     UuidCreditModel::updateRecord($info['id'], ['last_get' => $lastGet, 'total_num' => $totalNum]);
                 } else {
