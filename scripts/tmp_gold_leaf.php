@@ -29,6 +29,7 @@ if (Util::emptyExceptZero($needStart) || Util::emptyExceptZero($needEnd) || Util
     die();
 }
 
+SimpleLogger::info('deal fan wei', ['needstart' => $needStart, 'needend' => $needEnd, 'limit' => $limit]);
 
 // 全量智能用户自己的 最近90天的金叶子获得 和 金叶子余额
 $timeDiff = 7776000; // 86400 * 90
@@ -53,7 +54,7 @@ for($i = $needStart; $i < $needEnd; $i+=$limit) {
             foreach ($erpStudentUUidRelate as $erpStudentId => $uuid) {
                 $lastGet = $ckData[$erpStudentId] ?? 0;
                 $totalNum = $remainTotal[$erpStudentId] ?? 0;
-
+                SimpleLogger::info('total execute start', ['i' => $i, 'uuid' => $uuid]);
                 $info = UuidCreditModel::getRecord(['uuid' => $uuid]);
 
                 $lastGet = intval($lastGet);
