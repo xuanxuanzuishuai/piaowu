@@ -8,11 +8,11 @@ define('PROJECT_ROOT', realpath(__DIR__ . '/..'));
 // require composer autoload
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
-use App\Libs\Erp;
 use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use App\Models\CHModel\StudentAccountDetailModel;
 use App\Models\Dss\DssStudentModel;
-use App\Models\Erp\ErpStudentAccountDetail;
+use App\Models\Erp\ErpStudentAccountModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\UuidCreditModel;
 use Dotenv\Dotenv;
@@ -23,9 +23,10 @@ $dotenv->overload();
 
 $needStart = $argv[1];
 $needEnd = $argv[2];
-
-if (empty($needStart) || empty($needEnd)) {
+$limit = $argv[3];
+if (Util::emptyExceptZero($needStart) || Util::emptyExceptZero($needEnd) || Util::emptyExceptZero($limit)) {
     echo '参数错误';
+    die();
 }
 
 
@@ -34,28 +35,27 @@ $timeDiff = 7776000; // 86400 * 90
 $endTime = strtotime(date('Ymd'));
 $startTime = $endTime - $timeDiff;
 
-$limit = 10000;
-
-$erp = new Erp();
-
 for($i = $needStart; $i < $needEnd; $i+=$limit) {
     SimpleLogger::info('total execute start', ['i' => $i]);
     $idMin = $i;
     $idMAx = $idMin + $limit;
     $dssStudent = DssStudentModel::getRecords(['id[>]' => $idMin, 'id[<=]' => $idMAx], ['uuid']);
+
     if (!empty($dssStudent)) {
         $erpStudent = ErpStudentModel::getRecords(['uuid' => array_column($dssStudent, 'uuid')], ['id', 'uuid']);
 
         $erpStudentUUidRelate = array_column($erpStudent, 'uuid', 'id');
         //ck数据
         $ckData = array_column(StudentAccountDetailModel::timeRangeOnlyAdd(array_keys($erpStudentUUidRelate), $startTime, $endTime), 'total', 'student_id');
+        $remainTotal = array_column(ErpStudentAccountModel::getAccountTotalNum(array_keys($erpStudentUUidRelate)), 'remain_total_num', 'student_id');
 
         if (!empty($erpStudentUUidRelate)) {
             foreach ($erpStudentUUidRelate as $erpStudentId => $uuid) {
                 $lastGet = $ckData[$erpStudentId] ?? 0;
-                $totalNum = array_column($erp->studentAccount($uuid)['data'], 'total_num', 'sub_type')[ErpStudentAccountDetail::SUB_TYPE_GOLD_LEAF] ?? 0;
+                $totalNum = $remainTotal[$erpStudentId] ?? 0;
 
                 $info = UuidCreditModel::getRecord(['uuid' => $uuid]);
+
                 if (!empty($info)) {
                     UuidCreditModel::updateRecord($info['id'], ['last_get' => $lastGet, 'total_num' => $totalNum]);
                 } else {
@@ -73,3 +73,5 @@ for($i = $needStart; $i < $needEnd; $i+=$limit) {
     sleep(1);
 
 }
+
+echo 'success' . $needStart . '---' . $needEnd . PHP_EOL;

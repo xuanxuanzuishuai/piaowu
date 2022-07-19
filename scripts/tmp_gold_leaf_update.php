@@ -12,6 +12,7 @@ use App\Libs\Erp;
 use App\Libs\SimpleLogger;
 use App\Models\CHModel\StudentAccountDetailModel;
 use App\Models\Erp\ErpStudentAccountDetail;
+use App\Models\Erp\ErpStudentAccountModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\UuidCreditModel;
 use Dotenv\Dotenv;
@@ -50,12 +51,12 @@ $endTime = strtotime(date('Ymd'));
 $startTime = $endTime - $timeDiff;
 
 $ckData = array_column(StudentAccountDetailModel::timeRangeOnlyAdd(array_keys($needUpdateStudent), $startTime, $endTime), 'total', 'student_id');
+$remainTotal = array_column(ErpStudentAccountModel::getAccountTotalNum(array_keys($needUpdateStudent)), 'remain_total_num', 'student_id');
 
-$erp = new Erp();
 foreach ($needUpdateStudent as $erpStudentId => $uuid) {
     SimpleLogger::info('today execute start', ['uuid' => $uuid]);
     $lastGet = $ckData[$erpStudentId] ?? 0;
-    $totalNum = array_column($erp->studentAccount($uuid)['data'], 'total_num', 'sub_type')[ErpStudentAccountDetail::SUB_TYPE_GOLD_LEAF] ?? 0;
+    $totalNum = $remainTotal[$erpStudentId] ?? 0;
     $info = UuidCreditModel::getRecord(['uuid' => $uuid]);
     if (!empty($info)) {
         UuidCreditModel::updateRecord($info['id'], ['last_get' => $lastGet, 'total_num' => $totalNum]);
