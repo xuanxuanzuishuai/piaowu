@@ -72,9 +72,9 @@ class DssService extends LimitTimeActivityBaseAbstract
 		//首先检测是否付费有效检测
 		$studentIdentity = UserService::checkDssStudentIdentityIsNormal($this->studentInfo['user_id']);
 		if ($studentIdentity[0] !== true) {
-			throw new RunTimeException(['no_in_progress_activity']);
+			throw new RunTimeException(['student_pay_status_no']);
 		}
-		//此处首次付费时间取dss接口提供的数据，因为存在白名单账户，数据表的first_pay_time有可能不是白名单中设置的first_pay_time
+		//此处首次付费时间取dss接口提供的数据，因为存在白名单账户，数据表的pay_vip_time有可能不是白名单中设置的first_pay_time
 		$this->studentInfo['first_pay_time'] = $studentIdentity[1]['first_pay_time'];
 		return $studentIdentity;
 	}

@@ -195,22 +195,19 @@ class ClientAuthMiddleware extends MiddlewareBase
 	private function getStudentInfo(int $appId, int $userId): array
 	{
 		$studentBaseInfo = [];
-		$selectFields = [
-			'uuid',
-			'thumb',
-			'name',
-			'mobile',
-			'country_code',
-			'status',
-		];
 		switch ($appId) {
 			case Constants::SMART_APP_ID:
-				$studentBaseInfo = DssStudentModel::getRecord(
+				$studentBaseInfo = DssStudentModel::getRecord(['id' => $userId],
 					[
-						'id' => $userId
-					],
-					array_merge($selectFields, ['id(user_id)', 'pay_vip_time'])
-				);
+						'uuid',
+						'thumb',
+						'name',
+						'mobile',
+						'country_code',
+						'status',
+						'id(user_id)',
+						'pay_vip_time'
+					]);
 				$studentBaseInfo['thumb_oss_url'] = StudentService::getStudentThumb($studentBaseInfo['thumb']);
 				break;
 			case Constants::REAL_APP_ID:
@@ -221,7 +218,7 @@ class ClientAuthMiddleware extends MiddlewareBase
 				$studentBaseInfo['thumb_oss_url'] = ErpUserService::getStudentThumbUrl([$studentBaseInfo['thumb']])[0];
 				break;
 		}
-		if (empty($studentBaseInfo)) {
+		if (empty($studentBaseInfo['user_id'])) {
 			throw new RunTimeException(['user_invalid']);
 		}
 		return $studentBaseInfo;

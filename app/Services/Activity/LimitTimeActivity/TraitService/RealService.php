@@ -69,7 +69,7 @@ class RealService extends LimitTimeActivityBaseAbstract
 		$studentIdAttribute = ErpStudentService::getStudentCourseData($this->studentInfo['uuid']);
 		// 检查一下用户是否是有效用户，不是有效用户不可能有可参与的活动
 		if (empty($studentIdAttribute['is_valid_pay'])) {
-			throw new RunTimeException(['no_in_progress_activity']);
+			throw new RunTimeException(['student_pay_status_no']);
 		}
 		return $studentIdAttribute;
 	}

@@ -2,11 +2,14 @@
 
 namespace App\Services\Activity\LimitTimeActivity\TraitService;
 
+use App\Libs\Exceptions\RunTimeException;
+
 interface LimitTimeActivityBaseInterface
 {
     /**
      * 学生付费是否有效状态检测
      * @return array
+	 * @throws RunTimeException
      */
     public function studentPayStatusCheck(): array;
 

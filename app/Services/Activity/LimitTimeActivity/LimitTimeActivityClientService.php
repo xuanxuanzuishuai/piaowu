@@ -99,7 +99,7 @@ class LimitTimeActivityClientService
 			$activityList = LimitTimeActivityModel::searchList($where, [0, 1], [],
 				$serviceObj::RETURN_ACTIVITY_BASE_DATA_FIELDS);
 			if (empty($activityList[0])) {
-				throw new RunTimeException(['no_in_progress_activity']);
+				return [];
 			}
 			$activityInfo = $activityList[0][0];
 			//部分付费
@@ -109,12 +109,12 @@ class LimitTimeActivityClientService
 				if (!empty($filterWhere['target_user_first_pay_time_start']) &&
 					($serviceObj->studentInfo['first_pay_time'] < $filterWhere['target_user_first_pay_time_start'] ||
 						$serviceObj->studentInfo['first_pay_time'] > $filterWhere['target_user_first_pay_time_end'])) {
-					throw new RunTimeException(['no_in_progress_activity']);
+					return [];
 				}
 				if (!empty((int)$filterWhere['invitation_num'])) {
 					$invitationNum = $serviceObj->getStudentReferralOrBuyTrailCount();
 					if ($invitationNum < $filterWhere['invitation_num']) {
-						throw new RunTimeException(['no_in_progress_activity']);
+						return [];
 					}
 				}
 			}
