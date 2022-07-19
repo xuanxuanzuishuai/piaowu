@@ -360,4 +360,15 @@ class LimitTimeActivityModel extends Model
         SimpleLogger::info("getFilterAfterActivityList_sql", [$where, $listSql, $list]);
         return [intval($res[0]['total_count']), is_array($list) ? $list : []];
     }
+
+    /**
+     * 检查业务线下活动是否存在
+     * @param $appId
+     * @param $activityId
+     * @return mixed
+     */
+    public static function checkActivityInfo($appId, $activityId)
+    {
+        return self::getRecord(['activity_id' => $activityId, 'app_id' => $appId]);
+    }
 }
