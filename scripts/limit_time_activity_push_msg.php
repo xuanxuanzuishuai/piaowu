@@ -47,6 +47,7 @@ class ScriptLimitTimeActivityPush
     ];
     private $isCurrentPush   = '';
     private $time            = 0;
+    private $secondSendNum   = 0;
     private $last_student_id = [];
     const LogTitle = 'ScriptLimitTimeActivityPush';
     private $limit = 0;
@@ -67,6 +68,7 @@ class ScriptLimitTimeActivityPush
             $this->isCurrentPush = LimitTimeAwardConsumerService::IS_LAST_DAY_PUSH;
         }
         $this->limit = DictConstants::get(DictConstants::LIMIT_TIME_ACTIVITY_CONFIG, 'push_wx_msg_every_time_limit');
+        $this->secondSendNum = $this->limit / (15 * 60);
         return true;
     }
 
@@ -191,18 +193,27 @@ class ScriptLimitTimeActivityPush
             self::saveLog("student empty is app id : " . $appId);
             return true;
         }
+        // 重新设定延迟时间
         $this->setLastId($appId, end($studentIds)['student_id']);
+        $sendNum = 0;
         foreach ($studentIds as $item) {
+            $sendNum += 1;
             $pushMsg = [
                 'student_info'  => $item,
                 'activity_list' => $activityList,
                 'push_type'     => $this->isCurrentPush,
                 'app_id'        => $appId,
+                'def_time'      => $this->computeDefTime($sendNum)
             ];
             LimitTimeAwardProducerService::pushWxMsgProducer($pushMsg);
         }
         unset($item);
         return true;
+    }
+
+    public function computeDefTime($sendNum)
+    {
+        return intval($sendNum/$this->secondSendNum);
     }
 }
 

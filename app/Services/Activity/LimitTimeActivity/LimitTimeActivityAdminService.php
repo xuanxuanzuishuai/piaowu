@@ -284,18 +284,28 @@ class LimitTimeActivityAdminService
             /** 更新 */
             $activityId = intval($data['activity_id']);
             // 活动是否存在
-            $activityInfo = LimitTimeActivityModel::getRecord(['activity_id' => $activityId]);
+            $activityInfo = LimitTimeActivityModel::checkActivityInfo($data['app_id'], $activityId);
             if (empty($activityInfo)) {
                 throw new RunTimeException(['record_not_found']);
             }
             // 删掉创建时的不要参数
             unset($operationActivityData['create_time'], $activityData['create_time'], $activityData['enable_status'], $htmlConfig['create_time']);
+            // 活动启用且活动开始后不可编辑开始与结束时间
+            if ($activityInfo['enable_status'] >= OperationActivityModel::ENABLE_STATUS_ON && $activityInfo['start_time'] <= $time) {
+                if ($activityData['start_time'] != $activityInfo['start_time']) {
+                    throw new RunTimeException(['activity_start_time_not_modify']);
+                }
+                if ($activityData['end_time'] != $activityInfo['end_time']) {
+                    throw new RunTimeException(['activity_end_time_not_modify']);
+                }
+            }
             // 如果是非待启用状态 - 某些字段不能编辑
-            // 一旦启用，不论是不是禁用了，都不能编辑奖励信息以及活动开始时间
+            // 修改字段进行限制
             if ($activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_OFF) {
                 $activityData = [
                     'activity_name' => $activityData['activity_name'],
                     'end_time'      => $activityData['end_time'],
+                    'start_time'      => $activityData['start_time'],
                     'update_time'   => $activityData['update_time'],
                     'operator_id'   => $activityData['operator_id'],
                 ];
