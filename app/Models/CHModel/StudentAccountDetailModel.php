@@ -43,7 +43,7 @@ class StudentAccountDetailModel
     {
         $chDb = CHDB::getErpDB();
         $or = $needExpire ? ' or (esad.expire_time  >= ' . $startTime . ' and esad .expire_time < ' . $endTime . ')' : NULL;
-        $sql = 'select student_id from ' . self::$table . ' esad where esad.sub_type = ' . $subType . ' and ((esad.create_time >= ' . $startTime . ' and esad.create_time < ' . $endTime . ')'. $or .') group by student_id';
+        $sql = 'select distinct student_id from ' . self::$table . ' esad where esad.sub_type = ' . $subType . ' and ((esad.create_time >= ' . $startTime . ' and esad.create_time < ' . $endTime . ')'. $or .')';
 
         return $chDb->queryAll($sql);
     }
