@@ -3,6 +3,7 @@ namespace App;
 
 date_default_timezone_set('PRC');
 set_time_limit(0);
+ini_set('memory_limit', '2048M');
 define('PROJECT_ROOT', realpath(__DIR__ . '/..'));
 // require composer autoload
 require_once PROJECT_ROOT . '/vendor/autoload.php';
