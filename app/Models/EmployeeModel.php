@@ -349,4 +349,14 @@ class EmployeeModel extends Model
                     e.id";
         return $db->queryAll($sql);
     }
+
+    /**
+     * 根据id获取uuid
+     * @param $userId
+     * @return mixed
+     */
+    public static function getUuidById($userId)
+    {
+        return MysqlDB::getDB()->get(self::$table, 'uuid', ['id' => (string)$userId]);
+    }
 }

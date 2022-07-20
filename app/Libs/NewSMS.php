@@ -140,10 +140,10 @@ class NewSMS
      * @param string $countryCode
      * @return bool
      */
-    public function sendValidateCode($targetMobile, $msg, $sign, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
-    {
-        return self::send($sign, $targetMobile, $msg, $countryCode, self::SMS_TYPE_VERIFICATION_CODE);
-    }
+//    public function sendValidateCode($targetMobile, $msg, $sign, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
+//    {
+//        return self::send($sign, $targetMobile, $msg, $countryCode, self::SMS_TYPE_VERIFICATION_CODE);
+//    }
 
     /**
      * 发送参加活动的提醒
@@ -152,18 +152,18 @@ class NewSMS
      * @param $startTime
      * @return bool
      */
-    public function sendAttendActSMS($mobile, $sign, $startTime)
-    {
-        $msg = "温馨提示：“上传截图领奖”活动已于{$startTime}开始，您的金叶子还未领取！请进入小叶子智能陪练服务号，点击福利中心参与。详情咨询课管老师";
-        // phone_number 支持以逗号隔开的字符串
-        $data = [
-            'sign_name' => $sign,
-            'mobiles' => $mobile,
-            'content' => $msg,
-            'sms_type' => self::SMS_TYPE_NOTICE,
-        ];
-        return self::sendSMS($data);
-    }
+//    public function sendAttendActSMS($mobile, $sign, $startTime)
+//    {
+//        $msg = "温馨提示：“上传截图领奖”活动已于{$startTime}开始，您的金叶子还未领取！请进入小叶子智能陪练服务号，点击福利中心参与。详情咨询课管老师";
+//        // phone_number 支持以逗号隔开的字符串
+//        $data = [
+//            'sign_name' => $sign,
+//            'mobiles' => $mobile,
+//            'content' => $msg,
+//            'sms_type' => self::SMS_TYPE_NOTICE,
+//        ];
+//        return self::sendSMS($data);
+//    }
 
 
     /**
@@ -175,18 +175,18 @@ class NewSMS
      * @param $buyTime
      * @return bool
      */
-    public function sendWebPageClickNotify($sign, $mobile, $stage, $action, $sMobile, $buyTime)
-    {
-        $msg = "有{$stage}学员待跟进，用户行为:{$action}, 请尽快联系学员 ! 学员电话:{$sMobile},{$buyTime}购买体验卡";
-        // phone_number 支持以逗号隔开的字符串
-        $data = [
-            'sign_name' => $sign,
-            'phone_number' => $mobile,
-            'content' => $msg,
-            'sms_type' => self::SMS_TYPE_NOTICE,
-        ];
-        return self::sendSMS($data);
-    }
+//    public function sendWebPageClickNotify($sign, $mobile, $stage, $action, $sMobile, $buyTime)
+//    {
+//        $msg = "有{$stage}学员待跟进，用户行为:{$action}, 请尽快联系学员 ! 学员电话:{$sMobile},{$buyTime}购买体验卡";
+//        // phone_number 支持以逗号隔开的字符串
+//        $data = [
+//            'sign_name' => $sign,
+//            'phone_number' => $mobile,
+//            'content' => $msg,
+//            'sms_type' => self::SMS_TYPE_NOTICE,
+//        ];
+//        return self::sendSMS($data);
+//    }
 
 
     /**

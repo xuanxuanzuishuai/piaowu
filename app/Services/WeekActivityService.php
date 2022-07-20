@@ -582,8 +582,6 @@ class WeekActivityService
         $startTime = date('m月d日', $activityInfo['start_time']);
         // 当前阶段为付费正式课且未参加当前活动的学员
         $students = self::getPaidAndNotAttendStudents($activityId);
-        $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
-        $sign = CommonServiceForApp::SIGN_STUDENT_APP;
         $i = 0;
         $mobiles = [];
         $successNum = 0;
@@ -595,7 +593,7 @@ class WeekActivityService
             }
 
             if ($i >= 200) {
-                $result = $sms->sendAttendActSMS($mobiles, $sign, $startTime);
+                $result = SendSmsService::sendOpJoinActivity($mobiles, $startTime);
                 if ($result) {
                     $successNum += count($mobiles);
                 }
@@ -606,7 +604,7 @@ class WeekActivityService
 
         // 剩余数量小于200
         if (!empty($mobiles)) {
-            $result = $sms->sendAttendActSMS($mobiles, $sign, $startTime);
+            $result = SendSmsService::sendOpJoinActivity($mobiles, $startTime);
             if ($result) {
                 $successNum += count($mobiles);
             }

@@ -343,20 +343,25 @@ class WhiteGrantRecordService
             $m = date('m', strtotime($date . ' -1 month'));
             $m .= '月份';
         }
-        if($status == WhiteGrantRecordModel::STATUS_GIVE){
-            $msg = '亲爱的用户:您在'. $m .'参与的限定福利活动，共计获得'. $leaf .'金叶子,专属福利已发放至您的账户,请进入【小叶子智能陪练公众号】领取红包。';
-        }
+//        if($status == WhiteGrantRecordModel::STATUS_GIVE){
+//            $msg = '亲爱的用户:您在'. $m .'参与的限定福利活动，共计获得'. $leaf .'金叶子,专属福利已发放至您的账户,请进入【小叶子智能陪练公众号】领取红包。';
+//        }
+//
+//        if($status == WhiteGrantRecordModel::STATUS_GIVE_FAIL){
+//            $msg = '亲爱的用户:您在'. $m .'参与的限定福利活动，共计获得'.$leaf.'金叶子,专属福利发放失败，可以联系您的课管重新发放。';
+//        }
 
-        if($status == WhiteGrantRecordModel::STATUS_GIVE_FAIL){
-            $msg = '亲爱的用户:您在'. $m .'参与的限定福利活动，共计获得'.$leaf.'金叶子,专属福利发放失败，可以联系您的课管重新发放。';
-        }
-
-        if(empty($msg) || empty($leaf)){
+        if(empty($m) || empty($leaf)){
             SimpleLogger::error('weehWhiteSendSmsFail', [$mobile, $status, $leaf]);
             return false;
         }
 
-        return (new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host')))->sendCommonSms($msg, $mobile);
+        if ($status == WhiteGrantRecordModel::STATUS_GIVE) {
+            SendSmsService::sendSmartSendRedpackageResult($mobile, [$m, $leaf], '', true);
+        } elseif ($status == WhiteGrantRecordModel::STATUS_GIVE_FAIL) {
+            SendSmsService::sendSmartSendRedpackageResult($mobile, [$m, $leaf], '', false);
+        }
+        return true;
     }
 
 

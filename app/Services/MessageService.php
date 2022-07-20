@@ -1228,8 +1228,7 @@ class MessageService
         $sMobile = $data['sMobile'];
         $sign    = $data['sign'] ?? CommonServiceForApp::SIGN_STUDENT_APP;
         $buyTime = !empty($data['buyTime']) ? date('Y-m-d', $data['buyTime']) : '暂未';
-        $sms = new NewSMS(DictConstants::get(DictConstants::SERVICE, 'sms_host'));
-        $success = $sms->sendWebPageClickNotify($sign, $mobile, $stage, $action, $sMobile, $buyTime);
+        $success = SendSmsService::sendSmartPayRecall($mobile, [$stage, $action, $sMobile, $buyTime], '', $sign);
         if (!$success) {
             SimpleLogger::error('SEND RECALL PAGE SMS FAILED', [$data]);
             return false;
