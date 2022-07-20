@@ -1329,7 +1329,8 @@ class DictConstants {
     const EXCHANGE_CONFIG = [
         'type' => 'exchange_config',
         'keys' => [
-            'package_id'
+            'package_id',
+            'confirm_exchange_url'
         ]
     ];
 

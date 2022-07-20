@@ -17,6 +17,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\PhpMail;
 use App\Libs\QingChen;
 use App\Libs\SimpleLogger;
+use App\Libs\SmsCenter\SmsCenter;
 use App\Libs\Spreadsheet;
 use App\Libs\Util;
 use App\Models\Dss\DssChannelModel;
@@ -293,7 +294,12 @@ class ExchangeCourseService
         $payInfo = self::checkPay($uuid, $existAppId);
 
         //判断处理结果并更新
-        self::updateHandleResult($id, $uuid, $existAppId, $payInfo);
+        $res = self::updateHandleResult($id, $uuid, $existAppId, $payInfo);
+
+        if ($res) {
+            $linkUrl = DictConstants::get(DictConstants::EXCHANGE_CONFIG, 'EXCHANGE_CONFIG');
+            SendSmsService::sendExchangeResult($msg['mobile'], $linkUrl, $msg['country_code']);
+        }
         return true;
     }
 
@@ -399,7 +405,8 @@ class ExchangeCourseService
         if (!empty($payInfo['is_pay']) && $payInfo['is_pay'] == true) {
             $update['status'] = ExchangeCourseModel::STATUS_EXCHANGE_FAIL;
             $update['result_desc'] = '在'.$payInfo['app_name'].'已付费，不可导入';
-            return ExchangeCourseModel::updateRecord($id, $update);
+            ExchangeCourseModel::updateRecord($id, $update);
+            return false;
         }
 
         if (in_array(Constants::SMART_APP_ID, $existAppId)) {
@@ -407,7 +414,7 @@ class ExchangeCourseService
         } else {
             $update['result_desc'] = '非智能业务线未付费学员，已导入';
         }
-        ExchangeCourseModel::updateRecord($id, $update);
+        return ExchangeCourseModel::updateRecord($id, $update);
     }
 
     /**
@@ -592,9 +599,37 @@ class ExchangeCourseService
         return ExchangeCourseModel::batchUpdateRecord($update, $where);
     }
 
-    public static function activateSms()
+    /**
+     * 批量发送短信
+     * @param $idList
+     * @return bool
+     */
+    public static function activateSms($idList)
     {
+        $recordList = ExchangeCourseModel::getRecords(['id' => $idList], ['country_code', 'mobile']);
+        if (empty($recordList)) {
+            return true;
+        }
+        $linkUrl = DictConstants::get(DictConstants::EXCHANGE_CONFIG, 'EXCHANGE_CONFIG');
+        //国内手机号
+        foreach ($recordList as $value) {
+            if ($value['country_code'] == SmsCenter::DEFAULT_COUNTRY_CODE) {
+                $chinaMobile[] = $value['mobile'];
+            } else {
+                $overseas = $value;
+            }
+        }
 
+        if (!empty($chinaMobile)) {
+            SendSmsService::sendExchangeResult($chinaMobile, $linkUrl);
+        }
+
+        if (!empty($overseas)) {
+            foreach ($overseas as $v) {
+                SendSmsService::sendExchangeResult($v['mobile'], $linkUrl, $v['country_code']);
+            }
+        }
+        return true;
     }
 
     /**

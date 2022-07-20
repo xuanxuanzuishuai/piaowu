@@ -16,6 +16,7 @@ use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\NewSMS;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Services\CommonServiceForApp;
 use App\Services\ExchangeCourseService;
@@ -70,9 +71,18 @@ class ExchangeCourse extends ControllerBase
         if (move_uploaded_file($_FILES['filename']['tmp_name'], $filename) == false) {
             return $response->withJson(Valid::addErrors([], 'import', 'move_file_fail'));
         }
+
+        $employeeUuid = $this->ci['employee']['uuid'];
+
+        //将文件上传到oss
+        $fileName = 'import_exchange_' . time() . '.' . $extension;
+        $ossPath = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_TMP_EXCEL . '/' . $fileName;
+        AliOSS::uploadFile($ossPath, $filename);
+        $ossPath = AliOSS::replaceCdnDomainForDss($ossPath);
+        SimpleLogger::info('import exchange excel upload oss success', ['uuid' => $employeeUuid, 'oss_path' => $ossPath, 'time' => time()]);
+
         $data = [];
         try {
-            $employeeUuid = $this->ci['employee']['uuid'];
             // 检查订单数据
             $data = ExchangeCourseService::analysisData($filename, $employeeUuid, $params);
         } catch (RuntimeException $e) {

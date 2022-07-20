@@ -320,4 +320,44 @@ class SendSmsService
         SimpleLogger::info($keyCode, ['content' => $content, 'mobile' => $targetMobiles]);
         return true;
     }
+
+    /**
+     * 发送兑课结果
+     * @param $targetMobiles
+     * @param $msg
+     * @param string $countryCode
+     * @return bool
+     */
+    public static function sendExchangeResult($targetMobiles, $msg, $countryCode = SmsCenter::DEFAULT_COUNTRY_CODE) {
+        $keyCode = SmsInc::OP_EXCHANGE_RESULT;
+        $template = self::getTemplateInfoByKeyCode($keyCode);
+        if (empty($template)) {
+            return false;
+        }
+        if ($countryCode == SmsCenter::DEFAULT_COUNTRY_CODE && is_array($targetMobiles)){
+            $items = ['mobile' => $targetMobiles, 'params' => [$msg]];
+            self::sendSms(
+                SmsInc::SEND_TYPE_BATCH_SAME,
+                $keyCode,
+                $template['id'],
+                $items,
+                $countryCode
+            );
+        }else{
+            $items = ['mobile' => $targetMobiles, 'params' => $msg];
+            if (empty($template)) {
+                return false;
+            }
+            self::sendSms(
+                SmsInc::SEND_TYPE_SINGLE,
+                $keyCode,
+                $template['id'],
+                $items,
+                $countryCode
+            );
+        }
+        $content = self::valueReplaceVar($template['content'], $items['params']);
+        SimpleLogger::info($keyCode, ['content' => $content, 'mobile' => $targetMobiles]);
+        return true;
+    }
 }

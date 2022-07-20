@@ -21,4 +21,5 @@ class SmsInc
     const SMART_SEND_REDPACKAGE_FAIL = 'smart_send_redpackage_fail';        //智能周周领奖白名单发送红包失败模板ID
     const SMART_PAY_RECALL = 'smart_pay_recall';                            //年卡召回页面按钮点击短信模板ID
     const OP_JOIN_ACTIVITY = 'op_join_activity';                            //参加活动的提醒短信模板ID
+    const OP_EXCHANGE_RESULT = 'op_exchange_result';                        //兑课导入结果通知短信
 }
