@@ -17,6 +17,8 @@ use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\Erp\ErpEventModel;
+use App\Models\OperationActivityModel;
+use App\Services\Activity\LimitTimeActivity\LimitTimeActivityAdminService;
 use App\Services\Activity\RealWeekActivity\RealWeekActivityClientService;
 use App\Services\RealSharePosterDesignateUuidService;
 use App\Services\RealWeekActivityService;
@@ -242,12 +244,16 @@ class RealWeekActivity extends ControllerBase
      */
     public function activityList(Request $request, Response $response)
     {
-        try {
-            $params = $request->getParams();
-            list($page, $count) = Util::formatPageCount($params);
+        $params = $request->getParams();
+        list($page, $count) = Util::formatPageCount($params);
+        if (!empty($params['activity_type']) && $params['activity_type'] == OperationActivityModel::SHARE_POSTER_ACTIVITY_TYPE_LIMIT) {
+            $data = LimitTimeActivityAdminService::getFilterAfterActivityList($params, $page, $count);
+            foreach ($data['list'] as &$item) {
+                $item['name'] = $item['activity_name'];
+            }
+            unset($item);
+        } else {
             $data = RealWeekActivityClientService::getVerifySharePosterActivityList($page, $count, $params);
-        } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, ['activities' => $data['list'], 'total_count' => $data['total_count']]);
     }

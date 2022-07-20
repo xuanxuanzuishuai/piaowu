@@ -29,6 +29,8 @@ class RealDictConstants extends DictConstants
             'real_week_activity_url', // 周周领奖活动访问地址
             'register_default_channel', //注册默认渠道
             'employee_replace_student_create_poster_activity_id', // 员工替学生生成转介绍分享海报活动id
+            'limit_time_activity_detail',       // 限时活动详情页面
+            'limit_time_activity_record_list',  // 限时活动-上传截图记录详情页面
         ]
     ];
 

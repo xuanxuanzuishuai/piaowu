@@ -1307,6 +1307,7 @@ class DictConstants {
 			'real_student_wx_channel_id',
 			'real_student_app_channel_id',
             'push_wx_msg_every_time_limit',
+            'real_student_is_normal_attr_id',
         ]
     ];
     // 限时活动智能奖励类型

@@ -12,8 +12,8 @@ use App\Models\LimitTimeActivity\LimitTimeActivityModel;
 use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\TemplatePosterModel;
+use App\Services\CommonServiceForApp;
 use App\Services\DictService;
-use App\Services\Queue\Activity\LimitTimeAward\LimitTimeAwardConsumerService;
 
 /**
  * 活动客户端管理基础服务接口类：定义一些方法，由子类去实现
@@ -295,7 +295,8 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
         return DictService::getKeyValue($type, $keyCode);
     }
 
-    public static function getPushWxMsgAppType($appId) {
+    public static function getPushWxMsgAppType($appId)
+    {
         return 'limit_time_activity_msg_' . $appId;
     }
 
@@ -348,4 +349,33 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
 		}
 		return $activityIds;
 	}
+
+    /**
+     * 检查学生区号是否在活动投放区域内
+     * 活动是全球的，不关系学生区号
+     * @param $studentCountryCode
+     * @param $activityCountryCode
+     * @return false
+     */
+    public static function checkStudentCountryCodeRight($studentCountryCode, $activityCountryCode)
+    {
+        // 非全国
+        if ($activityCountryCode != OperationActivityModel::ACTIVITY_COUNTRY_ALL) {
+            // 学员区号为空
+            if (empty($studentInfo['country_code'])) {
+                SimpleLogger::info("checkStudentCountryCodeRight student country code empty:", [$studentCountryCode, $activityCountryCode]);
+                return false;
+            }
+            // 国内-活动区号是86但学生区号不是86-不能参与
+            if ($activityCountryCode == CommonServiceForApp::DEFAULT_COUNTRY_CODE && $studentCountryCode != CommonServiceForApp::DEFAULT_COUNTRY_CODE) {
+                SimpleLogger::info("checkStudentCountryCodeRight student country code error:", [$studentCountryCode, $activityCountryCode]);
+                return false;
+            } // 海外-活动区号非86但学生区号是86-不能参与
+            elseif ($activityCountryCode != CommonServiceForApp::DEFAULT_COUNTRY_CODE && $studentCountryCode == CommonServiceForApp::DEFAULT_COUNTRY_CODE) {
+                SimpleLogger::info("checkStudentCountryCodeRight student country code error:", [$studentCountryCode, $activityCountryCode]);
+                return false;
+            }
+        }
+        return true;
+    }
 }

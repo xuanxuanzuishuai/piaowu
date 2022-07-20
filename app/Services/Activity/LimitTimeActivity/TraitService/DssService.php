@@ -3,6 +3,7 @@
 namespace App\Services\Activity\LimitTimeActivity\TraitService;
 
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Models\Dss\DssEmployeeModel;
 use App\Models\Dss\DssStudentModel;
@@ -31,10 +32,10 @@ class DssService extends LimitTimeActivityBaseAbstract
 	public function getStudentInfoByUUID(array $uuids, array $fields = []): array
 	{
         if (empty($uuids)) return [];
-		if (!empty($fields)) {
-			$fields = array_merge($fields, ['uuid']);
-		}
-		$list = DssStudentModel::getRecords(['uuid' => $uuids], $fields);
+        if (!empty($fields)) {
+            $fields = array_merge($fields, ['uuid']);
+        }
+        $list = DssStudentModel::getRecords(['uuid' => $uuids], $fields);
 		return is_array($list) ? array_column($list, null, 'uuid') : [];
 	}
 
@@ -117,4 +118,18 @@ class DssService extends LimitTimeActivityBaseAbstract
 	{
 		return array_column(DssEmployeeModel::getRecords(['id' => $employeeIds]) ?: [], null, 'id');
 	}
+
+    // 限时活动详情页面
+    public function getActivityDetailHtmlUrl(): string
+    {
+        $url = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'limit_time_activity_detail');
+        return is_string($url) ? $url : '';
+    }
+
+    //上传截图记录详情页面
+    public function getActivityRecordListHtmlUrl(): string
+    {
+        $url = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'limit_time_activity_record_list');
+        return is_string($url) ? $url : '';
+    }
 }

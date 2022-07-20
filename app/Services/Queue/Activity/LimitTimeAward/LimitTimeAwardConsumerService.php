@@ -225,23 +225,10 @@ class LimitTimeAwardConsumerService
         }
         $inviteNum = $serviceObj->getStudentReferralOrBuyTrailCount();
         foreach ($activityList as $item) {
-            // 非全国
-            if ($item['activity_country_code'] != OperationActivityModel::ACTIVITY_COUNTRY_ALL) {
-                // 学员区号为空
-                if (empty($studentInfo['country_code'])) {
-                    SimpleLogger::info("$logTitle student country code error:", [$studentInfo, $item]);
-                    continue;
-                }
-                // 国内-活动区号是86但学生区号不是86-不能参与
-                if ($item['activity_country_code'] == CommonServiceForApp::DEFAULT_COUNTRY_CODE && $studentInfo['country_code'] != CommonServiceForApp::DEFAULT_COUNTRY_CODE) {
-                    SimpleLogger::info("$logTitle student country code error:", [$studentAttr, $item]);
-                    continue;
-                }
-                // 海外-活动区号非86但学生区号是86-不能参与
-                elseif ($item['activity_country_code'] != CommonServiceForApp::DEFAULT_COUNTRY_CODE && $studentInfo['country_code'] == CommonServiceForApp::DEFAULT_COUNTRY_CODE) {
-                    SimpleLogger::info("$logTitle student country code error:", [$studentAttr, $item]);
-                    continue;
-                }
+            // 检查区号
+            if (!LimitTimeActivityBaseAbstract::checkStudentCountryCodeRight($studentInfo['country_code'], $item['activity_country_code'])) {
+                SimpleLogger::info("$logTitle student country code error:", [$studentInfo, $item]);
+                continue;
             }
             $awardRules = LimitTimeActivityAwardRuleModel::getRecords(['activity_id' => $item['activity_id']]);
             $awardType = $awardRules[0]['award_type'] ?? 0;
@@ -262,10 +249,11 @@ class LimitTimeAwardConsumerService
             // 组装微信消息需要的参数
             $pushTypeDictKey = LimitTimeActivityBaseAbstract::getPushWxMsgAppType($appId);
             $msgId = DictService::getKeyValue($pushTypeDictKey, $pushType);
-            $jumpUrl = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'limit_time_activity_detail');
+            $jumpUrl = LimitTimeActivityBaseAbstract::getAppObj($appId)->getActivityDetailHtmlUrl();
             // 发送消息
             QueueService::sendUserWxMsg($appId, $studentInfo['student_id'], $msgId, [
                 'replace_params' => [
+                    'log_sign' => $appId . '-' . $studentInfo['student_id'] . '-' . $item['activity_id'],
                     'jump_url'   => LimitTimeActivityBaseAbstract::getMsgJumpUrl($jumpUrl, []),
                     'award_unit' => LimitTimeActivityBaseAbstract::getAwardUnit($awardType, true, SharePosterModel::VERIFY_STATUS_UNQUALIFIED),
                 ],

@@ -29,6 +29,10 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Models\Erp\ErpStudentAppModel;
+use App\Models\Erp\ErpStudentAttributeModel;
+use App\Models\Erp\ErpStudentModel;
+use App\Models\Erp\ErpUserWeiXinModel;
 use App\Models\LimitTimeActivity\LimitTimeActivityModel;
 use App\Models\OperationActivityModel;
 use App\Services\Queue\Activity\LimitTimeAward\LimitTimeAwardConsumerService;
@@ -161,15 +165,11 @@ class ScriptLimitTimeActivityPush
 
     public function getStudentIds($appId)
     {
-        // TODO qingfeng.lian  open test
-        $testUUIDS = [
-            // 10211, 713409, 713417, 710600
-        ];
+        $lastId = $this->getLastId($appId);
         if ($appId == Constants::SMART_APP_ID) {
             $db = MysqlDB::getDB(MysqlDB::CONFIG_SLAVE);
             $dssTable = DssStudentModel::getTableNameWithDb();
             $wxTable = DssUserWeiXinModel::getTableNameWithDb();
-            $lastId = $this->getLastId($appId);
             $sql = 'SELECT s.id as student_id,s.country_code FROM ' .
                 ' ' . $dssTable . ' as s' .
                 ' INNER JOIN ' . $wxTable . ' as wx on wx.user_id=s.id' .
@@ -177,17 +177,30 @@ class ScriptLimitTimeActivityPush
                 ' AND s.has_review_course=' . DssStudentModel::REVIEW_COURSE_1980 .
                 ' AND wx.app_id=' . $appId .
                 ' AND wx.status=' . DssUserWeiXinModel::STATUS_NORMAL;
-            // TODO qingfeng.lian  test user
-            if (!empty($testUUIDS)) {
-                $sql .= ' AND s.id in (' . implode(',', $testUUIDS) . ') ORDER BY s.id ASC  LIMIT 0, 3';
-            } else {
-                $sql .= ' ORDER BY s.id ASC  LIMIT 0,' . $this->limit;
-            }
-            $studentIds = $db->queryAll($sql);
         } elseif ($appId == Constants::REAL_APP_ID) {
-            // $db = MysqlDB::getDB(MysqlDB::CONFIG_ERP_SLAVE);
-            // TODO 读取erp 年卡绑定用户的列表 （这里现在貌似没有直接读取年卡用户的列表，是否需要erp配合出接口？）
+            $db = MysqlDB::getDB(MysqlDB::CONFIG_ERP_SLAVE);
+            $studentTable = ErpStudentModel::getTableNameWithDb();
+            $studentAppTable = ErpStudentAppModel::getTableNameWithDb();
+            $wxTable = ErpUserWeiXinModel::getTableNameWithDb();
+            $studentAttrTable = ErpStudentAttributeModel::getTableNameWithDb();
+            $attributeDict = DictConstants::get(DictConstants::LIMIT_TIME_ACTIVITY_CONFIG, 'real_student_is_normal_attr_id');
+            $sql = 'SELECT s.id as student_id,s.country_code, max(sattr.attribute_id) as student_attribute  FROM ' .
+                ' ' . $studentTable . ' as s' .
+                ' INNER JOIN ' . $studentAppTable . ' as sapp on sapp.student_id=s.id' .
+                ' INNER JOIN ' . $wxTable . ' as wx on wx.user_id=s.id' .
+                ' INNER JOIN ' . $studentAttrTable . ' as sattr on sattr.user_uuid=s.uuid' .
+                ' WHERE sapp.app_id=' . $appId .
+                ' AND s.id >' . $lastId .
+                ' AND wx.app_id=' . $appId .
+                ' AND wx.status=' . ErpUserWeiXinModel::STATUS_NORMAL .
+                ' AND sattr.attribute_id in (' . $attributeDict . ')';
+        } else {
+            $this->saveLog("get student where app id error", [$appId]);
+            return [];
         }
+
+        $sql .= ' ORDER BY s.id ASC  LIMIT 0,' . $this->limit;
+        $studentIds = $db->queryAll($sql);
         return $studentIds ?? [];
     }
 

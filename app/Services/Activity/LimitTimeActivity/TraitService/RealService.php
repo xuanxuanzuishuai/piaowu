@@ -4,6 +4,7 @@ namespace App\Services\Activity\LimitTimeActivity\TraitService;
 
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\RealDictConstants;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpReferralUserRefereeModel;
 use App\Models\Erp\ErpStudentModel;
@@ -30,6 +31,10 @@ class RealService extends LimitTimeActivityBaseAbstract
 	 */
 	public function getStudentInfoByUUID(array $uuids, array $fields = []): array
 	{
+        if (empty($uuids)) return [];
+        if (!empty($fields)) {
+            $fields = array_merge($fields, ['uuid']);
+        }
 		$list = ErpStudentModel::getRecords(['uuid' => $uuids], $fields);
 		return is_array($list) ? array_column($list, null, 'uuid') : [];
 	}
@@ -42,6 +47,7 @@ class RealService extends LimitTimeActivityBaseAbstract
 	 */
 	public function getStudentInfoByMobile(array $mobiles, array $fields = []): array
 	{
+        if (empty($mobiles)) return [];
 		$list = ErpStudentModel::getRecords(['mobile' => $mobiles], $fields);
 		return is_array($list) ? $list : [];
 	}
@@ -55,7 +61,8 @@ class RealService extends LimitTimeActivityBaseAbstract
      */
     public function getStudentInfoByName(string $name, array $fields = [], $limitArr = [0, 1000]): array
     {
-        $list = ErpStudentModel::getRecords(['name[~]' => $name, 'ORDER' => $limitArr], $fields);
+        if (empty($name)) return [];
+        $list = ErpStudentModel::getRecords(['name[~]' => $name, 'LIMIT' => $limitArr], $fields);
         return is_array($list) ? $list : [];
     }
 
@@ -110,4 +117,18 @@ class RealService extends LimitTimeActivityBaseAbstract
 	{
 		return array_column(EmployeeModel::getRecords(['id' => $employeeIds]) ?: [], null, 'id');
 	}
+
+    // 限时活动详情页面
+    public function getActivityDetailHtmlUrl(): string
+    {
+        $url = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'limit_time_activity_detail');
+        return is_string($url) ? $url : '';
+    }
+
+    //上传截图记录详情页面
+    public function getActivityRecordListHtmlUrl(): string
+    {
+        $url = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'limit_time_activity_record_list');
+        return is_string($url) ? $url : '';
+    }
 }

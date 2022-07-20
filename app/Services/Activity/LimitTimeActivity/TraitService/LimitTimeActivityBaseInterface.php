@@ -56,4 +56,16 @@ interface LimitTimeActivityBaseInterface
      * @return array
      */
     public function getEmployeeInfo(array $employeeIds): array;
+
+    /**
+     * 限时活动详情页面
+     * @return string
+     */
+    public function getActivityDetailHtmlUrl(): string;
+
+    /**
+     * 上传截图记录详情页面
+     * @return string
+     */
+    public function getActivityRecordListHtmlUrl(): string;
 }

@@ -901,9 +901,11 @@ class QueueService
 
     /**
      * 给用户发送消息
-     * @param $logId
-     * @param $uuidArr
-     * @param $employeeId
+     * 备注：最好在$data里面加入log_sign参数用于追踪定位日志
+     * @param $appId
+     * @param $userId
+     * @param $wechatConfigId
+     * @param $data
      * @return bool
      */
     public static function sendUserWxMsg($appId, $userId, $wechatConfigId, $data): bool
