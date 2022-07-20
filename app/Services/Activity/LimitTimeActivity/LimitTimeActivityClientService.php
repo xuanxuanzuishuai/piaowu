@@ -248,7 +248,8 @@ class LimitTimeActivityClientService
 				DictConstants::ACTIVITY_ENABLE_STATUS['type'],
 			]);
 		$formatTaskList = [];
-		$awardType = next($taskList)['award_type'];
+		reset($taskList);
+		$awardType = current($taskList)['award_type'];
 		$maxTaskNum = max(array_column($taskList, 'task_num'));
 		$tmpTotalAwardAmount = 0;
 		for ($i = 1; $i <= $maxTaskNum; $i++) {
@@ -380,7 +381,7 @@ class LimitTimeActivityClientService
 			$serviceObj->appId,
 			[$serviceObj->studentInfo['uuid']],
 			['id' => $detailId],
-			0, 10, ['a.activity_name', 'a.start_time', 'a.end_time', 'sp.award_type', 'sp.award_amount']);
+			0, 10, ['a.activity_name', 'a.start_time', 'a.end_time', 'sp.award_type', 'sp.award_amount', 'sp.remark']);
 		if (empty($recordsDetail[0][0])) {
 			return $result;
 		}
