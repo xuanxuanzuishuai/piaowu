@@ -224,6 +224,10 @@ class LimitTimeAwardConsumerService
         }
         $inviteNum = $serviceObj->getStudentReferralOrBuyTrailCount();
         foreach ($activityList as $item) {
+            if (!in_array($studentInfo['country_code'], [$item['activity_country_code'], OperationActivityModel::ACTIVITY_COUNTRY_ALL])) {
+                SimpleLogger::info("$logTitle student country code error:", [$studentAttr, $item]);
+                continue;
+            }
             $awardRules = LimitTimeActivityAwardRuleModel::getRecords(['activity_id' => $item['activity_id']]);
             $awardType = $awardRules[0]['award_type'] ?? 0;
             if ($item['target_user_type'] == OperationActivityModel::TARGET_USER_PART) {
@@ -232,12 +236,12 @@ class LimitTimeAwardConsumerService
                 if (!empty($targetUser['target_user_first_pay_time_start']) && !empty($targetUser['target_user_first_pay_time_end'])) {
                     if ($studentAttr['first_pay_time'] < $targetUser['target_user_first_pay_time_start'] || $studentAttr['first_pay_time'] > $targetUser['target_user_first_pay_time_end']) {
                         SimpleLogger::info("$logTitle student first pay time error:", [$studentAttr, $targetUser]);
-                        return false;
+                        continue;
                     }
                 }
                 if (!empty($targetUser['invitation_num']) && $inviteNum < $targetUser['invitation_num']) {
                     SimpleLogger::info("$logTitle student invitation user num error:", [$inviteNum, $targetUser]);
-                    return false;
+                    continue;
                 }
             }
             // 组装微信消息需要的参数

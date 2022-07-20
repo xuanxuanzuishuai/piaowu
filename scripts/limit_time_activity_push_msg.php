@@ -170,7 +170,7 @@ class ScriptLimitTimeActivityPush
             $dssTable = DssStudentModel::getTableNameWithDb();
             $wxTable = DssUserWeiXinModel::getTableNameWithDb();
             $lastId = $this->getLastId($appId);
-            $sql = 'SELECT s.id as student_id FROM ' .
+            $sql = 'SELECT s.id as student_id,s.country_code FROM ' .
                 ' ' . $dssTable . ' as s' .
                 ' INNER JOIN ' . $wxTable . ' as wx on wx.user_id=s.id' .
                 ' WHERE s.id >' . $lastId .
