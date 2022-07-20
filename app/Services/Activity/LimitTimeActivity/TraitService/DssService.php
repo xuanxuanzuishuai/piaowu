@@ -77,7 +77,7 @@ class DssService extends LimitTimeActivityBaseAbstract
 		}
 		//此处首次付费时间取dss接口提供的数据，因为存在白名单账户，数据表的pay_vip_time有可能不是白名单中设置的first_pay_time
 		$this->studentInfo['first_pay_time'] = $studentIdentity[1]['first_pay_time'];
-		return $studentIdentity;
+		return $studentIdentity[1];
 	}
 
 	/**

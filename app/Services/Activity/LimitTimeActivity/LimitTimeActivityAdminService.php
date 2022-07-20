@@ -551,7 +551,7 @@ class LimitTimeActivityAdminService
             throw new RunTimeException(['get_share_poster_error']);
         }
         $activityInfo = LimitTimeActivityModel::getRecord(['activity_id' => $poster['activity_id']]);
-        $awardRule = LimitTimeActivityAwardRuleModel::getRecord(['activity_id' => $poster['activity_id'], 'task_num' => $poster['task_num']]);
+        $awardRule = LimitTimeActivityAwardRuleModel::getRecord(['activity_id' => $poster['activity_id']]);
         $time = time();
         $updateData = [
             'verify_status'     => $status,
@@ -586,7 +586,7 @@ class LimitTimeActivityAdminService
                         'activity_id' => $poster['activity_id'],
                         'poster_id'   => $posterId,
                     ]),
-                    'award_unit'    => LimitTimeActivityBaseAbstract::getAwardUnit($poster['award_type'], true, SharePosterModel::VERIFY_STATUS_UNQUALIFIED),
+                    'award_unit'    => LimitTimeActivityBaseAbstract::getAwardUnit($updateData['award_type'], true, SharePosterModel::VERIFY_STATUS_UNQUALIFIED),
                 ],
             ]);
         }
