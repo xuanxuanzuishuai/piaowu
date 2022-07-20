@@ -647,7 +647,11 @@ class LimitTimeActivityAdminService
                 // 计算奖励
                 $awardTaskNum = $passNum + 1;
                 // 如果是全勤打卡， 获取距离下一个节点的次数
-                list($nextAwardNodeStep, $nextAward) = $activityInfo['activity_type'] == OperationActivityModel::ACTIVITY_TYPE_FULL_ATTENDANCE ? self::getNextAwardNodeStep($awardTaskNum, $awardRules) : 0;
+                $nextAwardNodeStep = 0;
+                $nextAward = [];
+                if ($activityInfo['activity_type'] == OperationActivityModel::ACTIVITY_TYPE_FULL_ATTENDANCE) {
+                    list($nextAwardNodeStep, $nextAward) = self::getNextAwardNodeStep($awardTaskNum, $awardRules);
+                }
                 // 是奖励节点
                 $award = $awardRules[$awardTaskNum] ?? [];
                 // 距离下一个奖励节点不是0 说明当前不是奖励节点，所有推送消息会是距离x次
@@ -683,11 +687,11 @@ class LimitTimeActivityAdminService
                     'award_unit'    => LimitTimeActivityBaseAbstract::getAwardUnit($awardType),
                 ];
                 $msgId = LimitTimeActivityBaseAbstract::getWxMsgId(
-                    $params['app_id'],
-                    $activityInfo['activity_type'],
+                    (int)$params['app_id'],
+                    (int)$activityInfo['activity_type'],
                     OperationActivityModel::SEND_AWARD_STATUS_WAITING,
                     SharePosterModel::VERIFY_STATUS_QUALIFIED,
-                    $nextAwardNodeStep
+                    intval($nextAwardNodeStep)
                 );
                 if ($activityInfo['award_prize_type'] == OperationActivityModel::AWARD_PRIZE_TYPE_IN_TIME) {
                     // 投递发奖消息

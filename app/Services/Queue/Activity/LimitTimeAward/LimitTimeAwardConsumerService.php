@@ -174,8 +174,8 @@ class LimitTimeAwardConsumerService
 		$activityInfo = LimitTimeActivityModel::getRecord(['activity_id' => $sharePosterRecordInfo['activity_id']]);
 		// 推送到账消息
 		$msgId = LimitTimeActivityBaseAbstract::getWxMsgId(
-			$sharePosterRecordInfo['app_id'],
-			$activityInfo['activity_type'],
+            (int)$sharePosterRecordInfo['app_id'],
+            (int)$activityInfo['activity_type'],
 			OperationActivityModel::SEND_AWARD_STATUS_GIVE,
 			SharePosterModel::VERIFY_STATUS_QUALIFIED
 		);
