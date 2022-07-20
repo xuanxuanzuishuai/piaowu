@@ -36,11 +36,12 @@ class LimitTimeActivityClientService
 	public static function baseData(LimitTimeActivityBaseAbstract $serviceObj): array
 	{
 		$data = [
-			'list'              => [],// 海报列表
-			'activity'          => [],// 活动详情
-			'student_info'      => [],// 学生详情
-			"is_have_activity"  => false,//是否有可参与的活动
-			'student_status_zh' => '',//学生付费状态
+			'list'                 => [],// 海报列表
+			'activity'             => [],// 活动详情
+			'student_info'         => [],// 学生详情
+			"is_have_activity"     => false,//是否有可参与的活动
+			'student_status_zh'    => '',//学生付费状态
+			'activity_is_complete' => false,//活动的任务列表是否都已完成
 		];
 		$studentStatusData = $serviceObj->getStudentStatus();
 		$data['student_status_zh'] = $studentStatusData['student_status_zh'];
@@ -54,6 +55,8 @@ class LimitTimeActivityClientService
 			'headimgurl' => $serviceObj->studentInfo['thumb_oss_url'],
 		];
 		$data['is_have_activity'] = true;
+		//检测当前活动的任务列表是否都已完成
+		$data['activity_is_complete'] = self::checkStudentIdIsCompleteActivityAllTask($data['activity']['activity_id'], $serviceObj->studentInfo['uuid']);
 		//格式化活动数据
 		$data['activity'] = ActivityService::formatData($data['activity']);
 		$sharePosterGroupList = $serviceObj->getSharePosterList(json_decode($data['activity']['share_poster'], true),
@@ -76,6 +79,24 @@ class LimitTimeActivityClientService
 			false);
 		return $data;
 	}
+
+	/**
+	 * 检测学生是否完成当前活动的所有任务
+	 * @param int $activityId
+	 * @param string $uuid
+	 * @return bool
+	 */
+	private static function checkStudentIdIsCompleteActivityAllTask(int $activityId, string $uuid): bool
+	{
+		$maxTaskNum = LimitTimeActivityAwardRuleModel::getActivityAwardMaxTaskNum($activityId);
+		$passTaskNum = LimitTimeActivitySharePosterModel::getActivityVerifyPassNum($uuid, $activityId);
+		if ($maxTaskNum > $passTaskNum) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+
 
 	/**
 	 * 获取可参与活动,检测活动参与条件
@@ -407,6 +428,9 @@ class LimitTimeActivityClientService
 		int $taskNum,
 		string $imagePath
 	): int {
+		if ($serviceObj->studentInfo['pay_status_check_res'] == false) {
+			throw new RunTimeException(['you_stop_join_activity']);
+		}
 		//获取活动数据
 		$activity = self::getStudentCanJoinActivityList($serviceObj);
 		if ($activityId != $activity['activity_id']) {

@@ -71,6 +71,7 @@ class DssService extends LimitTimeActivityBaseAbstract
 	{
 		//首先检测是否付费有效检测
 		$studentIdentity = UserService::checkDssStudentIdentityIsNormal($this->studentInfo['user_id']);
+		$this->studentInfo['pay_status_check_res'] = $studentIdentity[0];
 		if ($studentIdentity[0] !== true) {
 			throw new RunTimeException(['student_pay_status_no']);
 		}
