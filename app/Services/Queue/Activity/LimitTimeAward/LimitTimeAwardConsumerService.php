@@ -20,6 +20,7 @@ use App\Services\Activity\LimitTimeActivity\LimitTimeActivityAdminService;
 use App\Services\Activity\LimitTimeActivity\TraitService\LimitTimeActivityBaseAbstract;
 use App\Services\Activity\Lottery\LotteryServices\LotteryGrantAwardService;
 use App\Services\AutoCheckPicture;
+use App\Services\CommonServiceForApp;
 use App\Services\DictService;
 use App\Services\Queue\QueueService;
 
@@ -224,9 +225,23 @@ class LimitTimeAwardConsumerService
         }
         $inviteNum = $serviceObj->getStudentReferralOrBuyTrailCount();
         foreach ($activityList as $item) {
-            if (!in_array($studentInfo['country_code'], [$item['activity_country_code'], OperationActivityModel::ACTIVITY_COUNTRY_ALL])) {
-                SimpleLogger::info("$logTitle student country code error:", [$studentAttr, $item]);
-                continue;
+            // 非全国
+            if ($item['activity_country_code'] != OperationActivityModel::ACTIVITY_COUNTRY_ALL) {
+                // 学员区号为空
+                if (empty($studentInfo['country_code'])) {
+                    SimpleLogger::info("$logTitle student country code error:", [$studentInfo, $item]);
+                    continue;
+                }
+                // 国内-活动区号是86但学生区号不是86-不能参与
+                if ($item['activity_country_code'] == CommonServiceForApp::DEFAULT_COUNTRY_CODE && $studentInfo['country_code'] != CommonServiceForApp::DEFAULT_COUNTRY_CODE) {
+                    SimpleLogger::info("$logTitle student country code error:", [$studentAttr, $item]);
+                    continue;
+                }
+                // 海外-活动区号非86但学生区号是86-不能参与
+                elseif ($item['activity_country_code'] != CommonServiceForApp::DEFAULT_COUNTRY_CODE && $studentInfo['country_code'] == CommonServiceForApp::DEFAULT_COUNTRY_CODE) {
+                    SimpleLogger::info("$logTitle student country code error:", [$studentAttr, $item]);
+                    continue;
+                }
             }
             $awardRules = LimitTimeActivityAwardRuleModel::getRecords(['activity_id' => $item['activity_id']]);
             $awardType = $awardRules[0]['award_type'] ?? 0;
