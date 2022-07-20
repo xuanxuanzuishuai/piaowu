@@ -43,30 +43,30 @@ $ninetyDayNumChangeStudent = StudentAccountDetailModel::getHasChangeStudentId($n
 //汇总需要重新计算的
 $needUpdateStudentId = array_unique(array_merge(array_column($totalNumChangeStudent, 'student_id'), array_column($ninetyDayNumChangeStudent, 'student_id')));
 
-$needUpdateStudent = array_column(ErpStudentModel::getRecords(['id' => $needUpdateStudentId], ['id', 'uuid']), 'uuid', 'id');
-
-SimpleLogger::info('today execute ', ['total_num' => count($needUpdateStudent)]);
+$needUpdateStudentTotal = array_chunk(array_column(ErpStudentModel::getRecords(['id' => $needUpdateStudentId], ['id', 'uuid']), 'uuid', 'id'), 2000, true);
 
 $endTime = strtotime(date('Ymd'));
 $startTime = $endTime - $timeDiff;
 
-$ckData = array_column(StudentAccountDetailModel::timeRangeOnlyAdd(array_keys($needUpdateStudent), $startTime, $endTime), 'total', 'student_id');
-$remainTotal = array_column(ErpStudentAccountModel::getAccountTotalNum(array_keys($needUpdateStudent)), 'remain_total_num', 'student_id');
+array_map(function ($needUpdateStudent) use($endTime, $startTime) {
+    $ckData = array_column(StudentAccountDetailModel::timeRangeOnlyAdd(array_keys($needUpdateStudent), $startTime, $endTime), 'total', 'student_id');
+    $remainTotal = array_column(ErpStudentAccountModel::getAccountTotalNum(array_keys($needUpdateStudent)), 'remain_total_num', 'student_id');
 
-foreach ($needUpdateStudent as $erpStudentId => $uuid) {
-    SimpleLogger::info('today execute start', ['uuid' => $uuid]);
-    $lastGet = $ckData[$erpStudentId] ?? 0;
-    $totalNum = $remainTotal[$erpStudentId] ?? 0;
-    $info = UuidCreditModel::getRecord(['uuid' => $uuid]);
-    if (!empty($info)) {
-        UuidCreditModel::updateRecord($info['id'], ['last_get' => $lastGet, 'total_num' => $totalNum]);
-    } else {
-        UuidCreditModel::insertRecord(
-            [
-                'uuid' => $uuid,
-                'last_get' => $lastGet,
-                'total_num' => $totalNum
-            ]
-        );
+    foreach ($needUpdateStudent as $erpStudentId => $uuid) {
+        SimpleLogger::info('today execute start', ['uuid' => $uuid]);
+        $lastGet = $ckData[$erpStudentId] ?? 0;
+        $totalNum = $remainTotal[$erpStudentId] ?? 0;
+        $info = UuidCreditModel::getRecord(['uuid' => $uuid]);
+        if (!empty($info)) {
+            UuidCreditModel::updateRecord($info['id'], ['last_get' => $lastGet, 'total_num' => $totalNum]);
+        } else {
+            UuidCreditModel::insertRecord(
+                [
+                    'uuid' => $uuid,
+                    'last_get' => $lastGet,
+                    'total_num' => $totalNum
+                ]
+            );
+        }
     }
-}
+},$needUpdateStudentTotal);
