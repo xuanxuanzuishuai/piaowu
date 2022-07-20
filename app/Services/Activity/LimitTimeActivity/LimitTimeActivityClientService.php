@@ -428,11 +428,11 @@ class LimitTimeActivityClientService
 		int $taskNum,
 		string $imagePath
 	): int {
+		//获取活动数据
+		$activity = self::getStudentCanJoinActivityList($serviceObj);
 		if ($serviceObj->studentInfo['pay_status_check_res'] == false) {
 			throw new RunTimeException(['you_stop_join_activity']);
 		}
-		//获取活动数据
-		$activity = self::getStudentCanJoinActivityList($serviceObj);
 		if ($activityId != $activity['activity_id']) {
 			throw new RunTimeException(['no_in_progress_activity']);
 		}

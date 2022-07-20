@@ -128,7 +128,7 @@ class ClientAuthMiddleware extends MiddlewareBase
 		$token = $request->getHeader('token')[0];
 		//token为空
 		if (empty($token)) {
-			throw new RunTimeException(['token_required']);
+			throw new RunTimeException(['token_expired']);
 		}
 		//验证token存储的账户信息
 		$userInfo = WechatTokenService::getTokenInfo($token);
@@ -172,7 +172,7 @@ class ClientAuthMiddleware extends MiddlewareBase
 		$token = $request->getHeader('token')[0];
 		//token为空
 		if (empty($token)) {
-			throw new RunTimeException(['token_required']);
+			throw new RunTimeException(['token_expired']);
 		}
 		$userInfo = AppTokenService::getTokenInfo($token);
 		if (empty($userInfo)) {
