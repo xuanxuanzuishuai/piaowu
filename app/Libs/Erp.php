@@ -124,7 +124,7 @@ class Erp
 
     public function __construct()
     {
-        $this->host = DictConstants::get(DictConstants::SERVICE, "erp_host");
+        $this->host = 'https://erp-pre.xiaoyezi.com';
     }
 
     private function commonAPI($api, $data = [], $method = 'GET', &$exportBody = '')

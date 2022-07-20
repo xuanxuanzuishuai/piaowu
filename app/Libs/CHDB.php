@@ -32,6 +32,7 @@ class CHDB
     
     // build oneself clickhouse
     const CONFIG_BO = 'build_oneself';
+    const CONFIG_ERP = 'erp';
     
     /**
      * @param null $configType
@@ -58,6 +59,15 @@ class CHDB
     public static function getBODB()
     {
         return self::getDB(self::CONFIG_BO);
+    }
+
+    /**
+     * erp clickhouse
+     * @return CHDB
+     */
+    public static function getErpDB()
+    {
+        return self::getDB(self::CONFIG_ERP);
     }
     
     public function __construct($configName = 'default')
@@ -98,6 +108,17 @@ class CHDB
                     'database_name'   => $_ENV['CHDB_BO_DATABASE'],
                     'timeout'         => $_ENV['CHDB_BO_TIMEOUT'],
                     'connect_timeout' => $_ENV['CHDB_BO_CONNECT_TIMEOUT'],
+                    'auth_method'     => Http::AUTH_METHOD_QUERY_STRING,
+                ];
+            case self::CONFIG_ERP:
+                return [
+                    'host'            => $_ENV['CHDB_ERP_HOST'],
+                    'port'            => $_ENV['CHDB_ERP_PORT'],
+                    'username'        => $_ENV['CHDB_ERP_USERNAME'],
+                    'password'        => $_ENV['CHDB_ERP_PASSWORD'],
+                    'database_name'   => $_ENV['CHDB_ERP_DATABASE'],
+                    'timeout'         => $_ENV['CHDB_ERP_TIMEOUT'],
+                    'connect_timeout' => $_ENV['CHDB_ERP_CONNECT_TIMEOUT'],
                     'auth_method'     => Http::AUTH_METHOD_QUERY_STRING,
                 ];
             case 'default':

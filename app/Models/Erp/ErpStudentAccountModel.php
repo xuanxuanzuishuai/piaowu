@@ -22,4 +22,21 @@ class ErpStudentAccountModel extends ErpModel
         self::SUB_TYPE_INTGEGRAL => '音符',
         self::SUB_TYPE_GOLD_LEAF => '金叶子',
     ];
+
+    /**
+     * 金叶余额
+     * @param $studentId
+     * @param int $subType
+     * @return array|null
+     */
+    public static function getAccountTotalNum($studentId, $subType = ErpStudentAccountDetail::SUB_TYPE_GOLD_LEAF)
+    {
+        if (is_array($studentId)) {
+            $studentId = implode(',', $studentId);
+        }
+        $sql = 'select student_id, sum(num) remain_total_num from ' . self::$table . ' where student_id in (' . $studentId . ')
+
+and expire_time > UNIX_TIMESTAMP() and sub_type = ' . $subType . ' group by student_id';
+        return self::dbRO()->queryAll($sql);
+    }
 }
