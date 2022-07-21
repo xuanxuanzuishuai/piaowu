@@ -168,7 +168,7 @@ class LimitTimeActivityClientService
 		];
 		$records = LimitTimeActivitySharePosterModel::searchJoinRecords($serviceObj->appId,
 			[$serviceObj->studentInfo['uuid']],
-			['group' => ['sp.activity_id']],
+			['group' => ['sp.activity_id'],'order'=>['a.start_time'=>'DESC']],
 			$page,
 			$limit);
 		if (empty($records[0])) {
