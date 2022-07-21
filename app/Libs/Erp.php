@@ -121,6 +121,8 @@ class Erp
     const STUDENT_COURSES = '/op/user/student_courses';
     //批量查询学生生命周期
     const STUDENT_LIFT_CYCLE = '/api/student/life/cycle';
+    //添加学生属性
+    const ADD_STUDENT_ATTRIBUTES = '/api/student/attributes';
 
     private $host;
 
@@ -1104,5 +1106,28 @@ class Erp
             throw new RunTimeException(['service_busy_try_later']);
         }
         return $response['data'] ?? [];
+    }
+
+    /**
+     * 添加用户基本信息
+     * @param $uuid
+     * @param $tags
+     * @param $group
+     * @return array|mixed
+     */
+    public function addStudentAttributes($uuid, $tags, $group)
+    {
+        $params = [
+            'meta' => [
+                'source' => Constants::SELF_APP_ID,
+                'group'  => $group
+            ],
+            'data' => [
+                'uuid'          => $uuid,
+                'attribute_ids' => $tags,
+            ]
+        ];
+        $res = self::commonAPI(self::ADD_STUDENT_ATTRIBUTES, $params, 'POST');
+        return !empty($res['errors']) ? [] : $res['data'];
     }
 }

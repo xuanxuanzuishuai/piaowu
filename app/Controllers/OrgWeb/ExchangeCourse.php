@@ -226,7 +226,7 @@ class ExchangeCourse extends ControllerBase
         try {
             ExchangeCourseService::exchangeConfirm($params);
         } catch (RuntimeException $e) {
-            return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, []);
     }

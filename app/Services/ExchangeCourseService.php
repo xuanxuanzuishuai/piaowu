@@ -270,7 +270,7 @@ class ExchangeCourseService
      */
     public static function handleExchangePush($msg)
     {
-        $id = self::insertExchangeRecord($msg);
+        $id = self::getRecordId($msg);
         //检查注册信息
         $userInfo = ErpStudentModel::getUserInfoByMobile($msg['mobile']);
         $existAppId = array_column($userInfo, 'app_id');
@@ -286,6 +286,11 @@ class ExchangeCourseService
             } else {
                 $uuid = $userInfo[0]['uuid'];
             }
+            if(empty($uuid)){
+                throw new RunTimeException(['uuid_not_exist']);
+            }
+            //添加用户标签
+            (new Erp())->addStudentAttributes($uuid,$msg['tag'],'xyk_import');
             //检查在任意系统是否付费
             $payInfo = self::checkPay($uuid, $existAppId);
         }catch (\RuntimeException $e){
@@ -299,6 +304,23 @@ class ExchangeCourseService
             }
         }
         return true;
+    }
+
+    /**
+     * 获取记录的主键ID
+     * @param $msg
+     * @return int|mixed|string|null
+     * @throws RunTimeException
+     */
+    public static function getRecordId($msg)
+    {
+        $exist = ExchangeCourseModel::getRecord(['batch_id'=>$msg['batch_id'], 'mobile'=>$msg['mobile']], ['id']);
+        if (!empty($exist['id'])){
+            throw new RunTimeException(['mobile_has_exist']);
+        }else{
+            $id = self::insertExchangeRecord($msg);
+        }
+        return $id;
     }
 
     /**
@@ -646,19 +668,80 @@ class ExchangeCourseService
      */
     public static function exchangeConfirm($params)
     {
+        //首选检查此手机号是否兑换过
+        self::checkHasExchangeSuccess($params);
+        //首选检查此手机号是否还有兑换资格
+        $record = self::checkHasExchangeQualification($params);
+        //再次检查任意渠道是否付费
+        $uuid = self::checkHasPay($params);
+
+        //创建订单
+        $packageId = DictConstants::get(DictConstants::EXCHANGE_CONFIG, 'package_id');
+        $update['exchange_time'] = time();
+        $update['package_id'] = $packageId;
+        list($result, $body) = self::exchangeCreateBill($uuid, $packageId);
+        //记录请求结果
+        if ($result === false) {
+            $update['status'] = ExchangeCourseModel::STATUS_EXCHANGE_FAIL;
+            ExchangeCourseModel::updateRecord($record['id'], $update);
+            throw new RuntimeException(['exchange_create_bill_fail']);
+        } else {
+            $update['status'] = ExchangeCourseModel::STATUS_EXCHANGE_SUCCESS;
+            $update['order_id'] = $result['data']['order_id'] ?? '';
+            ExchangeCourseModel::updateRecord($record['id'], $update);
+        }
+        return true;
+    }
+
+    /**
+     * 检查是否成功兑换过
+     * @param $params
+     * @return bool
+     * @throws RunTimeException
+     */
+    public static function checkHasExchangeSuccess($params)
+    {
         $where = [
-            'mobile'=>$params['mobile'],
-            'status'=>ExchangeCourseModel::STATUS_READY_EXCHANGE,
-            'ORDER'=>[
-                'id'=>'DESC'
+            'mobile' => $params['mobile'],
+            'status' => ExchangeCourseModel::STATUS_EXCHANGE_SUCCESS,
+        ];
+        $record = ExchangeCourseModel::getRecord($where, ['id', 'status']);
+        if (!empty($record)) {
+            throw new RuntimeException(['exchange_no_qualification']);
+        }
+        return true;
+    }
+
+    /**
+     * 检查是否还有兑换机会
+     * @param $params
+     * @return mixed
+     * @throws RunTimeException
+     */
+    public static function checkHasExchangeQualification($params)
+    {
+        $where = [
+            'mobile' => $params['mobile'],
+            'status' => ExchangeCourseModel::STATUS_READY_EXCHANGE,
+            'ORDER'  => [
+                'id' => 'DESC'
             ],
         ];
-        $record = ExchangeCourseModel::getRecord($where, ['id','status']);
+        $record = ExchangeCourseModel::getRecord($where, ['id', 'status']);
         if (empty($record)) {
             throw new RuntimeException(['exchange_no_qualification']);
         }
+        return $record;
+    }
 
-        //再次检查任意渠道是否付费
+    /**
+     * 检查是否任意业务线付年卡
+     * @param $params
+     * @return mixed
+     * @throws RunTimeException
+     */
+    public static function checkHasPay($params)
+    {
         $userInfo = ErpStudentModel::getUserInfoByMobile($params['mobile']);
         $existAppId = array_column($userInfo, 'app_id');
         $uuid = $userInfo[0]['uuid'];
@@ -666,30 +749,18 @@ class ExchangeCourseService
         if (!empty($payInfo)) {
             throw new RuntimeException(['exchange_payed_user']);
         }
-
-        //创建订单
-        $update['exchange_time'] = time();
-        list($result,$body) =  self::exchangeCreateBill($uuid);
-        //记录请求结果
-        if ($result === false) {
-            $update['status'] = ExchangeCourseModel::STATUS_EXCHANGE_FAIL;
-            ExchangeCourseModel::updateRecord($record['id'],$update);
-            throw new RuntimeException(['exchange_create_bill_fail']);
-        } else {
-            $update['status'] = ExchangeCourseModel::STATUS_EXCHANGE_SUCCESS;
-            ExchangeCourseModel::updateRecord($record['id'],$update);
-        }
-        return true;
+        return $uuid;
     }
+
 
     /**
      * 确认兑换创建订单
      * @param $uuid
+     * @param $packageId
      * @return array
      */
-    public static function exchangeCreateBill($uuid)
+    public static function exchangeCreateBill($uuid,$packageId)
     {
-        $packageId = DictConstants::get(DictConstants::EXCHANGE_CONFIG,'package_id');
          return (new Erp())->manCreateDeliverBillV1([
             'uuid' => $uuid,
             'package_id' => $packageId,
