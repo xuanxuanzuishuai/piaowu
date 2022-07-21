@@ -21,18 +21,4 @@ class MessageReminderTopic extends BaseTopic
     {
         parent::__construct(self::TOPIC_NAME, $publishTime, QueueService::FROM_OP, true);
     }
-
-
-    /**
-     * 消息设定
-     * @param $data
-     * @param $eventType
-     * @return $this
-     */
-    public function nsqDataSet($data, $eventType): MessageReminderTopic
-    {
-        $this->setEventType($eventType);
-        $this->setMsgBody($data);
-        return $this;
-    }
 }

@@ -12,6 +12,7 @@ use App\Controllers\API\OSS;
 use App\Controllers\API\UICtl;
 use App\Controllers\Employee\Auth;
 use App\Controllers\Employee\Employee;
+use App\Controllers\OrgWeb\Activity\LimitTimeActivity;
 use App\Controllers\OrgWeb\ActivityCenter;
 use App\Controllers\OrgWeb\ActivityLottery;
 use App\Controllers\OrgWeb\ActivitySign;
@@ -421,5 +422,13 @@ class OrgWebRouter extends RouterBase
         '/op_web/channel_leads/list' => ['method' =>['get'], 'call' => ChannelLeads::class . ':list'],
         // 真人渠道线索录入
         '/op_web/channel_leads/add' => ['method' =>['post'], 'call' => ChannelLeads::class . ':add'],
+
+        /********************************************************************************************************************************************************
+         * 限时活动
+         ********************************************************************************************************************************************************/
+        '/op_web/limit_time_activity/save' => ['method' => ['post'], 'call' => LimitTimeActivity::class . ':save'],
+        '/op_web/limit_time_activity/list' => ['method' => ['get'], 'call' => LimitTimeActivity::class . ':list'],
+        '/op_web/limit_time_activity/detail' => ['method' => ['get'], 'call' => LimitTimeActivity::class . ':detail'],
+        '/op_web/limit_time_activity/enable_status' => ['method' => ['post'], 'call' => LimitTimeActivity::class . ':editEnableStatus'],
     ];
 }

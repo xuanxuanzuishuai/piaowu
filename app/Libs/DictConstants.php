@@ -9,6 +9,7 @@
 namespace App\Libs;
 
 use App\Models\Erp\ErpDictModel;
+use App\Models\OperationActivityModel;
 use App\Services\DictService;
 
 class DictConstants {
@@ -1180,6 +1181,8 @@ class DictConstants {
             'dss_gold_left_shop_url',           // 金叶子商城链接
             'dss_gold_left_goods_detail',       // 金叶子商城产品包详情页
             'dss_activity_check_list',          // 用户参与周周领奖活动审核详情页
+            'limit_time_activity_detail',       // 限时活动详情页面
+            'limit_time_activity_record_list',  // 限时活动-上传截图记录详情页面
         ],
     ];
 
@@ -1229,6 +1232,20 @@ class DictConstants {
         'type' => 'award_level',
         'keys' => [1, 2, 3, 4, 5, 6, 7, 8],
     ];
+
+    // 奖励发放状态对应的文字
+    const SEND_AWARD_STATUS = [
+        'type' => 'send_award_status',
+        'keys' => [
+            OperationActivityModel::SEND_AWARD_STATUS_NOT_OWN,
+            OperationActivityModel::SEND_AWARD_STATUS_DISABLED,
+            OperationActivityModel::SEND_AWARD_STATUS_WAITING,
+            OperationActivityModel::SEND_AWARD_STATUS_REVIEWING,
+            OperationActivityModel::SEND_AWARD_STATUS_GIVE,
+            OperationActivityModel::SEND_AWARD_STATUS_GIVE_ING,
+            OperationActivityModel::SEND_AWARD_STATUS_GIVE_FAIL,
+        ]
+    ];
     //抽奖奖品课程id
     const LESSON_ID = [
         'type' => 'lesson_id',
@@ -1268,6 +1285,44 @@ class DictConstants {
     const MESSAGE_REMINDER_TYPE = [
         'type' => 'message_reminder_type',
         'keys' => [1, 2, 3, 4, 5, 6, 7]
+    ];
+
+    /** 限时活动相关配置 */
+    // 限时活动活动类型
+    const LIMIT_TIME_ACTIVITY_TYPE = [
+        'type' => 'limit_time_activity_type',
+        'keys' => [
+            OperationActivityModel::ACTIVITY_TYPE_FULL_ATTENDANCE,
+            OperationActivityModel::ACTIVITY_TYPE_SHARE,
+        ]
+    ];
+    // 限时活动配置
+    const LIMIT_TIME_ACTIVITY_CONFIG = [
+        'type' => 'limit_time_activity_config',
+        'keys' => [
+            'limit_time_activity_award_max',
+            'send_award_base_delay_second',
+            'smart_student_wx_channel_id',
+            'smart_student_app_channel_id',
+			'real_student_wx_channel_id',
+			'real_student_app_channel_id',
+            'push_wx_msg_every_time_limit',
+        ]
+    ];
+    // 限时活动智能奖励类型
+    const LIMIT_TIME_ACTIVITY_AI_AWARD_TYPE = [
+        'type' => 'limit_time_activity_ai_award_t',
+        'keys' => [
+            Constants::AWARD_TYPE_GOLD_LEAF,
+            Constants::AWARD_TYPE_TIME,
+        ]
+    ];
+    // 限时活动真人奖励类型
+    const LIMIT_TIME_ACTIVITY_REAL_AWARD_TYPE = [
+        'type' => 'limit_time_activity_real_award_t',
+        'keys' => [
+           Constants::AWARD_TYPE_MAGIC_STONE,
+        ]
     ];
 
     /**

@@ -94,7 +94,8 @@ class Recall extends ControllerBase
                     $student['id'],
                     $userType,
                     $appId,
-                    $openId
+                    $openId,
+                    $student['uuid']
                 );
             }
         } catch (RunTimeException $e) {

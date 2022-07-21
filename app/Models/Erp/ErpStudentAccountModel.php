@@ -16,6 +16,7 @@ class ErpStudentAccountModel extends ErpModel
     //发放积分类用户行为类型
     const LOTTERY_ACTION = 6003; //抽奖活动
     const TYPE_LOTTERY_ACTIVE_HIS_AWARD_COURSE = 18; //活动赠课-抽奖活动赠课
+    const SOURCE_TYPE_LIMIT_TIME_ACTIVITY_AWARD = 5009;//限时活动奖励
 
     //账户各种资产名称
     const ACCOUNT_ASSETS_NAME_MAP = [

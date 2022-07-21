@@ -14,31 +14,32 @@ use App\Libs\MysqlDB;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpStudentModel;
+use App\Services\DictService;
 
 class OperationActivityModel extends Model
 {
     public static $table = "operation_activity";
 
-    const KEY_CURRENT_ACTIVE = 'CURRENT_ACTIVE_ACTIVITY_';
+    const KEY_CURRENT_ACTIVE    = 'CURRENT_ACTIVE_ACTIVITY_';
     const ACTIVITY_CACHE_EXPIRE = 86400;
 
     // 启用状态
-    const ENABLE_STATUS_OFF = 1;        // 待启用
-    const ENABLE_STATUS_ON = 2;         // 启用
+    const ENABLE_STATUS_OFF     = 1;        // 待启用
+    const ENABLE_STATUS_ON      = 2;         // 启用
     const ENABLE_STATUS_DISABLE = 3;    // 已禁用
 
     // 亲友优惠券活动类型
-    const RULE_TYPE_COURSE = 2; // 课管活动
+    const RULE_TYPE_COURSE    = 2; // 课管活动
     const RULE_TYPE_ASSISTANT = 1; // 社群活动
 
     // 转介绍运营活动类型
-    const TYPE_MONTH_ACTIVITY = 1;//月月有奖
-    const TYPE_WEEK_ACTIVITY = 2;//周周领奖
+    const TYPE_MONTH_ACTIVITY  = 1;//月月有奖
+    const TYPE_WEEK_ACTIVITY   = 2;//周周领奖
     const TYPE_INVITE_ACTIVITY = 3;//邀请领奖
 
     // 活动时间状态
-    const TIME_STATUS_PENDING = 1;//待开始
-    const TIME_STATUS_ONGOING = 2;//进行中
+    const TIME_STATUS_PENDING  = 1;//待开始
+    const TIME_STATUS_ONGOING  = 2;//进行中
     const TIME_STATUS_FINISHED = 3;//已结束
     // 活动时间状态与前端展示状态映射关系
     const TIME_STATUS_MAP_SHOW_STATUS = [
@@ -59,19 +60,35 @@ class OperationActivityModel extends Model
 
     // 活动奖品发奖方式类型:1立即发放 2延时发放
     const AWARD_PRIZE_TYPE_IN_TIME = 1;
-    const AWARD_PRIZE_TYPE_DELAY = 2;
+    const AWARD_PRIZE_TYPE_DELAY   = 2;
 
     // 活动投放地区
     const ACTIVITY_COUNTRY_ALL = 0; // 所有地区
-    const ACTIVITY_COUNTRY_CN = 86; // 中国
-    const ACTIVITY_COUNTRY_EN = 1;  // 所有非中国地区
+    const ACTIVITY_COUNTRY_CN  = 86; // 中国
+    const ACTIVITY_COUNTRY_EN  = 1;  // 所有非中国地区
 
     // 是否支持海报AB测 0：没有 1：支持
-    const HAS_AB_TEST_NO = 0; // 不支持
+    const HAS_AB_TEST_NO  = 0; // 不支持
     const HAS_AB_TEST_YES = 1; // 支持
 
     const ALLOCATION_MODE_AUTO = 1; // 平均分配
     const ALLOCATION_MODE_HAND = 2; // 手动分配
+
+    /** 目标用户类型 */
+    const TARGET_USER_ALL = 1;  // 有效付费用户范围 - 所有
+    const TARGET_USER_PART = 2; // 有效付费用户范围 - 部分
+    /** 活动类型  */
+    const ACTIVITY_TYPE_FULL_ATTENDANCE = 1;  // 全勤活动
+    const ACTIVITY_TYPE_SHARE = 2;  // 分享活动
+    /** 奖励发放状态 */
+    const SEND_AWARD_STATUS_NOT_OWN = -1;  // 未获取
+    const SEND_AWARD_STATUS_DISABLED = 0; // 不发放
+    const SEND_AWARD_STATUS_WAITING = 1; // 待发放
+    const SEND_AWARD_STATUS_REVIEWING = 2; // 审核中
+    const SEND_AWARD_STATUS_GIVE = 3; // 发放成功
+    const SEND_AWARD_STATUS_GIVE_ING = 4; // 发放中/已发放待领取
+    const SEND_AWARD_STATUS_GIVE_FAIL = 5; // 发放失败
+
 
     /**
      * 当前阶段为付费正式课且未参加当前活动的学员手微信open_id
@@ -172,7 +189,7 @@ WHERE
      * @param $timeStatus
      * @return array
      */
-    public static function timeStatusMapToSqlWhere($timeStatus):array
+    public static function timeStatusMapToSqlWhere($timeStatus): array
     {
         $where = [];
         $time = time();
@@ -211,7 +228,6 @@ WHERE
         }
         return $timeStatus;
     }
-
     /**
      * 获取学生周周领奖活动投放区域
      * @param $studentInfo
@@ -263,7 +279,8 @@ WHERE
         $studentInfo,
         $activityInfo,
         int $appId = Constants::SMART_APP_ID
-    ) {
+    )
+    {
         if (!isset($activityInfo['activity_country_code'])) {
             throw new RunTimeException(['week_activity_student_cannot_upload']);
         }

@@ -12,6 +12,13 @@ class Constants
     const REAL_APP_ID = 1;
     //清晨项目应用id
     const QC_APP_ID = 26;
+    //客户端平台类型,区分请求来源
+    const FROM_TYPE_SMART_STUDENT_APP = 'smart_student_app';//smart_student_app智能学生app
+    const FROM_TYPE_SMART_STUDENT_WX = 'smart_student_wx';//智能学生微信公众号
+    const FROM_TYPE_SMART_STUDENT_H5 = 'smart_student_h5';//smart_student_h5智能学生h5页面
+    const FROM_TYPE_REAL_STUDENT_APP = 'real_student_app'; //real_student_app真人学生app
+    const FROM_TYPE_REAL_STUDENT_WX = 'real_student_wx'; //real_student_wx真人学生微信公众号
+    const FROM_TYPE_REAL_STUDENT_H5 = 'real_student_h5'; //real_student_h5真人学生h5页面
     //智能陪练获客小程序的busi_type
     const SMART_MINI_BUSI_TYPE = 8;
     //智能陪练服务号的busi_type
@@ -93,15 +100,6 @@ class Constants
 
     //ERP nsq配置
     const DICT_KEY_NSQ_TOPIC_PREFIX = "NSQ_TOPIC_PREFIX";
-
-    // 积分账户类型 erp_dict表里的type
-    const ERP_DICT_ACCOUNT_NAME_TYPE = 'student_account_app_type';
-    // 积分账户类型  - 现金
-    const ERP_ACCOUNT_NAME_CASH = '8_1001';
-    const ERP_ACCOUNT_NAME_CASH_CODE = '1001';  // 学生现金账户；配合app_id:  8_1001现金
-    const ERP_ACCOUNT_NAME_MAGIC = '3001';  // 魔法石；配合app_id:  1_3001=魔法石
-    const ERP_ACCOUNT_NAME_GOLD_LEFT = '3002';  // 金叶子；配合app_id:  8_3001=金叶子
-
     // 版权区域代码
     const DICT_COPYRIGHT_CODE_CN = 'CN'; // 大陆版权
     const DICT_COPYRIGHT_CODE_CN_GAT = 'CN:GAT'; // 港澳台版权
@@ -114,9 +112,7 @@ class Constants
     // 奖励发送人身份
     const STUDENT_ID_INVITER = 1;   // 邀请人
     const STUDENT_ID_INVITEE = 2;  // 受邀人
-    // 客户端类型，区分请求来源
-    const FROM_TYPE_REAL_STUDENT_APP = 'real_student_app'; //真人app
-    const FROM_TYPE_REAL_STUDENT_WX = 'real_student_wx'; //真人学生微信
+
     // op运营平台发货单前缀：格式共14位,前4位的1001是平台标识,后10位是系统统一生成=》10010000000000
     const UNIQUE_ID_PREFIX = 1001;
     // 发货单状态:0废除 1待发货 2已发货 3发货中 4无需发货 -1发货失败 -2取消发货 -10 因库存不足导致待发货且不发货
@@ -136,14 +132,23 @@ class Constants
     const LOGISTICS_STATUS_SIGN = 4;
 
 
-    //奖励类型
-    const AWARD_TYPE_EMPTY=0;//空奖品
-    const AWARD_TYPE_TIME=1;//智能业务线：时长
-    const AWARD_TYPE_GOLD_LEAF=2;//智能业务线：金叶子
-    const AWARD_TYPE_MAGIC_STONE=3;//真人业务线：魔法石
-    const AWARD_TYPE_TYPE_ENTITY=4;//智能业务线：实物
-    const AWARD_TYPE_TYPE_LESSON=5;//真人业务线：课程
-    const AWARD_TYPE_TYPE_NOTE=6;//智能业务线：音符
+    //erp系统积分账户类型 erp_dict表里的type
+    const ERP_DICT_ACCOUNT_NAME_TYPE = 'student_account_app_type';
+    //奖励类型：erp系统积分账户类型
+    const ERP_ACCOUNT_NAME_CASH      = '8_1001';//现金
+    const ERP_ACCOUNT_NAME_CASH_CODE = 1001;  // 学生现金账户；配合app_id:  8_1001现金
+    const ERP_ACCOUNT_NAME_MAGIC     = 3001;  // 魔法石：配合app_id:  1_3001=魔法石 8_3001=音符
+    const ERP_ACCOUNT_NAME_GOLD_LEFT = 3002;  // 金叶子
+
+    //奖励类型：op系统存储使用
+    const AWARD_TYPE_EMPTY       = 0;//空奖品
+    const AWARD_TYPE_TIME        = 1;//智能业务线：时长
+    const AWARD_TYPE_GOLD_LEAF   = 2;//智能业务线：金叶子
+    const AWARD_TYPE_TYPE_NOTE   = 6;//智能业务线：音符
+    const AWARD_TYPE_TYPE_ENTITY = 4;//智能业务线：实物
+    const AWARD_TYPE_TYPE_LESSON = 5;//真人业务线：课程
+    const AWARD_TYPE_MAGIC_STONE = 3;//真人业务线：魔法石
+
     // 转介绍奖励规则配置身份
     const REFERRAL_INVITER_ROOT                 = 1;    // 身份状态跟节点
     const REFERRAL_INVITER_STATUS_REGISTER      = self::REFERRAL_INVITER_ROOT; // 注册

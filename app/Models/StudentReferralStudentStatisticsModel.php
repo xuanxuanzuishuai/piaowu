@@ -12,7 +12,6 @@ namespace App\Models;
 
 use App\Libs\DictConstants;
 use App\Libs\MysqlDB;
-use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpStudentCouponV1Model;
@@ -292,5 +291,25 @@ class StudentReferralStudentStatisticsModel extends Model
         ";
 
         return $db->queryAll($sql);
+    }
+
+    /**
+     * 获取推荐人和被推荐人，完成了某个阶段的人数数量
+     * @param int $refereeId
+     * @param int $stage
+     * @return int
+     */
+    public static function getReferralCountGroupByStage(int $refereeId, int $stage):int
+    {
+        $db = MysqlDB::getDB();
+        return $db->count(self::$table . ' (a)',
+            [
+                '[>]' . StudentReferralStudentDetailModel::$table . ' (b)' => ['a.student_id' => 'student_id']
+            ],
+            ['a.student_id'],
+            [
+                'a.referee_id' => $refereeId,
+                'b.stage'      => $stage,
+            ]);
     }
 }

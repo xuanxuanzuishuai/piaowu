@@ -13,6 +13,7 @@ use App\Libs\OpernCenter;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
+use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Services\WechatTokenService;
 use Slim\Http\Request;
@@ -49,11 +50,13 @@ class AIPlayMiniAppAuthCheckMiddleware extends MiddlewareBase
             // 根据open id 获取用户信息
             $userInfo = DssUserWeiXinModel::getByOpenid($data['openid'], $appId, $userType, $busiType);
             $userId   = $userInfo['user_id'] ?? '';
+            $studentInfo = DssStudentModel::getById($userId);
             $token    = WechatTokenService::generateToken(
                 $userId,
                 $busiType,
                 $appId,
-                $data['openid']
+                $data['openid'],
+                $studentInfo['uuid']
             );
             //返回token
             return HttpHelper::buildResponse($response, [

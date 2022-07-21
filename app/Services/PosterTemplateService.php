@@ -21,6 +21,7 @@ use App\Models\ShareMaterialConfig;
 use App\Models\TemplatePosterModel;
 use App\Models\TemplatePosterWordModel;
 use App\Models\WeekActivityPosterAbModel;
+use App\Services\Activity\LimitTimeActivity\TraitService\LimitTimeActivityBaseAbstract;
 use I18N\Lang;
 
 class PosterTemplateService
@@ -373,6 +374,9 @@ class PosterTemplateService
             $abWeekId = array_column(WeekActivityPosterAbModel::getAbPosterActivityIds($id), 'activity_id');
             $arrWeekId = array_unique(array_merge($arrWeekId, $abWeekId));
         }
+        //限时有奖活动海报使用数据统计
+		$limitTimeAwardActivityIds = LimitTimeActivityBaseAbstract::getPosterTemplateOccupation($id);
+
         $arrErrorMsg = [];
         $arrWeekId = array_map(function ($v) {
             return 'ID'.$v;
@@ -386,11 +390,16 @@ class PosterTemplateService
         $shareConfigId = array_map(function ($v) {
             return 'ID'.$v;
         }, $shareConfigId);
+		$limitTimeAwardActivityId = array_map(function ($v) {
+			return 'ID'.$v;
+		}, $limitTimeAwardActivityIds);
+
         $arrWeekId && $arrErrorMsg[] = '周周有奖活动'.implode('、', $arrWeekId);
         $arrMonthId && $arrErrorMsg[] = '月月有奖活动'.implode('、', $arrMonthId);
         $resRtId && $arrErrorMsg[] = 'RT亲友优惠券活动'.implode('、', $resRtId);
         $shareConfigId && $arrErrorMsg[] = '金叶子商城分享配置'.implode('、', $shareConfigId);
         !empty($inviteActivityId) && $arrErrorMsg[] = '邀请有礼活动' . implode('、', $inviteActivityId);
+        !empty($limitTimeAwardActivityId) && $arrErrorMsg[] = '限时有奖活动' . implode('、', $limitTimeAwardActivityId);
         return $arrErrorMsg;
     }
     

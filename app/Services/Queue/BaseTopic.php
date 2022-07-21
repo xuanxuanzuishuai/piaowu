@@ -137,4 +137,17 @@ class BaseTopic
     {
         $this->topicName = $topicName;
     }
+
+    /**
+     * 消息设定
+     * @param $data
+     * @param $eventType
+     * @return $this
+     */
+    public function nsqDataSet($data, $eventType): BaseTopic
+    {
+        $this->setEventType($eventType);
+        $this->setMsgBody($data);
+        return $this;
+    }
 }

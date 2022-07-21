@@ -111,7 +111,7 @@ class Gateway extends ControllerBase
                             break;
                         case 'wx' :
                             $userWxInfo = DssUserWeiXinModel::getByUserId($userInfo['id']);
-                            $token = WechatTokenService::generateToken($userInfo['id'], 1, Constants::SMART_APP_ID, $userWxInfo['open_id']);
+                            $token = WechatTokenService::generateToken($userInfo['id'], 1, Constants::SMART_APP_ID, $userWxInfo['open_id'], $params['uuid']);
                             break;
                         case 'mini_app' :
                         case 'web' :

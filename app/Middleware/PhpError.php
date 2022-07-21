@@ -9,7 +9,8 @@
 namespace App\Middleware;
 
 
-use App\Libs\MyErrorException;
+use App\Libs\Exceptions\RunTimeException;
+use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
 use Slim\Http\Request;
@@ -19,9 +20,9 @@ class PhpError
 {
     public function __invoke(Request $request, Response $response, $e)
     {
-        if ($e instanceof MyErrorException) {
-            SimpleLogger::error(__FILE__ . ":" . __LINE__ . " Exception:", $e->get());
-            return $response->withJson($e->get(), 200);
+        if ($e instanceof RunTimeException) {
+            SimpleLogger::error($e->getMessage(),[]);
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         } else {
             $errMsg = $e->getMessage();
             $trace = $e->getTrace();

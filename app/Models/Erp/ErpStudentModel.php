@@ -53,7 +53,7 @@ class ErpStudentModel extends ErpModel
     {
         $table = self::$table;
         $erpStudentAppModel = ErpStudentAppModel::$table;
-        $appId = Constants::USER_TYPE_STUDENT;
+        $appId = Constants::REAL_APP_ID;
 
         $sql = "
             SELECT

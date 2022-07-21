@@ -443,7 +443,12 @@ class MiniAppQrService
      * @return array
      * @throws RunTimeException
      */
-    public static function batchCreateUserMiniAppQr($appId, $busiesType, array $qrParams = [], bool $isFullUrl = false): array
+    public static function batchCreateUserMiniAppQr(
+        int $appId,
+        int $busiesType,
+        array $qrParams = [],
+        bool $isFullUrl = false
+    ): array
     {
         $returnQrSignArr = [];
         $saveQrData = [];
@@ -463,12 +468,8 @@ class MiniAppQrService
         // 根据小程序码主要信息，查询CH
         $qrImageArr = QrInfoOpCHModel::getQrInfoBySign(array_column($qrParams, 'qr_sign'), ['qr_path', 'qr_id', 'qr_sign']);
         $qrSignData = array_column($qrImageArr, null, 'qr_sign');
-
         // 获取qr_id
         SimpleLogger::info("getUserMiniAppQrList qrSignData", [$qrImageArr, $qrSignData]);
-
-        //获取海报自动审核校验活动ID
-        $checkActiveId = PosterService::getCheckActivityId($appId, $qrParams[0]['user_id'] ?? 0);
         foreach ($qrParams as $_key => $_qrParam) {
             $_qrSign = $_qrParam['qr_sign'];
             if (isset($qrSignData[$_qrSign])) {
@@ -497,7 +498,7 @@ class MiniAppQrService
                     'busies_type'     => $busiesType,
                     'user_status'     => $_qrParam['user_status'] ?? ($_qrParam['user_current_status'] ?? 0),
                     'qr_type'         => DictConstants::get(DictConstants::MINI_APP_QR, 'qr_type_mini'),
-                    'check_active_id' => $checkActiveId,
+                    'check_active_id' => (int)$_qrParam['check_active_id'],
                     'date'            => date('Y-m-d', time()),
                 ];
                 $returnQrSignArr[$_key] = [

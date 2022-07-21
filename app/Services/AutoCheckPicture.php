@@ -11,6 +11,7 @@ use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\EmployeeModel;
+use App\Models\LimitTimeActivity\LimitTimeActivitySharePosterModel;
 use App\Models\OperationActivityModel;
 use App\Models\RealSharePosterModel;
 use App\Models\RealWeekActivityModel;
@@ -20,7 +21,10 @@ use App\Models\WeekActivityModel;
 class AutoCheckPicture
 {
     public static $redisExpire = 432000; // 12小时
-
+    //海报类型
+    const SHARE_POSTER_TYPE_DSS_WEEK         = 'dss_week';//智能周周领奖
+    const SHARE_POSTER_TYPE_REAL_WEEK        = 'real_week';//真人周周领奖
+    const SHARE_POSTER_TYPE_LIMIT_TIME_AWARD = 'limit_time_award';//限时有奖活动
     /**
      * 获取要审核的图片
      * @param $data
@@ -155,42 +159,7 @@ class AutoCheckPicture
             //审核通过
             SharePosterService::approvalPoster([$poster_id], $params);
         } elseif (!empty($errCode)) {
-            foreach ($errCode as $value){
-                switch ($value) {
-                    case SharePosterModel::SYSTEM_REFUSE_CODE_NEW: //未使用最新海报
-                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_NEW;
-                        break;
-                    case SharePosterModel::SYSTEM_REFUSE_CODE_TIME: //朋友圈保留时长不足12小时，请重新上传
-                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_TIME;
-                        break;
-                    case SharePosterModel::SYSTEM_REFUSE_CODE_GROUP: //分享分组可见
-                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_GROUP;
-                        break;
-                    case SharePosterModel::SYSTEM_REFUSE_CODE_FRIEND: //请发布到朋友圈并截取朋友圈照片
-                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_FRIEND ;
-                        break;
-                    case SharePosterModel::SYSTEM_REFUSE_CODE_UPLOAD: //上传截图出错
-                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_UPLOAD;
-                        break;
-                    case SharePosterModel::SYSTEM_REFUSE_CODE_USER: //海报生成和上传非同一用户
-                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_USER;
-                        break;
-                    case SharePosterModel::SYSTEM_REFUSE_CODE_ACTIVITY_ID: //海报生成和上传非同一活动
-                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_ACTIVITY_ID;
-                        break;
-                    case SharePosterModel::SYSTEM_REFUSE_CODE_UNIQUE_USED: //作弊码已经被使用
-                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_UNIQUE_USED;
-                        break;
-                    case SharePosterModel::SYSTEM_REFUSE_CODE_COMMENT: //分享无分享语
-                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_COMMENT;
-                        break;
-                    case SharePosterModel::SYSTEM_REFUSE_CODE_UNIQUE: //作弊码识别失败
-                        $params['reason'][] = SharePosterModel::SYSTEM_REFUSE_REASON_CODE_UNIQUE;
-                        break;
-                    default:
-                        break;
-                }
-            }
+            $params['reason'] = self::formatAutoCheckErrorCodeMapToSystemErrorCode($errCode);
             //审核拒绝
             SharePosterService::refusedPoster($poster_id, $params, SharePosterModel::VERIFY_STATUS_WAIT);
         }
@@ -213,45 +182,57 @@ class AutoCheckPicture
             $params['activity_id'] = $posterInfo['activity_id'] ?? 0;
             RealSharePosterService::approvalPoster([$poster_id], $params);
         } elseif (!empty($errCode)) {
-            foreach ($errCode as $value){
-                switch ($value) {
-                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_NEW: //未使用最新海报
-                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_NEW;
-                        break;
-                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_TIME: //朋友圈保留时长不足12小时，请重新上传
-                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_TIME;
-                        break;
-                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_GROUP: //分享分组可见
-                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_GROUP;
-                        break;
-                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_FRIEND: //请发布到朋友圈并截取朋友圈照片
-                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_FRIEND;
-                        break;
-                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_UPLOAD: //上传截图出错
-                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_UPLOAD;
-                        break;
-                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_USER: //海报生成和上传非同一用户
-                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_USER;
-                        break;
-                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_ACTIVITY_ID: //海报生成和上传非同一活动
-                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_ACTIVITY_ID;
-                        break;
-                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_UNIQUE_USED: //作弊码已经被使用
-                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_UNIQUE_USED;
-                        break;
-                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_COMMENT: //分享无分享语
-                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_COMMENT;
-                        break;
-                    case RealSharePosterModel::SYSTEM_REFUSE_CODE_UNIQUE: //作弊码识别失败
-                        $params['reason'][] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_UNIQUE;
-                        break;
-                    default:
-                        break;
-                }
-            }
+            $params['reason'] = self::formatAutoCheckErrorCodeMapToSystemErrorCode($errCode);
             //审核拒绝
             RealSharePosterService::refusedPoster($poster_id, $params, SharePosterModel::VERIFY_STATUS_WAIT);
         }
+    }
+
+    /**
+     * 格式化将自动审核错误code映射成为op系统的错误code
+     * @param array $errCode
+     * @return array
+     */
+    public static function formatAutoCheckErrorCodeMapToSystemErrorCode(array $errCode): array
+    {
+        $reason = [];
+        foreach ($errCode as $value) {
+            switch ($value) {
+                case RealSharePosterModel::SYSTEM_REFUSE_CODE_NEW: //未使用最新海报
+                    $reason[] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_NEW;
+                    break;
+                case RealSharePosterModel::SYSTEM_REFUSE_CODE_TIME: //朋友圈保留时长不足12小时，请重新上传
+                    $reason[] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_TIME;
+                    break;
+                case RealSharePosterModel::SYSTEM_REFUSE_CODE_GROUP: //分享分组可见
+                    $reason[] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_GROUP;
+                    break;
+                case RealSharePosterModel::SYSTEM_REFUSE_CODE_FRIEND: //请发布到朋友圈并截取朋友圈照片
+                    $reason[] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_FRIEND;
+                    break;
+                case RealSharePosterModel::SYSTEM_REFUSE_CODE_UPLOAD: //上传截图出错
+                    $reason[] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_UPLOAD;
+                    break;
+                case RealSharePosterModel::SYSTEM_REFUSE_CODE_USER: //海报生成和上传非同一用户
+                    $reason[] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_USER;
+                    break;
+                case RealSharePosterModel::SYSTEM_REFUSE_CODE_ACTIVITY_ID: //海报生成和上传非同一活动
+                    $reason[] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_ACTIVITY_ID;
+                    break;
+                case RealSharePosterModel::SYSTEM_REFUSE_CODE_UNIQUE_USED: //作弊码已经被使用
+                    $reason[] = RealSharePosterModel::SYSTEM_REFUSE_REASON_UNIQUE_USED;
+                    break;
+                case RealSharePosterModel::SYSTEM_REFUSE_CODE_COMMENT: //分享无分享语
+                    $reason[] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_COMMENT;
+                    break;
+                case RealSharePosterModel::SYSTEM_REFUSE_CODE_UNIQUE: //作弊码识别失败
+                    $reason[] = RealSharePosterModel::SYSTEM_REFUSE_REASON_CODE_UNIQUE;
+                    break;
+                default:
+                    break;
+            }
+        }
+        return $reason;
     }
 
     /**
@@ -271,7 +252,6 @@ class AutoCheckPicture
             $errCode[] = -5;
             return [$status, $errCode];
         }
-
         $hours          = 3600 * 24; //24小时
         $screenDate     = null; //截图时间初始化
         $uploadTime     = time(); //上传时间
@@ -347,29 +327,17 @@ class AutoCheckPicture
                 $composeInfo          = MiniAppQrService::getQrInfoById($word);
                 $composeUser          = $composeInfo['user_id'] ?? 0;
                 $composeCheckActivity = $composeInfo['check_active_id'] ?? 0;
+                $qrId = $composeInfo['id'] ?? '';
 
-                if ($msgBody['app_id'] == Constants::REAL_APP_ID) {
-                    $uploadInfo = RealSharePosterModel::getRecord(['id' => $msgBody['id']], ['student_id', 'activity_id']);
-                    $exist = RealSharePosterModel::getRecord(['unique_code' => $word, 'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED], ['id']);
-                    if (empty($exist)) {
-                        RealSharePosterModel::updateRecord($msgBody['id'], ['unique_code' => $word]);
-                    } else {
-                        $errCode[] = -8;
-                    }
-                } elseif ($msgBody['app_id'] == Constants::SMART_APP_ID) {
-                    $uploadInfo = SharePosterModel::getRecord(['id' => $msgBody['id']], ['student_id', 'activity_id']);
-                    $exist = SharePosterModel::getRecord(['unique_code' => $word, 'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED], ['id']);
-                    if (empty($exist)) {
-                        SharePosterModel::updateRecord($msgBody['id'], ['unique_code' => $word]);
-                    } else {
-                        $errCode[] = -8;
-                    }
-                }
-
-                if (!empty($uploadInfo['student_id']) && $composeUser == $uploadInfo['student_id']) {
+                //根据不同活动类型的海报，查询海报数据
+                $checkRes = self::checkSharePosterUploadData($qrId, $msgBody);
+                if($checkRes['error_code']!=null){
+					$errCode[] = $checkRes['error_code'];
+				}
+				$uploadInfo = $checkRes['upload_info'];
+                if (!empty($checkRes['upload_info']['student_id']) && $composeUser == $checkRes['upload_info']['student_id']) {
                     $isSameUser = true;
                 }
-
                 $checkActivityIdStr = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'week_activity_id_effect');
                 $checkActivityIdStrV1 = DictConstants::get(DictConstants::REFERRAL_CONFIG, 'week_activity_id_effect_v1');
                 $checkActivityIdArr = $checkActivityIdArrV1 =  [];
@@ -550,5 +518,70 @@ class AutoCheckPicture
         ];
         $url     = $host . $path;
         return HttpHelper::requestJson($url, $bodys, 'POST', $headers);
+    }
+
+    /**
+     * 检测海报上传记录数据
+     * @param string $qrId
+     * @param array $msgBody
+     * @return array
+     */
+    private static function checkSharePosterUploadData(string $qrId, array $msgBody): array
+    {
+        $checkRes = [
+            'upload_info' => [],
+            'error_code' => null,
+        ];
+        if (empty($qrId)) {
+            return $checkRes;
+        }
+        switch ($msgBody['activity_type']) {
+            case self::SHARE_POSTER_TYPE_REAL_WEEK:
+                //真人周周领奖
+                $checkRes['upload_info'] = RealSharePosterModel::getRecord(['id' => $msgBody['id']],
+                    ['student_id', 'activity_id']);
+                $exist                   = RealSharePosterModel::getRecord([
+                    'unique_code' => $qrId,
+                    'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED
+                ], ['id']);
+                if (empty($exist)) {
+                    RealSharePosterModel::updateRecord($msgBody['id'], ['unique_code' => $qrId]);
+                } else {
+                    $checkRes['error_code'] = -8;
+                }
+                break;
+            case self::SHARE_POSTER_TYPE_DSS_WEEK:
+                //智能周周领奖
+                $checkRes['upload_info'] = SharePosterModel::getRecord(['id' => $msgBody['id']],
+                    ['student_id', 'activity_id']);
+                $exist                   = SharePosterModel::getRecord([
+                    'unique_code' => $qrId,
+                    'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED
+                ], ['id']);
+                if (empty($exist)) {
+                    SharePosterModel::updateRecord($msgBody['id'], ['unique_code' => $qrId]);
+                } else {
+                    $checkRes['error_code'] = -8;
+                }
+                break;
+            case self::SHARE_POSTER_TYPE_LIMIT_TIME_AWARD:
+                //限时有奖
+                $checkRes['upload_info'] = LimitTimeActivitySharePosterModel::getRecord(['id' => $msgBody['record_id']],
+                    ['student_uuid', 'activity_id']);
+                $exist                   = LimitTimeActivitySharePosterModel::getRecord([
+                    'qr_id' => $qrId,
+                    'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED
+                ], ['id']);
+                if (empty($exist)) {
+                    LimitTimeActivitySharePosterModel::updateRecord($msgBody['record_id'], ['qr_id' => $qrId]);
+                } else {
+                    $checkRes['error_code'] = -8;
+                }
+                $checkRes['upload_info']['student_id'] = $msgBody['user_id'];
+                break;
+            default:
+                return $checkRes;
+        }
+        return $checkRes;
     }
 }
