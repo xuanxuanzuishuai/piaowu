@@ -40,7 +40,6 @@ class ExchangeCourseService
      */
     public static function analysisData($filename, $operatorUuid, $params)
     {
-        try {
             $data = self::extractFromTemplate($filename);
             if (empty($data)) {
                 return $data;
@@ -60,9 +59,6 @@ class ExchangeCourseService
             self::exchangePush($data);
             self::exchangePushFinish($batchId);
             return $data;
-        } catch (\Exception $e) {
-            throw new RunTimeException(['excel_factory_error', 'import']);
-        }
     }
 
     /**
@@ -278,27 +274,29 @@ class ExchangeCourseService
         //检查注册信息
         $userInfo = ErpStudentModel::getUserInfoByMobile($msg['mobile']);
         $existAppId = array_column($userInfo, 'app_id');
-        if (!in_array(Constants::SMART_APP_ID, $existAppId)) {
-            //注册智能用户
-            $studentInfo = (new Dss())->studentRegisterBound([
-                'mobile'       => $msg['mobile'],
-                'channel_id'   => $msg['channel_id'],
-                'country_code' => $msg['country_code'],
-            ]);
-            $uuid = $studentInfo['uuid'];
-        } else {
-            $uuid = $userInfo[0]['uuid'];
-        }
-
-        //检查在任意系统是否付费
-        $payInfo = self::checkPay($uuid, $existAppId);
-
-        //判断处理结果并更新
-        $res = self::updateHandleResult($id, $uuid, $existAppId, $payInfo);
-
-        if ($res) {
-            $linkUrl = DictConstants::get(DictConstants::EXCHANGE_CONFIG, 'EXCHANGE_CONFIG');
-            SendSmsService::sendExchangeResult($msg['mobile'], $linkUrl, $msg['country_code']);
+        try {
+            if (!in_array(Constants::SMART_APP_ID, $existAppId)) {
+                //注册智能用户
+                $studentInfo = (new Dss())->studentRegisterBound([
+                    'mobile'       => $msg['mobile'],
+                    'channel_id'   => $msg['channel_id'],
+                    'country_code' => $msg['country_code'],
+                ]);
+                $uuid = $studentInfo['uuid'];
+            } else {
+                $uuid = $userInfo[0]['uuid'];
+            }
+            //检查在任意系统是否付费
+            $payInfo = self::checkPay($uuid, $existAppId);
+        }catch (\RuntimeException $e){
+            throw new RunTimeException([$e->getMessage()]);
+        } finally {
+            //判断处理结果并更新
+            $res = self::updateHandleResult($id, $uuid, $existAppId, $payInfo);
+            if ($res) {
+                $linkUrl = DictConstants::get(DictConstants::EXCHANGE_CONFIG, 'confirm_exchange_url');
+                SendSmsService::sendExchangeResult($msg['mobile'], $linkUrl, $msg['country_code']);
+            }
         }
         return true;
     }
@@ -344,7 +342,7 @@ class ExchangeCourseService
         //查询智能的付费情况
         if (in_array(Constants::SMART_APP_ID, $existAppId)) {
             $payStatus = [24, 25, 26, 27];
-            $res = (new Erp())->getStudentLifeCycle(Constants::SMART_APP_ID, $uuid);
+            $res = (new Erp())->getStudentLifeCycle(Constants::SMART_APP_ID, [$uuid]);
             if (in_array($res['data'][$uuid], $payStatus)) {
                 return [
                     'is_pay'   => true,
@@ -357,7 +355,7 @@ class ExchangeCourseService
         //查询真人的付费情况
         if (in_array(Constants::REAL_APP_ID, $existAppId)) {
             $payStatus = [16, 17, 18, 19];
-            $res = (new Erp())->getStudentLifeCycle(Constants::REAL_APP_ID, $uuid);
+            $res = (new Erp())->getStudentLifeCycle(Constants::REAL_APP_ID, [$uuid]);
             if (in_array($res['data'][$uuid], $payStatus)) {
                 return [
                     'is_pay'   => true,
@@ -393,10 +391,18 @@ class ExchangeCourseService
     public static function updateHandleResult($id, $uuid, $existAppId, $payInfo)
     {
         $update = [
-            'uuid'        => $uuid,
+            'uuid'        => $uuid ?: '',
             'status'      => ExchangeCourseModel::STATUS_READY_EXCHANGE,
             'update_time' => time()
         ];
+
+        if (empty($uuid)){
+            $update['status'] = ExchangeCourseModel::STATUS_HANDLE_FAIL;
+            $update['result_desc'] = '处理异常，不可导入';
+            ExchangeCourseModel::updateRecord($id, $update);
+            return false;
+        }
+
         if (empty($existAppId)) {
             $update['result_desc'] = '新学员，已导入';
             return ExchangeCourseModel::updateRecord($id, $update);
@@ -514,12 +520,12 @@ class ExchangeCourseService
             ];
         }
         if (!empty($params['import_start_time']) && !empty($params['import_end_time'])) {
-            $where['import_start_time[>=]'] = $params['import_start_time'];
-            $where['import_end_time[<=]'] = $params['import_end_time'];
+            $where['create_time[>=]'] = strtotime($params['import_start_time']);
+            $where['create_time[<=]'] = strtotime($params['import_end_time']);
         }
         if (!empty($params['update_start_time']) && !empty($params['update_end_time'])) {
-            $where['update_start_time[>=]'] = $params['update_start_time'];
-            $where['update_end_time[<=]'] = $params['update_end_time'];
+            $where['update_time[>=]'] = strtotime($params['update_start_time']);
+            $where['update_time[<=]'] = strtotime($params['update_end_time']);
         }
         if (!empty($params['import_source'])) {
             $where['import_source'] = $params['import_source'];
@@ -594,7 +600,7 @@ class ExchangeCourseService
             'status'        => ExchangeCourseModel::STATUS_DELETE,
             'operator_uuid' => $operatorInfo['uuid'] ?? '',
             'operator_name' => $operatorInfo['name'] ?? '',
-            'update_time'   => time() ?? '',
+            'update_time'   => time(),
         ];
         return ExchangeCourseModel::batchUpdateRecord($update, $where);
     }
@@ -610,7 +616,7 @@ class ExchangeCourseService
         if (empty($recordList)) {
             return true;
         }
-        $linkUrl = DictConstants::get(DictConstants::EXCHANGE_CONFIG, 'EXCHANGE_CONFIG');
+        $linkUrl = DictConstants::get(DictConstants::EXCHANGE_CONFIG, 'confirm_exchange_url');
         //国内手机号
         foreach ($recordList as $value) {
             if ($value['country_code'] == SmsCenter::DEFAULT_COUNTRY_CODE) {

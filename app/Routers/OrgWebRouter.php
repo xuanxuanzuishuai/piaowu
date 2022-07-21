@@ -440,7 +440,7 @@ class OrgWebRouter extends RouterBase
         //删除指定用户导入记录
         '/op_web/exchange_course/delete' => ['method' =>['post'], 'call' => ExchangeCourse::class . ':delete'],
         //发送短信
-        '/op_web/exchange_course/activate_sms' => ['method' =>['post'], 'call' => ExchangeCourse::class . ':activateSms'],
+        '/op_web/exchange_course/activate_sms' => ['method' =>['post'], 'call' => ExchangeCourse::class . ':activateSms','middles'=>[]],
         //兑课excel模板下载
         '/op_web/exchange_course/down_template' => ['method' =>['post'], 'call' => ExchangeCourse::class . ':downTemplate'],
     ];

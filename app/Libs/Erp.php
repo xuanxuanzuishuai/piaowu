@@ -1088,16 +1088,16 @@ class Erp
     /**
      * 查询学生在指定业务的生命周期
      * @param $appId
-     * @param $uuid
+     * @param $uuids
      * @return array|mixed
      * @throws RunTimeException
      */
-    public function getStudentLifeCycle($appId, $uuid)
+    public function getStudentLifeCycle($appId, $uuids)
     {
         $params = [
             'app_id'        => $appId,
             'source'        => Constants::SELF_APP_ID,
-            'student_uuids' => [$uuid],
+            'student_uuids' => json_encode($uuids),
         ];
         $response = HttpHelper::requestJson($this->host . self::STUDENT_LIFT_CYCLE, $params, 'POST');
         if ($response['code'] != Valid::CODE_SUCCESS) {

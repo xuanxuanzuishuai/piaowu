@@ -75,11 +75,13 @@ class ExchangeCourse extends ControllerBase
         $employeeUuid = $this->ci['employee']['uuid'];
 
         //将文件上传到oss
-        $fileName = 'import_exchange_' . time() . '.' . $extension;
-        $ossPath = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_TMP_EXCEL . '/' . $fileName;
-        AliOSS::uploadFile($ossPath, $filename);
-        $ossPath = AliOSS::replaceCdnDomainForDss($ossPath);
-        SimpleLogger::info('import exchange excel upload oss success', ['uuid' => $employeeUuid, 'oss_path' => $ossPath, 'time' => time()]);
+        if ($_ENV['ENV_NAME'] == 'prod') {
+            $fileName = 'import_exchange_' . time() . '.' . $extension;
+            $ossPath = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_TMP_EXCEL . '/' . $fileName;
+            AliOSS::uploadFile($ossPath, $filename);
+            $ossPath = AliOSS::replaceCdnDomainForDss($ossPath);
+            SimpleLogger::info('import exchange excel upload oss success', ['uuid' => $employeeUuid, 'oss_path' => $ossPath, 'time' => time()]);
+        }
 
         $data = [];
         try {
