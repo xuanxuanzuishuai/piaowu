@@ -30,6 +30,7 @@ class DssService extends LimitTimeActivityBaseAbstract
 	 */
 	public function getStudentInfoByUUID(array $uuids, array $fields = []): array
 	{
+        if (empty($uuids)) return [];
 		if (!empty($fields)) {
 			$fields = array_merge($fields, ['uuid']);
 		}
@@ -45,6 +46,7 @@ class DssService extends LimitTimeActivityBaseAbstract
 	 */
 	public function getStudentInfoByMobile(array $mobiles, array $fields = []): array
 	{
+        if (empty($mobiles)) return [];
 		$list = DssStudentModel::getRecords(['mobile' => $mobiles], $fields);
 		return is_array($list) ? $list : [];
 	}
@@ -58,6 +60,7 @@ class DssService extends LimitTimeActivityBaseAbstract
      */
     public function getStudentInfoByName(string $name, array $fields = [], $limitArr = [0,1000]): array
     {
+        if (empty($name)) return [];
         $list = DssStudentModel::getRecords(['name[~]' => $name, 'LIMIT' => $limitArr], $fields);
         return is_array($list) ? $list : [];
     }
