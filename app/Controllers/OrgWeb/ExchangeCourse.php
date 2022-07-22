@@ -11,12 +11,12 @@ namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
 use App\Libs\AliOSS;
-use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
+use App\Libs\SmsCenter\SmsCenter;
 use App\Libs\Util;
 use App\Services\CommonServiceForApp;
 use App\Services\ExchangeCourseService;
@@ -201,12 +201,6 @@ class ExchangeCourse extends ControllerBase
                 'error_code' => 'mobile_is_required'
             ],
             [
-                'key'        => 'mobile',
-                'type'       => 'regex',
-                'value'      => Constants::MOBILE_REGEX,
-                'error_code' => 'student_mobile_format_is_error'
-            ],
-            [
                 'key'        => 'code',
                 'type'       => 'required',
                 'error_code' => 'code_is_required'
@@ -217,6 +211,16 @@ class ExchangeCourse extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
+        //校验手机号码格式
+        if ($params['country_code'] == SmsCenter::DEFAULT_COUNTRY_CODE) {
+            $res = Util::isChineseMobile($params['mobile']);
+        } else {
+            $res = Util::validPhoneNumber($params['mobile'], $params['country_code']);
+        }
+        if (!$res) {
+            return $response->withJson(Valid::addAppErrors([], 'student_mobile_format_is_error'), StatusCode::HTTP_OK);
+        }
+
 
         // 验证手机验证码
         if (!empty($params['code']) && !CommonServiceForApp::checkValidateCode($params['mobile'], $params['code'],
