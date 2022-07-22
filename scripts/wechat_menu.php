@@ -44,6 +44,11 @@ $menuList = [
                     "type" => "view",
                     "name" => "🎉金叶子商城",
                     "url"  => "https://dss-weixin.xiongmaopeilian.com/Student/goldLeaf/index"
+                ],
+                [
+                    "type" => "view",
+                    "name" => "加入体验营",
+                    "url"  => "https://referral.xiaoyezi.com/market/landingWechatTab?ad=0&channel_id=1720"
                 ]
             ],
         ],
@@ -69,6 +74,11 @@ $menuList = [
                     "type" => "view",
                     "name" => "使用指南",
                     "url" => "https://mp.weixin.qq.com/mp/homepage?__biz=MzU2MjMxNTc5Mw==&hid=1&sn=2c284d2fb07e1cfde9ef5fe9543c62e6&scene=18"
+                ],
+                [
+                    "type" => "view",
+                    "name" => "下载APP",
+                    "url" => "http://www.xiaoyezi.com/html/aipeilian.html"
                 ],
                 [
                     "type" => "view",
