@@ -220,8 +220,6 @@ class ExchangeCourse extends ControllerBase
         if (!$res) {
             return $response->withJson(Valid::addAppErrors([], 'student_mobile_format_is_error'), StatusCode::HTTP_OK);
         }
-
-
         // 验证手机验证码
         if (!empty($params['code']) && !CommonServiceForApp::checkValidateCode($params['mobile'], $params['code'],
                 $params['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE)) {

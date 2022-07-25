@@ -42,7 +42,7 @@ class ExchangeCourseService
     {
             $data = self::extractFromTemplate($filename);
             if (empty($data)) {
-                return $data;
+				throw new RunTimeException(['data_can_not_be_empty', 'import']);
             }
             self::checkData($data);
             $batchId = Util::randString(32);
@@ -80,7 +80,7 @@ class ExchangeCourseService
                 }
                 $A = trim($v['A']);
                 $B = trim($v['B']);
-                $C = trim($v['C']);
+				$C = trim($v['C'], '/');
                 $D = trim($v['D']);
                 //四项必填数据全部为空，忽略不处理
                 if (empty($A) && empty($B) && empty($C) && empty($D)) {
@@ -119,26 +119,27 @@ class ExchangeCourseService
             throw new RunTimeException(['over_max_allow_num', 'import']);
         }
         //检查手机号
-        $invalidMobiles = self::checkMobile($data);
+		list($invalidCountryCode, $invalidMobiles) = self::checkMobile($data);
+		if (count($invalidCountryCode) > 0) {
+			throw new RunTimeException(['country_code_is_required', 'import'], ['list' => $invalidCountryCode]);
+		}
         if (count($invalidMobiles) > 0) {
-            throw new RunTimeException(['invalid_mobile', 'import'], ['list' => $invalidMobiles]);
-        }
-
+			throw new RunTimeException(['invalid_mobile', 'import'], ['list' => $invalidMobiles]);
+		}
         // 学生手机号重复
         if ($recordNum != count(array_unique(array_column($data, 'mobile')))) {
             throw new RunTimeException(['mobile_repeat', 'import']);
         }
-
         //检查标签
         $invalidTag = self::checkTag($data);
-        if (count($invalidMobiles) > 0) {
+        if (count($invalidTag) > 0) {
             throw new RunTimeException(['invalid_tag', 'import'], ['list' => $invalidTag]);
         }
 
         //检查手机号是否被导入过
         $existMobile = self::checkoutExistMobile($data);
         if (count($existMobile) > 0) {
-            throw new RunTimeException(['exist_mobile', 'import'], ['list' => $existMobile]);
+            throw new RunTimeException(['record_exist', 'import'], ['list' => $existMobile]);
         }
 
         return $data;
@@ -151,8 +152,9 @@ class ExchangeCourseService
      */
     public static function checkMobile($data)
     {
+		$invalidCountryCode = $invalidMobiles= [];
         foreach ($data as &$v) {
-            if (empty($v['country_code'])) {
+            if (empty((int)$v['country_code'])) {
                 $invalidCountryCode[] = $v;
             } elseif ($v['country_code'] == CommonServiceForApp::DEFAULT_COUNTRY_CODE) {
                 if (!Util::isChineseMobile($v['mobile'])) {
@@ -164,7 +166,7 @@ class ExchangeCourseService
                 }
             }
         }
-        return $invalidMobiles ?? [];
+		return [$invalidCountryCode,$invalidMobiles];
     }
 
     /**
@@ -178,20 +180,20 @@ class ExchangeCourseService
         $tagFlip = array_flip($tagInfo);
         foreach ($data as $key => $value) {
             if (empty($value['tag'])) {
-                $data[$key]['tag'] = [];
+				$invalidTag[] = $value;
                 continue;
             }
             $data[$key]['tag'] = explode('/', $value['tag']);
-
             foreach ($data[$key]['tag'] as $k => $tagName) {
-                if (in_array($tagName, $tagInfo)) {
-                    $data[$key]['tag'][$k] = $tagFlip[$tagName];
+				$lowerTagName = strtolower($tagName);
+                if (in_array($lowerTagName, $tagInfo)) {
+                    $data[$key]['tag'][$k] = $tagFlip[$lowerTagName];
                 } else {
-                    $invalidMobiles[] = $value;
+                    $invalidTag[] = $value;
                 }
             }
         }
-        return $invalidMobiles ?? [];
+        return $invalidTag ?? [];
     }
 
     /**
@@ -210,8 +212,8 @@ class ExchangeCourseService
             ExchangeCourseModel::STATUS_EXCHANGE_SUCCESS
         ];
         foreach ($mobileList as $value) {
-            $exist = ExchangeCourseModel::getRecords(['mobile' => $value, 'status[!]' => $filterState], ['mobile']);
-            if (empty($exist)) {
+            $exist = ExchangeCourseModel::getRecords(['mobile' => $value, 'status' => $filterState], ['mobile']);
+            if (!empty($exist)) {
                 foreach ($exist as $mobile) {
                     $existMobile[] = ['mobile' => $mobile];
                 }
@@ -293,6 +295,7 @@ class ExchangeCourseService
             (new Erp())->addStudentAttributes($uuid,$msg['tag'],'xyk_import');
             //检查在任意系统是否付费
             $payInfo = self::checkPay($uuid, $existAppId);
+            SimpleLogger::info('pay check info',[$payInfo]);
         }catch (\RuntimeException $e){
             throw new RunTimeException([$e->getMessage()]);
         } finally {
@@ -365,7 +368,7 @@ class ExchangeCourseService
         if (in_array(Constants::SMART_APP_ID, $existAppId)) {
             $payStatus = [24, 25, 26, 27];
             $res = (new Erp())->getStudentLifeCycle(Constants::SMART_APP_ID, [$uuid]);
-            if (in_array($res['data'][$uuid], $payStatus)) {
+            if (in_array($res[$uuid], $payStatus)) {
                 return [
                     'is_pay'   => true,
                     'app_id'   => Constants::SMART_APP_ID,
@@ -378,7 +381,7 @@ class ExchangeCourseService
         if (in_array(Constants::REAL_APP_ID, $existAppId)) {
             $payStatus = [16, 17, 18, 19];
             $res = (new Erp())->getStudentLifeCycle(Constants::REAL_APP_ID, [$uuid]);
-            if (in_array($res['data'][$uuid], $payStatus)) {
+            if (in_array($res[$uuid], $payStatus)) {
                 return [
                     'is_pay'   => true,
                     'app_id'   => Constants::REAL_APP_ID,
@@ -457,6 +460,7 @@ class ExchangeCourseService
             'batch_id' => $msg['batch_id'],
             'status'   => ExchangeCourseModel::STATUS_READY_HANDLE
         ], ['id']);
+        SimpleLogger::info('exchange course push finish data current status',[$exist]);
         if (empty($exist)) {
             //发送邮件
             self::sentResultEmail($msg['batch_id']);
@@ -565,6 +569,7 @@ class ExchangeCourseService
         foreach ($list['list'] as &$value) {
             $value['channel_path_name'] = $channelPathName[$value['channel_id']];
             $value['import_source_name'] = $importSource[$value['import_source']];
+            $value['mobile'] = Util::hideUserMobile($value['mobile']);
             $value['status_name'] = $statusMap[$value['status']];
             $value['create_time'] = date('Y-m-d H:i:s', $value['create_time']);
             $value['update_time'] = date('Y-m-d H:i:s', $value['update_time']);

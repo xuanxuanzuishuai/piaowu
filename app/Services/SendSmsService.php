@@ -344,7 +344,7 @@ class SendSmsService
                 $countryCode
             );
         }else{
-            $items = ['mobile' => $targetMobiles, 'params' => $msg];
+            $items = ['mobile' => $targetMobiles, 'params' => [$msg]];
             if (empty($template)) {
                 return false;
             }
