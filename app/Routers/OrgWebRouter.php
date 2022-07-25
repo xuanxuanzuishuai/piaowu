@@ -429,5 +429,9 @@ class OrgWebRouter extends RouterBase
         '/op_web/limit_time_activity/list' => ['method' => ['get'], 'call' => LimitTimeActivity::class . ':list'],
         '/op_web/limit_time_activity/detail' => ['method' => ['get'], 'call' => LimitTimeActivity::class . ':detail'],
         '/op_web/limit_time_activity/enable_status' => ['method' => ['post'], 'call' => LimitTimeActivity::class . ':editEnableStatus'],
+        '/op_web/real_limit_time_activity/save' => ['method' => ['post'], 'call' => LimitTimeActivity::class . ':save'],
+        '/op_web/real_limit_time_activity/list' => ['method' => ['get'], 'call' => LimitTimeActivity::class . ':list'],
+        '/op_web/real_limit_time_activity/detail' => ['method' => ['get'], 'call' => LimitTimeActivity::class . ':detail'],
+        '/op_web/real_limit_time_activity/enable_status' => ['method' => ['post'], 'call' => LimitTimeActivity::class . ':editEnableStatus'],
     ];
 }
