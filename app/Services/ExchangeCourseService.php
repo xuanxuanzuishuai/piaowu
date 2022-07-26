@@ -133,16 +133,17 @@ class ExchangeCourseService
         if ($recordNum != count(array_unique(array_column($data, 'mobile')))) {
             throw new RunTimeException(['mobile_repeat', 'import']);
         }
-        //检查标签
-        $invalidTag = self::checkTag($data);
-        if (count($invalidTag) > 0) {
-            throw new RunTimeException(['invalid_tag', 'import'], ['list' => $invalidTag]);
-        }
 
         //检查手机号是否被导入过
         $existMobile = self::checkoutExistMobile($data);
         if (count($existMobile) > 0) {
             throw new RunTimeException(['record_exist', 'import'], ['list' => $existMobile]);
+        }
+
+        //检查标签
+        $invalidTag = self::checkTag($data);
+        if (count($invalidTag) > 0) {
+            throw new RunTimeException(['invalid_tag', 'import'], ['list' => $invalidTag]);
         }
 
         return $data;
@@ -207,7 +208,8 @@ class ExchangeCourseService
      */
     public static function checkoutExistMobile($data)
     {
-        $mobiles = array_column($data, 'mobile');
+        $mData =  array_column($data, null,'mobile');
+        $mobiles = array_keys($mData);
         $mobileList = array_chunk($mobiles, 1000);
         $filterState = [
             ExchangeCourseModel::STATUS_READY_HANDLE,
@@ -218,7 +220,7 @@ class ExchangeCourseService
             $exist = ExchangeCourseModel::getRecords(['mobile' => $value, 'status' => $filterState], ['mobile']);
             if (!empty($exist)) {
                 foreach ($exist as $item) {
-                    $existMobile[] = $item;
+                    $existMobile[] = $mData[$item['mobile']];
                 }
             }
         }
