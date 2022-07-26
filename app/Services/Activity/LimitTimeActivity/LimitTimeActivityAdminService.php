@@ -288,6 +288,10 @@ class LimitTimeActivityAdminService
             if (empty($activityInfo)) {
                 throw new RunTimeException(['record_not_found']);
             }
+            // 禁用的活动不能编辑
+            if ($activityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_DISABLE) {
+                throw new RunTimeException(['activity_enable_not_modify']);
+            }
             // 删掉创建时的不要参数
             unset($operationActivityData['create_time'], $activityData['create_time'], $activityData['enable_status'], $htmlConfig['create_time']);
             // 活动启用且活动开始后不可编辑开始与结束时间
@@ -298,14 +302,9 @@ class LimitTimeActivityAdminService
                 if ($activityData['end_time'] != $activityInfo['end_time']) {
                     throw new RunTimeException(['activity_end_time_not_modify']);
                 }
-            }
-            // 如果是非待启用状态 - 某些字段不能编辑
-            // 修改字段进行限制
-            if ($activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_OFF) {
+                // 活动启用且开始后只能编辑指定信息
                 $activityData = [
                     'activity_name' => $activityData['activity_name'],
-                    'end_time'      => $activityData['end_time'],
-                    'start_time'    => $activityData['start_time'],
                     'update_time'   => $activityData['update_time'],
                     'operator_id'   => $activityData['operator_id'],
                 ];
@@ -364,6 +363,10 @@ class LimitTimeActivityAdminService
             return true;
         }
         if ($enableStatus == OperationActivityModel::ENABLE_STATUS_ON) {
+            // 禁用的活动不能再启用
+            if ($activityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_DISABLE) {
+                throw new RunTimeException(['activity_enable_not_start']);
+            }
             // 如果是启用活动 - 校验活动是否允许启动
             $conflictData = LimitTimeActivityBaseAbstract::getRangeTimeEnableActivity($activityInfo['app_id'], $activityInfo['start_time'], $activityInfo['end_time']);
             if (!empty($conflictData)) {
