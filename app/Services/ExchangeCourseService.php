@@ -16,6 +16,7 @@ use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\PhpMail;
 use App\Libs\QingChen;
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\SmsCenter\SmsCenter;
 use App\Libs\Spreadsheet;
@@ -29,6 +30,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 class ExchangeCourseService
 {
     const MAX_RECORDS = 10000;
+    const CACHE_PREFIX_HANDEL_DATA_NUM = 'exchange_course_handel_data_num';
 
     /**
      * 检查过滤表格数据
@@ -56,6 +58,7 @@ class ExchangeCourseService
                 $v['operator_uuid'] = $operatorInfo['uuid'] ?? '';
                 $v['operator_name'] = $operatorInfo['name'] ?? '';
             }
+            RedisDB::getConn()->set(self::CACHE_PREFIX_HANDEL_DATA_NUM . '-' . $batchId, count($data), 'EX', Util::TIMESTAMP_2H);
             self::exchangePush($data);
             self::exchangePushFinish($batchId);
             return $data;
@@ -214,8 +217,8 @@ class ExchangeCourseService
         foreach ($mobileList as $value) {
             $exist = ExchangeCourseModel::getRecords(['mobile' => $value, 'status' => $filterState], ['mobile']);
             if (!empty($exist)) {
-                foreach ($exist as $mobile) {
-                    $existMobile[] = ['mobile' => $mobile];
+                foreach ($exist as $item) {
+                    $existMobile[] = $item;
                 }
             }
         }
@@ -232,8 +235,8 @@ class ExchangeCourseService
     {
         try {
             $queue = new ThirdPartBillTopic();
-            foreach ($data as $v) {
-                $defer = round(1, 600);
+            foreach ($data as $k => $v) {
+                $defer = intval($k/20);
                 $queue->exchangeImport($v)->publish($defer);
             }
         } catch (\Exception $e) {
@@ -246,10 +249,11 @@ class ExchangeCourseService
      * 消息通知结束
      * @param $batchId
      * @param int $times
+     * @param int $defTime
      * @return bool
      * @throws RunTimeException
      */
-    public static function exchangePushFinish($batchId, $times = 0)
+    public static function exchangePushFinish($batchId, $times = 0, $defTime = 660)
     {
         $data = [
             'batch_id' => $batchId,
@@ -257,7 +261,7 @@ class ExchangeCourseService
         ];
         try {
             $queue = new ThirdPartBillTopic();
-            $queue->exchangeImportFinish($data)->publish(660);
+            $queue->exchangeImportFinish($data)->publish($defTime);
         } catch (\Exception $e) {
             throw new RunTimeException([$e->getMessage()]);
         }
@@ -276,8 +280,18 @@ class ExchangeCourseService
         //检查注册信息
         $userInfo = ErpStudentModel::getUserInfoByMobile($msg['mobile']);
         $existAppId = array_column($userInfo, 'app_id');
+        $payInfo = [];
+        $tag = '';
         try {
-            if (!in_array(Constants::SMART_APP_ID, $existAppId)) {
+            // 真人、清晨存在
+            if (!empty($userInfo)) {
+                $uuid = $userInfo[0]['uuid'];
+                //检查在任意系统是否付费
+                $payInfo = self::checkPay($uuid, $existAppId);
+                SimpleLogger::info('pay check info',[$payInfo]);
+            }
+            // 真人，清晨不存在并且是非付费状态可以注册
+            if (empty($payInfo['is_pay']) && !in_array(Constants::SMART_APP_ID, $existAppId)) {
                 //注册智能用户
                 $studentInfo = (new Dss())->studentRegisterBound([
                     'mobile'       => $msg['mobile'],
@@ -285,23 +299,23 @@ class ExchangeCourseService
                     'country_code' => $msg['country_code'],
                 ]);
                 $uuid = $studentInfo['uuid'];
-            } else {
-                $uuid = $userInfo[0]['uuid'];
             }
             if(empty($uuid)){
                 throw new RunTimeException(['uuid_not_exist']);
             }
-            //添加用户标签
-            (new Erp())->addStudentAttributes($uuid,$msg['tag'],'xyk_import');
-            //检查在任意系统是否付费
-            $payInfo = self::checkPay($uuid, $existAppId);
-            SimpleLogger::info('pay check info',[$payInfo]);
+            $tag = $msg['tag'];
         }catch (\RuntimeException $e){
             throw new RunTimeException([$e->getMessage()]);
         } finally {
             //判断处理结果并更新
-            $res = self::updateHandleResult($id, $uuid, $existAppId, $payInfo);
+            $res = self::updateHandleResult($id, $uuid, $existAppId, $payInfo, $tag);
             if ($res) {
+                // 处理完成后减一条
+                $handelNum = RedisDB::getConn()->decrby(self::CACHE_PREFIX_HANDEL_DATA_NUM . '-' . $msg['batch_id'], 1);
+                if ($handelNum <= 0) {
+                    // 立即开始生成邮件
+                    self::exchangePushFinish($msg['batch_id'], 0, 0);
+                }
                 $linkUrl = DictConstants::get(DictConstants::EXCHANGE_CONFIG, 'confirm_exchange_url');
                 SendSmsService::sendExchangeResult($msg['mobile'], $linkUrl, $msg['country_code']);
             }
@@ -411,39 +425,32 @@ class ExchangeCourseService
      * @param $uuid
      * @param $existAppId
      * @param $payInfo
+     * @param $tag
      * @return int|null
      */
-    public static function updateHandleResult($id, $uuid, $existAppId, $payInfo)
+    public static function updateHandleResult($id, $uuid, $existAppId, $payInfo, $tag)
     {
         $update = [
             'uuid'        => $uuid ?: '',
             'status'      => ExchangeCourseModel::STATUS_READY_EXCHANGE,
             'update_time' => time()
         ];
-
         if (empty($uuid)){
             $update['status'] = ExchangeCourseModel::STATUS_HANDLE_FAIL;
             $update['result_desc'] = '处理异常，不可导入';
-            ExchangeCourseModel::updateRecord($id, $update);
-            return false;
-        }
-
-        if (empty($existAppId)) {
+        } elseif (empty($existAppId)) {
             $update['result_desc'] = '新学员，已导入';
-            return ExchangeCourseModel::updateRecord($id, $update);
-        }
-
-        if (!empty($payInfo['is_pay']) && $payInfo['is_pay'] == true) {
+        } elseif (!empty($payInfo['is_pay'])) {
             $update['status'] = ExchangeCourseModel::STATUS_EXCHANGE_FAIL;
             $update['result_desc'] = '在'.$payInfo['app_name'].'已付费，不可导入';
-            ExchangeCourseModel::updateRecord($id, $update);
-            return false;
-        }
-
-        if (in_array(Constants::SMART_APP_ID, $existAppId)) {
+        } elseif (in_array(Constants::SMART_APP_ID, $existAppId)) {
             $update['result_desc'] = '未付费学员，已导入';
         } else {
             $update['result_desc'] = '非智能业务线未付费学员，已导入';
+        }
+        if (!empty($tag) && $update['status'] == ExchangeCourseModel::STATUS_READY_EXCHANGE) {
+            //可导入的数据添加用户标签
+            (new Erp())->addStudentAttributes($uuid, $tag, 'xyk_import');
         }
         return ExchangeCourseModel::updateRecord($id, $update);
     }
@@ -460,7 +467,7 @@ class ExchangeCourseService
             'batch_id' => $msg['batch_id'],
             'status'   => ExchangeCourseModel::STATUS_READY_HANDLE
         ], ['id']);
-        SimpleLogger::info('exchange course push finish data current status',[$exist]);
+        SimpleLogger::info('exchange course push finish data current status',[$exist, $msg]);
         if (empty($exist)) {
             //发送邮件
             self::sentResultEmail($msg['batch_id']);
@@ -693,6 +700,7 @@ class ExchangeCourseService
         } else {
             $update['status'] = ExchangeCourseModel::STATUS_EXCHANGE_SUCCESS;
             $update['order_id'] = $result['data']['order_id'] ?? '';
+            $update['update_time'] = time();
             ExchangeCourseModel::updateRecord($record['id'], $update);
         }
         return true;
