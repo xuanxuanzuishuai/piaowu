@@ -34,8 +34,8 @@ class ClientAuthMiddleware extends MiddlewareBase
 	public function __invoke(Request $request, Response $response, $next): Response
 	{
 		//header头中携带业务线AppId和FromType参数，依据不同业务线和不同平台类型获取登陆验证标识
-		$appId = (int)$request->getHeader('app-id')[0];
-		$fromType = $request->getHeader('from-type')[0];
+		$appId = $request->getHeader('app-id')[0]??$request->getHeader('AppId')[0];
+		$fromType = $request->getHeader('from-type')[0]??$request->getHeader('FromType')[0];
 		if (empty($appId) || empty($fromType)) {
 			throw new RunTimeException(['app_id_or_from_type_miss']);
 		}
