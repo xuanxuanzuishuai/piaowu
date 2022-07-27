@@ -689,7 +689,8 @@ class ExchangeCourseService
         //再次检查任意渠道是否付费
         $uuid = self::checkHasPay($params);
 		if (empty($uuid)) {
-			$result = false;
+			ExchangeCourseModel::updateRecord($record['id'], ['status'=>ExchangeCourseModel::STATUS_EXCHANGE_FAIL]);
+			throw new RuntimeException(['exchange_payed_user']);
 		} else {
 			//创建订单
 			$packageId = DictConstants::get(DictConstants::EXCHANGE_CONFIG, 'package_id');
