@@ -318,8 +318,8 @@ class ExchangeCourseService
                     // 立即开始生成邮件
                     self::exchangePushFinish($msg['batch_id'], 0, 0);
                 }
-                $linkUrl = DictConstants::get(DictConstants::EXCHANGE_CONFIG, 'confirm_exchange_url');
-                SendSmsService::sendExchangeResult($msg['mobile'], $linkUrl, $msg['country_code']);
+				$linkUrl = ((new Dss())->getShortUrl(DictConstants::get(DictConstants::EXCHANGE_CONFIG, 'confirm_exchange_url')))['data']['short_url'];
+				SendSmsService::sendExchangeResult($msg['mobile'], $linkUrl, $msg['country_code']);
             }
         }
         return true;
@@ -648,12 +648,12 @@ class ExchangeCourseService
      */
     public static function activateSms($idList)
     {
-        $recordList = ExchangeCourseModel::getRecords(['id' => $idList], ['country_code', 'mobile']);
+        $recordList = ExchangeCourseModel::getRecords(['id' => $idList, 'status'=>ExchangeCourseModel::STATUS_READY_EXCHANGE], ['country_code', 'mobile']);
         if (empty($recordList)) {
             return true;
         }
-        $linkUrl = DictConstants::get(DictConstants::EXCHANGE_CONFIG, 'confirm_exchange_url');
-        //国内手机号
+		$linkUrl = ((new Dss())->getShortUrl(DictConstants::get(DictConstants::EXCHANGE_CONFIG, 'confirm_exchange_url')))['data']['short_url'];
+		//国内手机号
         foreach ($recordList as $value) {
             if ($value['country_code'] == SmsCenter::DEFAULT_COUNTRY_CODE) {
                 $chinaMobile[] = $value['mobile'];
@@ -688,12 +688,15 @@ class ExchangeCourseService
         $record = self::checkHasExchangeQualification($params);
         //再次检查任意渠道是否付费
         $uuid = self::checkHasPay($params);
-
-        //创建订单
-        $packageId = DictConstants::get(DictConstants::EXCHANGE_CONFIG, 'package_id');
-        $update['exchange_time'] = time();
-        $update['package_id'] = $packageId;
-        list($result, $body) = self::exchangeCreateBill($uuid, $packageId);
+		if (empty($uuid)) {
+			$result = false;
+		} else {
+			//创建订单
+			$packageId = DictConstants::get(DictConstants::EXCHANGE_CONFIG, 'package_id');
+			$update['exchange_time'] = time();
+			$update['package_id'] = $packageId;
+			list($result, $body) = self::exchangeCreateBill($uuid, $packageId);
+		}
         //记录请求结果
         if ($result === false) {
             $update['status'] = ExchangeCourseModel::STATUS_EXCHANGE_FAIL;
@@ -705,7 +708,7 @@ class ExchangeCourseService
             $update['update_time'] = time();
             ExchangeCourseModel::updateRecord($record['id'], $update);
         }
-        return true;
+        return $uuid;
     }
 
     /**
@@ -762,7 +765,8 @@ class ExchangeCourseService
         $uuid = $userInfo[0]['uuid'];
         $payInfo = self::checkPay($uuid, $existAppId);
         if (!empty($payInfo)) {
-            throw new RuntimeException(['exchange_payed_user']);
+        	SimpleLogger::info('exchange_payed_user',[$payInfo]);
+        	return '';
         }
         return $uuid;
     }

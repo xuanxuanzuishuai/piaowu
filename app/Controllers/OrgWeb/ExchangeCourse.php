@@ -226,10 +226,10 @@ class ExchangeCourse extends ControllerBase
             return $response->withJson(Valid::addAppErrors([], 'validate_code_error'), StatusCode::HTTP_OK);
         }
         try {
-            ExchangeCourseService::exchangeConfirm($params);
+			$uuid=ExchangeCourseService::exchangeConfirm($params);
         } catch (RuntimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
-        return HttpHelper::buildResponse($response, []);
+        return HttpHelper::buildResponse($response, ['uuid'=>$uuid]);
     }
 }
