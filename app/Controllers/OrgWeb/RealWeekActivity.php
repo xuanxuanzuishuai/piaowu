@@ -229,7 +229,12 @@ class RealWeekActivity extends ControllerBase
         }
         try {
             list($page, $limit) = Util::formatPageCount($params);
-            $data = RealWeekActivityService::searchList($params, $page, $limit);
+            if (!empty($params['activity_type']) && $params['activity_type'] == OperationActivityModel::SHARE_POSTER_ACTIVITY_TYPE_LIMIT) {
+                $params['app_id'] = Constants::REAL_APP_ID;
+                $data = LimitTimeActivityAdminService::searchList($params, $page, $limit);
+            } else {
+                $data = RealWeekActivityService::searchList($params, $page, $limit);
+            }
         } catch (RunTimeException $e) {
             return HttpHelper::buildOrgWebErrorResponse($response, $e->getWebErrorData(), $e->getData());
         }
@@ -247,6 +252,7 @@ class RealWeekActivity extends ControllerBase
         $params = $request->getParams();
         list($page, $count) = Util::formatPageCount($params);
         if (!empty($params['activity_type']) && $params['activity_type'] == OperationActivityModel::SHARE_POSTER_ACTIVITY_TYPE_LIMIT) {
+            $params['app_id'] = Constants::REAL_APP_ID;
             $data = LimitTimeActivityAdminService::getFilterAfterActivityList($params, $page, $count);
             foreach ($data['list'] as &$item) {
                 $item['name'] = $item['activity_name'];

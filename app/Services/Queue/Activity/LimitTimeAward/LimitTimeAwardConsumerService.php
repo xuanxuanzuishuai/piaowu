@@ -157,6 +157,17 @@ class LimitTimeAwardConsumerService
 					'source_type'         => ErpStudentAccountModel::SOURCE_TYPE_LIMIT_TIME_ACTIVITY_AWARD,
 				];
 				break;
+            case Constants::AWARD_TYPE_MAGIC_STONE:
+                $sendData = [
+                    'type'                => Constants::AWARD_TYPE_MAGIC_STONE,
+                    'student_uuid'        => $sharePosterRecordInfo['student_uuid'],
+                    'sub_type'            => Constants::ERP_ACCOUNT_NAME_MAGIC,
+                    'source_type'         => ErpStudentAccountModel::SOURCE_TYPE_LIMIT_TIME_ACTIVITY_AWARD,
+                    'remark'              => '转介绍限时活动',
+                    'common_award_amount' => $sharePosterRecordInfo['award_amount'],
+                    'batch_id'            => Util::getBatchId(),
+                ];
+                break;
 			default:
 				$sendData = [];
 				break;
