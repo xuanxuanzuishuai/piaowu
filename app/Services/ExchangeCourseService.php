@@ -29,7 +29,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ExchangeCourseService
 {
-    const MAX_RECORDS = 10000;
+    const MAX_RECORDS = 1000;
     const CACHE_PREFIX_HANDEL_DATA_NUM = 'exchange_course_handel_data_num';
 
     /**
@@ -42,6 +42,14 @@ class ExchangeCourseService
      */
     public static function analysisData($filename, $operatorUuid, $params)
     {
+        // 获取最后版本
+        $lastBatchInfo = ExchangeCourseModel::getRecord(['ORDER' => ['id' => 'DESC']]);
+        if(!empty($lastBatchInfo)) {
+            $num = RedisDB::getConn()->get(self::CACHE_PREFIX_HANDEL_DATA_NUM . '-' . $lastBatchInfo['batch_id']);
+            if (intval($num) > 0) {
+                throw new RunTimeException(['having_import_excel', 'import']);
+            }
+        }
             $data = self::extractFromTemplate($filename);
             if (empty($data)) {
 				throw new RunTimeException(['data_can_not_be_empty', 'import']);
