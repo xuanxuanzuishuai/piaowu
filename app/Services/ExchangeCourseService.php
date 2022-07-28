@@ -238,7 +238,7 @@ class ExchangeCourseService
         try {
             $queue = new ThirdPartBillTopic();
             foreach ($data as $k => $v) {
-                $defer = intval($k/20);
+                $defer = intval(($k/2.5));
                 $queue->exchangeImport($v)->publish($defer);
             }
         } catch (\Exception $e) {
