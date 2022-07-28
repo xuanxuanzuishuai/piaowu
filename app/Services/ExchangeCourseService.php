@@ -236,10 +236,19 @@ class ExchangeCourseService
     public static function exchangePush($data)
     {
         try {
+            $_g = 3; //每组的个数
+            $_k = 0; //当前组的第几个
+            $_s = 0; //最终的延时时间
+            $_r = 0; //已经循环的最大组数
             $queue = new ThirdPartBillTopic();
             foreach ($data as $k => $v) {
-                $defer = intval(($k/2.5));
-                $queue->exchangeImport($v)->publish($defer);
+                if ($_k >= $_g) {
+                    $_k = 0;
+                    $_r += 1;
+                    $_s = intval($_r / 0.5);
+                }
+                $_k++;
+                $queue->exchangeImport($v)->publish($_s);
             }
         } catch (\Exception $e) {
             throw new RunTimeException([$e->getMessage()]);
