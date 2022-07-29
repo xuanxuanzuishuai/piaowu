@@ -17,4 +17,12 @@ class MorningDictConstants extends DictConstants
             '3',    // 清晨年卡用户
         ]
     ];
+
+    // 清晨转介绍相关配置
+    const MORNING_REFERRAL_CONFIG = [
+        'type' => 'morning_referral_config',
+        'keys' => [
+            'PUSH_MSG_USER_SHARE_CHANNEL_ID'
+        ]
+    ];
 }

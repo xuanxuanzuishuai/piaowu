@@ -3,7 +3,7 @@
 namespace App\Services\Queue\Track;
 
 use App\Libs\SimpleLogger;
-use App\Services\MorningReferral\MorningPushMessageService;
+use App\Services\MorningReferral\MorningReferralStatisticsService;
 use App\Services\StudentServices\CollectionService;
 use App\Services\StudentServices\ErpStudentService;
 
@@ -37,8 +37,8 @@ class CommonTrackConsumerService extends CommonTrackTopic
 
         // 体验课-处理转介绍关系
         if (!empty($paramsData['msg_body']['order_type']) && $paramsData['msg_body']['order_type'] == self::ORDER_TYPE_TRAIL) {
-            $res = MorningPushMessageService::createReferral($params['msg_body'] ?? []);
-            SimpleLogger::info("login create referral res:", [$res]);
+            $res = MorningReferralStatisticsService::createReferral($params['msg_body'] ?? []);
+            SimpleLogger::info("morning create referral res:", [$res]);
         }
     }
 
@@ -50,9 +50,7 @@ class CommonTrackConsumerService extends CommonTrackTopic
      */
     public function login($params)
     {
-        SimpleLogger::info("login", [$params, 'topic' => CommonTrackTopic::COMMON_EVENT_TYPE_LOGIN]);
-        $res = MorningPushMessageService::createReferral($params['msg_body'] ?? []);
-        SimpleLogger::info("login create referral res:", [$res]);
+        SimpleLogger::info("morning login", [$params, 'topic' => CommonTrackTopic::COMMON_EVENT_TYPE_LOGIN]);
         return true;
     }
 }

@@ -22,7 +22,6 @@ use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\DictModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
-use App\Services\MiniAppQrService;
 use App\Services\Queue\Track\DeviceCommonTrackTopic;
 use App\Services\ReferralActivityService;
 use App\Services\ReferralService;
@@ -408,5 +407,36 @@ class Student extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
         return HttpHelper::buildResponse($response, $assistantInfo);
+    }
+
+    /**
+     * 获取scene信息
+     * 根据需求，当前只返回清晨业务线下的信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getSceneInfo(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'scene',
+                'type' => 'required',
+                'error_code' => 'record_not_found'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::Validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $sceneData = ShowMiniAppService::getSceneData($params['scene'] ?? '');
+        if (!empty($sceneData['app_id']) && $sceneData['app_id'] != Constants::QC_APP_ID) {
+            $sceneData = [];
+        }
+        if (!empty($sceneData)) {
+            $sceneData['student_uuid'] = json_decode($sceneData['qr_data'], true)['student_uuid'] ?? '';
+        }
+        return HttpHelper::buildResponse($response, $sceneData);
     }
 }

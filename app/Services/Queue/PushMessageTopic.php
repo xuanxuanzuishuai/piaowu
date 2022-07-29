@@ -54,6 +54,7 @@ class PushMessageTopic extends BaseTopic
 
 
     const EVENT_WECHAT_LIFE_INTERACTION = 'wechat_life_interaction';  // 真人微信交互
+    const EVENT_WECHAT_MORNING_INTERACTION = 'wechat_morning_interaction';  // 清晨微信交互
 
     public function __construct($publishTime = null)
     {

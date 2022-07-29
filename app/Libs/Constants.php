@@ -12,6 +12,10 @@ class Constants
     const REAL_APP_ID = 1;
     //清晨项目应用id
     const QC_APP_ID = 26;
+    // 清晨公众号
+    const QC_APP_BUSI_WX_ID = 1;
+    // 清晨转介绍小程序
+    const QC_APP_BUSI_MINI_APP_ID = 2;
     //客户端平台类型,区分请求来源
     const FROM_TYPE_SMART_STUDENT_APP = 'smart_student_app';//smart_student_app智能学生app
     const FROM_TYPE_SMART_STUDENT_WX = 'smart_student_wx';//智能学生微信公众号

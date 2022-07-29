@@ -13,6 +13,7 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Dss;
 use App\Libs\HttpHelper;
+use App\Libs\Morning;
 use App\Libs\PandaService;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
@@ -130,7 +131,10 @@ class WeChatMiniPro
         $accessToken = RedisDB::getConn()->get($this->getWxAccessTokenKey($this->nowWxApp));
         //空处理
         if (empty($accessToken)) {
-            $this->refreshAccessToken();
+            $accessToken = $this->refreshAccessToken();
+            if (!empty($accessToken)) {
+                return $accessToken;
+            }
         }
         return RedisDB::getConn()->get($this->getWxAccessTokenKey($this->nowWxApp));
     }
@@ -262,9 +266,16 @@ class WeChatMiniPro
             if (!empty($data['access_token'])) {
                 $this->setAccessToken($data['access_token']);
             }
+        } elseif ($appId == Constants::QC_APP_ID && $busiType == Constants::QC_APP_BUSI_WX_ID) {
+            // 清晨公众号
+            $accessToken = (new Morning())->getWeChatAccessToken();
+        } elseif ($appId == Constants::QC_APP_ID && $busiType == Constants::QC_APP_BUSI_MINI_APP_ID) {
+            // 清晨小程序
+            $accessToken = (new Morning())->getMiniAppAccessToken();
         } else {
             SimpleLogger::info('UNKNOW APPID', [$appId, $busiType]);
         }
+        return $accessToken ?? '';
     }
 
     /**

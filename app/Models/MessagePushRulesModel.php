@@ -83,4 +83,16 @@ class MessagePushRulesModel extends Model
         $rules = $db->queryAll(sprintf($sql, $field) . $where . $limit);
         return [$rules, $total[0]['total'] ?? 0];
     }
+
+    /**
+     * 获取规则信息
+     * @param $appId
+     * @param $name
+     * @param $target
+     * @return mixed
+     */
+    public static function getRuleInfo($appId, $name, $target)
+    {
+        return self::getRecord(['app_id' => $appId, 'is_active' => self::STATUS_ENABLE, 'name' => $name, 'target' => $target]);
+    }
 }
