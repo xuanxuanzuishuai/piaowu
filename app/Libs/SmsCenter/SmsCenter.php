@@ -123,7 +123,7 @@ class SmsCenter
 		$api = self::API_BATCH_SEND_I18N_SMS;
 		$items = array_chunk($items, self::BATCH_SEND_LIMIT);
 		foreach ($items as $item) {
-			$data['item'] = $item;
+			$data['items'] = $item;
 			$this->send($api, $data);
 		}
 		return true;

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Libs\DictConstants;
 
 use App\Libs\Dss;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\NewSMS;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
@@ -333,14 +334,13 @@ class SendSmsService
         return true;
     }
 
-    /**
-     * 发送兑课结果
-     * @param $targetMobiles
-     * @param $msg
-     * @param string $countryCode
-     * @return bool
-     */
-    public static function sendExchangeResult($chinaMobile, $overseas)
+	/**
+	 * @param $chinaMobile
+	 * @param $overseas
+	 * @return bool
+	 * @throws RunTimeException
+	 */
+    public static function sendExchangeResult($chinaMobile, $overseas): bool
 	{
 		//获取短信模板ID
 		$keyCode = SmsInc::OP_EXCHANGE_RESULT;

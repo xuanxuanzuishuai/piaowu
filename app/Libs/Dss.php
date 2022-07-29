@@ -215,7 +215,7 @@ class Dss
         ];
         $res = self::commonAPI(self::GET_SHORT_URL, $params, 'POST');
         if ($res['code'] != Valid::CODE_SUCCESS) {
-            throw new RunTimeException(['update_failure']);
+            throw new RunTimeException(['get_short_url_fail']);
         }
         return $res;
     }

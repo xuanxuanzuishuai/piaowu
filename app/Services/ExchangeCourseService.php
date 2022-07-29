@@ -299,7 +299,7 @@ class ExchangeCourseService
         //检查注册信息
         $userInfo = ErpStudentModel::getUserInfoByMobile($msg['mobile']);
         $existAppId = array_column($userInfo, 'app_id');
-        $payInfo = [];
+		$payInfo = $chinaMobile = $overseas = [];
         $tag = '';
         try {
             // 真人、清晨存在
@@ -335,9 +335,13 @@ class ExchangeCourseService
                     // 立即开始生成邮件
                     self::exchangePushFinish($msg['batch_id'], 0, 0);
                 }
-				$linkUrl = ((new Dss())->getShortUrl(DictConstants::get(DictConstants::EXCHANGE_CONFIG, 'confirm_exchange_url')))['data']['short_url'];
-				SendSmsService::sendExchangeResult($msg['mobile'], $linkUrl, $msg['country_code']);
-            }
+				if ($msg['country_code'] == SmsCenter::DEFAULT_COUNTRY_CODE) {
+					$chinaMobile[] = $msg['mobile'];
+				} else {
+					$overseas[] = $msg;
+				}
+				SendSmsService::sendExchangeResult($chinaMobile, $overseas);
+			}
         }
         return true;
     }
@@ -662,6 +666,7 @@ class ExchangeCourseService
 	 * 批量发送短信
 	 * @param $idList
 	 * @return bool
+	 * @throws RunTimeException
 	 */
 	public static function activateSms($idList): bool
 	{
