@@ -658,38 +658,29 @@ class ExchangeCourseService
         return ExchangeCourseModel::batchUpdateRecord($update, $where);
     }
 
-    /**
-     * 批量发送短信
-     * @param $idList
-     * @return bool
-     */
-    public static function activateSms($idList)
-    {
-        $recordList = ExchangeCourseModel::getRecords(['id' => $idList, 'status'=>ExchangeCourseModel::STATUS_READY_EXCHANGE], ['country_code', 'mobile']);
-        if (empty($recordList)) {
-            return true;
-        }
-		$linkUrl = ((new Dss())->getShortUrl(DictConstants::get(DictConstants::EXCHANGE_CONFIG, 'confirm_exchange_url')))['data']['short_url'];
+	/**
+	 * 批量发送短信
+	 * @param $idList
+	 * @return bool
+	 */
+	public static function activateSms($idList): bool
+	{
+		$recordList = ExchangeCourseModel::getRecords(['id' => $idList, 'status' => ExchangeCourseModel::STATUS_READY_EXCHANGE], ['country_code', 'mobile']);
+		if (empty($recordList)) {
+			return true;
+		}
 		//国内手机号
-        foreach ($recordList as $value) {
-            if ($value['country_code'] == SmsCenter::DEFAULT_COUNTRY_CODE) {
-                $chinaMobile[] = $value['mobile'];
-            } else {
-                $overseas = $value;
-            }
-        }
-
-        if (!empty($chinaMobile)) {
-            SendSmsService::sendExchangeResult($chinaMobile, $linkUrl);
-        }
-
-        if (!empty($overseas)) {
-            foreach ($overseas as $v) {
-                SendSmsService::sendExchangeResult($v['mobile'], $linkUrl, $v['country_code']);
-            }
-        }
-        return true;
-    }
+		$chinaMobile = $overseas = [];
+		foreach ($recordList as $value) {
+			if ($value['country_code'] == SmsCenter::DEFAULT_COUNTRY_CODE) {
+				$chinaMobile[] = $value['mobile'];
+			} else {
+				$overseas[] = $value;
+			}
+		}
+		SendSmsService::sendExchangeResult($chinaMobile, $overseas);
+		return true;
+	}
 
     /**
      * 确认兑换
@@ -715,17 +706,18 @@ class ExchangeCourseService
 			$update['package_id'] = $packageId;
 			list($result, $body) = self::exchangeCreateBill($uuid, $packageId);
 		}
-        //记录请求结果
-        if ($result === false) {
-            $update['status'] = ExchangeCourseModel::STATUS_EXCHANGE_FAIL;
-            ExchangeCourseModel::updateRecord($record['id'], $update);
-            throw new RuntimeException(['exchange_create_bill_fail']);
-        } else {
-            $update['status'] = ExchangeCourseModel::STATUS_EXCHANGE_SUCCESS;
-            $update['order_id'] = $result['data']['order_id'] ?? '';
-            $update['update_time'] = time();
-            ExchangeCourseModel::updateRecord($record['id'], $update);
-        }
+		//记录请求结果
+		if ($result === false) {
+			$update['status'] = ExchangeCourseModel::STATUS_EXCHANGE_FAIL;
+			ExchangeCourseModel::updateRecord($record['id'], $update);
+			Util::errorCapture("学生兑课，创建订单失败", ['uuid' => $uuid, 'package_id' => $packageId]);
+			throw new RuntimeException(['exchange_create_bill_fail']);
+		} else {
+			$update['status'] = ExchangeCourseModel::STATUS_EXCHANGE_SUCCESS;
+			$update['order_id'] = $result['data']['order_id'] ?? '';
+			$update['update_time'] = time();
+			ExchangeCourseModel::updateRecord($record['id'], $update);
+		}
         return $uuid;
     }
 

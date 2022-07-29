@@ -7,8 +7,9 @@ class SmsInc
 {
 
     const SEND_TYPE_SINGLE = 1;  //发送单条
-    const SEND_TYPE_BATCH_SAME = 2;  //批量发送，模版变量一致
+    const SEND_TYPE_BATCH_SAME = 2;  //国内：批量发送，模版变量一致
     const SEND_TYPE_BATCH_DIFF = 3;  //批量发送，模版变量不一致
+	const SEND_TYPE_BATCH_SAME_INTERNATIONAL = 4;//国际：批量发送，模版变量一致
 
     const SMS_CENTER_TEMPLATE_CACHE = 'sms_center_template_cache';  //短信中心模版缓存
 

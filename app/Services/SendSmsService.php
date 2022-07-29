@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Libs\DictConstants;
 
+use App\Libs\Dss;
 use App\Libs\NewSMS;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
@@ -145,7 +146,7 @@ class SendSmsService
         switch ($type) {
             case SmsInc::SEND_TYPE_SINGLE:  //发送单条短信
                 return $smsCenter->singleSendSms($items['mobile'], $items['params'], $countryCode);
-            case SmsInc::SEND_TYPE_BATCH_SAME:  //批量给学员发相同的短信
+            case SmsInc::SEND_TYPE_BATCH_SAME:  //国内：批量给学员发相同的短信
                 $sendData = [];
                 foreach ($items['mobile'] as $mobile) {
                     $sendData[] = [
@@ -156,7 +157,18 @@ class SendSmsService
                 return $smsCenter->batchSendSms($sendData);
             case SmsInc::SEND_TYPE_BATCH_DIFF:  //批量给学员发送不同的短信
                 return $smsCenter->batchSendSms($items);
-        }
+			case SmsInc::SEND_TYPE_BATCH_SAME_INTERNATIONAL://国际：批量给学员发相同的短信
+				$sendData = [];
+				foreach ($items['mobile_list'] as $mv) {
+					$sendData[] = [
+						'params' => $items['params'],
+						'mobile' => $mv['mobile'],
+						'cc' => $mv['country_code'],
+					];
+				}
+				return $smsCenter->batchSendI18nSms($sendData);
+
+		}
         return false;
     }
 
@@ -328,36 +340,38 @@ class SendSmsService
      * @param string $countryCode
      * @return bool
      */
-    public static function sendExchangeResult($targetMobiles, $msg, $countryCode = SmsCenter::DEFAULT_COUNTRY_CODE) {
-        $keyCode = SmsInc::OP_EXCHANGE_RESULT;
+    public static function sendExchangeResult($chinaMobile, $overseas)
+	{
+		//获取短信模板ID
+		$keyCode = SmsInc::OP_EXCHANGE_RESULT;
         $template = self::getTemplateInfoByKeyCode($keyCode);
         if (empty($template)) {
             return false;
         }
-        if ($countryCode == SmsCenter::DEFAULT_COUNTRY_CODE && is_array($targetMobiles)){
-            $items = ['mobile' => $targetMobiles, 'params' => [$msg]];
-            self::sendSms(
-                SmsInc::SEND_TYPE_BATCH_SAME,
-                $keyCode,
-                $template['id'],
-                $items,
-                $countryCode
-            );
-        }else{
-            $items = ['mobile' => $targetMobiles, 'params' => [$msg]];
-            if (empty($template)) {
-                return false;
-            }
-            self::sendSms(
-                SmsInc::SEND_TYPE_SINGLE,
-                $keyCode,
-                $template['id'],
-                $items,
-                $countryCode
-            );
-        }
+		//获取短信链接短地址
+		$linkUrl = ((new Dss())->getShortUrl(DictConstants::get(DictConstants::EXCHANGE_CONFIG, 'confirm_exchange_url')))['data']['short_url'];
+        //国内
+		if (!empty($chinaMobile)) {
+			$items = ['mobile' => $chinaMobile, 'params' => [$linkUrl]];
+			self::sendSms(
+				SmsInc::SEND_TYPE_BATCH_SAME,
+				$keyCode,
+				$template['id'],
+				$items
+			);
+		}
+		//国际
+		if (!empty($overseas)) {
+			$items = ['mobile_list' => $overseas, 'params' => [$linkUrl]];
+			self::sendSms(
+				SmsInc::SEND_TYPE_BATCH_SAME_INTERNATIONAL,
+				$keyCode,
+				$template['id'],
+				$items
+			);
+		}
         $content = self::valueReplaceVar($template['content'], $items['params']);
-        SimpleLogger::info($keyCode, ['content' => $content, 'mobile' => $targetMobiles]);
+        SimpleLogger::info($keyCode, ['content' => $content, 'china_mobile' => $chinaMobile,'international_mobile' => $overseas]);
         return true;
     }
 }
