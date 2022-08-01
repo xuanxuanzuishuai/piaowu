@@ -520,9 +520,10 @@ class ExchangeCourseService
         // 发放结果的数据保存到excel
         $excelLocalPath = '/tmp/' . $fileName . '.csv';
         try {
-            $excelTitle = ['手机号区号', '手机号', 'UUID', '渠道号', '处理结果'];
+            $excelTitle = ['手机号区号', '手机号', 'UUID', '处理结果', '渠道号', '渠道名称'];
             $resultData = ExchangeCourseModel::getRecords(['batch_id' => $batchId],
-                ['country_code', 'mobile', 'uuid', 'channel_id', 'result_desc']);
+                ['country_code', 'mobile', 'uuid', 'result_desc', 'channel_id']);
+            $resultData = self::addChannelName($resultData);
             Spreadsheet::createXml($excelLocalPath, $excelTitle, $resultData);
             $emailTitle = '兑课学员导入结果-' . $fileName;
             $content = '本次三方用户导入处理完成' . '总共' . count($resultData) . '条数据，成功处理，可下载附件，查看详细数据';
@@ -534,6 +535,26 @@ class ExchangeCourseService
             unlink($excelLocalPath);
         }
         return true;
+    }
+
+    /**
+     * 增加渠道信息
+     * @param $resultData
+     * @return mixed
+     */
+    public static function addChannelName(&$resultData)
+    {
+        $channelIdList = array_unique(array_column($resultData, 'channel_id'));
+        $channelInfo = DssChannelModel::getRecords(['id' => $channelIdList], ['id', 'name']);
+        if (!empty($channelInfo)) {
+            foreach ($channelInfo as $value) {
+                $channelKeyId[$value['id']] = $value['name'];
+            }
+        }
+        foreach ($resultData as $k => $v) {
+            $resultData[$k]['channel_name'] = $channelKeyId[$v['channel_id']] ?? '';
+        }
+        return $resultData;
     }
 
     /**
