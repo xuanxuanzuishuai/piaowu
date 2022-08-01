@@ -9,6 +9,7 @@
 namespace App\Routers;
 
 use App\Controllers\Agent\Agent;
+use App\Controllers\OrgWeb\ExchangeCourse;
 use App\Controllers\OrgWeb\LandingRecall;
 use App\Controllers\StudentWeb\Landing;
 use App\Controllers\StudentWeb\Lottery;
@@ -98,5 +99,9 @@ class StudentWebRouter extends RouterBase
         '/student_web/lottery/modify_address' => ['method' => ['post'], 'call' => Lottery::class . ':modifyAddress','middles' => [CommonWebCheckMiddleware::class]],
         //查看物流信息
         '/student_web/lottery/shipping_info' => ['method' => ['get'], 'call' => Lottery::class . ':shippingInfo','middles' => [CommonWebCheckMiddleware::class]],
+
+        /********************兑课接口**********************/
+        //确认兑换接口
+        '/student_web/exchange_course/exchange_confirm' => ['method' => ['get'], 'call' => ExchangeCourse::class . ':exchangeConfirm','middles' => []],
     ];
 }

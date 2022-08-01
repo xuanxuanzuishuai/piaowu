@@ -12,7 +12,9 @@ class SmsCenter
     const API_SINGLE_SEND_SMS = '/api/v2/send/sms';   //【国内】发送单条短信
     const API_BATCH_SEND_SMS = '/api/v2/batch/send/sms';   //【国内】批量发送短信
     const API_SEND_I18N_SMS = '/api/v2/send/i18n/sms';  //【国际】发送国际短信
-    const API_ADD_TEMPLATE = '/api/v2/template/add';  //创建短信模板
+	const API_BATCH_SEND_I18N_SMS = '/api/v2/batch/send/i18n/sms';//【国际】批量发送短信
+
+	const API_ADD_TEMPLATE = '/api/v2/template/add';  //创建短信模板
     const API_GET_SMS_TEMPLATE = '/api/v2/templates';  //获取短信模版
 
     const DEFAULT_COUNTRY_CODE = '86';
@@ -93,7 +95,7 @@ class SmsCenter
     }
 
     /**
-     * 批量发送短信
+     * 批量发送短信：国内
      * http://yapi.xiaoyezi.com/project/656/interface/api/20026
      * @param $items array 批量发送参数和手机号 [["params" => ['1','2'], "mobile" => "xxx"]]
      * @return bool
@@ -108,6 +110,24 @@ class SmsCenter
         }
         return true;
     }
+
+
+	/**
+	 * 批量发送短信:国际
+	 * http://yapi.xiaoyezi.com/project/656/interface/api/23736
+	 * @param $items array 批量发送参数和手机号
+	 * @return bool
+	 */
+	public function batchSendI18nSms(array $items): bool
+	{
+		$api = self::API_BATCH_SEND_I18N_SMS;
+		$items = array_chunk($items, self::BATCH_SEND_LIMIT);
+		foreach ($items as $item) {
+			$data['items'] = $item;
+			$this->send($api, $data);
+		}
+		return true;
+	}
 
     /**
      * 发送短信

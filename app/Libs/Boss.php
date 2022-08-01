@@ -11,22 +11,17 @@ namespace App\Libs;
 use GuzzleHttp\Client;
 use Slim\Http\StatusCode;
 
-class QingChen
+class Boss
 {
-    //根据手机号（批量）检查是否购买过体验课
-    const API_QC_STUDENT_HAVE_TRIAL = '/api/op/student/is_have_trial';
-    //注册用户并购买体验课
-    const API_QC_REGISTER_ORDER = '/api/student/create_order';
-    //获取学生列表
-    const API_QC_PROFILE_LIST = '/api/student/profile/list';
-
+    //查询指定员工UUID的详情信息
+    const API_AC_FOREIGN_USERINFO = '/foreign/userinfo';
 
 
     private $host;
 
     public function __construct()
     {
-        $this->host = $_ENV['QC_HOST'];
+        $this->host = $_ENV['BOSS_HOST'];
     }
 
     private function commonAPI($api, $data = [], $method = 'GET', &$exportBody = '')
@@ -69,47 +64,17 @@ class QingChen
 
 
     /**
-     * 批量检查是否购买过体验课
-     * @param $mobiles
+     * 查询指定员工UUID的详情信息
+     * @param $uuid
      * @return false|mixed
      */
-    public function isHaveTrial($mobiles)
+    public function getEmployeeInfo($uuid)
     {
         $requestParams = [
-            'mobile' => $mobiles
+            'uuid' => $uuid
         ];
-        $res = self::commonAPI(self::API_QC_STUDENT_HAVE_TRIAL, $requestParams, 'POST');
+        $res = self::commonAPI(self::API_AC_FOREIGN_USERINFO, $requestParams, 'GET');
         return $res['data'] ?? [];
     }
 
-    /**
-     * 创建学生&订单
-     * @param $params
-     * @return array|mixed
-     */
-    public function registerAndOrder($params)
-    {
-        $requestParams = [
-            'country_code' => $params['country_code'],
-            'mobile'       => $params['mobile'],
-            'channel_id'   => $params['channel_id'],
-            'package_id'   => $params['package_id'],
-            'trade_no'     => $params['trade_no'],
-            'amount'       => $params['dss_amount'],
-        ];
-        return self::commonAPI(self::API_QC_REGISTER_ORDER, $requestParams, 'POST');
-    }
-
-    /**
-     * 查询用户信息
-     * @param $uuids
-     * @return false|mixed
-     */
-    public function profileList($uuids)
-    {
-        $requestParams = [
-            'uuid' => $uuids
-        ];
-        return self::commonAPI(self::API_QC_PROFILE_LIST, $requestParams, 'POST');
-    }
 }

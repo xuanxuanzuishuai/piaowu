@@ -7,8 +7,9 @@ class SmsInc
 {
 
     const SEND_TYPE_SINGLE = 1;  //发送单条
-    const SEND_TYPE_BATCH_SAME = 2;  //批量发送，模版变量一致
+    const SEND_TYPE_BATCH_SAME = 2;  //国内：批量发送，模版变量一致
     const SEND_TYPE_BATCH_DIFF = 3;  //批量发送，模版变量不一致
+	const SEND_TYPE_BATCH_SAME_INTERNATIONAL = 4;//国际：批量发送，模版变量一致
 
     const SMS_CENTER_TEMPLATE_CACHE = 'sms_center_template_cache';  //短信中心模版缓存
 
@@ -21,4 +22,5 @@ class SmsInc
     const SMART_SEND_REDPACKAGE_FAIL = 'smart_send_redpackage_fail';        //智能周周领奖白名单发送红包失败模板ID
     const SMART_PAY_RECALL = 'smart_pay_recall';                            //年卡召回页面按钮点击短信模板ID
     const OP_JOIN_ACTIVITY = 'op_join_activity';                            //参加活动的提醒短信模板ID
+    const OP_EXCHANGE_RESULT = 'op_exchange_result';                        //兑课导入结果通知短信
 }

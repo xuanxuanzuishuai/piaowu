@@ -39,6 +39,7 @@ use App\Services\BillMapService;
 use App\Services\CashGrantService;
 use App\Services\CountingActivityAwardService;
 use App\Services\CountingActivitySignService;
+use App\Services\ExchangeCourseService;
 use App\Services\MessageService;
 use App\Services\MiniAppQrService;
 use App\Services\PushMessageService;
@@ -401,6 +402,12 @@ class Consumer extends ControllerBase
             switch ($params['event_type']) {
                 case ThirdPartBillTopic::EVENT_TYPE_IMPORT:
                     $lastId = ThirdPartBillService::handleImport($params['msg_body']);
+                    break;
+                case ThirdPartBillTopic::EVENT_TYPE_EXCHANGE_IMPORT:
+                    ExchangeCourseService::handleExchangePush($params['msg_body']);
+                    break;
+                case ThirdPartBillTopic::EVENT_TYPE_EXCHANGE_IMPORT_FINISH:
+                    ExchangeCourseService::handleExchangePushFinish($params['msg_body']);
                     break;
                 default:
                     SimpleLogger::error('consume_third_part_bill', ['unknown_event_type' => $params]);
