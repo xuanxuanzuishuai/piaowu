@@ -47,7 +47,7 @@ $menuList = [
                 ],
                 [
                     "type" => "view",
-                    "name" => "加入体验营",
+                    "name" => "🎉加入体验营",
                     "url"  => "https://referral.xiaoyezi.com/market/landingWechatTab?ad=0&channel_id=1720"
                 ]
             ],
@@ -68,7 +68,7 @@ $menuList = [
                 [
                     "type" => "view",
                     "name" => "学员故事",
-                    "url" => "https://mp.weixin.qq.com/mp/homepage?__biz=MzU2MjMxNTc5Mw==&hid=2&sn=1884b772776ab74b77312fb4178bd5e1"
+                    "url" => "https://mp.weixin.qq.com/mp/homepage?__biz=MzU2MjMxNTc5Mw==&hid=3&sn=d614b9ca4c7e9e2aa4f7431544f03854"
                 ],
                 [
                     "type" => "view",
