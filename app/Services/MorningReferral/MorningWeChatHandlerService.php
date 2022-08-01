@@ -33,12 +33,11 @@ class MorningWeChatHandlerService
 {
     /**
      * 用户关注公众号
-     * @param $xml
+     * @param $data
      * @return string
      */
-    public static function subscribe($xml)
+    public static function subscribe($data)
     {
-        $data = json_decode(json_encode($xml), true);
         // 推送关注消息
         try {
             (new PushMessageTopic)->pushRuleWx($data, PushMessageTopic::EVENT_WECHAT_MORNING_INTERACTION)->publish();
@@ -49,15 +48,14 @@ class MorningWeChatHandlerService
     }
 
     /**
-     * @param $xml
+     * @param $data
      * @return string
      * @throws Exception
      */
-    public static function menuClickEventHandler($xml)
+    public static function menuClickEventHandler($data)
     {
         // 自定义KEY事件
-        $keyEvent = (string)$xml->EventKey;
-        $data = json_decode(json_encode($xml), true);
+        $keyEvent = $data['EventKey'];
         switch ($keyEvent) {
             case 'PUSH_MSG_USER_SHARE':
                 /** 推荐好友 */
@@ -83,13 +81,17 @@ class MorningWeChatHandlerService
         $event = $msgBody['Event'];
         $keyEvent = $msgBody['EventKey'];
 
-
         SimpleLogger::info('interActionDealMessage student weixin event: ', [$msgBody]);
         if ($msgType != 'event') {
             return;
         }
         // 根据open_id获取用户信息
         $userUuid = (new Morning())->getStudentUuidByOpenId([$openId])[$openId] ?? '';
+        if (empty($userUuid) && $event != 'subscribe') {
+            // 首关不检查是否绑定账号，非首关检查openid是否绑定了账号，未绑定账号引导绑定
+            self::sendBindAccountMsg($openId);
+            return;
+        }
         // 根据用户信息获取用户状态
         $userUuidInfo = (new Morning())->getStudentList([$userUuid])[0] ?? [];
         $ruleStatus = MorningPushMessageService::MORNING_PUSH_USER_ALL;
@@ -104,20 +106,21 @@ class MorningWeChatHandlerService
             'app_id'       => Constants::QC_APP_ID,
             'busi_type'    => Constants::QC_APP_BUSI_WX_ID,
             'student_uuid' => $userUuidInfo['uuid'] ?? '',
+            'user_status'  => $userUuidInfo['status'],
             'student_id'   => $userUuidInfo['id'] ?? '',
             'channel_id'   => 0,
-            'rule_id'      => 0,
+            'rule_info'    => [],
         ];
         // 获取规则id
         if ($event == 'subscribe') {
             /** 关注 */
-            $data['rule_id'] = MessagePushRulesModel::getRuleInfo(Constants::QC_APP_ID, '首次关注', $ruleStatus);
+            $data['rule_info'] = MessagePushRulesModel::getRuleInfo(Constants::QC_APP_ID, '首次关注', $ruleStatus);
         } elseif ($event == 'CLICK') {
             /** 自定义点击事件 */
             switch ($keyEvent) {
                 case 'PUSH_MSG_USER_SHARE':
                     // 推荐好友
-                    $data['rule_id'] = MessagePushRulesModel::getRuleInfo(Constants::QC_APP_ID, '推荐好友', $ruleStatus);
+                    $data['rule_info'] = MessagePushRulesModel::getRuleInfo(Constants::QC_APP_ID, '推荐好友', $ruleStatus);
                     $data['channel_id'] = MorningDictConstants::get(MorningDictConstants::MORNING_REFERRAL_CONFIG, 'PUSH_MSG_USER_SHARE_CHANNEL_ID');
                     break;
                 default:
@@ -125,10 +128,11 @@ class MorningWeChatHandlerService
             }
         }
         // 推送规则不能为空
-        if (empty($data['rule_id'])) {
-            SimpleLogger::info('interActionDealMessage student weixin rule id empty: ', [$msgBody, $data]);
+        if (empty($data['rule_info'])) {
+            SimpleLogger::info('interActionDealMessage student weixin rule empty: ', [$msgBody, $data]);
             return;
         }
+        $data['rule_info']['content'] = json_decode($data['rule_info']['content'], true);
         self::sendWxMessage($data);
     }
 
@@ -141,7 +145,7 @@ class MorningWeChatHandlerService
      */
     public static function sendWxMessage($data, $activityType = MessageRecordModel::ACTIVITY_TYPE_AUTO_PUSH)
     {
-        $messageRule = MessageService::getMessagePushRuleByID($data['rule_id']);
+        $messageRule = $data['rule_info'];
         //发送客服消息
         if ($messageRule['type'] == MessagePushRulesModel::PUSH_TYPE_CUSTOMER) {
             $res = self::pushCustomMessage($messageRule, $data, $data['app_id'], $data['busi_type']);
@@ -218,8 +222,9 @@ class MorningWeChatHandlerService
         $posterName = $item['name'] ?? ''; // message_push_rules表中name字段作为海报名称
         $config = DictConstants::getSet(DictConstants::TEMPLATE_POSTER_CONFIG);
         $extParams = [
-            'poster_id'    => PosterModel::getIdByPath($item['path'], ['name' => $posterName]),
-            'user_uuid' => $studentUuid,
+            'poster_id'   => PosterModel::getIdByPath($item['value'], ['name' => $posterName]),
+            'user_uuid'   => $studentUuid,
+            'user_status' => $data['user_status'] ?? 0,
         ];
         $qrInfo = MiniAppQrService::getUserMiniAppQr(
             Constants::QC_APP_ID,
@@ -231,7 +236,7 @@ class MorningWeChatHandlerService
             $extParams
         );
         return PosterService::generateQRPoster(
-            $item['path'],
+            $item['value'],
             $config,
             $studentId,
             Constants::USER_TYPE_STUDENT,
@@ -239,5 +244,37 @@ class MorningWeChatHandlerService
             $extParams,
             $qrInfo
         );
+    }
+
+    /**
+     * 发送绑定消息
+     * @param $openId
+     * @return void
+     * @throws RunTimeException
+     */
+    public static function sendBindAccountMsg($openId)
+    {
+        // 没有绑定公众号，提示绑定账号
+        list($openIdNotBindUserMsgId, $bindUserUrl) = MorningDictConstants::get(MorningDictConstants::MORNING_REFERRAL_CONFIG, [
+            'OPEN_ID_NOT_BIND_USER_MSG_ID',
+            'WX_BIND_USER_URL',
+        ]);
+        $res = self::pushCustomMessage(
+            [
+                    'content' => [
+                        [
+                            'type'  => WeChatConfigModel::CONTENT_TYPE_TEXT,
+                            'value' => WeChatConfigModel::getRecord(['id' => $openIdNotBindUserMsgId])['content'],
+                        ]
+                    ]
+            ],
+            [
+                'open_id'  => $openId,
+                'jump_url' => $bindUserUrl,
+            ],
+            Constants::QC_APP_ID,
+            Constants::QC_APP_BUSI_WX_ID
+        );
+        SimpleLogger::info('interActionDealMessage student weixin not bind user tip bind account: ', [$res]);
     }
 }

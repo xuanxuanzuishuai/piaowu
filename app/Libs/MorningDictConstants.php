@@ -22,7 +22,31 @@ class MorningDictConstants extends DictConstants
     const MORNING_REFERRAL_CONFIG = [
         'type' => 'morning_referral_config',
         'keys' => [
-            'PUSH_MSG_USER_SHARE_CHANNEL_ID'
+            'PUSH_MSG_USER_SHARE_CHANNEL_ID',
+            'WX_BIND_USER_URL',
+            'OPEN_ID_NOT_BIND_USER_MSG_ID'
+        ]
+    ];
+
+    // 清晨学生状态对应的文字
+    const MORNING_STUDENT_STATUS = [
+        'type' => 'morning_student_status',
+        'keys' => [
+            Constants::MORNING_STUDENT_STATUS_CANCEL,
+            Constants::MORNING_STUDENT_STATUS_REGISTE,
+            Constants::MORNING_STUDENT_STATUS_TRAIL,
+            Constants::MORNING_STUDENT_STATUS_TRAIL_EXPIRE,
+            Constants::MORNING_STUDENT_STATUS_NORMAL,
+            Constants::MORNING_STUDENT_STATUS_NORMAL_EXPIRE,
+        ]
+    ];
+
+    // 清晨不同用户状态对应的不同产品包
+    const MORNING_STUDENT_STATUS_PACKAGE = [
+        'type' => 'morning_student_status_package',
+        'keys' => [
+            Constants::MORNING_STUDENT_STATUS_NORMAL,
+            Constants::MORNING_STUDENT_STATUS_NORMAL_EXPIRE,
         ]
     ];
 }

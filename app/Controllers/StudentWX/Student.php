@@ -14,6 +14,8 @@ use App\Libs\DictConstants;
 use App\Libs\Dss;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
+use App\Libs\Morning;
+use App\Libs\MorningDictConstants;
 use App\Libs\NewSMS;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
@@ -434,7 +436,15 @@ class Student extends ControllerBase
         if (!empty($sceneData['app_id']) && $sceneData['app_id'] != Constants::QC_APP_ID) {
             $sceneData = [];
         }
-        $sceneData['student_uuid'] = $sceneData['user_uuid'];
+        // 生成二维码状态对应的中文
+        $userStatusList = MorningDictConstants::getSet(MorningDictConstants::MORNING_STUDENT_STATUS);
+        $sceneData['user_status_zh'] = $userStatusList[$sceneData['user_status']] ?? '未知-' . $sceneData['user_status'];
+        // 获取学生状态
+        $studentInfo = (new Morning())->getStudentList([$sceneData['user_uuid']])[0] ?? [];
+        $sceneData['user_current_moment_status'] = $studentInfo['status'] ?? 0;
+        // 学生状态对应的产品包id
+        $sceneData['package_id'] = intval(MorningDictConstants::get(MorningDictConstants::MORNING_STUDENT_STATUS_PACKAGE, $sceneData['user_current_moment_status']));
+
         return HttpHelper::buildResponse($response, $sceneData);
     }
 }

@@ -19,6 +19,7 @@ use App\Models\MorningReferralDetailModel;
 use App\Models\MorningReferralStatisticsModel;
 use App\Models\QrInfoOpCHModel;
 use App\Models\StudentReferralStudentStatisticsModel;
+use App\Services\Queue\Track\CommonTrackConsumerService;
 use Exception;
 
 class MorningReferralStatisticsService
@@ -34,6 +35,34 @@ class MorningReferralStatisticsService
         if (empty($data)) {
             return false;
         }
+        // 获取用户信息
+        $uuid = $data['uuid'] ?? '';
+        if (empty($uuid)) {
+            SimpleLogger::info("create morning referral uuid is not found", [$uuid]);
+            return false;
+        }
+        // 获取学生状态
+        $studentInfo = (new Morning())->getStudentList([$uuid])[0] ?? [];
+        if (empty($studentInfo)) {
+            SimpleLogger::info("create morning referral get user info is empty", [$uuid, $studentInfo]);
+            return false;
+        }
+        // 读取用户是否存在转介绍关系
+        list($isHasReferral, $hasReferralInfo) = self::checkStudentReferral($uuid);
+        if ($isHasReferral) {
+            SimpleLogger::info("create morning referral student is has referral", [$isHasReferral, $hasReferralInfo]);
+            // 存在转介绍关系，不应再创建清晨转介绍关系
+            // 如果是清晨存在了转介绍关系，那么判断是否是系统课，如果是系统课并且当前转介绍关系进度是未购买系统课则更新成购买系统课
+            if (!empty($paramsData['msg_body']['order_type']) && $paramsData['msg_body']['order_type'] == CommonTrackConsumerService::ORDER_TYPE_NORMAL) {
+                if (!empty($hasReferralInfo['morning_referral'])) {
+                    if (!empty($hasReferralInfo['morning_referral']['last_stage']) && $hasReferralInfo['morning_referral']['last_stage'] == MorningReferralDetailModel::STAGE_TRIAL) {
+                        $updateReferralStage = self::updateReferralStage($uuid);
+                        SimpleLogger::info("update morning referral student stage res:", [$isHasReferral, $updateReferralStage]);
+                    }
+                }
+            }
+            return false;
+        }
         // 接收qr_id
         $qrId = $data['extra_params']['scene'] ?? '';
         if (empty($qrId)) {
@@ -46,23 +75,9 @@ class MorningReferralStatisticsService
             SimpleLogger::info("create morning referral qr info is not found", [$qrInfo]);
             return false;
         }
-        // 获取用户信息
-        $uuid = $data['uuid'] ?? '';
-        if (empty($uuid)) {
-            SimpleLogger::info("create morning referral uuid is not found", [$uuid]);
-            return false;
-        }
-        // 获取学生状态
-        $studentInfo = (new Morning())->getStudentList([$uuid])[0] ?? [];
         // 只有学生是注册用户,体验课用户可以创建转介绍关系
         if (empty($studentInfo['status']) || !in_array($studentInfo['status'], [Constants::MORNING_STUDENT_STATUS_REGISTE, Constants::MORNING_STUDENT_STATUS_TRAIL])) {
             SimpleLogger::info("create morning referral student status not error", [$studentInfo]);
-            return false;
-        }
-        // 读取用户是否存在转介绍关系
-        list($isHasReferral, $hasReferralInfo) = self::checkStudentReferral($uuid);
-        if ($isHasReferral) {
-            SimpleLogger::info("create morning referral student is has referral", [$isHasReferral, $hasReferralInfo]);
             return false;
         }
         // 读取推荐人信息
@@ -183,5 +198,15 @@ class MorningReferralStatisticsService
             $db->rollBack();
         }
         return true;
+    }
+
+    /**
+     * 更新转介绍关系进度为购买年卡
+     * @param $studentUuid
+     * @return bool
+     */
+    public static function updateReferralStage($studentUuid)
+    {
+        return self::createStudentReferral($studentUuid, [], MorningReferralDetailModel::STAGE_FORMAL);
     }
 }

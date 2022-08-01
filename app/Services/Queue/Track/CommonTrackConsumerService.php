@@ -35,11 +35,9 @@ class CommonTrackConsumerService extends CommonTrackTopic
             SimpleLogger::error("undefined order type", []);
         }
 
-        // 体验课-处理转介绍关系
-        if (!empty($paramsData['msg_body']['order_type']) && $paramsData['msg_body']['order_type'] == self::ORDER_TYPE_TRAIL) {
-            $res = MorningReferralStatisticsService::createReferral($params['msg_body'] ?? []);
-            SimpleLogger::info("morning create referral res:", [$res]);
-        }
+        // 处理转介绍关系
+        $res = MorningReferralStatisticsService::createReferral($params['msg_body'] ?? []);
+        SimpleLogger::info("morning create referral res:", [$res]);
     }
 
     /**

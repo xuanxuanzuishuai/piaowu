@@ -65,7 +65,7 @@ class Morning
     public function getStudentUuidByOpenId($openIds)
     {
         SimpleLogger::info('getStudentUuidByOpenId params', [$openIds]);
-        if (empty($studentUuids)) {
+        if (empty($openIds)) {
             return [];
         }
         $params = [
