@@ -48,7 +48,7 @@ class QrInfoService
             'check_active_id'     => 'check_active_id',         // 海报唯一码校验活动ID
             'from_service'        => 'from_service',            // 请求来源服务
             'employee_uuid'       => 'employee_uuid',           // 员工uuid
-            'student_uuid'        => 'student_uuid',            // 学生uuid
+            'user_uuid'           => 'user_uuid',               // 学生uuid
         ];
         if (!isset($qrData['check_active_id'])) {
             $qrData['check_active_id'] = ($onlyReferralBaseField == false) ? 0 : PosterService::getCheckActivityId($appId, $qrData['user_id'] ?? 0);

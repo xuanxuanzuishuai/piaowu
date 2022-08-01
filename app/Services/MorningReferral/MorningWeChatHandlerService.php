@@ -219,7 +219,7 @@ class MorningWeChatHandlerService
         $config = DictConstants::getSet(DictConstants::TEMPLATE_POSTER_CONFIG);
         $extParams = [
             'poster_id'    => PosterModel::getIdByPath($item['path'], ['name' => $posterName]),
-            'student_uuid' => $studentUuid,
+            'user_uuid' => $studentUuid,
         ];
         $qrInfo = MiniAppQrService::getUserMiniAppQr(
             Constants::QC_APP_ID,

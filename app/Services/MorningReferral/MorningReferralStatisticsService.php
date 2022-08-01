@@ -8,6 +8,7 @@
 namespace App\Services\MorningReferral;
 
 use App\Libs\Constants;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Morning;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
@@ -142,13 +143,13 @@ class MorningReferralStatisticsService
                 $refRes = MorningReferralStatisticsModel::insertRecord($referralData);
                 if (empty($refRes)) {
                     SimpleLogger::info("create student referral fail.", [$studentUuid, $referralData]);
-                    $db->rollBack();
+                    throw new RunTimeException(['create student referral fail.']);
                 }
                 // 补全注册进度信息
                 $detailData[] = [
                     'student_uuid' => $studentUuid,
                     'stage'        => MorningReferralDetailModel::STAGE_REGISTER,
-                    'create_time'  => ErpStudentModel::getRecord(['uuid' => $studentUuid], ['create_time'])['create_time'] ?? $time,
+                    'create_time'  => ErpStudentModel::getRecord(['uuid' => $studentUuid], ['create_time'])['create_time'] ?? 0,
                 ];
             } elseif ($stage == MorningReferralDetailModel::STAGE_FORMAL) {
                 // 购买年卡（系统课）
@@ -161,7 +162,7 @@ class MorningReferralStatisticsService
                 $refRes = MorningReferralStatisticsModel::batchUpdateRecord([], $where);
                 if (empty($refRes)) {
                     SimpleLogger::info("update student referral stage fail.", [$studentUuid, $where, $updateData]);
-                    $db->rollBack();
+                    throw new RunTimeException(['update student referral stage fail.']);
                 }
             }
 
@@ -174,7 +175,7 @@ class MorningReferralStatisticsService
             $detailRes = MorningReferralDetailModel::batchInsert($detailData);
             if (empty($detailRes)) {
                 SimpleLogger::info("create student referral detail fail.", [$studentUuid, $detailData]);
-                $db->rollBack();
+                throw new RunTimeException(['create student referral detail fail.']);
             }
             $db->commit();
         } catch (Exception $e) {

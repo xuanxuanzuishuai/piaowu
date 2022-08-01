@@ -434,9 +434,7 @@ class Student extends ControllerBase
         if (!empty($sceneData['app_id']) && $sceneData['app_id'] != Constants::QC_APP_ID) {
             $sceneData = [];
         }
-        if (!empty($sceneData)) {
-            $sceneData['student_uuid'] = json_decode($sceneData['qr_data'], true)['student_uuid'] ?? '';
-        }
+        $sceneData['student_uuid'] = $sceneData['user_uuid'];
         return HttpHelper::buildResponse($response, $sceneData);
     }
 }

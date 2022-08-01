@@ -45,7 +45,8 @@ class WxCallback extends ControllerBase
         } else { //text, image, voice, location ... 等客服消息
             // MorningWeChatHandlerService::autoReply($xml);
         }
-        $response->getBody()->write($result);
+        SimpleLogger::info("weixin callback event result.", [$result]);
+        $response->getBody()->write('');
         return $response;
     }
 }

@@ -59,6 +59,7 @@ class QrInfoOpCHModel
                 'qr_sign',
                 'qr_ticket',
                 'user_id',
+                'user_uuid',
                 'user_type',
                 'channel_id',
                 'landing_type',
