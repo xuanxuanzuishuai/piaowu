@@ -359,7 +359,7 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
 		// 非全国
 		if ($activityCountryCode != OperationActivityModel::ACTIVITY_COUNTRY_ALL) {
 			// 学员区号为空
-			if (empty($studentInfo['country_code'])) {
+			if (empty($studentCountryCode)) {
 				SimpleLogger::info("checkStudentCountryCodeRight student country code empty:", [$studentCountryCode, $activityCountryCode]);
 				return false;
 			}

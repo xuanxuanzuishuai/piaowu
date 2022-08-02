@@ -88,6 +88,7 @@ class RealService extends LimitTimeActivityBaseAbstract
 		if (empty($studentIdAttribute['is_valid_pay'])) {
 			throw new RunTimeException(['student_pay_status_no'], [$studentIdAttribute]);
 		}
+		$this->studentInfo['first_pay_time'] = $studentIdAttribute['first_pay_time'];
 		return $studentIdAttribute;
 	}
 

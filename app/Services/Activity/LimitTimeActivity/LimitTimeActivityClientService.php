@@ -8,7 +8,6 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssUserQrTicketModel;
-use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\LimitTimeActivity\LimitTimeActivityAwardRuleModel;
 use App\Models\LimitTimeActivity\LimitTimeActivityHtmlConfigModel;
 use App\Models\LimitTimeActivity\LimitTimeActivityModel;
