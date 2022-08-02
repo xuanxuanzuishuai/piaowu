@@ -1309,6 +1309,8 @@ class DictConstants {
             'push_wx_msg_every_time_limit',
             'real_student_is_normal_attr_id',
             'show_tab_list',
+			'special_show_tab_list',//回归测试使用tab
+			'special_uuids',//回归测试人uuid
         ]
     ];
     // 限时活动智能奖励类型
@@ -1326,7 +1328,6 @@ class DictConstants {
            Constants::AWARD_TYPE_MAGIC_STONE,
         ]
     ];
-
     /**
      * 单个获取op系统dict配置数据
      * @param $type

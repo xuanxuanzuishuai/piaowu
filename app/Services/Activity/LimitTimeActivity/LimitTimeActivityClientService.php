@@ -480,11 +480,17 @@ class LimitTimeActivityClientService
 
 	/**
 	 * 活动tab展示列表
+	 * @param string $uuid
 	 * @return array
 	 */
-	public static function getActivityShowTab(): array
+	public static function getActivityShowTab(string $uuid): array
 	{
-		$dictData = DictConstants::get(DictConstants::LIMIT_TIME_ACTIVITY_CONFIG, 'show_tab_list');
-		return array_values(json_decode($dictData, true));
+		$dictData = DictConstants::getSet(DictConstants::LIMIT_TIME_ACTIVITY_CONFIG);
+		if (!empty($dictData['special_uuids']) && in_array($uuid, explode(',', $dictData['special_uuids']))) {
+			$tab = $dictData['special_show_tab_list'];
+		} else {
+			$tab = $dictData['show_tab_list'];
+		}
+		return array_values(json_decode($tab, true));
 	}
 }

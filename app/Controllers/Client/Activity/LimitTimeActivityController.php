@@ -236,7 +236,7 @@ class LimitTimeActivityController extends ControllerBase
 	 */
 	public function activityShowTab(Request $request, Response $response): Response
 	{
-		$data = LimitTimeActivityClientService::getActivityShowTab();
+		$data = LimitTimeActivityClientService::getActivityShowTab($this->ci['user_info']['uuid']);
 		return HttpHelper::buildResponse($response, $data);
 	}
 }
