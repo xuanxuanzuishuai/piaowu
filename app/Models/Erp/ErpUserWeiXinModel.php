@@ -65,11 +65,12 @@ class ErpUserWeiXinModel extends ErpModel
     public static function getStudentWxInfo($userId)
     {
         $userWxInfo = self::getRecord([
-            'user_id' => $userId,
-            'app_id' => Constants::REAL_APP_ID,
+            'user_id'   => $userId,
+            'app_id'    => Constants::REAL_APP_ID,
             'user_type' => self::PANDA_USER_APP,
-            'status' => self::STATUS_NORMAL,
+            'status'    => self::STATUS_NORMAL,
             'busi_type' => self::BUSI_TYPE_STUDENT_SERVER,
+            'ORDER'     => ['id' => 'DESC'],
         ]);
         return is_array($userWxInfo) ? $userWxInfo : [];
     }

@@ -184,7 +184,7 @@ class ScriptLimitTimeActivityPush
             $wxTable = ErpUserWeiXinModel::getTableNameWithDb();
             $studentAttrTable = ErpStudentAttributeModel::getTableNameWithDb();
             $attributeDict = DictConstants::get(DictConstants::LIMIT_TIME_ACTIVITY_CONFIG, 'real_student_is_normal_attr_id');
-            $sql = 'SELECT s.id as student_id,s.country_code, max(sattr.attribute_id) as student_attribute  FROM ' .
+            $sql = 'SELECT s.id as student_id,s.country_code,s.uuid as student_uuid,max(sattr.attribute_id) as student_attribute  FROM ' .
                 ' ' . $studentTable . ' as s' .
                 ' INNER JOIN ' . $studentAppTable . ' as sapp on sapp.student_id=s.id' .
                 ' INNER JOIN ' . $wxTable . ' as wx on wx.user_id=s.id' .
@@ -193,7 +193,8 @@ class ScriptLimitTimeActivityPush
                 ' AND s.id >' . $lastId .
                 ' AND wx.app_id=' . $appId .
                 ' AND wx.status=' . ErpUserWeiXinModel::STATUS_NORMAL .
-                ' AND sattr.attribute_id in (' . $attributeDict . ')';
+                ' AND sattr.attribute_id in (' . $attributeDict . ')' .
+                ' GROUP BY s.id';
         } else {
             $this->saveLog("get student where app id error", [$appId]);
             return [];
