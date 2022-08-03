@@ -273,8 +273,8 @@ class AutoCheckPicture
 
         foreach ($response['ret'] as $key => $val) {
             $issetDel = false; //是否包含有删除
-            $word     = $val['word'];
-            //1.判断是否分享到朋友圈
+			$word     = str_replace(' ','',$val['word']);
+			//1.判断是否分享到朋友圈
             if (!$shareType && ($word == '朋友圈' || $word == '详情') && $val['rect']['top'] < 200) {
                 $shareType = true;
                 continue;
