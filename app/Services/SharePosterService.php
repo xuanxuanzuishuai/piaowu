@@ -153,7 +153,11 @@ class SharePosterService
         $joinRecordFormat = $joinVerifyData = [];
         foreach ($joinRecord as $jk => $jv) {
             $joinRecordFormat[$jv['activity_id'] . '_' . (empty($jv['task_num']) ? 1 : $jv['task_num'])] = $jv;
-            $joinVerifyData[$jv['activity_id']][$jv['verify_status']] += 1;
+            if (isset($joinVerifyData[$jv['activity_id']][$jv['verify_status']])) {
+                $joinVerifyData[$jv['activity_id']][$jv['verify_status']] += 1;
+            } else {
+                $joinVerifyData[$jv['activity_id']][$jv['verify_status']] = 1;
+            }
         }
         foreach ($activityBaseInfo as $info) {
             // 最早的活动不支持多次分享 所以task_num_count会是0， 给默认1
@@ -189,7 +193,7 @@ class SharePosterService
                 $tmpFormatData['task_list'] = array_map(function ($tmv) use ($joinRecordFormat, $info, $studentId) {
                     list($tmpTaskNode['task_num'], $tmpTaskNode['award_amount'], $tmpTaskNode['award_type'],) = explode('-', $tmv);
                     $tmpTaskNode['verify_status'] = (int)$joinRecordFormat[$info['activity_id'] . '_' . $tmpTaskNode['task_num']]['verify_status'];
-                    $tmpTaskNode['award_status'] = $joinRecordFormat[$info['activity_id'] . '_' . $tmpTaskNode['task_num']]['award_status'];
+                    // $tmpTaskNode['award_status'] = $joinRecordFormat[$info['activity_id'] . '_' . $tmpTaskNode['task_num']]['award_status'];
                     $tmpTaskNode['points_award_id'] = $joinRecordFormat[$info['activity_id'] . '_' . $tmpTaskNode['task_num']]['points_award_id'];
                     $tmpTaskNode['verify_time'] = $joinRecordFormat[$info['activity_id'] . '_' . $tmpTaskNode['task_num']]['verify_time'];
                     $tmpFormatAwardData = self::formatSharePosterAwardStatus($studentId, $info, $tmpTaskNode);
