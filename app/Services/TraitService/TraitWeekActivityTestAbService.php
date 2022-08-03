@@ -245,7 +245,7 @@ trait TraitWeekActivityTestAbService
     public static function getStudentTestAbPoster($studentId, $activityId, $extData = [])
     {
         // 查询是否已经有命中的海报，如果有直接返回命中的海报
-        $info = $hasHitPoster = WeekActivityUserAllocationABModel::getRecord(['activity_id' => $activityId, 'student_id' => $studentId]);
+        $info = $hasHitPoster = self::getStudentHitPoster($activityId, $studentId);
         $activityInfo = WeekActivityModel::getRecord(['activity_id' => $activityId]);
         SimpleLogger::info("qingfeng-test-getStudentTestAbPoster", ['msg' => 'msg-start', 'student_id' => $studentId, 'activity_id' => $activityId, 'has_ab_test' => $activityInfo['has_ab_test']]);
         // 是否开启了ab测， 没有开启直接返回已经命中的海拔或者空
@@ -476,5 +476,22 @@ trait TraitWeekActivityTestAbService
         $posterInfo['poster_ascription'] = ActivityPosterModel::POSTER_ASCRIPTION_STUDENT;
         $posterInfo['poster_url'] = $testAbPosterInfo['poster_url'] ?? '';
         return [true, $posterInfo];
+    }
+
+    /**
+     * 获取学生命中海报
+     * @param $activityId
+     * @param $studentId
+     * @return mixed
+     */
+    public static function getStudentHitPoster($activityId, $studentId)
+    {
+        $redis = RedisDB::getConn();
+        $redisData = self::getRedisKey($activityId);
+        return WeekActivityUserAllocationABModel::getRecord([
+            'activity_id' => $activityId,
+            'student_id' => $studentId,
+            'ab_version' => $redis->get($redisData[2]),
+        ]);
     }
 }
