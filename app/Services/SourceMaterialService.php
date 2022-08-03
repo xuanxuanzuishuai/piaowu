@@ -651,7 +651,7 @@ class SourceMaterialService
 
         $defaultBanner = DictConstants::get(DictConstants::SALE_SHOP_CONFIG, 'dafault_banner');
         if (empty($bannerLists)) {
-            array_push($bannerLists, ['id' => 1, 'image_path' => $defaultBanner, 'jump_url' => '']);
+            $bannerLists[] = ['id' => 1, 'image_path' => $defaultBanner, 'jump_url' => '', 'jump_rule' => BannerConfigModel::NOT_ALLOW_JUMP];
         }
         foreach ($bannerLists as &$val) {
             $val['image_path'] = AliOSS::replaceCdnDomainForDss($val['image_path']);
