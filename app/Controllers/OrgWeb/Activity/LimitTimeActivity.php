@@ -13,6 +13,7 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\OperationActivityModel;
 use App\Services\Activity\LimitTimeActivity\LimitTimeActivityAdminService;
+use ClickHouseDB\Transport\Http;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -76,11 +77,6 @@ class LimitTimeActivity extends ControllerBase
                 'error_code' => 'activity_type_is_required'
             ],
             [
-                'key'        => 'award_type',
-                'type'       => 'required',
-                'error_code' => 'award_type_is_required'
-            ],
-            [
                 'key'        => 'award_prize_type',
                 'type'       => 'in',
                 'value'      => [OperationActivityModel::AWARD_PRIZE_TYPE_IN_TIME, OperationActivityModel::AWARD_PRIZE_TYPE_DELAY],
@@ -98,17 +94,6 @@ class LimitTimeActivity extends ControllerBase
                 'error_code' => 'delay_day_max_is_ten'
             ],
             /** 页面配置参数 */
-            [
-                'key'        => 'guide_word',
-                'type'       => 'required',
-                'error_code' => 'guide_word_is_required'
-            ],
-            [
-                'key'        => 'guide_word',
-                'type'       => 'lengthMax',
-                'value'      => 1000,
-                'error_code' => 'guide_word_length_invalid'
-            ],
             [
                 'key'        => 'share_word',
                 'type'       => 'required',
@@ -157,16 +142,6 @@ class LimitTimeActivity extends ControllerBase
                 'error_code' => 'personality_poster_button_img_is_required'
             ],
             [
-                'key'        => 'poster_prompt',
-                'type'       => 'required',
-                'error_code' => 'poster_prompt_is_required'
-            ],
-            [
-                'key'        => 'poster_make_button_img',
-                'type'       => 'required',
-                'error_code' => 'poster_make_button_img_is_required'
-            ],
-            [
                 'key'        => 'share_poster_prompt',
                 'type'       => 'required',
                 'error_code' => 'share_poster_prompt_is_required'
@@ -178,11 +153,46 @@ class LimitTimeActivity extends ControllerBase
             ],
         ];
         $params = $request->getParams();
+        // 智能和真人必填字段是不一样的，所以要根据app_id区分，并且补全默认值
+        if ($params['app_id'] == Constants::SMART_APP_ID){
+            $rules = array_merge($rules, [
+                [
+                    'key'        => 'guide_word',
+                    'type'       => 'required',
+                    'error_code' => 'guide_word_is_required'
+                ],
+                [
+                    'key'        => 'guide_word',
+                    'type'       => 'lengthMax',
+                    'value'      => 1000,
+                    'error_code' => 'guide_word_length_invalid'
+                ],
+                [
+                    'key'        => 'award_type',
+                    'type'       => 'required',
+                    'error_code' => 'award_type_is_error'
+                ],
+                [
+                    'key'        => 'poster_prompt',
+                    'type'       => 'required',
+                    'error_code' => 'poster_prompt_is_required'
+                ],
+                [
+                    'key'        => 'poster_make_button_img',
+                    'type'       => 'required',
+                    'error_code' => 'poster_make_button_img_is_required'
+                ],
+            ]);
+        } elseif ($params['app_id'] == Constants::REAL_APP_ID) {
+            $params['award_type'] = Constants::AWARD_TYPE_MAGIC_STONE;
+        }
+
         $result = Valid::validate($params, $rules);
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         $employeeId = $this->getEmployeeId();
+        // 所有奖励都立即发放
         if (empty($params['award_prize_type'])) {
             $params['award_prize_type'] = OperationActivityModel::AWARD_PRIZE_TYPE_IN_TIME;
         }

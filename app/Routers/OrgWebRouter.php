@@ -443,5 +443,9 @@ class OrgWebRouter extends RouterBase
         '/op_web/exchange_course/activate_sms' => ['method' =>['post'], 'call' => ExchangeCourse::class . ':activateSms','middles'=>[]],
         //兑课excel模板下载
         '/op_web/exchange_course/down_template' => ['method' =>['post'], 'call' => ExchangeCourse::class . ':downTemplate'],
+        '/op_web/real_limit_time_activity/save' => ['method' => ['post'], 'call' => LimitTimeActivity::class . ':save'],
+        '/op_web/real_limit_time_activity/list' => ['method' => ['get'], 'call' => LimitTimeActivity::class . ':list'],
+        '/op_web/real_limit_time_activity/detail' => ['method' => ['get'], 'call' => LimitTimeActivity::class . ':detail'],
+        '/op_web/real_limit_time_activity/enable_status' => ['method' => ['post'], 'call' => LimitTimeActivity::class . ':editEnableStatus'],
     ];
 }

@@ -34,8 +34,8 @@ class ClientAuthMiddleware extends MiddlewareBase
 	public function __invoke(Request $request, Response $response, $next): Response
 	{
 		//header头中携带业务线AppId和FromType参数，依据不同业务线和不同平台类型获取登陆验证标识
-		$appId = (int)$request->getHeader('app-id')[0];
-		$fromType = $request->getHeader('from-type')[0];
+		$appId = $request->getHeader('app-id')[0]??$request->getHeader('AppId')[0];
+		$fromType = $request->getHeader('from-type')[0]??$request->getHeader('FromType')[0];
 		if (empty($appId) || empty($fromType)) {
 			throw new RunTimeException(['app_id_or_from_type_miss']);
 		}
@@ -45,7 +45,6 @@ class ClientAuthMiddleware extends MiddlewareBase
 		//验证登陆态以及账户信息
 		switch ($fromType) {
 			case Constants::FROM_TYPE_SMART_STUDENT_H5:
-			case Constants::FROM_TYPE_REAL_STUDENT_APP:
 			case Constants::FROM_TYPE_REAL_STUDENT_H5:
 				throw new RunTimeException(['middleware_undo']);
 			case Constants::FROM_TYPE_SMART_STUDENT_WX:
@@ -54,8 +53,9 @@ class ClientAuthMiddleware extends MiddlewareBase
 			case Constants::FROM_TYPE_SMART_STUDENT_APP:
 				self::smartStudentAppAuthCheck($request);
 				break;
+			case Constants::FROM_TYPE_REAL_STUDENT_APP:
 			case Constants::FROM_TYPE_REAL_STUDENT_WX:
-				self::realStudentWxAuthCheck($request);
+				self::realStudentWxAndAppAuthCheck($request);
 				break;
 		}
 		$this->container['app_id'] = $appId;
@@ -104,7 +104,7 @@ class ClientAuthMiddleware extends MiddlewareBase
 	 * @param Request $request
 	 * @throws RunTimeException
 	 */
-	private function realStudentWxAuthCheck(Request $request)
+	private function realStudentWxAndAppAuthCheck(Request $request)
 	{
 		//获取header头中账户ID数据
 		$userId = (int)$request->getHeader('UserId')[0];

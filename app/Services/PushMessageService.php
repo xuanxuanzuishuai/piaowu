@@ -383,6 +383,7 @@ class PushMessageService
         $userId = $msgBody['user_id'] ?? 0;
         $wechatConfigId = $msgBody['wechat_config_id'] ?? 0;
         $replaceParams = $msgBody['replace_params'] ?? [];
+        SimpleLogger::info('sendUserWxMsg params', [$msgBody]);
         //得到奖励用户的微信信息
         $userInfo = UserService::getUserWeiXinInfoByUserId($appId, $userId, DssUserWeiXinModel::USER_TYPE_STUDENT, DssUserWeiXinModel::BUSI_TYPE_STUDENT_SERVER);
         if (empty($userInfo)) {

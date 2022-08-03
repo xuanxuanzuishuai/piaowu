@@ -133,9 +133,9 @@ class LimitTimeActivityAdminService
             // 部分用户时校验部分用户指定条件
             if (empty($targetUser['target_user_first_pay_time_start']) && empty($targetUser['target_user_first_pay_time_end']) && empty($targetUser['invitation_num'])) {
                 throw new RunTimeException(['target_user_empty']);
-            } elseif (!empty($targetUser['target_user_first_pay_time_start']) && empty($targetUser['target_user_first_pay_time_end'])){
+            } elseif (!empty($targetUser['target_user_first_pay_time_start']) && empty($targetUser['target_user_first_pay_time_end'])) {
                 throw new RunTimeException(['target_user_first_pay_empty']);
-            } elseif (empty($targetUser['target_user_first_pay_time_start']) && !empty($targetUser['target_user_first_pay_time_end'])){
+            } elseif (empty($targetUser['target_user_first_pay_time_start']) && !empty($targetUser['target_user_first_pay_time_end'])) {
                 throw new RunTimeException(['target_user_first_pay_empty']);
             }
             // 格式化付费时间  去掉时分秒
@@ -288,6 +288,10 @@ class LimitTimeActivityAdminService
             if (empty($activityInfo)) {
                 throw new RunTimeException(['record_not_found']);
             }
+            // 禁用的活动不能编辑
+            if ($activityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_DISABLE) {
+                throw new RunTimeException(['activity_enable_not_modify']);
+            }
             // 删掉创建时的不要参数
             unset($operationActivityData['create_time'], $activityData['create_time'], $activityData['enable_status'], $htmlConfig['create_time']);
             // 活动启用且活动开始后不可编辑开始与结束时间
@@ -298,14 +302,9 @@ class LimitTimeActivityAdminService
                 if ($activityData['end_time'] != $activityInfo['end_time']) {
                     throw new RunTimeException(['activity_end_time_not_modify']);
                 }
-            }
-            // 如果是非待启用状态 - 某些字段不能编辑
-            // 修改字段进行限制
-            if ($activityInfo['enable_status'] != OperationActivityModel::ENABLE_STATUS_OFF) {
+                // 活动启用且开始后只能编辑指定信息
                 $activityData = [
                     'activity_name' => $activityData['activity_name'],
-                    'end_time'      => $activityData['end_time'],
-                    'start_time'      => $activityData['start_time'],
                     'update_time'   => $activityData['update_time'],
                     'operator_id'   => $activityData['operator_id'],
                 ];
@@ -364,6 +363,10 @@ class LimitTimeActivityAdminService
             return true;
         }
         if ($enableStatus == OperationActivityModel::ENABLE_STATUS_ON) {
+            // 禁用的活动不能再启用
+            if ($activityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_DISABLE) {
+                throw new RunTimeException(['activity_enable_not_start']);
+            }
             // 如果是启用活动 - 校验活动是否允许启动
             $conflictData = LimitTimeActivityBaseAbstract::getRangeTimeEnableActivity($activityInfo['app_id'], $activityInfo['start_time'], $activityInfo['end_time']);
             if (!empty($conflictData)) {
@@ -436,17 +439,19 @@ class LimitTimeActivityAdminService
             'list'        => [],
         ];
         $appId = $params['app_id'];
-        // 如果存在学员名称和手机号，用名称和手机号换取uuid
-        $mobileUUID = LimitTimeActivityBaseAbstract::getAppObj($appId)->getStudentInfoByMobile(!empty($params['student_mobile']) ? [$params['student_mobile']] : []);
-        $studentNameUUID = LimitTimeActivityBaseAbstract::getAppObj($appId)->getStudentInfoByName($params['student_name'] ?? '', ['id', 'uuid', 'name']);
+
         // 如果传入的uuid不为空和传入的uuid取交集，交集为空认为不会有数据， 不为空直接用交集作为条件
         $searchUUID = [];
         if (!empty($params['uuid'])) $searchUUID[] = $params['uuid'];
+        // 如果存在学员手机号用手机号换取uuid
         if (!empty($params['student_mobile'])) {
+            $mobileUUID = LimitTimeActivityBaseAbstract::getAppObj($appId)->getStudentInfoByMobile([$params['student_mobile']]);
             $_mobileUUIDS = array_column($mobileUUID, 'uuid');
             $searchUUID = empty($searchUUID) ? $_mobileUUIDS : array_intersect($searchUUID, $_mobileUUIDS);
         }
+        // 如果存在学员名称用名称换取uuid
         if (!empty($params['student_name'])) {
+            $studentNameUUID = LimitTimeActivityBaseAbstract::getAppObj($appId)->getStudentInfoByName($params['student_name'], ['id', 'uuid', 'name']);
             $_nameUUIDS = array_column($studentNameUUID, 'uuid');
             $searchUUID = empty($searchUUID) ? $_nameUUIDS : array_intersect($searchUUID, $_nameUUIDS);
         }
@@ -479,17 +484,17 @@ class LimitTimeActivityAdminService
         unset($item);
         $uuids = array_unique($uuids);
         $operatorIds = array_unique($operatorIds);
-        if (!empty($uuids)) $studentList = LimitTimeActivityBaseAbstract::getAppObj($appId)->getStudentInfoByUUID($uuids);
-        if (!empty($operatorIds)) $operatorList = LimitTimeActivityBaseAbstract::getAppObj($appId)->getEmployeeInfo($operatorIds);
+        $studentList = LimitTimeActivityBaseAbstract::getAppObj($appId)->getStudentInfoByUUID($uuids);
+        $operatorList = LimitTimeActivityBaseAbstract::getAppObj($appId)->getEmployeeInfo($operatorIds);
         // 获取备注
-        $uiconfigList = array_column(LimitTimeActivityHtmlConfigModel::getRecords(['activity_id' => $activityIds]), null, 'activity_id');
+        $uiConfigList = array_column(LimitTimeActivityHtmlConfigModel::getRecords(['activity_id' => $activityIds]), null, 'activity_id');
 
         $statusDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS);
         $reasonDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);
         foreach ($returnData['list'] as &$item) {
             $_student = $studentList[$item['student_uuid']] ?? [];
             $_operator = $operatorList[$item['verify_user']] ?? [];
-            $_uiconfig = $uiconfigList[$item['activity_id']] ?? [];
+            $_uiConfig = $uiConfigList[$item['activity_id']] ?? [];
             $item['format_share_poster_url'] = AliOSS::replaceCdnDomainForDss($item['image_path']);
             $item['mobile'] = Util::hideUserMobile($_student['mobile']);
             $item['student_name'] = $_student['name'];
@@ -499,7 +504,7 @@ class LimitTimeActivityAdminService
             $item['format_verify_time'] = !empty($item['verify_time']) ? date('Y-m-d H:i', $item['verify_time']) : '';
             $item['reason_str'] = self::reasonToStr(explode(',', $item['verify_reason']), $reasonDict);
             $item['format_verify_user'] = $item['verify_user'] == EmployeeModel::SYSTEM_EMPLOYEE_ID ? EmployeeModel::SYSTEM_EMPLOYEE_NAME : ($_operator['name'] ?? '');
-            $item['remark'] = Util::textDecode($_uiconfig['remark']);
+            $item['remark'] = Util::textDecode($_uiConfig['remark']);
         }
         unset($item);
         return $returnData;
@@ -554,13 +559,13 @@ class LimitTimeActivityAdminService
         $awardRule = LimitTimeActivityAwardRuleModel::getRecord(['activity_id' => $poster['activity_id']]);
         $time = time();
         $updateData = [
-            'verify_status'     => $status,
-            'verify_time'       => $time,
-            'verify_user'       => $params['employee_id'],
-            'verify_reason'     => is_array($reason) ? implode(',', $reason) : $reason,
-            'update_time'       => $time,
-            'remark'            => $remark,
-            'award_type'        => $awardRule['award_type'],
+            'verify_status' => $status,
+            'verify_time'   => $time,
+            'verify_user'   => $params['employee_id'],
+            'verify_reason' => is_array($reason) ? implode(',', $reason) : $reason,
+            'update_time'   => $time,
+            'remark'        => $remark,
+            'award_type'    => $awardRule['award_type'],
         ];
         $status == SharePosterModel::VERIFY_STATUS_UNQUALIFIED && $updateData['send_award_status'] = OperationActivityModel::SEND_AWARD_STATUS_DISABLED;
         $update = LimitTimeActivitySharePosterModel::updateRecord($poster['id'], $updateData);
@@ -573,7 +578,7 @@ class LimitTimeActivityAdminService
         // 审核不通过, 发送模版消息
         if ($update > 0 && $status == SharePosterModel::VERIFY_STATUS_UNQUALIFIED && !empty($msgId)) {
             $studentInfo = LimitTimeActivityBaseAbstract::getAppObj($appId)->getStudentInfoByUUID([$poster['student_uuid']], ['id'])[$poster['student_uuid']];
-            $jumpUrl = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'limit_time_activity_record_list');
+            $jumpUrl = LimitTimeActivityBaseAbstract::getAppObj($appId)->getActivityRecordListHtmlUrl();
             $activityInfo = LimitTimeActivityModel::getRecord(['activity_id' => $poster['activity_id']]);
             $activityHtmlConfigInfo = LimitTimeActivityHtmlConfigModel::getRecord(['activity_id' => $poster['activity_id']], ['share_poster', 'first_poster_type_order']);
             $posterList = json_decode($activityHtmlConfigInfo['share_poster'], true);
@@ -581,6 +586,7 @@ class LimitTimeActivityAdminService
             // 发送消息
             QueueService::sendUserWxMsg($appId, $studentInfo['id'], $msgId, [
                 'replace_params' => [
+                    'share_poster_id' => $poster['id'],
                     'activity_name' => $activityInfo['activity_name'] . '-' . $poster['task_num'],
                     'jump_url'      => LimitTimeActivityBaseAbstract::getMsgJumpUrl($jumpUrl, [
                         'activity_id' => $poster['activity_id'],
@@ -681,10 +687,11 @@ class LimitTimeActivityAdminService
                 }
                 // 组装微信消息需要的参数
                 $replaceParams = [
-                    'activity_name' => $activityInfo['activity_name'] . '-' . $poster['task_num'],
-                    'passes_num'    => !empty($nextAwardNodeStep) ? $nextAwardNodeStep : $awardTaskNum,
-                    'award_amount'  => $activityInfo['activity_type'] == OperationActivityModel::ACTIVITY_TYPE_SHARE ? $award['award_amount'] : $nextAward['award_amount'],
-                    'award_unit'    => LimitTimeActivityBaseAbstract::getAwardUnit($awardType),
+                    'activity_name'   => $activityInfo['activity_name'] . '-' . $poster['task_num'],
+                    'passes_num'      => !empty($nextAwardNodeStep) ? $nextAwardNodeStep : $awardTaskNum,
+                    'award_amount'    => $activityInfo['activity_type'] == OperationActivityModel::ACTIVITY_TYPE_SHARE ? $award['award_amount'] : $nextAward['award_amount'],
+                    'award_unit'      => LimitTimeActivityBaseAbstract::getAwardUnit($awardType),
+                    'share_poster_id' => $poster['id'],
                 ];
                 $msgId = LimitTimeActivityBaseAbstract::getWxMsgId(
                     (int)$params['app_id'],

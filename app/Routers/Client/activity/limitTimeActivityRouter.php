@@ -32,4 +32,8 @@ return [
         'method' => ['post'],
         'call'   => LimitTimeActivityController::class . ':posterUpload'
     ],
+	'/show_tab'      => [
+        'method' => ['get'],
+        'call'   => LimitTimeActivityController::class . ':activityShowTab'
+    ],
 ];

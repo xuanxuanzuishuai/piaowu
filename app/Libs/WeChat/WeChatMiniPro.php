@@ -258,7 +258,7 @@ class WeChatMiniPro
         ) {
             $this->requestAccessToken();
         } elseif ($appId == UserCenter::APP_ID_PRACTICE){
-            $data = (new PandaService())->updateAccessToken();
+            $data = (new PandaService())->getAccessToken();
             if (!empty($data['access_token'])) {
                 $this->setAccessToken($data['access_token']);
             }
@@ -355,7 +355,12 @@ class WeChatMiniPro
             $type => $content,
             'timeout' => 2
         ];
-        return $this->requestJson($api, $params, 'POST');
+        $resData = $this->requestJson($api, $params, 'POST');
+        // 如果返回状态码是40001认为是可能access_token失效， 重新获取最新的access_token
+        if (is_array($resData) && $resData['errcode'] == '40001') {
+            $this->refreshAccessToken();
+        }
+        return $resData;
     }
 
     /**

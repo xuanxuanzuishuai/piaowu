@@ -4,6 +4,8 @@ namespace App\Services\Activity\LimitTimeActivity\TraitService;
 
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\RealDictConstants;
+use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpReferralUserRefereeModel;
 use App\Models\Erp\ErpStudentModel;
@@ -20,6 +22,8 @@ class RealService extends LimitTimeActivityBaseAbstract
 		$this->appId = Constants::REAL_APP_ID;
 		$this->studentInfo = $studentInfo;
 		$this->fromType = $fromType;
+		$this->busiType = DssUserWeiXinModel::REAL_MINI_BUSI_TYPE;
+
 	}
 
 	/**
@@ -30,6 +34,12 @@ class RealService extends LimitTimeActivityBaseAbstract
 	 */
 	public function getStudentInfoByUUID(array $uuids, array $fields = []): array
 	{
+		if (empty($uuids)) {
+			return [];
+		}
+		if (!empty($fields)) {
+			$fields = array_merge($fields, ['uuid']);
+		}
 		$list = ErpStudentModel::getRecords(['uuid' => $uuids], $fields);
 		return is_array($list) ? array_column($list, null, 'uuid') : [];
 	}
@@ -42,22 +52,28 @@ class RealService extends LimitTimeActivityBaseAbstract
 	 */
 	public function getStudentInfoByMobile(array $mobiles, array $fields = []): array
 	{
+		if (empty($mobiles)) {
+			return [];
+		}
 		$list = ErpStudentModel::getRecords(['mobile' => $mobiles], $fields);
 		return is_array($list) ? $list : [];
 	}
 
-    /**
-     * 根据name批量获取用户信息
-     * @param string $name
-     * @param array $fields
-     * @param int[] $limitArr
-     * @return array
-     */
-    public function getStudentInfoByName(string $name, array $fields = [], $limitArr = [0, 1000]): array
-    {
-        $list = ErpStudentModel::getRecords(['name[~]' => $name, 'ORDER' => $limitArr], $fields);
-        return is_array($list) ? $list : [];
-    }
+	/**
+	 * 根据name批量获取用户信息
+	 * @param string $name
+	 * @param array $fields
+	 * @param int[] $limitArr
+	 * @return array
+	 */
+	public function getStudentInfoByName(string $name, array $fields = [], $limitArr = [0, 1000]): array
+	{
+		if (empty($name)) {
+			return [];
+		}
+		$list = ErpStudentModel::getRecords(['name[~]' => $name, 'LIMIT' => $limitArr], $fields);
+		return is_array($list) ? $list : [];
+	}
 
 	/**
 	 * 学生付费是否有效状态检测
@@ -70,8 +86,9 @@ class RealService extends LimitTimeActivityBaseAbstract
 		// 检查一下用户是否是有效用户，不是有效用户不可能有可参与的活动
 		$this->studentInfo['pay_status_check_res'] = $studentIdAttribute['is_valid_pay'];
 		if (empty($studentIdAttribute['is_valid_pay'])) {
-			throw new RunTimeException(['student_pay_status_no']);
+			throw new RunTimeException(['student_pay_status_no'], [$studentIdAttribute]);
 		}
+		$this->studentInfo['first_pay_time'] = $studentIdAttribute['first_pay_time'];
 		return $studentIdAttribute;
 	}
 
@@ -109,5 +126,19 @@ class RealService extends LimitTimeActivityBaseAbstract
 	public function getEmployeeInfo(array $employeeIds): array
 	{
 		return array_column(EmployeeModel::getRecords(['id' => $employeeIds]) ?: [], null, 'id');
+	}
+
+	// 限时活动详情页面
+	public function getActivityDetailHtmlUrl(): string
+	{
+		$url = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'limit_time_activity_detail');
+		return is_string($url) ? $url : '';
+	}
+
+	//上传截图记录详情页面
+	public function getActivityRecordListHtmlUrl(): string
+	{
+		$url = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'limit_time_activity_record_list');
+		return is_string($url) ? $url : '';
 	}
 }

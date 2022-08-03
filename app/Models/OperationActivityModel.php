@@ -89,6 +89,9 @@ class OperationActivityModel extends Model
     const SEND_AWARD_STATUS_GIVE_ING = 4; // 发放中/已发放待领取
     const SEND_AWARD_STATUS_GIVE_FAIL = 5; // 发放失败
 
+    /** f分享海报活动类型 */
+    const SHARE_POSTER_ACTIVITY_TYPE_LIMIT = 'limit';    // 限时
+    const SHARE_POSTER_ACTIVITY_TYPE_WEEK = 'week';      // 周周
 
     /**
      * 当前阶段为付费正式课且未参加当前活动的学员手微信open_id

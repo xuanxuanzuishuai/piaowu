@@ -8,7 +8,6 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dss\DssUserQrTicketModel;
-use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\LimitTimeActivity\LimitTimeActivityAwardRuleModel;
 use App\Models\LimitTimeActivity\LimitTimeActivityHtmlConfigModel;
 use App\Models\LimitTimeActivity\LimitTimeActivityModel;
@@ -68,7 +67,7 @@ class LimitTimeActivityClientService
 		//海报打水印
 		$data['list'] = PosterService::batchSynthesizePosterAndQr(
 			$serviceObj->appId,
-			DssUserWeiXinModel::BUSI_TYPE_REFERRAL_MINAPP,
+			$serviceObj->busiType,
 			DssUserQrTicketModel::LANDING_TYPE_MINIAPP,
 			$sharePosterList,
 			$data['activity']['activity_id'],
@@ -168,7 +167,7 @@ class LimitTimeActivityClientService
 		];
 		$records = LimitTimeActivitySharePosterModel::searchJoinRecords($serviceObj->appId,
 			[$serviceObj->studentInfo['uuid']],
-			['group' => ['sp.activity_id'],'order'=>['a.start_time'=>'DESC']],
+			['group' => ['sp.activity_id'], 'order' => ['a.start_time' => 'DESC']],
 			$page,
 			$limit);
 		if (empty($records[0])) {
@@ -477,5 +476,21 @@ class LimitTimeActivityClientService
 		//系统自动审核
 		LimitTimeAwardProducerService::autoCheckProducer($insertId, $serviceObj->studentInfo['user_id'], 0);
 		return $insertId;
+	}
+
+	/**
+	 * 活动tab展示列表
+	 * @param string $uuid
+	 * @return array
+	 */
+	public static function getActivityShowTab(string $uuid): array
+	{
+		$dictData = DictConstants::getSet(DictConstants::LIMIT_TIME_ACTIVITY_CONFIG);
+		if (!empty($dictData['special_uuids']) && in_array($uuid, explode(',', $dictData['special_uuids']))) {
+			$tab = $dictData['special_show_tab_list'];
+		} else {
+			$tab = $dictData['show_tab_list'];
+		}
+		return array_values(json_decode($tab, true));
 	}
 }
