@@ -909,7 +909,8 @@ class WeekActivityService
         $firstStandardPoster = true;
         foreach ($posterList as $key => &$item) {
             // 如果是对照组标准海报，不用重新生成海报二维码
-            if (!empty($abTestPosterInfo) && $item['type'] == TemplatePosterModel::STANDARD_POSTER && $firstStandardPoster) {
+            // 开启了ab测，测试海报不正常删除， 正常替换
+            if ($activityInfo['has_ab_test'] == OperationActivityModel::HAS_AB_TEST_YES && $item['type'] == TemplatePosterModel::STANDARD_POSTER && $firstStandardPoster) {
                 if (!$abPosterIsNormal) {
                     unset($posterList[$key]);
                 } else {
