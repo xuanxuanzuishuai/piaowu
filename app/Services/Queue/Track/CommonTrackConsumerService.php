@@ -36,7 +36,7 @@ class CommonTrackConsumerService extends CommonTrackTopic
         }
 
         // 处理转介绍关系
-        $res = MorningReferralStatisticsService::createReferral($params['msg_body'] ?? []);
+        $res = MorningReferralStatisticsService::createReferral($paramsData['msg_body'] ?? []);
         SimpleLogger::info("morning create referral res:", [$res]);
     }
 

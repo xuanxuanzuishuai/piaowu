@@ -94,11 +94,14 @@ class MorningWeChatHandlerService
         }
         // 根据用户信息获取用户状态
         $userUuidInfo = (new Morning())->getStudentList([$userUuid])[0] ?? [];
+        // 根据用户状态获取需要推送的消息
         $ruleStatus = MorningPushMessageService::MORNING_PUSH_USER_ALL;
-        if (in_array($userUuidInfo['status'], [2, 3])) {
-            $ruleStatus = MorningPushMessageService::MORNING_PUSH_USER_TRAIL;
-        } elseif (in_array($userUuidInfo['status'], [4, 5])) {
+        if (in_array($userUuidInfo['status'], [Constants::MORNING_STUDENT_STATUS_NORMAL, Constants::MORNING_STUDENT_STATUS_NORMAL_EXPIRE])) {
+            // 年卡，年卡过期
             $ruleStatus = MorningPushMessageService::MORNING_PUSH_USER_NORMAL;
+        } elseif (in_array($userUuidInfo['status'], [Constants::MORNING_STUDENT_STATUS_TRAIL, Constants::MORNING_STUDENT_STATUS_TRAIL_EXPIRE])) {
+            // 体验卡，体验卡过期
+            $ruleStatus = MorningPushMessageService::MORNING_PUSH_USER_TRAIL;
         }
         // 消息推送体
         $data = [

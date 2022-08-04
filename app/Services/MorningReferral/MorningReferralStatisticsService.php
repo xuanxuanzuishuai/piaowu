@@ -64,7 +64,7 @@ class MorningReferralStatisticsService
             return false;
         }
         // 接收qr_id
-        $qrId = $data['extra_params']['scene'] ?? '';
+        $qrId = $data['metadata']['scene'] ?? '';
         if (empty($qrId)) {
             SimpleLogger::info("create morning referral scene is empty", $data);
             return false;
