@@ -80,15 +80,23 @@ class MorningReferralStatisticsService
             SimpleLogger::info("create morning referral student status not error", [$studentInfo]);
             return false;
         }
+        $refUuid = $qrInfo['user_uuid'];
+        // 扫自己的码不创建转介绍关系
+        if ($refUuid == $uuid) {
+            SimpleLogger::info("create morning referral student is referral self. ", [$qrInfo, $uuid]);
+            return false;
+        }
         // 读取推荐人信息
-        $refUuid = json_decode($qrInfo['qr_data'], true)['student_uuid'] ?? '';
         $referralInfo = (new Morning())->getStudentList([$refUuid])[0] ?? [];
         if (empty($referralInfo)) {
             SimpleLogger::info("create morning referral student is empty", [$qrInfo, $referralInfo]);
             return false;
         }
         // 创建转介绍进度
-        $createReferral = self::createStudentReferral($uuid, $referralInfo);
+        $createReferral = self::createStudentReferral($uuid, $referralInfo, [
+            'order_id' => $data['order_id'],
+            'channel_id' => $qrInfo['channel_id'],
+        ]);
         if (empty($createReferral)) {
             SimpleLogger::info("create morning referral create student referral fail", [$createReferral]);
             return false;
@@ -138,7 +146,7 @@ class MorningReferralStatisticsService
      * @param array $extraParams
      * @return bool
      */
-    public static function createStudentReferral($studentUuid, $referralInfo, $stage = MorningReferralDetailModel::STAGE_TRIAL, $extraParams = [])
+    public static function createStudentReferral($studentUuid, $referralInfo, $extraParams = [], $stage = MorningReferralDetailModel::STAGE_TRIAL)
     {
         $time = time();
         $db = MysqlDB::getDB();
@@ -207,6 +215,6 @@ class MorningReferralStatisticsService
      */
     public static function updateReferralStage($studentUuid)
     {
-        return self::createStudentReferral($studentUuid, [], MorningReferralDetailModel::STAGE_FORMAL);
+        return self::createStudentReferral($studentUuid, [], [], MorningReferralDetailModel::STAGE_FORMAL);
     }
 }
