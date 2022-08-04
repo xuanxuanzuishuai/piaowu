@@ -82,7 +82,9 @@ class BillMapService
             'create_time' => time(),
             'type' => $paramInfo['type'],
             'buy_channel'=>$paramInfo['c'] ?? 0,
-            'is_success' => $isSuccess
+            'is_success' => $isSuccess,
+            'test_name' => $sceneData['test_name'] ?? '',
+            'test_type' => $sceneData['test_type'] ?? '',
         ];
         if (!empty($openId)) {
             $insertData['open_id'] = $openId;
