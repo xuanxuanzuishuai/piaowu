@@ -245,7 +245,7 @@ trait TraitWeekActivityTestAbService
     public static function getStudentTestAbPoster($studentId, $activityId, $extData = [])
     {
         // 查询是否已经有命中的海报，如果有直接返回命中的海报
-        $info = $hasHitPoster = self::getStudentHitPoster($activityId, $studentId);
+        $info = self::getStudentHitPoster($activityId, $studentId);
         $activityInfo = WeekActivityModel::getRecord(['activity_id' => $activityId]);
         SimpleLogger::info("qingfeng-test-getStudentTestAbPoster", ['msg' => 'msg-start', 'student_id' => $studentId, 'activity_id' => $activityId, 'has_ab_test' => $activityInfo['has_ab_test']]);
         // 是否开启了ab测， 没有开启直接返回已经命中的海拔或者空
@@ -268,22 +268,13 @@ trait TraitWeekActivityTestAbService
                 return self::formatTestAbPoster([]);
             }
             $info['ab_poster_id'] = $hitPosterId;
+            // 首次命中海报 - 保存学生命中海报信息
+            self::saveStudentTestAbPosterQrId($studentId, $activityId, $info['ab_poster_id'], $abVersion ??  0);
         }
         // 是否生成小程序码
         if (!empty($extData) && !empty($extData['is_create_qr_id'])) {
             $hitPosterInfo = TemplatePosterModel::getPosterInfo($info['ab_poster_id']);
             if (!empty($hitPosterInfo)) {
-                // 首次命中海报 - 保存学生命中海报信息
-                SimpleLogger::info("qingfeng-test-getStudentTestAbPoster", [
-                    'msg' => 'msg-save_user_hit_poster',
-                    'student_id' => $studentId,
-                    'activity_id' => $activityId,
-                    'has_ab_test' => $activityInfo['has_ab_test'],
-                    'has_hit_poster' => empty($hasHitPoster),
-                    'hit_poster_id' => $info['ab_poster_id'],
-                    'ab_version' => $abVersion ?? 0,
-                ]);
-                empty($hasHitPoster) && self::saveStudentTestAbPosterQrId($studentId, $activityId, $info['ab_poster_id'], $abVersion ??  0);
                 // 海报图：
                 $posterConfig = PosterService::getPosterConfig();
                 $studentType = $extData['user_type'] ?? DssUserQrTicketModel::STUDENT_TYPE;
@@ -463,14 +454,10 @@ trait TraitWeekActivityTestAbService
         if (empty($testAbPosterInfo)) {
             return [false, []];
         }
-        $posterInfo = TemplatePosterModel::getRecord(['id' => $testAbPosterInfo['ab_poster_id']]);
+        $posterInfo = TemplatePosterModel::getPosterInfo($testAbPosterInfo['ab_poster_id']);
         if (empty($posterInfo)) {
-            // 没找到海报
+            // 没找到海报 或海报已下线
             return [false, []];
-        }
-        if ($posterInfo['status'] != TemplatePosterModel::STANDARD_POSTER) {
-            // 找到海报但海报已下线
-            return [false, $posterInfo];
         }
         $posterInfo['practise_zh'] = TemplatePosterModel::$practiseArray[$posterInfo['practise']] ?? '否';
         $posterInfo['poster_ascription'] = ActivityPosterModel::POSTER_ASCRIPTION_STUDENT;
