@@ -182,7 +182,7 @@ class MorningReferralStatisticsService
                 $where = [
                     'student_uuid' => $studentUuid,
                 ];
-                $refRes = MorningReferralStatisticsModel::batchUpdateRecord([], $where);
+                $refRes = MorningReferralStatisticsModel::batchUpdateRecord($updateData, $where);
                 if (empty($refRes)) {
                     SimpleLogger::info("update student referral stage fail.", [$studentUuid, $where, $updateData]);
                     throw new RunTimeException(['update student referral stage fail.']);
