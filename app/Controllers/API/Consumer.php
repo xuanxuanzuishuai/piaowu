@@ -24,6 +24,7 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\BillMapModel;
+use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\EmployeeModel;
@@ -62,6 +63,7 @@ use App\Services\Queue\WeekActivityTopic;
 use App\Services\RealAd;
 use App\Services\RealSharePosterService;
 use App\Services\RefereeAwardService;
+use App\Services\SendSmsService;
 use App\Services\StudentAccountAwardPointsLogService;
 use App\Services\StudentService;
 use App\Services\ThirdPartBillService;
@@ -1360,32 +1362,9 @@ class Consumer extends ControllerBase
      */
     public function recordDouShopOrder(Request $request, Response $response): Response
     {
-        $params = $request->getParams();
-        $rules = [
-            [
-                'key'        => 'topic_name',
-                'type'       => 'required',
-                'error_code' => 'topic_name_is_required',
-            ],
-            [
-                'key'        => 'source_app_id',
-                'type'       => 'required',
-                'error_code' => 'source_app_id_is_required',
-            ],
-            [
-                'key'        => 'event_type',
-                'type'       => 'required',
-                'error_code' => 'event_type_is_required',
-            ],
-            [
-                'key'        => 'msg_body',
-                'type'       => 'required',
-                'error_code' => 'msg_body_is_required',
-            ],
-        ];
-        $result = Valid::validate($params, $rules);
-        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
+        $params = self::commonParamsCheck($request, $response);
+        if (is_object($params)) {
+            return $params;
         }
         $paramMapInfo = $params['msg_body'];
         $douShopId = $paramMapInfo['dou_shop_id'] ?? 0;
@@ -1408,6 +1387,12 @@ class Consumer extends ControllerBase
         if (empty($shopChannel[$douShopId])) {
             SimpleLogger::info('record_dou_shop_order', ['msg' => 'dou_shop_id_invalid']);
             return HttpHelper::buildResponse($response, []);
+        }
+        // 查询是否已经有体验课订单
+        $hadPurchasePackageByType = DssGiftCodeModel::hadPurchasePackageByType($studentInfo['id'], DssPackageExtModel::PACKAGE_TYPE_TRIAL, false, ['limit' => 2]);
+        if (!empty($hadPurchasePackageByType) && count($hadPurchasePackageByType) >= 2) {
+            // 购买体验课超过2次，发送短息
+            SendSmsService::sendDouRepeatBuy($studentInfo['id']);
         }
         // 查询订单是否存在不记录 - 订单号
         $billMapInfo = BillMapModel::getRecord(['bill_id' => $paramMapInfo['order_id']], ['id']);

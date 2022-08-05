@@ -1184,6 +1184,8 @@ class DictConstants {
             'dss_activity_check_list',          // 用户参与周周领奖活动审核详情页
             'limit_time_activity_detail',       // 限时活动详情页面
             'limit_time_activity_record_list',  // 限时活动-上传截图记录详情页面
+            'add_assistant_url',                // 添加助教页面
+            'download_app_url',                 // 下载app页面
         ],
     ];
 

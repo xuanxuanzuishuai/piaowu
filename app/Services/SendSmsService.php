@@ -12,7 +12,10 @@ use App\Libs\SimpleLogger;
 use App\Libs\SmsCenter\SmsCenter;
 use App\Libs\SmsCenter\SmsInc;
 use App\Libs\Util;
+use App\Models\Dss\DssEmployeeModel;
+use App\Models\Dss\DssStudentModel;
 use App\Models\EmployeeModel;
+use App\Services\Activity\LimitTimeActivity\TraitService\LimitTimeActivityBaseAbstract;
 
 class SendSmsService
 {
@@ -372,6 +375,50 @@ class SendSmsService
 		}
         $content = self::valueReplaceVar($template['content'], $items['params']);
         SimpleLogger::info($keyCode, ['content' => $content, 'china_mobile' => $chinaMobile,'international_mobile' => $overseas]);
+        return true;
+    }
+
+    /**
+     * 发送抖店重复购买短信
+     * @param $studentId
+     * @return bool
+     */
+    public static function sendDouRepeatBuy($studentId): bool
+    {
+        try {
+            //获取短信模板ID
+            $keyCode = SmsInc::DOU_REPEAT_BUY;
+            $template = self::getTemplateInfoByKeyCode($keyCode);
+            if (empty($template)) {
+                return false;
+            }
+            // 获取学生和助教信息
+            $studentInfo = DssStudentModel::getRecord(['id' => $studentId], ['mobile', 'assistant_id']);
+            $employeeInfo = DssEmployeeModel::getRecord(['id' => $studentInfo['assistant_id']], ['wx_num']);
+            // 没有助教不发短信
+            if (empty($employeeInfo)) {
+                SimpleLogger::info($keyCode, ['msg' => 'is not found assistant', 'student_info' => $studentInfo, 'employee' => $employeeInfo]);
+                return false;
+            }
+            // 生成添加助教url
+            $addAssistantUrl = DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'add_assistant_url');
+            $addAssistantUrl = LimitTimeActivityBaseAbstract::getMsgJumpUrl($addAssistantUrl, ['student_id'=>$studentId]);
+            $addAssistantUrl = ((new Dss())->getShortUrl($addAssistantUrl))['data']['short_url'];
+            // 获取app下载地址短链
+            $downLoadUrl = ((new Dss())->getShortUrl(DictConstants::get(DictConstants::DSS_JUMP_LINK_CONFIG, 'download_app_url')))['data']['short_url'];
+            // 发送短信
+            $countryCode = $studentInfo['country_code'] ?? NewSMS::DEFAULT_COUNTRY_CODE;
+            $items = ['mobile' => $studentInfo['mobile'], 'params' => [
+                $addAssistantUrl,
+                $employeeInfo['wx_num'],
+                $downLoadUrl,
+            ]];
+            self::sendSms(SmsInc::SEND_TYPE_SINGLE, $keyCode, $template['id'], $items, $countryCode);
+            $content = self::valueReplaceVar($template['content'], $items['params']);
+            SimpleLogger::info($keyCode, ['content' => $content, 'student_id' => $studentId, 'employee' => $employeeInfo, 'student_info' => $studentInfo, 'items' => $items]);
+        } catch (\Exception $e) {
+            SimpleLogger::info('sendDouRepeatBuy error', ['key_code' => $keyCode, 'student_id' => $studentId, 'err' => $e->getMessage()]);
+        }
         return true;
     }
 }
