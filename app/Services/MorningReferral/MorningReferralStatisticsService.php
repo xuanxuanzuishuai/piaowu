@@ -53,7 +53,7 @@ class MorningReferralStatisticsService
             SimpleLogger::info("create morning referral student is has referral", [$isHasReferral, $hasReferralInfo]);
             // 存在转介绍关系，不应再创建清晨转介绍关系
             // 如果是清晨存在了转介绍关系，那么判断是否是系统课，如果是系统课并且当前转介绍关系进度是未购买系统课则更新成购买系统课
-            if (!empty($paramsData['msg_body']['order_type']) && $paramsData['msg_body']['order_type'] == CommonTrackConsumerService::ORDER_TYPE_NORMAL) {
+            if (!empty($data['order_type']) && $data['order_type'] == CommonTrackConsumerService::ORDER_TYPE_NORMAL) {
                 if (!empty($hasReferralInfo['morning_referral'])) {
                     if (!empty($hasReferralInfo['morning_referral']['last_stage']) && $hasReferralInfo['morning_referral']['last_stage'] == MorningReferralDetailModel::STAGE_TRIAL) {
                         $updateReferralStage = self::updateReferralStage($uuid);
