@@ -1388,12 +1388,6 @@ class Consumer extends ControllerBase
             SimpleLogger::info('record_dou_shop_order', ['msg' => 'dou_shop_id_invalid']);
             return HttpHelper::buildResponse($response, []);
         }
-        // 查询是否已经有体验课订单
-        $hadPurchasePackageByType = DssGiftCodeModel::hadPurchasePackageByType($studentInfo['id'], DssPackageExtModel::PACKAGE_TYPE_TRIAL, false, ['limit' => 2]);
-        if (!empty($hadPurchasePackageByType) && count($hadPurchasePackageByType) >= 2) {
-            // 购买体验课超过2次，发送短息
-            SendSmsService::sendDouRepeatBuy($studentInfo['id']);
-        }
         // 查询订单是否存在不记录 - 订单号
         $billMapInfo = BillMapModel::getRecord(['bill_id' => $paramMapInfo['order_id']], ['id']);
         if (!empty($billMapInfo)) {
@@ -1405,6 +1399,12 @@ class Consumer extends ControllerBase
         if (!$res) {
             SimpleLogger::info('record_dou_shop_order', ['msg' => 'save_bill_map_fail']);
             return HttpHelper::buildResponse($response, []);
+        }
+        // 查询是否已经有体验课订单
+        $hadPurchasePackageByType = DssGiftCodeModel::hadPurchasePackageByType($studentInfo['id'], DssPackageExtModel::PACKAGE_TYPE_TRIAL, false, ['limit' => 2]);
+        if (!empty($hadPurchasePackageByType) && count($hadPurchasePackageByType) >= 2) {
+            // 购买体验课超过2次，发送短息
+            SendSmsService::sendDouRepeatBuy($studentInfo['id']);
         }
         return HttpHelper::buildResponse($response, []);
     }
