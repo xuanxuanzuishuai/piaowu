@@ -77,10 +77,11 @@ class ErpReferralUserRefereeModel extends ErpModel
      */
     public static function getStudentReferral($studentId): array
     {
-        return ErpReferralUserRefereeModel::getRecord([
+        $arr =  ErpReferralUserRefereeModel::getRecord([
             'user_id'   => $studentId,
             'referee_type' => ErpReferralUserRefereeModel::REFEREE_TYPE_STUDENT,
             'app_id'       => Constants::REAL_APP_ID
         ]);
+        return is_array($arr) ? $arr : [];
     }
 }
