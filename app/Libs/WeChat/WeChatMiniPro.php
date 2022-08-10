@@ -13,6 +13,7 @@ use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Dss;
 use App\Libs\HttpHelper;
+use App\Libs\Morning;
 use App\Libs\PandaService;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
@@ -73,6 +74,7 @@ class WeChatMiniPro
 
     private $busiType = ''; // 业务场景
     private $busiId = '';   // factory方法对应的appid，不是真正的微信的appid
+    private $currentRequestAccessToken = [];  // 本次请求产生的token
 
 
     public static function factory($appId, $busiType)
@@ -130,7 +132,14 @@ class WeChatMiniPro
         $accessToken = RedisDB::getConn()->get($this->getWxAccessTokenKey($this->nowWxApp));
         //空处理
         if (empty($accessToken)) {
-            $this->refreshAccessToken();
+            if (!empty($this->currentRequestAccessToken[$this->nowWxApp])) {
+                return $this->currentRequestAccessToken[$this->nowWxApp];
+            }
+            $accessToken = $this->refreshAccessToken();
+            if (!empty($accessToken)) {
+                $this->currentRequestAccessToken[$this->nowWxApp] = $accessToken;
+                return $accessToken;
+            }
         }
         return RedisDB::getConn()->get($this->getWxAccessTokenKey($this->nowWxApp));
     }
@@ -262,9 +271,16 @@ class WeChatMiniPro
             if (!empty($data['access_token'])) {
                 $this->setAccessToken($data['access_token']);
             }
+        } elseif ($appId == Constants::QC_APP_ID && $busiType == Constants::QC_APP_BUSI_WX_ID) {
+            // 清晨公众号
+            $accessToken = (new Morning())->getWeChatAccessToken()['access_token'];
+        } elseif ($appId == Constants::QC_APP_ID && $busiType == Constants::QC_APP_BUSI_MINI_APP_ID) {
+            // 清晨小程序
+            $accessToken = (new Morning())->getMiniAppAccessToken()['access_token'];
         } else {
             SimpleLogger::info('UNKNOW APPID', [$appId, $busiType]);
         }
+        return $accessToken ?? '';
     }
 
     /**

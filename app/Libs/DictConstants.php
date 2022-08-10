@@ -160,6 +160,7 @@ class DictConstants {
             'access_id_ios',
             'secret_key_ios',
             'meta_host',
+            'morning_host',
         ]
     ];
 

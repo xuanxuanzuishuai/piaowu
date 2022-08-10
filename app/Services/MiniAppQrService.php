@@ -23,6 +23,7 @@ use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\ParamMapModel;
 use App\Models\QrInfoOpCHModel;
 use App\Services\Queue\QueueService;
+use App\Services\Queue\WechatTopic;
 
 /**
  * 小程序二维码管理类
@@ -348,6 +349,7 @@ class MiniAppQrService
             'employee_uuid'   => $extParams['employee_uuid'] ?? '',
             'diversion_type'  => $extParams['diversion_type'] ?? 0,
             'dss_uuid'        => $extParams['dss_uuid'] ?? '',
+            'user_uuid'       => $extParams['user_uuid'] ?? '',
         ];
         // 根据小程序码主要信息，查询CH
         $qrSign = QrInfoService::createQrSign($qrData, $appId, $busiesType, $onlyReferralBaseField);
@@ -565,6 +567,12 @@ class MiniAppQrService
                 QueueService::dssYearCardStartCreateMiniAppId();
                 break;
             default:
+                // 默认根据appId 和 busiseType 创建
+                $data['time'] = time();
+                $data['app_id']      = $appId;
+                $data['busies_type'] = $busiesType;
+                (new WechatTopic())->startCreateMiniAppId($data)->publish();
+                break;
         }
     }
 

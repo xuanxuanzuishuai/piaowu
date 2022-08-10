@@ -75,12 +75,24 @@ class MessagePushRulesModel extends Model
     {
         $limit      = Util::limitation($page, $count);
         $countField = "count(id) as total";
-        $field      = "`id`,`name`,`type`,`target`,`is_active`,time->>'$.desc' as `display_time`,`update_time`,`remark`";
+        $field      = "`id`,`name`,`type`,`target`,`is_active`,time->>'$.desc' as `display_time`,`update_time`,`remark`,`app_id`";
         $sql        = "SELECT %s FROM ".self::$table." WHERE ";
 
         $db    = MysqlDB::getDB();
         $total = $db->queryAll(sprintf($sql, $countField) . $where);
         $rules = $db->queryAll(sprintf($sql, $field) . $where . $limit);
         return [$rules, $total[0]['total'] ?? 0];
+    }
+
+    /**
+     * 获取规则信息
+     * @param $appId
+     * @param $name
+     * @param $target
+     * @return mixed
+     */
+    public static function getRuleInfo($appId, $name, $target)
+    {
+        return self::getRecord(['app_id' => $appId, 'is_active' => self::STATUS_ENABLE, 'name' => $name, 'target' => $target]);
     }
 }

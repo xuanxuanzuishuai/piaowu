@@ -9,7 +9,6 @@
 namespace App\Routers;
 
 
-use App\Controllers\OrgWeb\WeekActivity;
 use App\Controllers\StudentWX\ActivityCenter;
 use App\Controllers\StudentWX\RtActivity;
 use App\Controllers\StudentWX\DuanWuActivity;
@@ -30,6 +29,10 @@ class StudentWXRouter extends RouterBase
         /** 公共 */
         '/student_wx/common/js_config' => ['method' => ['get'], 'call'=>'\App\Controllers\StudentWX\Common:getJsConfig', 'middles' => []],
         '/student_wx/student/getOtherToken' => ['method' => ['get'], 'call' => Student::class . ':getOtherToken'],
+        // 清晨微信公众号微信服务器回调地址
+        '/student_wx/morning/callback' => ['method' => ['get', 'post'], 'call' => '\App\Controllers\StudentWX\WxCallback:morningCallback', 'middles' => []],
+        // 获取转介绍码信息
+        '/student_wx/scene/info' => ['method' => ['get'], 'call' => '\App\Controllers\StudentWX\Student:getSceneInfo', 'middles' => []],
 
         /** 用户信息 */
         '/student_wx/student/account_detail' => ['method' => ['get'], 'call' => Student::class . ':accountDetail'],

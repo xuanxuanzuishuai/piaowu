@@ -29,12 +29,9 @@ class Message extends ControllerBase
     public function rulesList(Request $request, Response $response)
     {
         $params = $request->getParams();
-        $params['app_id'] = Constants::SMART_APP_ID;
-        try {
-            list($rules, $totalCount) = MessageService::rulesList($params);
-        } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
-        }
+        // 获取推送规则列表，默认获取智能的推送规则列表
+        if (empty($params['app_id'])) $params['app_id'] = Constants::SMART_APP_ID;
+        list($rules, $totalCount) = MessageService::rulesList($params);
 
         return HttpHelper::buildResponse($response, [
             'rules'       => $rules,
@@ -86,13 +83,7 @@ class Message extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-
-        try {
-            $detail = MessageService::ruleDetail($params['id']);
-        } catch (RunTimeException $e) {
-            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
-        }
-
+        $detail = MessageService::ruleDetail($params['id'], $params['app_id'] ?? 0);
         return HttpHelper::buildResponse($response, $detail);
     }
 

@@ -69,4 +69,19 @@ class ErpReferralUserRefereeModel extends ErpModel
         $list = $db->queryAll($sql);
         return is_array($list) ? $list : [];
     }
+
+    /**
+     * 获取学生转介绍关系信息
+     * @param $studentId
+     * @return array
+     */
+    public static function getStudentReferral($studentId): array
+    {
+        $arr =  ErpReferralUserRefereeModel::getRecord([
+            'user_id'   => $studentId,
+            'referee_type' => ErpReferralUserRefereeModel::REFEREE_TYPE_STUDENT,
+            'app_id'       => Constants::REAL_APP_ID
+        ]);
+        return is_array($arr) ? $arr : [];
+    }
 }

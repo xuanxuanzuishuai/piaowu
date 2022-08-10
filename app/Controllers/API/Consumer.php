@@ -43,6 +43,7 @@ use App\Services\CountingActivitySignService;
 use App\Services\ExchangeCourseService;
 use App\Services\MessageService;
 use App\Services\MiniAppQrService;
+use App\Services\MorningReferral\MorningWeChatHandlerService;
 use App\Services\PushMessageService;
 use App\Services\QrInfoService;
 use App\Services\Queue\Activity\LimitTimeAward\LimitTimeAwardConsumerService;
@@ -285,7 +286,9 @@ class Consumer extends ControllerBase
                 case PushMessageTopic::EVENT_WECHAT_LIFE_INTERACTION:
                     MessageService::lifeInterActionDealMessage($params['msg_body']);
                     break;
-
+                case PushMessageTopic::EVENT_WECHAT_MORNING_INTERACTION:
+                    MorningWeChatHandlerService::interActionDealMessage($params['msg_body']);
+                    break;
                 case PushMessageTopic::EVENT_USER_BIND_WECHAT:
                     MessageService::boundWxActionDealMessage(
                         $params['msg_body']['open_id'],

@@ -36,6 +36,7 @@ use App\Models\SharePosterModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\WeChatConfigModel;
+use App\Services\MorningReferral\MorningPushMessageService;
 use App\Services\Queue\QueueService;
 use App\Services\Queue\SaBpDataTopic;
 use Exception;
@@ -92,16 +93,21 @@ class MessageService
 
     /**
      * @param $id
+     * @param int $appId
      * @return array
      * 单条推送规则详情
      */
-    public static function ruleDetail($id)
+    public static function ruleDetail($id, $appId = 0)
     {
         if (empty($id)) {
             return [];
         }
-        $detail = MessagePushRulesModel::getById($id);
-
+        $where['id'] = $id;
+        if (!empty($appId)) $where['app_id'] = $appId;
+        $detail = MessagePushRulesModel::getRecord($where);
+        if (empty($detail)) {
+            return [];
+        }
         $detail['img_must'] = in_array($id, DictConstants::getValues(DictConstants::MESSAGE_RULE,
         [
             'invite_friend_pay_rule_id',
@@ -180,7 +186,11 @@ class MessageService
     public static function ruleFormat($rule)
     {
         $rule['display_type']      = MessagePushRulesModel::PUSH_TYPE_DICT[$rule['type']] ?? '';
-        $rule['display_target']    = MessagePushRulesModel::PUSH_TARGET_DICT[$rule['target']] ?? '';
+        if ($rule['app_id'] == Constants::QC_APP_ID) {
+            $rule['display_target']    = MorningPushMessageService::getTargetUserDict($rule['target']);
+        } else {
+            $rule['display_target']    = MessagePushRulesModel::PUSH_TARGET_DICT[$rule['target']] ?? '';
+        }
         $rule['update_time']       = date('Y-m-d H:i:s', $rule['update_time']);
         $rule['display_is_active'] = MessagePushRulesModel::RULE_STATUS_DICT[$rule['is_active']];
         // 解析【推送时间】字段
