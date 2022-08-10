@@ -351,6 +351,11 @@ class MiniAppQrService
             'dss_uuid'        => $extParams['dss_uuid'] ?? '',
             'user_uuid'       => $extParams['user_uuid'] ?? '',
         ];
+        // user_id 和 user_uuid 不能同时为空
+        if (empty($qrData['user_id']) && empty($qrData['user_uuid'])) {
+            SimpleLogger::info('getUserMiniAppQr user is empty', [$appId, $qrData]);
+            throw new RunTimeException(['invalid_data']);
+        }
         // 根据小程序码主要信息，查询CH
         $qrSign = QrInfoService::createQrSign($qrData, $appId, $busiesType, $onlyReferralBaseField);
         $qrImage = QrInfoOpCHModel::getQrInfoBySign($qrSign, ['qr_path', 'qr_id'])[0] ?? [];

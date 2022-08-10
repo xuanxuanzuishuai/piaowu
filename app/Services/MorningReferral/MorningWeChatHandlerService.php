@@ -110,7 +110,6 @@ class MorningWeChatHandlerService
             'busi_type'    => Constants::QC_APP_BUSI_WX_ID,
             'student_uuid' => $userUuidInfo['uuid'] ?? '',
             'user_status'  => $userUuidInfo['status'],
-            'student_id'   => $userUuidInfo['id'] ?? '',
             'channel_id'   => 0,
             'rule_info'    => [],
         ];
@@ -220,7 +219,7 @@ class MorningWeChatHandlerService
     private static function dealPosterByRule($data, $item)
     {
         $studentUuid = $data['student_uuid'] ?? '';
-        $studentId = $data['student_id'] ?? 0;
+        $studentId = 0;
         $channelId = $data['channel_id'] ?? 0;
         $posterName = $item['name'] ?? ''; // message_push_rules表中name字段作为海报名称
         $config = DictConstants::getSet(DictConstants::TEMPLATE_POSTER_CONFIG);
