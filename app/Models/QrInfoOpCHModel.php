@@ -161,8 +161,9 @@ class QrInfoOpCHModel
             SimpleLogger::error("checkSaveQrData error qr_id empty", [$qrData]);
             return false;
         }
-        if (empty($qrData['user_id'])) {
-            SimpleLogger::info("checkSaveQrData error user_id empty", [$qrData]);
+        // user_id 和 user_uuid 不能都为空
+        if (empty($qrData['user_id']) && empty($qrData['user_uuid'])) {
+            SimpleLogger::info('checkSaveQrData user is empty', [$qrData]);
             return false;
         }
         if (!isset($qrData['qr_path']) || !isset($qrData['qr_type'])) {
