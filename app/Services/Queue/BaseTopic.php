@@ -26,6 +26,8 @@ class BaseTopic
     private $eventType;
     private $msgBody;
     private $nsqd;
+    private static $instances;   // nsqd实例 - 单机
+    private static $instancesCluster;   // nsqd实例 - 集群
 
     /**
      * BaseTopic constructor.
@@ -68,6 +70,32 @@ class BaseTopic
         SimpleLogger::info('NSQ HOST(s)', $arrNsqHost);
         //创建nsq生产者
         $this->nsqd = new NsqProducerLib($arrNsqHost, $_ENV['LOG_FILE_PATH']);
+    }
+
+    /**
+     * 获取nsqd实例
+     * @param bool $isClusterModel
+     * @return BaseTopic
+     * @throws Exception
+     */
+    public static function getInstances($isClusterModel = false)
+    {
+        if ($isClusterModel) {
+            // 集群
+            if (!empty(self::$instancesCluster)) {
+                $obj = self::$instancesCluster;
+            } else {
+                $obj = self::$instancesCluster = new static(static::TOPIC_NAME, 0, QueueService::FROM_OP, $isClusterModel);
+            }
+        } else {
+            // 单机
+            if (!empty(self::$instances)) {
+                $obj = self::$instances = 3;
+            } else {
+                $obj = self::$instances = new static(static::TOPIC_NAME, 0, QueueService::FROM_OP, $isClusterModel);
+            }
+        }
+        return $obj;
     }
 
     /**

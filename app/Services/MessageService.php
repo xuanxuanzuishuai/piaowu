@@ -37,6 +37,7 @@ use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\WeChatConfigModel;
 use App\Services\MorningReferral\MorningPushMessageService;
+use App\Services\MorningReferral\MorningWeChatHandlerService;
 use App\Services\Queue\QueueService;
 use App\Services\Queue\SaBpDataTopic;
 use Exception;
@@ -419,17 +420,19 @@ class MessageService
     /**
      * @param $messageRule
      * @param $data
+     * @param null $appId
+     * @param null $busiType
      * @return bool
      * 基于规则 发送客服消息
+     * @throws RunTimeException
      */
-    private static function pushCustomMessage($messageRule, $data, $appId = null)
+    public static function pushCustomMessage($messageRule, $data, $appId = null, $busiType = null)
     {
-        $posterId = 0;
-        $user_current_status = DssStudentModel::STATUS_REGISTER;
         $appId = DssUserWeiXinModel::dealAppId($appId);
+        $busiType = !empty($busiType) ? $busiType : PushMessageService::APPID_BUSI_TYPE_DICT[$appId];
         //即时发送
         $res = MessageRecordLogModel::PUSH_SUCCESS;
-        $wechat = WeChatMiniPro::factory($appId, PushMessageService::APPID_BUSI_TYPE_DICT[$appId]);
+        $wechat = WeChatMiniPro::factory($appId, $busiType);
         if (empty($wechat)) {
             SimpleLogger::error('wechat create fail', ['pushCustomMessage']);
             return false;
@@ -448,7 +451,7 @@ class MessageService
                     $res = MessageRecordLogModel::PUSH_FAIL;
                 }
             } elseif ($item['type'] == WeChatConfigModel::CONTENT_TYPE_IMG) { //发送图片消息
-                $posterImgFile = self::dealPosterByRule($data, $item);
+                $posterImgFile = self::dealPosterByRule($data, $item, $appId, $busiType);
                 if (empty($posterImgFile)) {
                     SimpleLogger::error('empty poster file', ['pushCustomMessage', $data, $item]);
                     continue;
@@ -456,47 +459,37 @@ class MessageService
                 $wxData = $wechat->getTempMedia('image', $posterImgFile['unique'], $posterImgFile['poster_save_full_path']);
                 //发送海报
                 if (!empty($wxData['media_id'])) {
-                    $res2 = $wechat->sendImage($data['open_id'], $wxData['media_id']);
+                    $res1 = $wechat->sendImage($data['open_id'], $wxData['media_id']);
                     //全部推送成功才算成功
-                    if (empty($res2) || !empty($res2['errcode'])) {
+                    if (empty($res1) || !empty($res1['errcode'])) {
                         $res = MessageRecordLogModel::PUSH_FAIL;
                     }
                 }
-                $posterId = PosterModel::getIdByPath($item['path']);
-                $user_current_status = $posterImgFile['user_current_status'];
+            }
+            // 只要有一个推送返回的错误码是指定的错误码，本次所有消息都不推送
+            if (!empty($res1['errcode']) && $res1['errcode'] == Constants::WX_RESPONSE_ERRCODE) {
+                $res = MessageRecordLogModel::PUSH_FAIL;
+                break;
             }
         }
-
-        // 关注规则，无法获取转介绍二维码
-        if ($data['rule_id'] != DictConstants::get(DictConstants::MESSAGE_RULE, 'subscribe_rule_id')) {
-            // 海报埋点 - 全部推送成功
-            if ($res == MessageRecordLogModel::PUSH_SUCCESS && $posterId > 0) {
-                $openidUserInfo = DssUserWeiXinModel::getUserInfoBindWX($data['open_id'], $appId, PushMessageService::APPID_BUSI_TYPE_DICT[$appId]);
-                if (empty($openidUserInfo[0]['uuid'])) {
-                    return $res;
-                }
-                $queueData = [
-                    'uuid' => $openidUserInfo[0]['uuid'],
-                    'poster_id' => intval($posterId),
-                    'activity_name' => $messageRule['name'] ?? '',
-                    'user_status' => DssStudentModel::STUDENT_IDENTITY_ZH_MAP[$user_current_status],
-                ];
-                SimpleLogger::info('MessageService::pushCustomMessage', ['info' => 'SaBpDataTopic', 'queueData' => $queueData, 'param_data' => $data]);
-                (new SaBpDataTopic())->posterPush($queueData)->publish();
-            }
-        }
-
         return $res;
     }
 
     /***
      * @param $data
      * @param $item
+     * @param null $appId
+     * @param null $busiType
      * @return array|string|void
      * 基于规则处理要发送的图片
+     * @throws RunTimeException
      */
-    private static function dealPosterByRule($data, $item)
+    private static function dealPosterByRule($data, $item, $appId = null, $busiType = null)
     {
+        if ($appId == Constants::QC_APP_ID && $busiType == Constants::QC_APP_BUSI_MINI_APP_ID) {
+            // 清晨小程序海报
+            return MorningWeChatHandlerService::dealPosterByRule($data, $item);
+        }
         //走关注规则，无法获取转介绍二维码
         if (in_array($data['rule_id'], DictConstants::getValues(DictConstants::MESSAGE_RULE, ['subscribe_rule_id', 'life_subscribe_rule_id']))
         ) {

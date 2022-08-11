@@ -209,4 +209,7 @@ class Constants
     const MORNING_STUDENT_STATUS_TRAIL_EXPIRE  = 3;   // 体验课过期
     const MORNING_STUDENT_STATUS_NORMAL        = 4;   // 系统课
     const MORNING_STUDENT_STATUS_NORMAL_EXPIRE = 5;   // 系统课过期
+
+    // 请求微信错误码
+    const WX_RESPONSE_ERRCODE = 45015;  // msg: response out of time limit or subscription is canceled
 }

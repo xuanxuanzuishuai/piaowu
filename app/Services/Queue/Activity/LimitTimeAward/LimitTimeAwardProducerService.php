@@ -67,10 +67,8 @@ class LimitTimeAwardProducerService
     {
         try {
             $defTime = $params['def_time'] ?? rand(0, 3600);
-            $nsqObj = new LimitTimeAwardTopic();
-            $nsqObj->nsqDataSet($params,
-                $nsqObj::EVENT_TYPE_PUSH_ACTIVITY_MSG)
-                ->publish($defTime);
+            $nsqObj = LimitTimeAwardTopic::getInstances();
+            $nsqObj->nsqDataSet($params, LimitTimeAwardTopic::EVENT_TYPE_PUSH_ACTIVITY_MSG)->publish($defTime);
         } catch (Exception $e) {
             SimpleLogger::error($e->getMessage(), []);
             return false;
