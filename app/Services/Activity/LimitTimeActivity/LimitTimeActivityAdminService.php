@@ -486,15 +486,12 @@ class LimitTimeActivityAdminService
         $operatorIds = array_unique($operatorIds);
         $studentList = LimitTimeActivityBaseAbstract::getAppObj($appId)->getStudentInfoByUUID($uuids);
         $operatorList = LimitTimeActivityBaseAbstract::getAppObj($appId)->getEmployeeInfo($operatorIds);
-        // 获取备注
-        $uiConfigList = array_column(LimitTimeActivityHtmlConfigModel::getRecords(['activity_id' => $activityIds]), null, 'activity_id');
 
         $statusDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS);
         $reasonDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);
         foreach ($returnData['list'] as &$item) {
             $_student = $studentList[$item['student_uuid']] ?? [];
             $_operator = $operatorList[$item['verify_user']] ?? [];
-            $_uiConfig = $uiConfigList[$item['activity_id']] ?? [];
             $item['format_share_poster_url'] = AliOSS::replaceCdnDomainForDss($item['image_path']);
             $item['mobile'] = Util::hideUserMobile($_student['mobile']);
             $item['student_name'] = $_student['name'];
@@ -504,7 +501,7 @@ class LimitTimeActivityAdminService
             $item['format_verify_time'] = !empty($item['verify_time']) ? date('Y-m-d H:i', $item['verify_time']) : '';
             $item['reason_str'] = self::reasonToStr(explode(',', $item['verify_reason']), $reasonDict);
             $item['format_verify_user'] = $item['verify_user'] == EmployeeModel::SYSTEM_EMPLOYEE_ID ? EmployeeModel::SYSTEM_EMPLOYEE_NAME : ($_operator['name'] ?? '');
-            $item['remark'] = Util::textDecode($_uiConfig['remark']);
+            $item['remark'] = Util::textDecode($item['remark']);
         }
         unset($item);
         return $returnData;

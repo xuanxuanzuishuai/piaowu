@@ -92,6 +92,7 @@ class LimitTimeActivitySharePosterModel extends Model
                 'sp.task_num',
                 'sp.create_time',
                 'sp.send_award_status',
+                'sp.remark',
             ],
             $fields
         );
