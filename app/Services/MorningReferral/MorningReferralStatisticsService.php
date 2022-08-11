@@ -217,4 +217,22 @@ class MorningReferralStatisticsService
     {
         return self::createStudentReferral($studentUuid, [], [], MorningReferralDetailModel::STAGE_FORMAL);
     }
+
+    /**
+     * 批量获取学生推荐人列表
+     * @param $studentUuids
+     * @return array
+     */
+    public static function getStudentRefereeList($studentUuids): array
+    {
+        if (empty($studentUuids)) {
+            return [];
+        }
+        foreach ($studentUuids as $key => &$_uuid) {
+            if (empty($_uuid)) unset($studentUuids[$key]);
+            $_uuid = (string)$_uuid;
+        }
+        $list = MorningReferralStatisticsModel::getRecords(['student_uuid' => array_unique($studentUuids)], ['student_uuid', 'referee_student_uuid']);
+        return is_array($list) ? $list : [];
+    }
 }
