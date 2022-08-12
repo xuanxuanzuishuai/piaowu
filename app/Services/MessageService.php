@@ -486,7 +486,7 @@ class MessageService
      */
     private static function dealPosterByRule($data, $item, $appId = null, $busiType = null)
     {
-        if ($appId == Constants::QC_APP_ID && $busiType == Constants::QC_APP_BUSI_MINI_APP_ID) {
+        if ($appId == Constants::QC_APP_ID) {
             // 清晨小程序海报
             return MorningWeChatHandlerService::dealPosterByRule($data, $item);
         }
