@@ -48,7 +48,13 @@ class DeliveryService
         }
         //参数
         $params = $args[0]['params'];
-        $phoneNumberValid = Util::validPhoneNumber($params['mobile'], $params['country_code']);
+        if (preg_match('/^999/', $params['mobile']) && strlen($params['mobile']) == 11) {
+            //999开头的测试账号允许通过
+            $phoneNumberValid = true;
+        } else {
+            $phoneNumberValid = Util::validPhoneNumber($params['mobile'], $params['country_code']);
+        }
+
         if (empty($phoneNumberValid)) {
             throw new RunTimeException(['invalid_mobile']);
         }
