@@ -5,6 +5,7 @@
 
 namespace App\Services\Queue\Track;
 
+use App\Libs\Constants;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Services\Queue\BaseTopic;
@@ -39,9 +40,9 @@ class DeviceCommonTrackTopic extends BaseTopic
      * @param null $publishTime
      * @throws Exception
      */
-    public function __construct($publishTime = null)
+    public function __construct($publishTime = null, $sourceAppId = Constants::SMART_APP_ID)
     {
-        parent::__construct(self::TOPIC_NAME, $publishTime);
+        parent::__construct(self::TOPIC_NAME, $publishTime, $sourceAppId);
     }
 
     /**
