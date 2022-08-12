@@ -31,7 +31,6 @@ use App\Services\DssDictService;
 use App\Services\ErpUserEventTaskAwardGoldLeafService;
 use App\Services\ErpUserEventTaskAwardService;
 use App\Services\MiniAppQrService;
-use App\Services\MorningReferral\MorningReferralStatisticsService;
 use App\Services\PosterService;
 use App\Services\AgentService;
 use App\Services\PushServices;
@@ -1817,31 +1816,6 @@ class Dss extends ControllerBase
         }
 
         return HttpHelper::buildResponse($response, []);
-    }
-
-    /**
-     * 清晨 - 获取用户推荐人
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     */
-    public function getMorningStudentReferee(Request $request, Response $response): Response
-    {
-        $rules = [
-            [
-                'key' => 'student_uuids',
-                'type' => 'required',
-                'error_code' => 'student_uuid_is_required'
-            ]
-        ];
-        $params = $request->getParams();
-        $result = Valid::appValidate($params, $rules);
-        if ($result['code'] != Valid::CODE_SUCCESS) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
-        }
-        $studentUuids = array_slice($params['student_uuids'], 0, 500);
-        $data = MorningReferralStatisticsService::getStudentRefereeList($studentUuids);
-        return HttpHelper::buildResponse($response, $data);
     }
 }
 

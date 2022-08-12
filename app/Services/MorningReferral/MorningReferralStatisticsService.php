@@ -63,6 +63,11 @@ class MorningReferralStatisticsService
             }
             return false;
         }
+        // 不是体验卡不能创建转介绍关系
+        if ($data['order_type'] != CommonTrackConsumerService::ORDER_TYPE_TRAIL) {
+            SimpleLogger::info("create morning referral buy not trail", [$data]);
+            return false;
+        }
         // 接收qr_id
         $qrId = $data['metadata']['scene'] ?? '';
         if (empty($qrId)) {
