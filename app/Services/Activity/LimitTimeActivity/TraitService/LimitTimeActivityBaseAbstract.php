@@ -185,6 +185,8 @@ abstract class LimitTimeActivityBaseAbstract implements LimitTimeActivityBaseInt
 			$targetUser['target_user_first_pay_time_start']);
 		!empty($targetUser['target_user_first_pay_time_end']) && $targetUser['format_target_user_first_pay_time_end'] = date("Y-m-d H:i:s",
 			$targetUser['target_user_first_pay_time_end']);
+        !empty($targetUser['play_intensity_start_time']) && $targetUser['play_intensity_start_time'] = date("Y-m-d H:i:s", $targetUser['play_intensity_start_time']);
+        !empty($targetUser['play_intensity_end_time']) && $targetUser['play_intensity_end_time'] = date("Y-m-d H:i:s", $targetUser['play_intensity_end_time']);
 		return $targetUser;
 	}
 

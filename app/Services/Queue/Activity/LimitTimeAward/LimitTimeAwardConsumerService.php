@@ -229,13 +229,6 @@ class LimitTimeAwardConsumerService
             ],
             'from_type'    => '',
         ]);
-        try {
-            $studentAttr = $serviceObj->studentPayStatusCheck();
-        } catch (RunTimeException $e) {
-            SimpleLogger::info("$logTitle student attr error:", [$e->getMessage(), $e->getData()]);
-            return true;
-        }
-        $inviteNum = $serviceObj->getStudentReferralOrBuyTrailCount();
         foreach ($activityList as $item) {
             // 检查区号
             if (!LimitTimeActivityBaseAbstract::checkStudentCountryCodeRight($studentInfo['country_code'], $item['activity_country_code'])) {
@@ -247,14 +240,9 @@ class LimitTimeAwardConsumerService
             if ($item['target_user_type'] == OperationActivityModel::TARGET_USER_PART) {
                 // 部分付费有效判断条件
                 $targetUser = json_decode($item['target_user'], true);
-                if (!empty($targetUser['target_user_first_pay_time_start']) && !empty($targetUser['target_user_first_pay_time_end'])) {
-                    if ($studentAttr['first_pay_time'] < $targetUser['target_user_first_pay_time_start'] || $studentAttr['first_pay_time'] > $targetUser['target_user_first_pay_time_end']) {
-                        SimpleLogger::info("$logTitle student first pay time error:", [$studentAttr, $targetUser]);
-                        continue;
-                    }
-                }
-                if (!empty($targetUser['invitation_num']) && $inviteNum < $targetUser['invitation_num']) {
-                    SimpleLogger::info("$logTitle student invitation user num error:", [$inviteNum, $targetUser]);
+                list($isTargetUser) = $serviceObj->checkStudentIsTargetUser($targetUser);
+                if (!$isTargetUser) {
+                    SimpleLogger::info("$logTitle student is not target user num error:", [$isTargetUser, $targetUser]);
                     continue;
                 }
             }

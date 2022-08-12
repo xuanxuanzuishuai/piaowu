@@ -131,7 +131,14 @@ class LimitTimeActivityAdminService
         $targetUser = $data['target_user'] ?? [];
         if ($data['target_user_type'] == OperationActivityModel::TARGET_USER_PART) {
             // 部分用户时校验部分用户指定条件
-            if (empty($targetUser['target_user_first_pay_time_start']) && empty($targetUser['target_user_first_pay_time_end']) && empty($targetUser['invitation_num'])) {
+            if (
+                empty($targetUser['target_user_first_pay_time_start']) &&
+                empty($targetUser['target_user_first_pay_time_end']) &&
+                empty($targetUser['invitation_num']) &&
+                empty($targetUser['play_intensity_start_time']) &&
+                empty($targetUser['play_intensity_end_time']) &&
+                empty($targetUser['play_intensity_count'])
+            ) {
                 throw new RunTimeException(['target_user_empty']);
             } elseif (!empty($targetUser['target_user_first_pay_time_start']) && empty($targetUser['target_user_first_pay_time_end'])) {
                 throw new RunTimeException(['target_user_first_pay_empty']);
@@ -145,11 +152,42 @@ class LimitTimeActivityAdminService
             if (!empty($targetUser['target_user_first_pay_time_end'])) {
                 $targetUser['target_user_first_pay_time_end'] = Util::getDayLastSecondUnix($targetUser['target_user_first_pay_time_end']);
             }
+            // 练琴强度-条件检查
+            if (  !empty($targetUser['play_intensity_start_time']) ||
+                !empty($targetUser['play_intensity_end_time']) ||
+                !empty($targetUser['play_intensity_count'])
+            ) {
+                // 练琴时间范围不能为空
+                if (empty($targetUser['play_intensity_start_time']) || empty($targetUser['play_intensity_end_time'])) {
+                    throw new RunTimeException(['target_user_play_intensity_time']);
+                }
+                // 练琴强度不能为空
+                if (empty($targetUser['play_intensity_count'])) {
+                    throw new RunTimeException(['target_user_play_intensity_count']);
+                }
+                // 针对业务线进行检查必要信息 - 检查天数
+                if ($data['app_id'] == Constants::SMART_APP_ID && $targetUser['play_intensity_count'] > 100) {
+                    throw new RunTimeException(['target_user_play_intensity_day_too_long']);
+                }
+                // 针对业务线进行检查必要信息 - 检查课消数量
+                if ($data['app_id'] == Constants::REAL_APP_ID && $targetUser['play_intensity_count'] > 50){
+                    throw new RunTimeException(['target_user_play_intensity_course_consumed_too_long']);
+                }
+                // 时间范围不得超过6个月
+                $targetUser['play_intensity_start_time'] = Util::getDayFirstSecondUnix($targetUser['play_intensity_start_time']);
+                $targetUser['play_intensity_end_time'] = Util::getDayLastSecondUnix($targetUser['play_intensity_end_time']);
+                if ($targetUser['play_intensity_end_time'] - $targetUser['play_intensity_start_time'] > (180*Util::TIMESTAMP_ONEDAY)) {
+                    throw new RunTimeException(['target_user_play_intensity_time_too_long']);
+                }
+            }
         }
         return [
             'target_user_first_pay_time_start' => $targetUser['target_user_first_pay_time_start'] ?? 0, // 目标用户首次付费时间开始时间
             'target_user_first_pay_time_end'   => $targetUser['target_user_first_pay_time_end'] ?? 0, // 目标用户首次付费时间截止时间
             'invitation_num'                   => $targetUser['invitation_num'] ?? 0, // 邀请人数
+            'play_intensity_start_time'        => $targetUser['play_intensity_start_time'] ?? 0, // 练琴强度-开始时间
+            'play_intensity_end_time'          => $targetUser['play_intensity_end_time'] ?? 0, // 练琴强度-结束时间
+            'play_intensity_count'             => $targetUser['play_intensity_count'] ?? 0, // 练琴强度-总数
         ];
     }
 

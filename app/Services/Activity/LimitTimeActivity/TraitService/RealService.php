@@ -141,4 +141,37 @@ class RealService extends LimitTimeActivityBaseAbstract
 		$url = RealDictConstants::get(RealDictConstants::REAL_REFERRAL_CONFIG, 'limit_time_activity_record_list');
 		return is_string($url) ? $url : '';
 	}
+
+    /**
+     * 检查用户是否是目标用户
+     * @param $activityTargetUser
+     * @return array
+     * @throws RunTimeException
+     */
+    public function checkStudentIsTargetUser($activityTargetUser): array
+    {
+        $this->studentPayStatusCheck();
+        // 首次付费时间校验
+        if (!empty($activityTargetUser['target_user_first_pay_time_start']) &&
+            ($this->studentInfo['first_pay_time'] < $activityTargetUser['target_user_first_pay_time_start'] ||
+                $this->studentInfo['first_pay_time'] > $activityTargetUser['target_user_first_pay_time_end'])) {
+            return [false];
+        }
+        // 邀请人数量检验
+        if (!empty((int)$activityTargetUser['invitation_num'])) {
+            $invitationNum = $this->getStudentReferralOrBuyTrailCount();
+            if ($invitationNum < $activityTargetUser['invitation_num']) {
+                return [false];
+            }
+        }
+        // 练琴强度校验
+        if (!empty($activityTargetUser['play_intensity_start_time'])) {
+            // 获取学生练琴记录  TODO qingfeng.lian 获取课消记录
+            $playRecords = 0;
+            if (count($playRecords) < $activityTargetUser['play_intensity_count']) {
+                return [false];
+            }
+        }
+        return [true];
+    }
 }
