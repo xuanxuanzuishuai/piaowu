@@ -542,6 +542,7 @@ class SharePosterModel extends Model
                         verify_time,
                         award_id,
                         points_award_id,
+                        create_time,
                         dense_rank() over ( PARTITION BY activity_id, task_num ORDER BY id DESC ) AS upload_order 
                     FROM
                         " . self::$table . " 

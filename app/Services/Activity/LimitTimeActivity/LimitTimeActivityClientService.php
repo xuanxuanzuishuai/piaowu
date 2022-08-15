@@ -16,6 +16,7 @@ use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
 use App\Services\Activity\LimitTimeActivity\TraitService\LimitTimeActivityBaseAbstract;
 use App\Services\ActivityService;
+use App\Services\DictService;
 use App\Services\PosterService;
 use App\Services\Queue\Activity\LimitTimeAward\LimitTimeAwardProducerService;
 use App\Services\SharePosterService;
@@ -246,7 +247,8 @@ class LimitTimeActivityClientService
 				DictConstants::SEND_AWARD_STATUS['type'],
 				DictConstants::ACTIVITY_ENABLE_STATUS['type'],
 			]);
-		$formatTaskList = [];
+        $statusDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_STATUS);
+        $formatTaskList = [];
 		reset($taskList);
 		$awardType = current($taskList)['award_type'];
 		$maxTaskNum = max(array_column($taskList, 'task_num'));
@@ -271,6 +273,10 @@ class LimitTimeActivityClientService
 				'verify_status'   => (int)$recordsDetailFormat[$i]['verify_status'],
 				'award_status'    => $tmpAwardStatus,
 				'award_status_zh' => $dictData[DictConstants::SEND_AWARD_STATUS['type']][$tmpAwardStatus]['value'],
+                'share_poster_create_time' => (int)$recordsDetailFormat[$i]['create_time'] ?? 0,
+                'verify_status_zh'         => empty($recordsDetailFormat[$i]) ? '待上传' : ($statusDict[$recordsDetailFormat[$i]['verify_status']] ?? ''),
+                'activity_id'              => $activityData['activity_id'],
+                'activity_name'            => $activityData['activity_name'],
 			];
 		}
 		return $formatTaskList;
@@ -299,15 +305,8 @@ class LimitTimeActivityClientService
 			[$serviceObj->studentInfo['uuid']],
 			['activity_id' => $activityData['activity_id']],
 			0)[0], null, 'task_num');
-		$formatTaskList = self::formatActivityTaskListData($activityData, $taskList, $recordsDetail, false);
-		foreach ($formatTaskList as $tv) {
-			$result['list'][] = [
-				'activity_id' => $activityData['activity_id'],
-				'task_num'    => $tv['task_num'],
-				'name'        => $activityData['activity_name'] . '-' . $tv['task_num'],
-			];
-		}
-		return $result;
+        $formatTaskList = self::formatActivityTaskListData($activityData, $taskList, $recordsDetail);
+		return self::activityTaskListGroupSort($formatTaskList);
 	}
 
 	/**
@@ -493,4 +492,51 @@ class LimitTimeActivityClientService
 		}
 		return array_values(json_decode($tab, true));
 	}
+
+    /**
+     * 活动任务列表分组排序
+     * @param $activityTaskList
+     * @return array[]
+     * @throws RunTimeException
+     */
+    public static function activityTaskListGroupSort($activityTaskList)
+    {
+        $result = [
+            'verify_pass_task_list' => [],
+            'can_upload_task_list'  => [],
+        ];
+        if (empty($activityTaskList)) {
+            return $result;
+        }
+        // 拼接可参与活动的列表
+        foreach ($activityTaskList as $_taskInfo) {
+            $verifyStatusTask[$_taskInfo['verify_status']][] = [
+                'activity_id'                   => $_taskInfo['activity_id'],
+                'task_num'                      => $_taskInfo['task_num'],
+                'share_poster_create_time'      => $_taskInfo['share_poster_create_time'],
+                'share_poster_verify_status'    => $_taskInfo['verify_status'],
+                'share_poster_verify_status_zh' => $_taskInfo['verify_status_zh'],
+                'name'                          => $_taskInfo['activity_name'],
+            ];
+        }
+        unset($_taskInfo);
+        // 审核通过的 - 按照上传截图的时间倒序排列
+        if (!empty($verifyStatusTask[SharePosterModel::VERIFY_STATUS_QUALIFIED])) {
+            $result['verify_pass_task_list'] = Util::arraySort($verifyStatusTask[SharePosterModel::VERIFY_STATUS_QUALIFIED], 'share_poster_create_time');
+        }
+        // 可上传任务列表：未通过>待上传>待审核
+        // 可上传任务 - 审核未通过的 - 按照上传截图的时间倒序排列
+        if (!empty($verifyStatusTask[SharePosterModel::VERIFY_STATUS_UNQUALIFIED])) {
+            $result['can_upload_task_list'] = array_merge($result['can_upload_task_list'], Util::arraySort($verifyStatusTask[SharePosterModel::VERIFY_STATUS_UNQUALIFIED], 'share_poster_create_time'));
+        }
+        // 可上传任务 - 待上传 - 按照序号由小到大的顺序排列在审核未通过任务的后边
+        if (!empty($verifyStatusTask[0])) {
+            $result['can_upload_task_list'] = array_merge($result['can_upload_task_list'],  Util::arraySort($verifyStatusTask[0], 'task_num', 'ASC'));
+        }
+        // 可上传任务 - 待审核 - 按照序号由小到大的顺序排列在待上传任务的后边
+        if (!empty($verifyStatusTask[SharePosterModel::VERIFY_STATUS_WAIT])) {
+            $result['can_upload_task_list'] = array_merge($result['can_upload_task_list'], Util::arraySort($verifyStatusTask[SharePosterModel::VERIFY_STATUS_WAIT], 'share_poster_create_time'));
+        }
+        return $result;
+    }
 }
