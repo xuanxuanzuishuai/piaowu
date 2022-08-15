@@ -115,5 +115,7 @@ class DSSRouter extends RouterBase
         '/dss/limit_time_activity/share_poster_approval'      => ['method' => ['post'], 'call' => Dss::class . ':limitTimeActivitySharePosterApproval'],
         // 审核拒绝
         '/dss/limit_time_activity/share_poster_refused'       => ['method' => ['post'], 'call' => Dss::class . ':limitTimeActivitySharePosterRefused'],
-    ];
+		//获取订单购买渠道
+		'/dss/bill/buy_channel' => ['method' => ['get'], 'call' => Dss::class . ':getOrderBuyChannel'],
+	];
 }
