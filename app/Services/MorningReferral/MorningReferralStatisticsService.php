@@ -63,6 +63,11 @@ class MorningReferralStatisticsService
             }
             return false;
         }
+        // 不是体验卡不能创建转介绍关系
+        if ($data['order_type'] != CommonTrackConsumerService::ORDER_TYPE_TRAIL) {
+            SimpleLogger::info("create morning referral buy not trail", [$data]);
+            return false;
+        }
         // 接收qr_id
         $qrId = $data['metadata']['scene'] ?? '';
         if (empty($qrId)) {
@@ -216,5 +221,23 @@ class MorningReferralStatisticsService
     public static function updateReferralStage($studentUuid)
     {
         return self::createStudentReferral($studentUuid, [], [], MorningReferralDetailModel::STAGE_FORMAL);
+    }
+
+    /**
+     * 批量获取学生推荐人列表
+     * @param $studentUuids
+     * @return array
+     */
+    public static function getStudentRefereeList($studentUuids): array
+    {
+        if (empty($studentUuids)) {
+            return [];
+        }
+        foreach ($studentUuids as $key => &$_uuid) {
+            if (empty($_uuid)) unset($studentUuids[$key]);
+            $_uuid = (string)$_uuid;
+        }
+        $list = MorningReferralStatisticsModel::getRecords(['student_uuid' => array_unique($studentUuids)], ['student_uuid', 'referee_student_uuid']);
+        return is_array($list) ? $list : [];
     }
 }

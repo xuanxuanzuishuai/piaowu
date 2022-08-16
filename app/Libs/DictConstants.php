@@ -761,6 +761,7 @@ class DictConstants {
         'keys' => [
             'erp_service',
             'crm_service',
+            'dawn_service',
         ],
     ];
 
