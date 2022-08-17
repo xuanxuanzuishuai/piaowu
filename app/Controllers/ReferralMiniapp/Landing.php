@@ -18,7 +18,7 @@ use App\Services\Queue\QueueService;
 use App\Services\Queue\Track\DeviceCommonTrackTopic;
 use App\Services\ReferralService;
 use App\Services\ShowMiniAppService;
-use App\Services\UserService;
+use App\Services\StudentServices\DssStudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use App\Libs\Exceptions\RunTimeException;
@@ -324,7 +324,8 @@ class Landing extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            $data = UserService::getDssStudentRepeatBuyPkg($params['uuid'], $params['pkg']);
+            $params['open_id'] = $this->ci['referral_miniapp_openid'];
+            $data = DssStudentService::getStudentRepeatBuyPkg($params['uuid'], $params['pkg'], $params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

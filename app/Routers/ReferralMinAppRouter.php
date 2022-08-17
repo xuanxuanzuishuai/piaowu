@@ -70,7 +70,7 @@ class ReferralMinAppRouter extends RouterBase
         '/referral_miniapp/student/check_student_is_repeat' => [
             'method' => ['get'],
             'call' => Landing::class . ':checkStudentIsRepeat',
-            'middles' => []
+            'middles' => [ReferralMinAppAuthCheckMiddleware::class]
         ],
         //用户支付成功获取跳转小程序加微页链接
         '/referral_miniapp/url_scheme/get_assistant_wx_url' => [
