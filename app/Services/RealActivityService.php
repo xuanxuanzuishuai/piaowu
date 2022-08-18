@@ -382,7 +382,7 @@ class RealActivityService
             if ($item['activity_id'] == $currentActivity['activity_id']) {
                 $result['verify_pass_task_list'] = $_tmpData['verify_pass_task_list'];
             }
-            $result['can_upload_task_list'] += $_tmpData['can_upload_task_list'];
+            $result['can_upload_task_list'] = array_merge($result['can_upload_task_list'], $_tmpData['can_upload_task_list']);
         }
         unset($item);
         return $result;
