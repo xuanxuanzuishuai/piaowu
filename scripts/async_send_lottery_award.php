@@ -20,6 +20,7 @@ require_once PROJECT_ROOT . '/vendor/autoload.php';
 use App\Libs\Constants;
 use App\Libs\SimpleLogger;
 use App\Models\Erp\ErpStudentModel;
+use App\Models\LotteryActivityChangeLogModel;
 use App\Models\LotteryActivityModel;
 use App\Services\Activity\Lottery\LotteryServices\LotteryAwardRecordService;
 use App\Services\ErpService\ErpGoodsV1Service;
@@ -27,7 +28,7 @@ use App\Services\Queue\GrantAwardTopic;
 use Dotenv\Dotenv;
 
 /**
- * 异步发送抽奖活动的实物奖品:领取奖品24小时后发货，即24小时后推送到ERP
+ * 异步发送抽奖活动的实物奖品:领取奖品XXX小时后发货推送到ERP
  */
 $dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();
@@ -36,43 +37,64 @@ SimpleLogger::info('async send lottery award start', []);
 //转盘抽奖实物奖励,等待发货数据
 $waitSendAwardRecordData = LotteryAwardRecordService::getUnshippedAwardRecord();
 SimpleLogger::info("waitSendAwardRecordData", [$waitSendAwardRecordData]);
+$nowTime = time();
 if (empty($waitSendAwardRecordData)) {
-    return true;
+	return true;
 }
-foreach ($waitSendAwardRecordData as &$wv) {
-    $wv += json_decode($wv['award_detail'], true);
+//查询活动不同版本数据
+$opActivityIds = array_column($waitSendAwardRecordData, 'op_activity_id');
+$opActivityVersions = array_column($waitSendAwardRecordData, 'activity_version');
+$lotteryActivityVersionData = LotteryActivityChangeLogModel::getRecords([
+	'op_activity_id'   => array_unique($opActivityIds),
+	'activity_version' => array_unique($opActivityVersions),
+]);
+$lotteryActivityVersionFormatData = [];
+foreach ($lotteryActivityVersionData as $lav) {
+	$lotteryActivityVersionFormatData[$lav['op_activity_id'] . '_' . $lav['activity_version']]['base_data'] = json_decode($lav['base_data'], true);
 }
-
+foreach ($waitSendAwardRecordData as $wk => &$wv) {
+	//兼容一下旧版数据：以前的活动不支持修改，所以没有版本变更日志
+	if (isset($lotteryActivityVersionFormatData[$wv['op_activity_id'] . '_' . $wv['activity_version']]['base_data']['material_send_interval_hours'])) {
+		if ($nowTime - $wv['draw_time'] < $lotteryActivityVersionFormatData[$wv['op_activity_id'] . '_' . $wv['activity_version']]['base_data']['material_send_interval_hours'] * 3600) {
+			unset($waitSendAwardRecordData[$wk]);
+			continue;
+		}
+	}
+	$wv += json_decode($wv['award_detail'], true);
+}
+if (empty($waitSendAwardRecordData)) {
+	return true;
+}
 //获取商品数据
 $goodsIds = array_column($waitSendAwardRecordData, 'common_award_id');
 $goodsData = array_column(ErpGoodsV1Service::getGoodsDataByIds($goodsIds), null, 'id');
 //获取学生数据
 $uuids = array_column($waitSendAwardRecordData, 'uuid');
 $studentData = array_column(ErpStudentModel::getRecords(['uuid' => array_unique($uuids)], ['mobile', 'uuid']), null,
-    'uuid');
+	'uuid');
 
 //获取发奖topic对象
 try {
-    $topicObj = new GrantAwardTopic();
+	$topicObj = new GrantAwardTopic();
 } catch (\Exception $e) {
-    SimpleLogger::error($e->getMessage(), []);
-    return false;
+	SimpleLogger::error($e->getMessage(), []);
+	return false;
 }
 foreach ($waitSendAwardRecordData as $wak => $wav) {
-    $nsqData = [
-        'record_id'  => $wav['id'],
-        'type'       => $wav['award_type'],
-        'unique_id'  => $wav['unique_id'],
-        'plat_id'    => Constants::UNIQUE_ID_PREFIX,
-        'app_id'     => $wav['app_id'],
-        'sale_shop'  => LotteryActivityModel::BUSINESS_MAP_SHOP[$wav['app_id']],
-        'goods_id'   => $wav['common_award_id'],
-        'goods_code' => $goodsData[$wav['common_award_id']]['code'],
-        'mobile'     => $studentData[$wav['uuid']]['mobile'],
-        'uuid'       => $wav['uuid'],
-        'amount'     => $wav['common_award_amount'],
-        'erp_address_id' => $wav['erp_address_id'],
-    ];
-    $topicObj->lotteryGrantAward($nsqData)->publish($wak % 600);
+	$nsqData = [
+		'record_id'      => $wav['id'],
+		'type'           => $wav['award_type'],
+		'unique_id'      => $wav['unique_id'],
+		'plat_id'        => Constants::UNIQUE_ID_PREFIX,
+		'app_id'         => $wav['app_id'],
+		'sale_shop'      => LotteryActivityModel::BUSINESS_MAP_SHOP[$wav['app_id']],
+		'goods_id'       => $wav['common_award_id'],
+		'goods_code'     => $goodsData[$wav['common_award_id']]['code'],
+		'mobile'         => $studentData[$wav['uuid']]['mobile'],
+		'uuid'           => $wav['uuid'],
+		'amount'         => $wav['common_award_amount'],
+		'erp_address_id' => $wav['erp_address_id'],
+	];
+	$topicObj->lotteryGrantAward($nsqData)->publish($wak % 600);
 }
 SimpleLogger::info('async send lottery award end', []);

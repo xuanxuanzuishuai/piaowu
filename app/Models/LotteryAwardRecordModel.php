@@ -12,7 +12,8 @@ class LotteryAwardRecordModel extends Model
 
     const USE_TYPE_FILTER = 1;
     const USE_TYPE_IMPORT = 2;
-
+	//抽奖活动修改地址加锁
+    const LOTTERY_ENTITY_AWARD_PUSH_ERP_LOCK='lottery_entity_award_push_erp_lock';
     /**
      * 获取未中空奖人数
      * @param $opActivityId
@@ -131,12 +132,11 @@ class LotteryAwardRecordModel extends Model
 
     /**
      * 获取未发货的奖励记录
-     * @param $drawTime
      * @param $shippingStatus
      * @param $awardType
      * @return array
      */
-    public static function getUnshippedAwardRecord($drawTime, $shippingStatus, $awardType): array
+    public static function getUnshippedAwardRecord($shippingStatus, $awardType): array
     {
         $db = MysqlDB::getDB();
         return $db->select(self::$table,
@@ -150,14 +150,16 @@ class LotteryAwardRecordModel extends Model
                 self::$table . ".id",
                 self::$table . ".erp_address_id",
                 self::$table . ".award_type",
+                self::$table . ".activity_version",
+                self::$table . ".op_activity_id",
                 LotteryAwardInfoModel::$table . ".award_detail",
                 LotteryActivityModel::$table . ".app_id",
             ],
             [
                 self::$table . ".draw_time[>]"    => 0,
-                self::$table . ".draw_time[<=]"   => $drawTime,
                 self::$table . ".shipping_status" => $shippingStatus,
                 self::$table . ".award_type"      => $awardType,
+                self::$table . ".grant_state"      => Constants::STATUS_FALSE,
             ]);
     }
 }

@@ -6,7 +6,9 @@ namespace App\Controllers\OrgWeb;
 
 use App\Controllers\ControllerBase;
 use App\Libs\AliOSS;
+use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
@@ -198,4 +200,110 @@ class StudentAccount extends ControllerBase
             'data' => ['url' => $ossUrl]
         ]);
     }
+
+	/**
+	 * 添加/修改地址
+	 * @param Request $request
+	 * @param Response $response
+	 * @return Response
+	 */
+	public function modifyAddress(Request $request, Response $response):Response
+	{
+		$rules = [
+			[
+				'key' => 'name',
+				'type' => 'required',
+				'error_code' => 'student_name_is_required',
+			],
+			[
+				'key' => 'mobile',
+				'type' => 'required',
+				'error_code' => 'mobile_is_required',
+			],
+			[
+				'key' => 'mobile',
+				'type' => 'regex',
+				'value' => Constants::MOBILE_REGEX,
+				'error_code' => 'student_mobile_format_is_error'
+			],
+			[
+				'key' => 'country_code',
+				'type' => 'required',
+				'error_code' => 'country_code_is_required',
+			],
+			[
+				'key' => 'province_code',
+				'type' => 'required',
+				'error_code' => 'province_code_is_required'
+			],
+			[
+				'key' => 'city_code',
+				'type' => 'required',
+				'error_code' => 'city_code_is_required'
+			],
+			[
+				'key' => 'district_code',
+				'type' => 'required',
+				'error_code' => 'district_code_is_required'
+			],
+			[
+				'key' => 'address',
+				'type' => 'required',
+				'error_code' => 'student_address_is_required',
+			],
+			[
+				'key' => 'is_default',
+				'type' => 'required',
+				'error_code' => 'address_default_is_required',
+			],
+			[
+				'key'        => 'uuid',
+				'type'       => 'required',
+				'error_code' => 'uuid_is_required'
+			],
+		];
+
+		$params = $request->getParams();
+		$result = Valid::appValidate($params, $rules);
+		if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+			return $response->withJson($result, StatusCode::HTTP_OK);
+		}
+		$params['default'] = $params['is_default'];
+		$params['address_id'] = $params['address_id'] ?? 0;
+		$erp = new Erp();
+		$result = $erp->modifyStudentAddress($params);
+		return $response->withJson($result, StatusCode::HTTP_OK);
+	}
+
+	/**
+	 *
+	 * @param Request $request
+	 * @param Response $response
+	 * @return Response
+	 */
+	public function addressList(Request $request, Response $response):Response
+	{
+		$rules = [
+			[
+				'key'        => 'uuid',
+				'type'       => 'required',
+				'error_code' => 'uuid_is_required'
+			]
+		];
+		$params = $request->getParams();
+		$result = Valid::appValidate($params, $rules);
+		if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+			return $response->withJson($result, StatusCode::HTTP_OK);
+		}
+		$erp = new Erp();
+		$result = $erp->getStudentAddressList($params['uuid']);
+		if (empty($result) || $result['code'] != 0) {
+			$errorCode = $result['errors'][0]['err_no'] ?? 'erp_request_error';
+			return $response->withJson(Valid::addAppErrors([], $errorCode), StatusCode::HTTP_OK);
+		}
+		return $response->withJson([
+			'code' => Valid::CODE_SUCCESS,
+			'data' => $result['data']['list']
+		], StatusCode::HTTP_OK);
+	}
 }

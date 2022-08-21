@@ -440,19 +440,6 @@ class AliOSS
     }
 
     /**
-     * 替换cdn域名(曲谱用)
-     * @param string $url
-     * @return string
-     */
-    public static function replaceCdnDomain($url)
-    {
-        $cdnDomain = DictConstants::get(DictConstants::ALI_OSS_CONFIG, 'cdn_domain');
-        $reg = '/(http|https):\/\/([^\/]+)/i';
-        $newUrl = preg_replace($reg, $cdnDomain, $url);
-        return $newUrl ?? $url;
-    }
-
-    /**
      * @param $url
      * @return string|string[]
      */
@@ -469,7 +456,22 @@ class AliOSS
         return $newUrl ?? $url;
     }
 
-    /**
+	/**
+	 * 批量获取图片oss访问路径
+	 * @param array $urls
+	 * @return array
+	 */
+	public static function batchReplaceCdnDomainForDss(array $urls): array
+	{
+		$ossPath = [];
+		$cdnDomain = DictConstants::get(DictConstants::ALI_OSS_CONFIG, 'dss_cdn_domain');
+		foreach ($urls as $val) {
+			$ossPath[$val['code']] = $cdnDomain . '/' . ($val['value']);
+		}
+		return $ossPath;
+	}
+
+	/**
      * 检测文件是否存在
      * @param $objName
      * @return bool

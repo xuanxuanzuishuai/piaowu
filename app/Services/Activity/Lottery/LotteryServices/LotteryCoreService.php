@@ -25,14 +25,8 @@ class LotteryCoreService
         }
 
         //经过算法计算奖品
-        if ($params['use_type'] == LotteryAwardRecordModel::USE_TYPE_FILTER) {
-            SimpleLogger::info('LotteryCore consume filter times', []);
-            $hitInfo = self::LotteryFilterRuleCore($params);
-        } elseif ($params['use_type'] == LotteryAwardRecordModel::USE_TYPE_IMPORT) {
-            SimpleLogger::info('LotteryCore consume import times', []);
-            $hitInfo = self::LotteryImportCore($params);
-        }
-
+		SimpleLogger::info('LotteryCore consume filter times', []);
+		$hitInfo = self::LotteryFilterRuleCore($params);
         return $hitInfo ?? [];
     }
 

@@ -11,6 +11,7 @@ namespace App\Models;
 
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 
 class Model
@@ -179,8 +180,11 @@ class Model
         $db = MysqlDB::getDB();
         $client = $db->getClientObj();
         $client->pdo->exec($updateSqlStr);
+        SimpleLogger::info("query sql",[$updateSqlStr]);
         $error = $client->error();
-        if($error[0]!='0000'||!empty($error[1]) || !empty($error[2])){
+		SimpleLogger::info("query error",[$error]);
+
+		if($error[0]!='0000'||!empty($error[1]) || !empty($error[2])){
             return false;
         }
         return true;

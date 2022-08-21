@@ -72,7 +72,11 @@ class LotteryActivityService
             }
 
             //查询用户导入抽奖机会
-            $importTimes = LotteryImportUserService::importUserTimes($params['op_activity_id'], $params['uuid']);
+            $importData = LotteryImportUserService::importUserTimes($params['op_activity_id'], $params['uuid']);
+			$importTimes = 0;
+            if(!empty($importData)){
+				$importTimes = array_sum(array_column($importData,'rest_times'));
+			}
             //用户消耗的抽奖次数
             $useTime = LotteryAwardRecordService::useLotteryTimes($params['op_activity_id'], $params['uuid']);
 
@@ -231,27 +235,44 @@ class LotteryActivityService
             $orderToTimes = self::orderToTimes($activityInfo['op_activity_id'], $orderInfo);
             $filerTimes = count($orderToTimes);
         }
-        $importTimes = LotteryImportUserService::importUserTimes($params['op_activity_id'], $params['uuid']);
+		//确定抽奖次数的最大值
+		if ($activityInfo['upper_limit'] >= 0) {
+			$filerTimes = min($filerTimes, $activityInfo['upper_limit']);
+		}
+		//导入的抽奖次数
+		$importData = LotteryImportUserService::importUserTimes($params['op_activity_id'], $params['uuid']);
+		$importTimes = 1;
+		$importTimeAmountMap = [];
+		if (!empty($importData)) {
+			$importTimes = array_sum(array_column($importData, 'rest_times'));
+			$tmpMaxStartIndex = 0;
+			foreach ($importData as $iv) {
+				$importTimeAmountMap = array_merge($importTimeAmountMap, array_fill($tmpMaxStartIndex, $iv['rest_times'], $iv['order_amount']));
+				$tmpMaxStartIndex = $iv['rest_times'];
+			}
+		}
         $totalTimes = $filerTimes + $importTimes;
-
         //用户消耗的抽奖次数
         $useTimes = LotteryAwardRecordService::useLotteryTimes($params['op_activity_id'], $params['uuid']);
         $params['rest_times'] = $totalTimes - $useTimes;
         if ($totalTimes <= $useTimes) {
             throw new RunTimeException(['lottery_times_empty']);
         }
-
-        $importTimesUsed = LotteryAwardRecordService::useLotteryTimes($params['op_activity_id'], $params['uuid'],
-            LotteryAwardRecordModel::USE_TYPE_FILTER);
-        if ($filerTimes > $importTimesUsed) {
-            $params['use_type'] = LotteryAwardRecordModel::USE_TYPE_FILTER;
-            $params['pay_amount'] = $orderToTimes[$importTimesUsed] ?? -1;
-        } else {
-            $params['use_type'] = LotteryAwardRecordModel::USE_TYPE_IMPORT;
-        }
+		$filterTimesUsed = LotteryAwardRecordService::useLotteryTimes($params['op_activity_id'], $params['uuid'],
+			LotteryAwardRecordModel::USE_TYPE_FILTER);
+		if ($filerTimes > $filterTimesUsed) {
+			$params['use_type'] = LotteryAwardRecordModel::USE_TYPE_FILTER;
+			$params['pay_amount'] = $orderToTimes[$filterTimesUsed] ?? -1;
+		} else {
+			$importTimesUsed = LotteryAwardRecordService::useLotteryTimes($params['op_activity_id'], $params['uuid'],
+				LotteryAwardRecordModel::USE_TYPE_IMPORT);
+			$params['use_type'] = LotteryAwardRecordModel::USE_TYPE_IMPORT;
+			$params['pay_amount'] = $importTimeAmountMap[$importTimesUsed] ?? -1;
+		}
 
         $params['max_hit'] = $activityInfo['max_hit'];
         $params['day_max_hit'] = $activityInfo['day_max_hit'];
+        $params['upper_limit'] = $activityInfo['upper_limit'];
         return $params;
     }
 
@@ -328,15 +349,10 @@ class LotteryActivityService
      * @return bool
      */
     public static function update($opActivityId, $updateParamsData): bool
-    {
-        //获取活动数据
-        $activityData = LotteryActivityModel::getRecord(['op_activity_id' => $opActivityId]);
-        if (empty($activityData)) {
-            return false;
-        }
-        if(empty($updateParamsData['base_data']['status'])){
-            unset($updateParamsData['base_data']['status']);
-        }
+	{
+		if (empty($updateParamsData['update_params_data']['base_data']['status'])) {
+			unset($updateParamsData['update_params_data']['base_data']['status']);
+		}
         return LotteryActivityModel::update($opActivityId, $updateParamsData);
     }
 
@@ -357,6 +373,9 @@ class LotteryActivityService
         if (!empty($searchParams['user_source'])) {
             $where['user_source'] = $searchParams['user_source'];
         }
+		if (!empty($searchParams['app_id'])) {
+			$where['app_id'] = (int)$searchParams['app_id'];
+		}
         //根据不同状态设置不同查询条件
         $mapWhere = OperationActivityModel::showStatusMapWhere($searchParams['show_status']);
         $where += $mapWhere;
@@ -407,7 +426,9 @@ class LotteryActivityService
             "app_id",
             "start_pay_time",
             "end_pay_time",
-            "activity_desc"
+            "activity_desc",
+            "material_send_interval_hours",
+            "upper_limit"
         ], false);
         if (empty($activityBaseData)) {
             return $detailData;

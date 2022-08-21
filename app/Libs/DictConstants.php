@@ -78,7 +78,7 @@ class DictConstants {
             '2',    // 课管活动
         ]
     ];
-    
+
     // RT活动优惠券状态
     const RT_ACTIVITY_COUPON_STATUS = [
         'type' => 'RT_ACTIVITY_COUPON_STATUS',
@@ -90,7 +90,7 @@ class DictConstants {
             '5',    // 已作废
         ]
     ];
-    
+
     // RT活动优惠券状态
     const RT_ACTIVITY_CONFIG = [
         'type' => 'RT_ACTIVITY_CONFIG',
@@ -106,7 +106,7 @@ class DictConstants {
             'year_days',    //年卡对应天数
         ]
     ];
-    
+
     // 阿里云config
     const ALI_OSS_CONFIG = [
         'type' => 'ALI_OSS_CONFIG',
@@ -561,7 +561,7 @@ class DictConstants {
     //业务线
     const PACKAGE_APP_NAME = [
         'type' => 'PACKAGE_APP_NAME',
-        'keys' => ['8']
+        'keys' => ['8', '1']
     ];
     //代理绑定有效时间
     const AGENT_BIND = [
@@ -988,7 +988,7 @@ class DictConstants {
             'erp_rt_activity_name',
         ]
     ];
-    
+
     /**
      * landing页召回目标人群
      */
@@ -996,7 +996,7 @@ class DictConstants {
         'type' => 'LANDING_RECALL_TARGET',
         'keys' => [1, 2]
     ];
-    
+
     /**
      * landing页召回时机
      */
@@ -1004,7 +1004,7 @@ class DictConstants {
         'type' => 'LANDING_RECALL_SEND_TIME',
         'keys' => [5, 30, 60]
     ];
-    
+
     /**
      * landing页召回页面url
      */
@@ -1012,7 +1012,7 @@ class DictConstants {
         'type' => 'LANDING_RECALL_URL',
         'keys' => ['landing_recall_url']
     ];
-    
+
     /**
      * landing页召回注册和购买渠道号
      */
@@ -1283,8 +1283,14 @@ class DictConstants {
         'keys' => [
             '1',//抽奖活动真人用户注册默认渠道key_code
             '8',//抽奖活动智能用户注册默认渠道key_code
+			'default_top_banner'
         ],
     ];
+	//奖品图片配置:各种奖品默认的图片
+	const AWARD_IMG_CONFIG = [
+		'type' => 'award_img_config',
+		'keys' => [0, 1, 2, 3, 4, 5, 6],
+	];
 
     //消息提醒类型
     const MESSAGE_REMINDER_TYPE = [

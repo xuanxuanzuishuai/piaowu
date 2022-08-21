@@ -241,7 +241,11 @@ class OrgWebRouter extends RouterBase
         '/op_web/student_account/importRewardPointsList' => ['method' => ['get'], 'call' => StudentAccount::class . ':importRewardPointsList'],
         // 获取批量发放积分导入模板地址
         '/op_web/student_account/download_template' => ['method' => ['get'], 'call' => StudentAccount::class . ':batchImportRewardPointsTemplate'],
-        // DEV: 创建验证码
+		// 添加/修改地址
+		'/op_web/student_account/modify_address' => ['method' => ['post'], 'call' => StudentAccount::class . ':modifyAddress'],
+		// 收获地址列表
+		'/op_web/student_account/address_list' => ['method' => ['get'], 'call' => StudentAccount::class . ':addressList'],
+		// DEV: 创建验证码
         '/op_web/admin/sms_code' => ['method' => ['post'], 'call' => Admin::class . ':smsCode', 'middles' => []],
 
         // event事件列表
@@ -417,6 +421,7 @@ class OrgWebRouter extends RouterBase
         '/op_web/lottery_activity/express_detail' => ['method' => ['get'], 'call' => ActivityLottery::class . ':expressDetail'],
         '/op_web/lottery_activity/update_status' => ['method' => ['post'], 'call' => ActivityLottery::class . ':updateEnableStatus'],
         '/op_web/lottery_activity/export_records' => ['method' => ['get'], 'call' => ActivityLottery::class . ':exportRecords'],
+        '/op_web/lottery_activity/default_img_config' => ['method' => ['get'], 'call' => ActivityLottery::class . ':activityDefaultImgConfig'],
 
         /** 渠道线索管理 */
         // 真人渠道线索列表
