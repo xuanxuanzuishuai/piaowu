@@ -56,9 +56,17 @@ class LotteryAdminService
 		$nowTime = time();
 		$formatParams = [];
 		//检测参数
-		if ($paramsData['start_time'] < $nowTime ||
-			$paramsData['end_time'] <= $paramsData['start_time']) {
-			throw new RuntimeException(["activity_start_time_error"]);
+		if (!isset($paramsData['op_activity_id'])) {
+			//新增要检测开始时间和当前时间关系
+			if ($paramsData['start_time'] < $nowTime ||
+				$paramsData['end_time'] <= $paramsData['start_time']) {
+				throw new RuntimeException(["activity_start_time_error"]);
+			}
+		} else {
+			if ($paramsData['end_time'] <= $nowTime ||
+				$paramsData['end_time'] <= $paramsData['start_time']) {
+				throw new RuntimeException(["activity_start_time_error"]);
+			}
 		}
 		$formatParams['base_data']['name'] = Util::textEncode(trim($paramsData['name']));
 		$formatParams['base_data']['activity_desc'] = Util::textEncode(trim($paramsData['activity_desc']));
@@ -182,7 +190,7 @@ class LotteryAdminService
 		foreach ($paramsData['awards'] as $awk => &$awv) {
 			//批量验证参数格式
 			$formatParams['awards'][$awk] = self::checkAwardsParams($awv);
-			$formatParams['awards'][$awk]['rest_num'] = $formatParams['awards'][$awk]['num'];
+			$formatParams['awards'][$awk]['num'] = $formatParams['awards'][$awk]['rest_num'];
 			$weightTotal += $awv['weight'];
 			//区分不同奖励，校验不同参数
 			switch ($awv['type']) {
@@ -216,6 +224,7 @@ class LotteryAdminService
 				}
 				$formatParams['awards'][$awk]['num'] = $formatParams['awards'][$awk]['rest_num'] = -1;
 			} else {
+				//活动的奖品剩余数量
 				$formatParams['base_data']['rest_award_num'] += $formatParams['awards'][$awk]['num'];
 
 			}
@@ -244,8 +253,7 @@ class LotteryAdminService
 						'start_time' => (int)$thv['start_time'],
 						'end_time'   => (int)$thv['end_time'],
 					];
-					if ($tmpHitTimesItem['start_time'] <= $nowTime ||
-						$tmpHitTimesItem['start_time'] >= $tmpHitTimesItem['end_time']) {
+					if ($tmpHitTimesItem['start_time'] >= $tmpHitTimesItem['end_time']) {
 						throw new RuntimeException(["hit_times_start_time_error"]);
 					}
 					if (isset($awv['hit_times'][$thk + 1]['start_time']) &&
@@ -315,10 +323,10 @@ class LotteryAdminService
 	public static function checkAwardsParams($awv): array
 	{
 		$checkParamsConfig = [
-			"name"    => ['error' => "award_name_is_required", 'type' => 'string'],
-			"img_url" => ['error' => "img_is_required", 'type' => 'string'],
-			"weight"  => ['error' => "weight_is_error", 'type' => 'float', '0_relation' => ">"],
-			"num"     => ['error' => "award_storage_num_error", 'type' => 'int', '0_relation' => ">="],
+			"name"     => ['error' => "award_name_is_required", 'type' => 'string'],
+			"img_url"  => ['error' => "img_is_required", 'type' => 'string'],
+			"weight"   => ['error' => "weight_is_error", 'type' => 'float', '0_relation' => ">"],
+			"rest_num" => ['error' => "award_storage_num_error", 'type' => 'int', '0_relation' => ">="],
 		];
 		$awardCheckParams = [];
 		foreach ($checkParamsConfig as $ck => $cv) {
@@ -356,14 +364,18 @@ class LotteryAdminService
 	private static function checkStopUpdateColumn(int $opActivityId, array $activityParamsData): array
 	{
 		$checkRes = [
-			"update_params_data" => [],
-			"mysql_change_data"  => []
+			"update_params_data"                => [],
+			"mysql_change_data"                 => [],
+			"mysql_data_current_version"        => 0,
+			"mysql_data_current_rest_award_num" => 0,
 		];
 		$nowTime = time();
 		$activityParamsData['awards_update_sql'] = '';
 		//获取活动当前配置数据
-		$commonDeleteWhere = ['op_activity_id' => $opActivityId];
-		$mysqlBaseData = LotteryActivityModel::getRecord($commonDeleteWhere);
+		$commonSearchWhere = ['op_activity_id' => $opActivityId];
+		$mysqlBaseData = LotteryActivityModel::getRecord($commonSearchWhere);
+		$checkRes['mysql_data_current_version'] = $mysqlBaseData['version'];
+		$checkRes['mysql_data_current_rest_award_num'] = $mysqlBaseData['rest_award_num'];
 		if (empty($mysqlBaseData)) {
 			throw new RuntimeException(["record_not_found"]);
 		} elseif ($mysqlBaseData['status'] == OperationActivityModel::ENABLE_STATUS_DISABLE) {
@@ -371,7 +383,7 @@ class LotteryAdminService
 		} elseif ($mysqlBaseData['end_time'] <= $nowTime) {
 			throw new RuntimeException(["event_pass_deadline"]);
 		} elseif ($mysqlBaseData['status'] == OperationActivityModel::ENABLE_STATUS_OFF ||
-			$mysqlBaseData['start_time'] <= $nowTime) {
+			$mysqlBaseData['start_time'] > $nowTime) {
 			$checkRes["update_params_data"] = $activityParamsData;
 			return $checkRes;
 		} else {
@@ -379,8 +391,8 @@ class LotteryAdminService
 			$activityChangeMysqlData['version'] = $mysqlBaseData['version'];
 			$activityChangeMysqlData['create_time'] = $activityParamsData['base_data']['update_time'];
 			$activityChangeMysqlData['update_uuid'] = $activityParamsData['base_data']['update_uuid'];
-			$activityChangeMysqlData['win_prize_rule'] = json_encode(LotteryAwardRuleModel::getRecords($commonDeleteWhere), JSON_UNESCAPED_UNICODE);
-			$mysqlAwardsData = LotteryAwardInfoModel::getRecords($commonDeleteWhere);
+			$activityChangeMysqlData['win_prize_rule'] = json_encode(LotteryAwardRuleModel::getRecords($commonSearchWhere), JSON_UNESCAPED_UNICODE);
+			$mysqlAwardsData = LotteryAwardInfoModel::getRecords($commonSearchWhere);
 			//活动可修改数据
 			$allowUpdateColumn = LotteryActivityModel::ALLOW_UPDATE_COLUMNS;
 			//基础信息
@@ -392,6 +404,7 @@ class LotteryAdminService
 				$activityChangeMysqlData['base_data'][$bk] = $bv;
 			}
 			$activityParamsData['base_data']['version'] = $mysqlBaseData['version'] + 1;
+			$activityChangeMysqlData['base_data']['rest_award_num'] = $activityParamsData['base_data']['rest_award_num'] = array_sum(array_column($activityParamsData['awards'], 'rest_num'));
 			$activityChangeMysqlData['base_data'] = json_encode($activityChangeMysqlData['base_data'], JSON_UNESCAPED_UNICODE);
 			//奖品信息
 			$tmpAwardParams = array_column($activityParamsData['awards'], null, 'level');
@@ -399,21 +412,27 @@ class LotteryAdminService
 			foreach ($mysqlAwardsData as $amk => $amv) {
 				$tmpSql = '';
 				foreach ($amv as $amvKey => $amvItem) {
+					if ($amvKey == 'num') {
+						continue;
+					}
 					if (!in_array($amvKey, $allowUpdateColumn['awards'])) {
 						$tmpSql .= "," . $amvKey . "='" . $amvItem . "'";
 					} else {
+						//库存需要计算
+						if ($amvKey == 'rest_num') {
+							$tmpSql .= ", num='" . ($amv['num'] + ($tmpAwardParams[$amv['level']][$amvKey] - $amvItem)) . "'";
+						}
 						$tmpSql .= "," . $amvKey . "='" . $tmpAwardParams[$amv['level']][$amvKey] . "'";
 						$activityChangeMysqlData['awards'][$amk][$amvKey] = $amvItem;
 					}
 				}
-				$awardsUpdateSql .= "UPDATE " . LotteryAwardInfoModel::$table . " SET " . trim($tmpSql, ',') . " WHERE id=" . $amv['id'] . ";";
+				$awardsUpdateSql .= "UPDATE " . LotteryAwardInfoModel::$table . " SET " . trim($tmpSql, ',') .
+					" WHERE id=" . $amv['id'] . " AND num=" . $amv['num'] . ' AND rest_num=' . $amv['rest_num'] . ';';
 			}
 			$activityParamsData['awards_update_sql'] = $awardsUpdateSql;
 			$activityChangeMysqlData['awards'] = json_encode($activityChangeMysqlData['awards'], JSON_UNESCAPED_UNICODE);
-			$checkRes = [
-				"update_params_data" => $activityParamsData,
-				"mysql_change_data"  => $activityChangeMysqlData
-			];
+			$checkRes['update_params_data'] = $activityParamsData;
+			$checkRes['mysql_change_data'] = $activityChangeMysqlData;
 		}
 		return $checkRes;
 	}
@@ -525,25 +544,25 @@ class LotteryAdminService
 			$tmpEndAward['value'] = '兜底奖';
 			array_splice($awardFormatData[$lv['op_activity_id']], -1, 1, [$tmpEndAward]);
 			$formatList[] = [
-				'op_activity_id'     => $lv['op_activity_id'],
-				'name'               => Util::textDecode($lv['name']),
-				'start_time'         => date("Y-m-d H:i:s", $lv['start_time']),
-				'end_time'           => date("Y-m-d H:i:s", $lv['end_time']),
-				'rest_award_num'     => $lv['rest_award_num'],
-				'hit_times'          => $lv['hit_times'],
-				'join_num'           => $lv['join_num'],
-				'user_source_zh'     => $dictData[DictConstants::USER_SOURCE['type']][$lv['user_source']]['value'],
-				'app_id_zh'          => $dictData[DictConstants::PACKAGE_APP_NAME['type']][$lv['app_id']]['value'],
-				'show_status_zh'     => $showStatusZh,
-				'show_status'        => $showStatus,
-				'enable_status'      => $lv['status'],
-				'app_id'             => $lv['app_id'],
-				'channel_id'         => $dictData[DictConstants::LOTTERY_CONFIG['type']][$lv['app_id']]['value'],
-				'creator_name'       => $employeeData[$lv['create_uuid']]['name'] ?? '',
-				'create_time'        => date("Y-m-d H:i:s", $lv['create_time']),
+				'op_activity_id'               => $lv['op_activity_id'],
+				'name'                         => Util::textDecode($lv['name']),
+				'start_time'                   => date("Y-m-d H:i:s", $lv['start_time']),
+				'end_time'                     => date("Y-m-d H:i:s", $lv['end_time']),
+				'rest_award_num'               => $lv['rest_award_num'],
+				'hit_times'                    => $lv['hit_times'],
+				'join_num'                     => $lv['join_num'],
+				'user_source_zh'               => $dictData[DictConstants::USER_SOURCE['type']][$lv['user_source']]['value'],
+				'app_id_zh'                    => $dictData[DictConstants::PACKAGE_APP_NAME['type']][$lv['app_id']]['value'],
+				'show_status_zh'               => $showStatusZh,
+				'show_status'                  => $showStatus,
+				'enable_status'                => $lv['status'],
+				'app_id'                       => $lv['app_id'],
+				'channel_id'                   => $dictData[DictConstants::LOTTERY_CONFIG['type']][$lv['app_id']]['value'],
+				'creator_name'                 => $employeeData[$lv['create_uuid']]['name'] ?? '',
+				'create_time'                  => date("Y-m-d H:i:s", $lv['create_time']),
 				'material_send_interval_hours' => $lv['material_send_interval_hours'],
-				'upper_limit'        => $lv['upper_limit'],
-				'award_level_dict'   => $awardFormatData[$lv['op_activity_id']],
+				'upper_limit'                  => $lv['upper_limit'],
+				'award_level_dict'             => $awardFormatData[$lv['op_activity_id']],
 			];
 		}
 		return $formatList;
@@ -567,6 +586,21 @@ class LotteryAdminService
 		$detailData['base_data']['activity_desc'] = Util::textDecode($detailData['base_data']['activity_desc']);
 		$detailData['base_data']['max_hit'] = $detailData['base_data']['max_hit_type'] == LotteryActivityModel::MAX_HIT_TYPE_UNLIMITED ? 0 : $detailData['base_data']['max_hit'];
 		$detailData['base_data']['day_max_hit'] = $detailData['base_data']['day_max_hit_type'] == LotteryActivityModel::MAX_HIT_TYPE_UNLIMITED ? 0 : $detailData['base_data']['day_max_hit'];
+		//格式化活动状态
+		$dictData = DictConstants::getTypesMap([
+			DictConstants::ACTIVITY_TIME_STATUS['type'],
+			DictConstants::ACTIVITY_ENABLE_STATUS['type'],
+		]);
+		if ($detailData['base_data']['status'] == OperationActivityModel::ENABLE_STATUS_ON) {
+			$timeStatus = OperationActivityModel::dataMapToTimeStatus($detailData['base_data']['start_time'], $detailData['base_data']['end_time']);
+			$showStatus = OperationActivityModel::TIME_STATUS_MAP_SHOW_STATUS[$timeStatus];
+			$showStatusZh = $dictData[DictConstants::ACTIVITY_TIME_STATUS['type']][$timeStatus]['value'];
+		} else {
+			$showStatusZh = $dictData[DictConstants::ACTIVITY_ENABLE_STATUS['type']][$detailData['base_data']['status']]['value'];
+			$showStatus = $detailData['base_data']['status'];
+		}
+		$detailData['base_data']['show_status'] = $showStatus;
+		$detailData['base_data']['show_status_zh'] = $showStatusZh;
 		//奖品数据
 		list($detailData['awards'], $detailData['goods_list']) = self::formatEntityAwardDetailData($detailData['awards']);
 		//抽奖次数

@@ -38,6 +38,7 @@ class LotteryActivityModel extends Model
 			'update_uuid',
 			'status',
 			'material_send_interval_hours',
+			'rest_award_num',
 		],
 		'win_prize_rule' => [//中奖规则
 			'low_pay_amount',
@@ -48,6 +49,7 @@ class LotteryActivityModel extends Model
 			'name',//奖品名称
 			'weight',//奖品概率
 			'num',//奖品数量
+			'rest_num',//奖品数量
 			'hit_times',//奖品中奖时间
 			'hit_times_type',//奖品中奖时间类型
 		]
@@ -120,7 +122,13 @@ class LotteryActivityModel extends Model
 		$db = MysqlDB::getDB();
 		$db->beginTransaction();
 		//基础数据修改
-		$updateRows = self::batchUpdateRecord($updateParamsData['update_params_data']['base_data'], ['op_activity_id' => $opActivityId]);
+		$updateRows = self::batchUpdateRecord(
+			$updateParamsData['update_params_data']['base_data'],
+			[
+				'op_activity_id' => $opActivityId,
+				'version'        => $updateParamsData['mysql_data_current_version'],
+				'rest_award_num' => $updateParamsData['mysql_data_current_rest_award_num'],
+			]);
 		if (empty($updateRows)) {
 			SimpleLogger::error("lottery update error", []);
 			$db->rollBack();

@@ -432,58 +432,80 @@ class LotteryAwardRecordService
 
     /**
      * 修改收货地址:实物&待发货条件才可以修改
-     * @param $id
-     * @param $addressId
-     * @return bool
-     * @throws RunTimeException
-     */
+	 * @param $id
+	 * @param $addressId
+	 * @return bool
+	 * @throws RunTimeException
+	 */
     public static function updateAwardShippingAddress($id, $addressId): bool
     {
-        $recordData = LotteryAwardRecordModel::getRecord(['id' => $id],
-            ['op_activity_id', 'award_id', 'award_type', 'shipping_status', 'draw_time', 'uuid','unique_id', 'grant_state']);
-        if ($recordData['award_type'] != Constants::AWARD_TYPE_TYPE_ENTITY) {
-            throw new RuntimeException(["not_entity_award_stop_update_shipping_address"]);
-        }
-        if ($recordData['shipping_status'] != Constants::SHIPPING_STATUS_BEFORE) {
+		$recordData = LotteryAwardRecordModel::getRecord(['id' => $id],
+			['id', 'erp_address_id', 'op_activity_id', 'award_id', 'award_type', 'shipping_status', 'draw_time', 'uuid', 'unique_id', 'grant_state']);
+		if ($recordData['award_type'] != Constants::AWARD_TYPE_TYPE_ENTITY) {
+			throw new RuntimeException(["not_entity_award_stop_update_shipping_address"]);
+		}
+		if ($recordData['shipping_status'] != Constants::SHIPPING_STATUS_BEFORE) {
             throw new RuntimeException(["not_waiting_send_stop_update_shipping_address"]);
         }
 		$time = time();
-        //请求erp新增地址
 		$erp = new Erp();
 		$result = $erp->getStudentAddressList($recordData['uuid']);
-		$addressList = array_column($result['data']['list'],null,'id');
-        $res = LotteryAwardRecordModel::batchUpdateRecord([
-            'erp_address_id' => $result['data']['address_id'],
+		if (!isset($result['data']['list'])) {
+			throw new RuntimeException(["erp_system_busy"]);
+		}
+		$addressList = array_column($result['data']['list'], null, 'id');
+		if (empty($addressList[$addressId])) {
+			throw new RuntimeException(["address_id_is_error"]);
+		}
+		$res = LotteryAwardRecordModel::batchUpdateRecord([
+            'erp_address_id' => $addressId,
             'address_detail' => json_encode($addressList[$addressId]),
-            'draw_time'      => empty($recordData['draw_time']) ? $time : $recordData['draw_time']
+            'draw_time'      => empty($recordData['draw_time']) ? $time : $recordData['draw_time'] + 1
         ], ['id' => $id, 'shipping_status' => Constants::SHIPPING_STATUS_BEFORE]);
+		if (empty($res)) {
+			return false;
+		}
+		self::lotteryGrantAward($recordData, $addressId);
+        return true;
+	}
+
+	/**
+	 * @param array $recordData
+	 * @param int $addressId
+	 */
+	private static function lotteryGrantAward(array $recordData, int $addressId)
+	{
 		//获取活动数据：如果活动处于「已结束」状态且活动结束7天以上，修改用户收货地址后，立即推送到ERP
 		$activityData = LotteryActivityModel::getRecord(['op_activity_id' => $recordData['op_activity_id']],
 			['end_time'], false);
-		if ($time > ($activityData['end_time'] + 7 * Util::TIMESTAMP_ONEDAY) && $recordData['grant_state']==Constants::STATUS_FALSE) {
-			$topicObj = new GrantAwardTopic();
-			//获取商品数据
-			$awardDetail= json_decode(LotteryAwardInfoModel::getRecord(['id'=>$recordData['award_id']],['award_detail'])['award_detail'], true);
-			$goodsData = ErpGoodsV1Service::getGoodsDataByIds([$awardDetail['common_award_id']]);
-			$studentData = ErpStudentModel::getRecord(['uuid'=>$recordData['uuid']],['mobile']);
-			$nsqData = [
-				'record_id'  => $id,
-				'type'       => $recordData['award_type'],
-				'unique_id'  => $recordData['unique_id'],
-				'plat_id'    => Constants::UNIQUE_ID_PREFIX,
-				'app_id'     => $activityData['app_id'],
-				'sale_shop'  => LotteryActivityModel::BUSINESS_MAP_SHOP[$activityData['app_id']],
-				'goods_id'   => $awardDetail['common_award_id'],
-				'goods_code' => $goodsData[0]['code'],
-				'mobile'     => $studentData['mobile'],
-				'uuid'       => $recordData['uuid'],
-				'amount'     => $awardDetail['common_award_amount'],
-				'erp_address_id' => $addressId,
-			];
-			$topicObj->lotteryGrantAward($nsqData)->publish();
+		$time = time();
+		if ($time > ($activityData['end_time'] + 7 * Util::TIMESTAMP_ONEDAY) && $recordData['grant_state'] == Constants::STATUS_FALSE) {
+			try {
+				$topicObj = new GrantAwardTopic();
+				//获取商品数据
+				$awardDetail = json_decode(LotteryAwardInfoModel::getRecord(['id' => $recordData['award_id']], ['award_detail'])['award_detail'], true);
+				$goodsData = ErpGoodsV1Service::getGoodsDataByIds([$awardDetail['common_award_id']]);
+				$studentData = ErpStudentModel::getRecord(['uuid' => $recordData['uuid']], ['mobile']);
+				$nsqData = [
+					'record_id'      => $recordData['id'],
+					'type'           => $recordData['award_type'],
+					'unique_id'      => $recordData['unique_id'],
+					'plat_id'        => Constants::UNIQUE_ID_PREFIX,
+					'app_id'         => $activityData['app_id'],
+					'sale_shop'      => LotteryActivityModel::BUSINESS_MAP_SHOP[$activityData['app_id']],
+					'goods_id'       => $awardDetail['common_award_id'],
+					'goods_code'     => $goodsData[0]['code'],
+					'mobile'         => $studentData['mobile'],
+					'uuid'           => $recordData['uuid'],
+					'amount'         => $awardDetail['common_award_amount'],
+					'erp_address_id' => $addressId,
+				];
+				$topicObj->lotteryGrantAward($nsqData)->publish();
+			} catch (\Exception $e) {
+				SimpleLogger::error("grant award error",[$e->getMessage()]);
+			}
 		}
-        return !empty($res);
-    }
+	}
 
     /**
      * 获取未签收的实物获奖记录

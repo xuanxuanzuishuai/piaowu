@@ -66,12 +66,6 @@ class ActivityLottery extends ControllerBase
 				'error_code' => 'start_time_is_required'
 			],
 			[
-				'key'        => 'start_time',
-				'type'       => 'min',
-				'value'      => time(),
-				'error_code' => 'start_time_must_greater_than_current_time'
-			],
-			[
 				'key'        => 'end_time',
 				'type'       => 'required',
 				'error_code' => 'end_time_is_required'
