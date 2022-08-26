@@ -3,6 +3,7 @@
 namespace App\Services\Activity\LimitTimeActivity\TraitService;
 
 use App\Libs\Constants;
+use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\RealDictConstants;
 use App\Models\Dss\DssUserWeiXinModel;
@@ -166,8 +167,13 @@ class RealService extends LimitTimeActivityBaseAbstract
         }
         // 练琴强度校验
         if (!empty($activityTargetUser['play_intensity_start_time'])) {
-            // 获取学生练琴记录  TODO qingfeng.lian 获取课消记录
-            $playRecords = 0;
+            // 获取学生练琴记录
+            $consumerCourseData = (new Erp())->getCourseConsumerStatistic(
+                [$this->studentInfo['user_id']],
+                $activityTargetUser['play_intensity_start_time'],
+                $activityTargetUser['play_intensity_end_time']
+            );
+            $playRecords = $consumerCourseData[0]['used_num'] ?? 0;
             if (count($playRecords) < $activityTargetUser['play_intensity_count']) {
                 return [false];
             }
