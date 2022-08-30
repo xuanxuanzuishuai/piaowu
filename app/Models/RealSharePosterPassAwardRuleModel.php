@@ -56,4 +56,16 @@ class RealSharePosterPassAwardRuleModel extends Model
         }
         return self::batchInsertPassAwardRule($activityId, $taskList, $createTime);
     }
+
+    /**
+     * 获取活动任务总数
+     * @param $activityIds
+     * @return array
+     */
+    public static function getActivityTaskCount($activityIds)
+    {
+        $sql = 'select activity_id,count(*) as total from ' . self::$table . ' group by activity_id';
+        $list = MysqlDB::getDB()->queryAll($sql);
+        return is_array($list) ? $list : [];
+    }
 }

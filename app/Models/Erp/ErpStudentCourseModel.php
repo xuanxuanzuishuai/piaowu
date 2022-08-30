@@ -2,6 +2,8 @@
 
 namespace App\Models\Erp;
 
+use App\Libs\MysqlDB;
+
 class ErpStudentCourseModel extends ErpModel
 {
     public static $table = 'erp_student_course';
@@ -11,6 +13,7 @@ class ErpStudentCourseModel extends ErpModel
     const STATUS_EXPIRE = 2;  // 过期
     const STATUS_TRANSED = 3; // 已转移
 
+    const BUSINESS_TYPE_NORMAL = 1; // 正式课
 
     /**
      * 获取账户可用课程：不同类型的课程
@@ -46,5 +49,30 @@ class ErpStudentCourseModel extends ErpModel
             ]
         );
         return empty($courseData) ? [] : $courseData;
+    }
+
+    /**
+     * 获取用户清退后是否再购买正式课
+     * @param $studentId
+     * @param $firstCleanTime
+     * @return array
+     */
+    public static function getStudentCleanAfterHasBuyCourse($studentId, $firstCleanTime = 0): array
+    {
+        if (empty($firstCleanTime)) {
+            $firstCleanInfo = ErpStudentCourseTmpModel::getRecord(['student_id' => $studentId, 'ORDER' => ['id' => 'DESC']], ['create_time']);
+            $firstCleanTime = $firstCleanInfo['create_time'] ?? 0;
+            if (empty($firstCleanTime)) {
+                return [];
+            }
+        }
+        $sql = 'select id from ' . self::getTableNameWithDb() . ' WHERE student_id=' . $studentId .
+            ' AND create_time >' . $firstCleanTime .
+            ' AND business_type=' . self::BUSINESS_TYPE_NORMAL .
+            " AND json_extract(business_tag,'$.price') >0" .
+            " AND json_search(business_tag,'one','free_type') IS NULL" .
+            ' LIMIT 1';
+        $info = MysqlDB::getDB()->queryAll($sql);
+        return is_array($info) ? $info : [];
     }
 }

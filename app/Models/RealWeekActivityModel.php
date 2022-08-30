@@ -178,9 +178,10 @@ class RealWeekActivityModel extends Model
      * 获取当前时间可参与的周周有奖活动:数量和时间指定
      * @param int $limit
      * @param int $time
-     * @return array|mixed
+     * @param array $fields
+     * @return array
      */
-    public static function getStudentCanSignWeekActivity($limit, $time = 0)
+    public static function getStudentCanSignWeekActivity($limit, $time = 0, $fields = [])
     {
         $where = [
             'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
@@ -192,9 +193,8 @@ class RealWeekActivityModel extends Model
             $where['start_time[<]'] = $time;
             $where['end_time[>]'] = $time;
         }
-        $activityData = self::getRecords(
-            $where,
-            [
+        if (empty($fields)) {
+            $fields = [
                 'name',
                 'activity_id',
                 'share_word',
@@ -209,8 +209,9 @@ class RealWeekActivityModel extends Model
                 'poster_order',
                 'start_time',
                 'end_time',
-            ]
-        );
+            ];
+        }
+        $activityData = self::getRecords($where, $fields);
         return empty($activityData) ? [] : $activityData;
     }
 

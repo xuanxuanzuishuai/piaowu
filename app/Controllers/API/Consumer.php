@@ -56,6 +56,7 @@ use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\RealReferralTopic;
 use App\Services\Queue\SaveTicketTopic;
 use App\Services\Queue\StudentAccountAwardPointsTopic;
+use App\Services\Queue\SyncTableData\StatisticsStudentReferral\StatisticsStudentReferralConsumerService;
 use App\Services\Queue\ThirdPartBillTopic;
 use App\Services\Queue\Track\CommonTrackConsumerService;
 use App\Services\Queue\UserPointsExchangeRedPackTopic;
@@ -67,6 +68,7 @@ use App\Services\RefereeAwardService;
 use App\Services\SendSmsService;
 use App\Services\StudentAccountAwardPointsLogService;
 use App\Services\StudentService;
+use App\Services\SyncTableData\SyncBinlogTableDataService;
 use App\Services\ThirdPartBillService;
 use App\Services\UserRefereeService;
 use App\Services\UserService;
@@ -1430,6 +1432,76 @@ class Consumer extends ControllerBase
             call_user_func(array($consumerObj, $funName), $checkFormatParams);
         } else {
             SimpleLogger::error('unknown event type', ['params' => $checkFormatParams]);
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 统计学生转介绍学生信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public static function statisticsStudentReferral(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key' => 'event_type',
+                'type' => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+            [
+                'key' => 'msg_body',
+                'type' => 'required',
+                'error_code' => 'msg_body_is_required',
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $funName = Util::underlineToHump($params['event_type']);
+        $consumerObj = new StatisticsStudentReferralConsumerService();
+        if (method_exists($consumerObj, $funName)) {
+            call_user_func(array($consumerObj, $funName), $params);
+        } else {
+            SimpleLogger::error('unknown event type', ['params' => $params]);
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 同步数据表信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public static function syncBinlogTableData(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key' => 'event_type',
+                'type' => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+            [
+                'key' => 'msg_body',
+                'type' => 'required',
+                'error_code' => 'msg_body_is_required',
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $funName = Util::underlineToHump($params['event_type']);
+        $consumerObj = new SyncBinlogTableDataService();
+        if (method_exists($consumerObj, $funName)) {
+            call_user_func(array($consumerObj, $funName), $params);
+        } else {
+            SimpleLogger::error('unknown event type', ['params' => $params]);
         }
         return HttpHelper::buildResponse($response, []);
     }

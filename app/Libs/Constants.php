@@ -209,4 +209,10 @@ class Constants
     const MORNING_STUDENT_STATUS_TRAIL_EXPIRE  = 3;   // 体验课过期
     const MORNING_STUDENT_STATUS_NORMAL        = 4;   // 系统课
     const MORNING_STUDENT_STATUS_NORMAL_EXPIRE = 5;   // 系统课过期
+
+    // 用户参与活动完成进度 1未参与，2：参与未完成，3已完成 4资格终止
+    const STUDENT_WEEK_PROGRESS_NO_JOIN       = 1;
+    const STUDENT_WEEK_PROGRESS_JOINING       = 2;
+    const STUDENT_WEEK_PROGRESS_COMPLETE_JOIN = 3;
+    const STUDENT_WEEK_PROGRESS_STOP_JOIN     = 4;
 }
