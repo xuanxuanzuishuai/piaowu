@@ -62,15 +62,12 @@ class LotteryAdminService
 				$paramsData['end_time'] <= $paramsData['start_time']) {
 				throw new RuntimeException(["activity_start_time_error"]);
 			}
-		} else {
-			if ($paramsData['end_time'] <= $nowTime ||
-				$paramsData['end_time'] <= $paramsData['start_time']) {
-				throw new RuntimeException(["activity_start_time_error"]);
-			}
 		}
+		//图片cdn域名
+		$cdnDomain = DictConstants::get(DictConstants::ALI_OSS_CONFIG, 'dss_cdn_domain'). '/';
 		$formatParams['base_data']['name'] = Util::textEncode(trim($paramsData['name']));
 		$formatParams['base_data']['activity_desc'] = Util::textEncode(trim($paramsData['activity_desc']));
-		$formatParams['base_data']['title_url'] = trim($paramsData['title_url']);
+		$formatParams['base_data']['title_url'] = str_replace($cdnDomain, '', trim($paramsData['title_url']));
 		$formatParams['base_data']['start_time'] = $paramsData['start_time'];
 		$formatParams['base_data']['end_time'] = $paramsData['end_time'];
 		$formatParams['base_data']['app_id'] = $paramsData['app_id'];
@@ -189,6 +186,7 @@ class LotteryAdminService
 		$weightTotal = 0;
 		foreach ($paramsData['awards'] as $awk => &$awv) {
 			//批量验证参数格式
+			$awv['img_url'] = str_replace($cdnDomain, '', trim($awv['img_url']));
 			$formatParams['awards'][$awk] = self::checkAwardsParams($awv);
 			$formatParams['awards'][$awk]['num'] = $formatParams['awards'][$awk]['rest_num'];
 			$weightTotal += $awv['weight'];
@@ -377,16 +375,28 @@ class LotteryAdminService
 		$checkRes['mysql_data_current_version'] = $mysqlBaseData['version'];
 		$checkRes['mysql_data_current_rest_award_num'] = $mysqlBaseData['rest_award_num'];
 		if (empty($mysqlBaseData)) {
+			//不存在
 			throw new RuntimeException(["record_not_found"]);
 		} elseif ($mysqlBaseData['status'] == OperationActivityModel::ENABLE_STATUS_DISABLE) {
+			//禁用
 			throw new RuntimeException(["activity_enable_not_modify"]);
 		} elseif ($mysqlBaseData['end_time'] <= $nowTime) {
+			//已结束
 			throw new RuntimeException(["event_pass_deadline"]);
 		} elseif ($mysqlBaseData['status'] == OperationActivityModel::ENABLE_STATUS_OFF ||
 			$mysqlBaseData['start_time'] > $nowTime) {
+			//活动未开始或者未启用，可以修改任何数据
+			if ($activityParamsData['base_data']['end_time'] <= $activityParamsData['base_data']['start_time']) {
+				throw new RuntimeException(["activity_start_time_error"]);
+			}
 			$checkRes["update_params_data"] = $activityParamsData;
 			return $checkRes;
 		} else {
+			//活动进行中只能修改部分功能
+			if ($activityParamsData['base_data']['end_time'] <= $nowTime ||
+				$activityParamsData['base_data']['end_time'] <= $mysqlBaseData['start_time']) {
+				throw new RuntimeException(["activity_end_time_error"]);
+			}
 			$activityChangeMysqlData['op_activity_id'] = $opActivityId;
 			$activityChangeMysqlData['version'] = $mysqlBaseData['version'];
 			$activityChangeMysqlData['create_time'] = $activityParamsData['base_data']['update_time'];

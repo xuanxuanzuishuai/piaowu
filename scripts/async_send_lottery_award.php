@@ -41,17 +41,26 @@ $nowTime = time();
 if (empty($waitSendAwardRecordData)) {
 	return true;
 }
-//查询活动不同版本数据
-$opActivityIds = array_column($waitSendAwardRecordData, 'op_activity_id');
-$opActivityVersions = array_column($waitSendAwardRecordData, 'activity_version');
+//查询活动不同旧版本数据
+$opActivityIds = array_unique(array_column($waitSendAwardRecordData, 'op_activity_id'));
+$opActivityVersions = array_unique(array_column($waitSendAwardRecordData, 'activity_version'));
 $lotteryActivityVersionData = LotteryActivityChangeLogModel::getRecords([
-	'op_activity_id'   => array_unique($opActivityIds),
-	'activity_version' => array_unique($opActivityVersions),
+	'op_activity_id' => $opActivityIds,
+	'version'        => $opActivityVersions,
 ]);
 $lotteryActivityVersionFormatData = [];
 foreach ($lotteryActivityVersionData as $lav) {
-	$lotteryActivityVersionFormatData[$lav['op_activity_id'] . '_' . $lav['activity_version']]['base_data'] = json_decode($lav['base_data'], true);
+	$lotteryActivityVersionFormatData[$lav['op_activity_id'] . '_' . $lav['version']]['base_data'] = json_decode($lav['base_data'], true);
 }
+//获取活动当前版本数据
+$lotteryLastVersionData = LotteryActivityModel::getRecords(['op_activity_id' => $opActivityIds], ['op_activity_id', 'version', 'material_send_interval_hours']);
+foreach ($lotteryLastVersionData as $lastVal) {
+	$lotteryActivityVersionFormatData[$lastVal['op_activity_id'] . '_' . $lastVal['version']]['base_data'] = [
+		'material_send_interval_hours' => $lastVal['material_send_interval_hours'],
+	];
+
+}
+
 foreach ($waitSendAwardRecordData as $wk => &$wv) {
 	//兼容一下旧版数据：以前的活动不支持修改，所以没有版本变更日志
 	if (isset($lotteryActivityVersionFormatData[$wv['op_activity_id'] . '_' . $wv['activity_version']]['base_data']['material_send_interval_hours'])) {
@@ -95,6 +104,6 @@ foreach ($waitSendAwardRecordData as $wak => $wav) {
 		'amount'         => $wav['common_award_amount'],
 		'erp_address_id' => $wav['erp_address_id'],
 	];
-	$topicObj->lotteryGrantAward($nsqData)->publish($wak % 600);
+	$topicObj->lotteryGrantAward($nsqData)->publish($wak % 1200);
 }
 SimpleLogger::info('async send lottery award end', []);

@@ -67,7 +67,8 @@ class LotteryActivityService
                     $activityInfo['app_id'],
                     $params['uuid'],
                     $activityInfo['start_pay_time'],
-                    $activityInfo['end_pay_time']
+                    $activityInfo['end_pay_time'],
+                    $activityInfo['upper_limit']
                 );
             }
 
@@ -106,14 +107,15 @@ class LotteryActivityService
      * @param $uuid
      * @param $startPayTime
      * @param $endPayTime
+     * @param int $upperLimit	抽奖次数上限：-1不限制
      * @return int
      */
-    public static function filterUserTimes($opActivityId, $appId, $uuid, $startPayTime, $endPayTime)
-    {
-        $orderInfo = self::getOrderInfo($appId, $uuid, $startPayTime, $endPayTime);
-        $orderToTimes = self::orderToTimes($opActivityId, $orderInfo);
-        return count($orderToTimes);
-    }
+	public static function filterUserTimes($opActivityId, $appId, $uuid, $startPayTime, $endPayTime, int $upperLimit): int
+	{
+		$orderInfo = self::getOrderInfo($appId, $uuid, $startPayTime, $endPayTime);
+		$orderToTimes = self::orderToTimes($opActivityId, $orderInfo);
+		return ($upperLimit == -1) ? count($orderToTimes) : min(count($orderToTimes), $upperLimit);
+	}
 
     /**
      * 请求订单系统，获取满足条件的订单信息
@@ -233,11 +235,7 @@ class LotteryActivityService
             $orderInfo = self::getOrderInfo($activityInfo['app_id'], $params['uuid'], $activityInfo['start_pay_time'],
                 $activityInfo['end_pay_time']);
             $orderToTimes = self::orderToTimes($activityInfo['op_activity_id'], $orderInfo);
-            $filerTimes = count($orderToTimes);
-        }
-		//确定抽奖次数的最大值
-		if ($activityInfo['upper_limit'] >= 0) {
-			$filerTimes = min($filerTimes, $activityInfo['upper_limit']);
+			$filerTimes = ($activityInfo['upper_limit'] == -1) ? count($orderToTimes) : min(count($orderToTimes), $activityInfo['upper_limit']);
 		}
 		//导入的抽奖次数
 		$importData = LotteryImportUserService::importUserTimes($params['op_activity_id'], $params['uuid']);
