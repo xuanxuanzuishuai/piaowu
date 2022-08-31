@@ -3,6 +3,7 @@
 namespace App\Services\StudentServices;
 
 
+use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Dss;
 use App\Libs\Exceptions\RunTimeException;
@@ -14,6 +15,7 @@ use App\Models\Dss\DssStudentLeadsModel;
 use App\Models\Dss\DssStudentModel;
 use App\Services\DssDictService;
 use App\Services\Employee\DssEmployeeService;
+use App\Services\ReferralService;
 
 class DssStudentService
 {
@@ -93,6 +95,23 @@ class DssStudentService
         $hadPurchasePackageByType = DssGiftCodeModel::hadPurchasePackageByType($studentId, DssPackageExtModel::PACKAGE_TYPE_TRIAL, false, ['limit' => 1]);
         if (!empty($hadPurchasePackageByType)) {
             throw new RunTimeException(['has_trialed']);
+        }
+
+        //校验是否推荐人黑名单
+        if ($isRepeat == self::STUDENT_COLLECT_WOOL_NO) {
+            $sceneData = ReferralService::getSceneData(urldecode($extendParams['scene'] ?? ''));
+            if (!empty($sceneData['app_id']) && $sceneData['app_id'] == Constants::SMART_APP_ID) {
+                $refereeInfo = DssStudentModel::getRecord(['id' => $sceneData['user_id']], ['uuid']);
+
+                $refereeBlackList = DictConstants::getSet(DictConstants::REFEREE_BLACK_LIST);
+
+                if(!empty($refereeBlackList[$refereeInfo['uuid']] ?? NULL)) {
+                    SimpleLogger::info('referral black list fetch', ['uuid' => $uuid]);
+                    $isRepeat = self::STUDENT_COLLECT_WOOL_YES;
+                    $newPkg = DssDictService::getKeyValue(DictConstants::DSS_WEB_STUDENT_CONFIG, 'pkg_9_student_is_repeat_new_pkg');
+                }
+            }
+
         }
 
         return [

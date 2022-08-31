@@ -1349,6 +1349,17 @@ class DictConstants {
             28,29,30
         ]
     ];
+
+    // 推荐人黑名单
+    const REFEREE_BLACK_LIST = [
+        'type' => 'referee_black_list',
+        'keys' => [
+            394480080513978676,
+            394623525492674868,
+            390949989783753012
+        ]
+    ];
+
     /**
      * 单个获取op系统dict配置数据
      * @param $type
