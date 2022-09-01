@@ -477,7 +477,7 @@ class LotteryAwardRecordService
 	{
 		//获取活动数据：如果活动处于「已结束」状态且活动结束7天以上，修改用户收货地址后，立即推送到ERP
 		$activityData = LotteryActivityModel::getRecord(['op_activity_id' => $recordData['op_activity_id']],
-			['end_time'], false);
+			['end_time', 'app_id'], false);
 		$time = time();
 		if ($time > ($activityData['end_time'] + 7 * Util::TIMESTAMP_ONEDAY) && $recordData['grant_state'] == Constants::STATUS_FALSE) {
 			try {

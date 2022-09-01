@@ -52,6 +52,7 @@ $lotteryActivityVersionFormatData = [];
 foreach ($lotteryActivityVersionData as $lav) {
 	$lotteryActivityVersionFormatData[$lav['op_activity_id'] . '_' . $lav['version']]['base_data'] = json_decode($lav['base_data'], true);
 }
+
 //获取活动当前版本数据
 $lotteryLastVersionData = LotteryActivityModel::getRecords(['op_activity_id' => $opActivityIds], ['op_activity_id', 'version', 'material_send_interval_hours']);
 foreach ($lotteryLastVersionData as $lastVal) {
@@ -60,11 +61,10 @@ foreach ($lotteryLastVersionData as $lastVal) {
 	];
 
 }
-
 foreach ($waitSendAwardRecordData as $wk => &$wv) {
 	//兼容一下旧版数据：以前的活动不支持修改，所以没有版本变更日志
 	if (isset($lotteryActivityVersionFormatData[$wv['op_activity_id'] . '_' . $wv['activity_version']]['base_data']['material_send_interval_hours'])) {
-		if ($nowTime - $wv['draw_time'] < $lotteryActivityVersionFormatData[$wv['op_activity_id'] . '_' . $wv['activity_version']]['base_data']['material_send_interval_hours'] * 3600) {
+		if (($nowTime - $wv['draw_time']) < $lotteryActivityVersionFormatData[$wv['op_activity_id'] . '_' . $wv['activity_version']]['base_data']['material_send_interval_hours'] * 3600) {
 			unset($waitSendAwardRecordData[$wk]);
 			continue;
 		}

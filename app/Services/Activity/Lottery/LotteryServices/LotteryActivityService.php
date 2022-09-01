@@ -239,7 +239,7 @@ class LotteryActivityService
 		}
 		//导入的抽奖次数
 		$importData = LotteryImportUserService::importUserTimes($params['op_activity_id'], $params['uuid']);
-		$importTimes = 1;
+		$importTimes = 0;
 		$importTimeAmountMap = [];
 		if (!empty($importData)) {
 			$importTimes = array_sum(array_column($importData, 'rest_times'));

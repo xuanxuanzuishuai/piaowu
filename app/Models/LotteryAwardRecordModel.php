@@ -152,6 +152,7 @@ class LotteryAwardRecordModel extends Model
                 self::$table . ".award_type",
                 self::$table . ".activity_version",
                 self::$table . ".op_activity_id",
+                self::$table . ".draw_time",
                 LotteryAwardInfoModel::$table . ".award_detail",
                 LotteryActivityModel::$table . ".app_id",
             ],
