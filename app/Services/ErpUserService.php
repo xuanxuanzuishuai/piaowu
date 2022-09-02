@@ -134,23 +134,23 @@ class ErpUserService
 
     /**
      * 获取当前所有有付费正式课剩余课程数的学生列表
+     * @param $studentId
      * @return array
      */
-    public static function getIsPayAndCourseRemaining(): array
+    public static function getIsPayAndCourseRemaining($studentId = 0): array
     {
         $stuTable = ErpStudentModel::getTableNameWithDb();
         $stuAppTable = ErpStudentAppModel::getTableNameWithDb();
         $courseTable = ErpStudentCourseModel::getTableNameWithDb();
         $courseExtTable = ErpStudentCourseExtModel::getTableNameWithDb();
-        $cleanTable = ErpStudentCourseTmpModel::getTableNameWithDb();
-        $whiteTable = ErpGenericWhitelistModel::getTableNameWithDb();
-        $sql = "select s.id,s.uuid,s.country_code,a.first_pay_time,cl.create_time as clean_time,gw.scene_value as white_value" .
+        // $cleanTable = ErpStudentCourseTmpModel::getTableNameWithDb();
+        // $sql = "select s.id,s.uuid,s.country_code,a.first_pay_time,cl.create_time as clean_time" .
+        $sql = "select s.id,s.uuid,s.country_code,a.first_pay_time" .
             " from $stuTable s " .
             " inner join $stuAppTable a on a.student_id = s.id and a.app_id = 1" .
             " inner join $courseTable c on s.id = c.student_id and c.`status` = 1" .
             " left JOIN $courseExtTable e on c.id = e.student_course_id" .
-            " left join $cleanTable cl on cl.student_id=s.id" .
-            " left join $whiteTable gw on gw.scene_key = s.uuid and gw.app_id = 1" .
+            // " left join $cleanTable cl on cl.student_id=s.id" .
             " where" .
             // 付费用户
             " a.first_pay_time > 0 " .
@@ -158,6 +158,9 @@ class ErpUserService
             " and c.business_type=1 and json_extract(c.business_tag,'$.price') >0 and json_search(c.business_tag,'one', 'free_type') IS NULL" .
             // 有剩余付费正式课程数量
             " and (c.lesson_count > 0 or e.lesson_decimal > 0)";
+        if (!empty($studentId)) {
+            $sql .= ' and s.id='. $studentId . ' limit 1';
+        }
         $list = MysqlDB::getDB()->queryAll($sql);
         return is_array($list) ? $list : [];
     }

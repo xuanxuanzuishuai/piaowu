@@ -124,8 +124,6 @@ class APIRouter extends RouterBase
         ],
         // 检查学生是否可参与活动
         '/api/consumer/check_student_is_can_activity' => ['method' => ['post'], 'call' => Consumer::class . ':checkStudentIsCanActivity', 'middles' => []],
-        // 统计学生转介绍学生信息
-        '/api/consumer/statistics_student_referral' => ['method' => ['post'], 'call' => Consumer::class . ':statisticsStudentReferral', 'middles' => []],
         // 同步表信息
         '/api/consumer/sync_binlog_table_data' => ['method' => ['post'], 'call' => Consumer::class . ':syncBinlogTableData', 'middles' => []],
     ];

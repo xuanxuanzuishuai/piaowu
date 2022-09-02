@@ -7,12 +7,14 @@
 
 namespace App;
 
+use App\Libs\Constants;
 use App\Models\RealSharePosterPassAwardRuleModel;
 use App\Models\RealStudentCanJoinActivityHistoryModel;
 use App\Models\RealStudentCanJoinActivityModel;
 use App\Models\RealWeekActivityModel;
 use App\Services\ErpUserService;
 use App\Services\SyncTableData\CheckStudentIsCanActivityService;
+use App\Services\SyncTableData\TraitService\StatisticsStudentReferralBaseAbstract;
 use Dotenv\Dotenv;
 
 date_default_timezone_set('PRC');
@@ -43,6 +45,21 @@ class ScriptRealUpdateStudentCanJoinActivity
     {
         // 读取所有付费并且有剩余正式课的用户
         $this->payStudentList = ErpUserService::getIsPayAndCourseRemaining();
+        // 获取白名单用户
+        $whitList = StatisticsStudentReferralBaseAbstract::getAppObj(Constants::REAL_APP_ID)->getRealWhiteList();
+        if (!empty($whitList)) {
+            // 在用户列表中加入白名单用户
+            foreach ($whitList as $item) {
+                $this->payStudentList[] = [
+                    'id' => $item['student_id'],
+                    'country_code' =>$item['country_code'],
+                    'uuid' => $item['uuid'],
+                    'first_pay_time' => $item['first_pay_time'],
+                    'clean_time' => 0,
+                ];
+            }
+            unset($item);
+        }
         $this->weekActivityList = RealWeekActivityModel::getStudentCanSignWeekActivity(200, time() + 1, [
             'activity_id',
             'clean_is_join',

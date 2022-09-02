@@ -8,22 +8,28 @@
 namespace App\Services\SyncTableData;
 
 use App\Libs\Constants;
-use App\Libs\Elasticsearch;
+use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Pika;
+use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
+use App\Models\Erp\ErpReferralUserRefereeModel;
 use App\Models\Erp\ErpStudentCourseModel;
-use App\Services\Queue\SyncTableData\StatisticsStudentReferral\StatisticsStudentReferralTopic;
 
 class SyncBinlogTableDataService
 {
+    const EVENT_TYPE_SYNC_ERP_STUDENT_COURSE_TMP    = 'op_sync_erp_erp_student_course_tmp';
+    const EVENT_TYPE_SYNC_ERP_REFERRAL_USER_REFEREE = 'op_sync_erp_erp_referral_user_referee';
+    const EVENT_TYPE_SYNC_ERP_STUDENT_ATTRIBUTE     = 'op_sync_erp_erp_student_attribute';
+    const EVENT_TYPE_SYNC_ERP_STUDENT_COURSE        = 'op_sync_erp_erp_student_course';
+
     /**
-     * 同步真人清退用户表（erp_student_course_tmp）到es
+     * 同步真人清退用户表（erp_student_course_tmp）到cache
      * @param $params
      * @return bool
      */
     public function opSyncErpErpStudentCourseTmp($params)
     {
-        $eventType = StatisticsStudentReferralTopic::EVENT_TYPE_SYNC_ERP_STUDENT_COURSE_TMP;
+        $eventType = self::EVENT_TYPE_SYNC_ERP_STUDENT_COURSE_TMP;
         // 先记录请求日志
         SimpleLogger::info("SyncBinlogTableDataService::opErpErpStudentCourseTmp", [
             'msg'        => 'start',
@@ -32,22 +38,18 @@ class SyncBinlogTableDataService
         ]);
         // 解析数据
         $pikaObj = Pika::initObj($params);
-        // 只处理insert 和 update
-        if (!$pikaObj->isInsert() && !$pikaObj->isUpdate()) {
-            return false;
-        }
         $rowsData = $pikaObj->getRows();
+        $redis = RedisDB::getConn();
 
-        $es = Elasticsearch::getInstance($eventType);
         if ($pikaObj->isDelete()) {
-            // 删除es中的数据
-            list($esData) = $es->getOneDoc(['id' => $rowsData['id'] ?? 0]);
-            $es->delete($esData['_id']);
+            // 删除操
+            $redis->hdel($eventType, $rowsData['student_id']);
             return true;
         }
 
-        // 判断es是否存在,
-        list($studentCleanInfo, $esId) = $es->getOneDoc(['student_id' => $rowsData['student_id']]);
+        // 判断是否存在,
+        $studentCleanInfoStr = $redis->hget($eventType, $rowsData['student_id']);
+        $studentCleanInfo = !empty($studentCleanInfoStr) ? json_decode($studentCleanInfoStr, true) : [];
         // 存在
         if (!empty($studentCleanInfo)) {
             // 存在并且属于清退后再购买 - 属于不做任何处理
@@ -62,17 +64,107 @@ class SyncBinlogTableDataService
         }
         $courseInfo = ErpStudentCourseModel::getStudentCleanAfterHasBuyCourse($rowsData['student_id'], $cleanTime);
         // 保存到es 存在update,不存在add
-        $update = [
-            'create_time'     => $cleanTime,
-            'buy_after_clean' => !empty($courseInfo) ? Constants::STATUS_TRUE : Constants::STATUS_FALSE,
-        ];
-        if (!empty($studentCleanInfo)) {
-            $es->update($esId, $update);
-        } else {
-            $update['id'] = $rowsData['id'];
-            $update['student_id'] = $rowsData['student_id'];
-            $es->index($update);
+        $studentCleanInfo['create_time'] = (int)$cleanTime;
+        $studentCleanInfo['buy_after_clean'] = !empty($courseInfo) ? Constants::STATUS_TRUE : Constants::STATUS_FALSE;
+        $studentCleanInfo['id'] = $rowsData['id'];
+        $studentCleanInfo['student_id'] = $rowsData['student_id'];
+        $redis->hset($eventType, $studentCleanInfo['student_id'], json_encode($studentCleanInfo));
+
+        // 清退又购买的用户重新计算用户命中的真人周周活动
+        $studentCleanInfo['buy_after_clean'] = 1;
+        if (!empty($studentCleanInfo['buy_after_clean'])) {
+            CheckStudentIsCanActivityService::checkRealStudentHitWeek($rowsData['student_id']);
         }
+        return true;
+    }
+
+    /**
+     * 监听真人转介绍关系表（referral_user_referee）
+     * @param $params
+     * @return bool
+     * @throws RunTimeException
+     */
+    public function opSyncErpErpReferralUserReferee($params)
+    {
+        $eventType = self::EVENT_TYPE_SYNC_ERP_REFERRAL_USER_REFEREE;
+        // 先记录请求日志
+        SimpleLogger::info("SyncBinlogTableDataService::opSyncErpErpReferralUserReferee", [
+            'msg'        => 'start',
+            'params'     => $params,
+            "event_type" => $eventType,
+        ]);
+        // 解析数据
+        $pikaObj = Pika::initObj($params);
+        $rowsData = $pikaObj->getRows();
+
+        if ($pikaObj->isDelete()) {
+            // 删除推荐人转介绍关系
+            // TODO 现在真人转介绍关系不能被删除，也不能被更改
+            return true;
+        }
+
+        // 开始更新学生转介绍关系统计数据
+        $res = StatisticsStudentReferralService::updateStatisticsStudentReferral($pikaObj->getAppId(), $rowsData);
+        SimpleLogger::info("SyncBinlogTableDataService::opSyncErpErpReferralUserReferee", [
+            'msg' => 'end',
+            'res' => $res,
+        ]);
+        return true;
+    }
+
+    /**
+     * 监听学生生命周期表（erp_student_attribute）
+     * @param $params
+     * @return bool
+     * @throws RunTimeException
+     */
+    public function opSyncErpErpStudentAttribute($params)
+    {
+        $eventType = self::EVENT_TYPE_SYNC_ERP_STUDENT_ATTRIBUTE;
+        // 先记录请求日志
+        SimpleLogger::info("SyncBinlogTableDataService::opSyncErpErpStudentAttribute", [
+            'msg'        => 'start',
+            'params'     => $params,
+            "event_type" => $eventType,
+        ]);
+        // 解析数据
+        $pikaObj = Pika::initObj($params);
+        $rowsData = $pikaObj->getRows();
+
+        if ($pikaObj->isDelete()) {
+            return true;
+        }
+
+        // 开始更新学生转介绍关系统计数据
+        $urInfo = ErpReferralUserRefereeModel::getStudentReferral($rowsData['user_id']);
+        if ($urInfo) {
+            StatisticsStudentReferralService::updateStatisticsStudentReferral($pikaObj->getAppId(), ['ur_id' => $urInfo['id']]);
+        }
+
+        return true;
+    }
+
+    /**
+     * 监听学生课程数量变化（erp_student_course）
+     * @param $params
+     * @return bool
+     */
+    public function opSyncErpErpStudentCourse($params)
+    {
+        $eventType = self::EVENT_TYPE_SYNC_ERP_STUDENT_COURSE;
+        // 先记录请求日志
+        SimpleLogger::info("SyncBinlogTableDataService::opSyncErpErpStudentCourse", [
+            'msg'        => 'start',
+            'params'     => $params,
+            "event_type" => $eventType,
+        ]);
+        // 解析数据
+        $pikaObj = Pika::initObj($params);
+        $rowsData = $pikaObj->getRows();
+
+        // 开始更新学生转介绍关系统计数据
+        CheckStudentIsCanActivityService::checkRealStudentHitWeek($rowsData['student_id']);
+
         return true;
     }
 }

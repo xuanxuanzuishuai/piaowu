@@ -8,9 +8,16 @@ namespace App\Services\SyncTableData;
 
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\RedisDB;
+use App\Models\Erp\ErpGenericWhitelistModel;
+use App\Models\Erp\ErpStudentModel;
 use App\Models\OperationActivityModel;
+use App\Models\RealSharePosterPassAwardRuleModel;
+use App\Models\RealStudentCanJoinActivityHistoryModel;
 use App\Models\RealStudentCanJoinActivityModel;
 use App\Models\RealWeekActivityModel;
+use App\Services\ErpUserService;
+use App\Services\StudentServices\ErpStudentService;
 
 class CheckStudentIsCanActivityService
 {
@@ -63,25 +70,22 @@ class CheckStudentIsCanActivityService
      */
     public static function checkStudentIsTargetUser($studentInfo, $activityInfo)
     {
-        // 清退用户
-        if ($studentInfo['clean_time'] > 0) {
-            // 活动清退用户可参与
-            if ($activityInfo['clean_is_join'] == RealWeekActivityModel::CLEAN_IS_JOIN_YES) {
-                /**
-                 * 检查清退用户是否可参与周周领奖
-                 * 清退再续费用户定义：清退用户&首次清退后再续费&当前付费有效
-                 * 优先级：清退再续费用户 》活动对象：
-                 * 1。活动此选项选择"是"：可以参与
-                 * 2。活动此选项选择"否"：不可参与
-                 */
-                // 考虑通过es读取清退用户信息
-                $studentIdAttribute = [];
-                // 清退用户是否是清退后再购买
-                if (isset($studentIdAttribute['buy_after_clean']) && $studentIdAttribute['buy_after_clean'] == Constants::STATUS_TRUE) {
-                    return true;
-                }
-                // 清退后未购买，不可参与
+        // 活动清退用户可参与
+        if ($activityInfo['clean_is_join'] == RealWeekActivityModel::CLEAN_IS_JOIN_YES) {
+            /**
+             * 检查清退用户是否可参与周周领奖
+             * 清退再续费用户定义：清退用户&首次清退后再续费&当前付费有效
+             * 优先级：清退再续费用户 》活动对象：
+             * 1。活动此选项选择"是"：可以参与
+             * 2。活动此选项选择"否"：不可参与
+             */
+            $studentIdAttribute = RedisDB::getConn()->hget(SyncBinlogTableDataService::EVENT_TYPE_SYNC_ERP_STUDENT_COURSE_TMP, $studentInfo['id']);
+            $studentIdAttribute = !empty($studentIdAttribute) ? json_encode($studentIdAttribute, true) : [];
+            // 清退用户是否是清退后再购买
+            if (isset($studentIdAttribute['buy_after_clean']) && $studentIdAttribute['buy_after_clean'] == Constants::STATUS_TRUE) {
+                return true;
             }
+            // 清退后未购买，不可参与
             return false;
         }
         // 全部用户，只要用户是付费有效直接返回可参与
@@ -97,5 +101,59 @@ class CheckStudentIsCanActivityService
             return false;
         }
         return true;
+    }
+
+    public static function checkRealStudentHitWeek($studentId)
+    {
+        $studentInfo = ErpUserService::getIsPayAndCourseRemaining($studentId)[0] ?? [];
+        // 没有查到，说明不是付费有效 - 直接更新为不可参与
+        if (!empty($studentInfo)) {
+            // 获取用户白名单信息
+            $whiteInfo = ErpGenericWhitelistModel::getRecord(['scene_key' => $studentInfo['uuid']]);
+            if (!empty($whiteInfo)) {
+                $whiteInfoScene = json_decode($whiteInfo['scene_value'], true);
+                // 计算首次付费时间
+                $studentInfo['first_pay_time'] = ErpStudentService::computeFirstTime($studentInfo['first_pay_time'], $whiteInfoScene);
+            }
+            // 计算命中活动
+            $weekList = RealWeekActivityModel::getStudentCanSignWeekActivity(200, time() + 1, [
+                'activity_id',
+                'clean_is_join',
+                'activity_country_code',
+                'target_user_type',
+                'target_use_first_pay_time_start',
+                'target_use_first_pay_time_end',
+                'award_prize_type',
+                'start_time',
+                'end_time',
+            ]);
+            $activityIds = array_column($weekList, 'activity_id');
+            $list = RealSharePosterPassAwardRuleModel::getActivityTaskCount($activityIds);
+            $list = array_column($list, 'total', 'activity_id');
+            foreach ($weekList as &$item) {
+                $item['activity_task_total'] = $list[$item['activity_id']] ?? 0;
+                $item['target_user_first_pay_time_start'] = $item['target_use_first_pay_time_start'];
+                $item['target_user_first_pay_time_end'] = $item['target_use_first_pay_time_end'];
+            }
+            CheckStudentIsCanActivityService::checkWeekActivity($studentInfo, $weekList);
+        } else {
+            // 更新为不可参与
+            $sInfo = ErpStudentModel::getRecord(['id'=>$studentId], ['uuid']);
+            $hitInfo = RealStudentCanJoinActivityModel::getRecord(['student_uuid' => $sInfo['uuid']], ['week_activity_id']);
+            self::cleanStudentWeekActivityId($sInfo['uuid'], $hitInfo['week_activity_id']);
+        }
+
+        return false;
+    }
+
+    public static function cleanStudentWeekActivityId($studentUuid, $activityId)
+    {
+        if (empty($studentUuid)) {
+            return;
+        }
+        RealStudentCanJoinActivityModel::cleanAllStudentWeekActivityId(['student_uuid' => $studentUuid]);
+        if (!empty($activityId)) {
+            RealStudentCanJoinActivityHistoryModel::stopJoinWeekActivity($studentUuid, $activityId);
+        }
     }
 }

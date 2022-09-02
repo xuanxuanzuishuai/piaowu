@@ -7,20 +7,26 @@
 namespace App\Services\SyncTableData\TraitService;
 
 
+use App\Libs\Constants;
+use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
+use App\Models\Erp\ErpGenericWhitelistModel;
+use App\Models\Erp\ErpReferralUserRefereeModel;
+use App\Models\Erp\ErpStudentAppModel;
+use App\Models\Erp\ErpStudentAttributeModel;
+use App\Models\Erp\ErpStudentModel;
 use App\Models\RealStudentReferralInfoModel;
+use App\Services\StudentServices\ErpStudentService;
 use ClickHouseDB\Exception\QueryException;
-use Medoo\Medoo;
 
 class RealStatisticsStudentReferralService extends StatisticsStudentReferralBaseAbstract
 {
     /**
      * 更新推荐的学员购买体验卡和年卡的数量
      * @param $studentUuid
-     * @param $action
      * @return bool
      */
-    public function updateStudentReferralStatistics($studentUuid, $action): bool
+    public function updateStudentReferralStatistics($studentUuid): bool
     {
         $info = RealStudentReferralInfoModel::getRecord(['student_uuid' => $studentUuid]);
         // 不存在转介绍关系-创建转介绍关系
@@ -41,24 +47,98 @@ class RealStatisticsStudentReferralService extends StatisticsStudentReferralBase
                 ]);
             }
         }
-        // 存在转介绍关系，购买的年卡，更新
-        if ($action == 4) {
-            $update = [
-                'now_referral_trail_num'  => Medoo::raw("now_referral_trail_num-1"),
-                'now_referral_normal_num' => Medoo::raw("now_referral_normal_num+1"),
-            ];
-        } elseif ($action == 1) {
-            $update = [
-                'referral_num'           => Medoo::raw("referral_num+1"),
-                'now_referral_trail_num' => Medoo::raw("now_referral_trail_num+1"),
-            ];
-        } else {
-            SimpleLogger::info('RealStatisticsStudentReferralService::updateStudentReferralStatistics', [
-                'msg' => 'action not handle',
-            ]);
-            return true;
-        }
+        $update = self::computeStudentReferralStatisticsInfo(['uuid' => $studentUuid]);
+        // where 条件不更新
+        unset($update['student_uuid']);
         RealStudentReferralInfoModel::batchUpdateRecord($update, ['student_uuid' => $studentUuid]);
         return true;
+    }
+
+    /**
+     * 获取真人周周领奖白明单
+     * @param $isPayStatus
+     * @param $isRemainNum
+     * @return array
+     */
+    public function getRealWhiteList($isPayStatus = Constants::REAL_COURSE_YES_PAY, $isRemainNum = true)
+    {
+        $sql = 'SELECT s.student_id,s.uuid,s.country_code, sp.first_pay_time FROM ' . ErpGenericWhitelistModel::getTableNameWithDb() . ' as w ' .
+            ' inner join ' . ErpStudentModel::getTableNameWithDb() . ' as s on s.uuid=w.scene' .
+            ' inner join ' . ErpStudentAppModel::getTableNameWithDb() . ' as sp on sp.app_id=' . Constants::REAL_APP_ID . ' sp.student_id=s.id' .
+            ' WHERE w.app_id=' . Constants::REAL_APP_ID . ' and enabled=' . Constants::STATUS_TRUE;
+        $list = MysqlDB::getDB()->queryAll($sql);
+        foreach ($list as $key => &$item) {
+            $whiteInfo = json_decode($item['scene_value'], true);
+            if ($isPayStatus == Constants::REAL_COURSE_YES_PAY && empty($whiteInfo['order_courses']['pay_source'])) {
+                unset($list[$key]);
+                continue;
+            }
+            if ($isRemainNum && empty($whiteInfo['remain_num'])) {
+                unset($list[$key]);
+                continue;
+            }
+            $item['scene_value'] = $whiteInfo;
+            $item['first_pay_time'] = ErpStudentService::computeFirstTime($item['first_pay_time'], $whiteInfo);
+        }
+        return $list;
+    }
+
+    /**
+     * 计算学生转介绍统计信息
+     * 推荐人的uuid 一定不能为空
+     * @param $refereeInfo
+     * @return array
+     */
+    public static function computeStudentReferralStatisticsInfo($refereeInfo)
+    {
+        $db = MysqlDB::getDB();
+        $refTable = ErpReferralUserRefereeModel::getTableNameWithDb();
+        $stuTable = ErpStudentModel::getTableNameWithDb();
+        $stuAttrTable = ErpStudentAttributeModel::getTableNameWithDb();
+        $_insertData = [
+            'student_uuid'            => $refereeInfo['uuid'],
+            'referral_num'            => 0,
+            'now_referral_trail_num'  => 0,
+            'now_referral_normal_num' => 0,
+        ];
+        $refereeUuid = $refereeInfo['uuid'] ?? '';
+        $refereeId = $refereeInfo['id'] ?? 0;
+        if (empty($refereeUuid)) {
+            return $_insertData;
+        }
+        if (empty($refereeId['id'])) {
+            $refereeId = ErpStudentModel::getRecord(['uuid' => $refereeUuid], ['id'])['id'] ?? 0;
+        }
+        // 查询推荐人下所有被推荐人信息和生命周期
+        $attrSql = 'select r.user_id,s.uuid as student_uuid,a.attribute_id' .
+            ' from ' . $refTable . ' as r' .
+            ' left join ' . $stuTable . ' as s on s.id=r.user_id' .
+            ' left join ' . $stuAttrTable . ' as a on a.user_uuid=s.uuid and a.attribute_id in (15,16,17,18)' .
+            ' where r.referee_id=' . $refereeId;
+        $list = $db->queryAll($attrSql);
+        $_insertData['referral_num'] = count($list);
+        $repeatUuid = [];
+        foreach ($list as $_attr) {
+            // 同一个用户有多个attribute_id时，不需要重复处理
+            if (isset($repeatUuid[$_attr['student_uuid']])) {
+                continue;
+            }
+            $repeatUuid[$_attr['student_uuid']] = 1;
+
+            // 体验已完成
+            if ($_attr['attribute_id'] == ErpStudentAttributeModel::REAL_PERSON_LIFE_CYCLE_TRIAL_FINISHED) {
+                $_insertData['now_referral_trail_num'] += 1;
+            }
+            // 已付费的
+            if (in_array($_attr['attribute_id'], [
+                ErpStudentAttributeModel::REAL_PERSON_LIFE_CYCLE_LEARNING,
+                ErpStudentAttributeModel::REAL_PERSON_LIFE_CYCLE_WAIT_RENEW,
+                ErpStudentAttributeModel::REAL_PERSON_LIFE_CYCLE_EXPIRED,
+            ])) {
+                $_insertData['now_referral_normal_num'] += 1;
+            }
+        }
+        unset($_attr);
+        return $_insertData;
     }
 }

@@ -32,8 +32,8 @@ class StatisticsStudentReferralService extends StatisticsStudentReferralBaseAbst
         // 获取用户信息
         $referralUser = StudentService::getUuid($appId, $referralInfo['referee_id'], ['uuid']);
         // 统计
-        return StatisticsStudentReferralBaseAbstract::getAppObj($appId)
-            ->updateStudentReferralStatistics($referralUser['uuid'], $params['action']);
+        StatisticsStudentReferralBaseAbstract::getAppObj($appId)->updateStudentReferralStatistics($referralUser['uuid']);
+        return true;
     }
 
     // 检查用户是否是

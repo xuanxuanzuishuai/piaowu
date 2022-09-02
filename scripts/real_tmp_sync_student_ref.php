@@ -3,15 +3,20 @@
  * 手动统计历史真人转介绍关系
  * author: qingfeng.lian
  * date: 2022/8/30
+ * 使用示例：
+ * 全量计算：php real_tmp_sync_student_ref.php
+ * 分批计算：php real_tmp_sync_student_ref.php limit 0(最小的主键id,不包含)
+ * 指定用户：php real_tmp_sync_student_ref.php user 10（需要重新计算的用户id）
  */
 
 namespace App;
 
 use App\Libs\MysqlDB;
-use App\Models\Erp\ErpReferralUserRefereeLogModel;
 use App\Models\Erp\ErpReferralUserRefereeModel;
+use App\Models\Erp\ErpStudentAttributeModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\RealStudentReferralInfoModel;
+use App\Services\SyncTableData\TraitService\RealStatisticsStudentReferralService;
 use Dotenv\Dotenv;
 
 date_default_timezone_set('PRC');
@@ -30,65 +35,43 @@ $dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();
 $dotenv->overload();
 
+$db = MysqlDB::getDB();
 $refTable = ErpReferralUserRefereeModel::getTableNameWithDb();
-$refLogTable = ErpReferralUserRefereeLogModel::getTableNameWithDb();
 $stuTable = ErpStudentModel::getTableNameWithDb();
+$stuAttrTable = ErpStudentAttributeModel::getTableNameWithDb();
 
-// 读取所有数据
-$sql = "select r.id,r.referee_id,count(1) as total,s.uuid,group_concat(CONCAT_WS('-',r.id,l.id)) as ur_ids from $refTable r" .
-    " left join $stuTable s on s.id=r.referee_id".
-    " left join $refLogTable l on l.ur_id=r.id and l.action=4".
-    " group by r.referee_id";
+$countSql = 'select count(*) as total from (select referee_id from ' . $refTable . ' group by referee_id) t';
+$count = $db->queryAll($countSql);
+$total = $count[0]['total'];
+echo "本次轮询需要处理 " . $total . " 条" . PHP_EOL;
 
+$firstCmd = $argv[1] ?? '';
+$twoCmd = $argv[2] ?? '';
 
-$list = MysqlDB::getDB()->queryAll($sql);
-$count = count($list);
-echo "本次轮询需要处理 " . $count . " 条" . PHP_EOL;
-
-$chunkList = array_chunk($list, 150);
-foreach ($chunkList as $_list) {
-    $batchData = [];
-    foreach ($_list as $item) {
-        if (empty($item['uuid'])) {
-            echo "处理失败----------uuid找不到 " . $item['referee_id'] . PHP_EOL;
-            continue;
-        }
-        $batchData[$item['uuid']] = [
-            'student_uuid'            => $item['uuid'],
-            'referral_num'            => $item['total'],
-            'now_referral_trail_num'  => $item['total'],
-            'now_referral_normal_num' => 0,
-        ];
-        // $batchData[$item['uuid']]['ur_ids'] = $item['ur_ids'];
-        // 查询
-        if (!empty($item['ur_ids'])) {
-            $parseUr = explode(',',$item['ur_ids']);
-            foreach ($parseUr as $_ur) {
-                if (stripos($_ur,'-') !== false) {
-                    $batchData[$item['uuid']]['now_referral_normal_num'] += 1;
-                    $batchData[$item['uuid']]['now_referral_trail_num'] -= 1;
-                }
-            }
-            unset($_ur);
-        }
+$sql = 'select r.referee_id,s.uuid as referee_uuid from ' . $refTable . ' as r' .
+    ' left join ' . $stuTable . ' as s on s.id=r.referee_id';
+if (!empty($firstCmd)) {
+    switch ($firstCmd) {
+        case "limit":
+            $sql .= " where id> $twoCmd";
+            break;
+        case "user":
+            $sql .= " where r.referee_id=$twoCmd";
     }
-    unset($item);
-    RealStudentReferralInfoModel::batchInsert(array_values($batchData));
 }
-unset($_list);
+$sql .= ' group by r.referee_id';
+if (!empty($firstCmd) && $firstCmd == "limit") {
+    $sql .= " limit 0,5000";
+}
 
-// 验证sql
-/*
-select count(*) from (
-select r.id,r.referee_id,count(1) as total,s.uuid,group_concat(CONCAT_WS('-',r.id,l.id)) as ur_ids from referral_user_referee r
-left join erp_student s on s.id=r.referee_id
-left join referral_user_referee_log l on l.ur_id=r.id and l.action=4
-group by r.referee_id
-) t where uuid is not null
+$refList = $db->queryAll($sql);
+foreach ($refList as $k => $item) {
+    if (empty($item['referee_uuid'])) {
+        continue;
+    }
+    $_insertData = RealStatisticsStudentReferralService::computeStudentReferralStatisticsInfo(['uuid' => $item['referee_uuid'], 'id' => $item['referee_id']]);
+    RealStudentReferralInfoModel::insertRecord($_insertData);
+    echo "处理进度 $k/$total 条" . PHP_EOL;
+}
+unset($item);
 
-
--- 找不到uuid的验证sql
-select * from erp_dev.referral_user_referee where referee_id=63391;
-select * from erp_dev.referral_user_referee_log where ur_id = 3256;
-select * from erp_dev.erp_student where id=63391;
- */

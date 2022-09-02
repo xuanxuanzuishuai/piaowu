@@ -58,20 +58,24 @@ class RealStudentCanJoinActivityModel extends Model
         ];
         $info = self::getRecord(['student_uuid' => $studentUuid]);
         if (empty($info)) {
+            // 用户首次命中活动
             self::insertRecord($data);
-            RealStudentCanJoinActivityHistoryModel::insertRecord([
-                'student_uuid'            => $studentUuid,
-                'activity_type'           => OperationActivityModel::SHARE_POSTER_ACTIVITY_TYPE_WEEK,
-                'activity_id'             => $activityInfo['activity_id'],
-                'week_progress'           => 1,
-                'week_last_verify_status' => 0,
-                'week_batch_update_day'   => date('Ymd'),
-                'week_update_time'        => $time,
-            ]);
         } else {
             unset($data['student_uuid'], $data['student_first_pay_time']);
-            self::batchUpdateRecord($info['id'], $data);
+            self::updateRecord($info['id'], $data);
         }
-        return;
+
+        // 历史记录中不存在则新增，存在更新
+        RealStudentCanJoinActivityHistoryModel::createOrUpdateHitWeek($studentUuid, $activityInfo['activity_id'], [
+            'student_uuid'        => $studentUuid,
+            'activity_type'       => OperationActivityModel::SHARE_POSTER_ACTIVITY_TYPE_WEEK,
+            'activity_id'         => $activityInfo['activity_id'],
+            'activity_start_time' => $activityInfo['start_time'],
+            'activity_end_time'   => $activityInfo['end_time'],
+            'task_num'            => $activityInfo['activity_task_total'],
+            'join_num'            => 0,
+            'last_verify_status'  => 0,
+            'update_time'         => $time,
+        ]);
     }
 }
