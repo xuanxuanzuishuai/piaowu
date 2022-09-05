@@ -414,7 +414,7 @@ class LotteryAdminService
 				$activityChangeMysqlData['base_data'][$bk] = $bv;
 			}
 			$activityParamsData['base_data']['version'] = $mysqlBaseData['version'] + 1;
-			$activityChangeMysqlData['base_data']['rest_award_num'] = $activityParamsData['base_data']['rest_award_num'] = array_sum(array_column($activityParamsData['awards'], 'rest_num'));
+			$activityChangeMysqlData['base_data']['rest_award_num'] = $mysqlBaseData['rest_award_num'];
 			$activityChangeMysqlData['base_data'] = json_encode($activityChangeMysqlData['base_data'], JSON_UNESCAPED_UNICODE);
 			//奖品信息
 			$tmpAwardParams = array_column($activityParamsData['awards'], null, 'level');
@@ -439,6 +439,8 @@ class LotteryAdminService
 				$awardsUpdateSql .= "UPDATE " . LotteryAwardInfoModel::$table . " SET " . trim($tmpSql, ',') .
 					" WHERE id=" . $amv['id'] . " AND num=" . $amv['num'] . ' AND rest_num=' . $amv['rest_num'] . ';';
 			}
+			//兜底奖品库存为-1，sum是多扣除一个，然后再加一个补偿回来
+			$activityParamsData['base_data']['rest_award_num'] = array_sum(array_column($activityParamsData['awards'], 'rest_num')) + 1;
 			$activityParamsData['awards_update_sql'] = $awardsUpdateSql;
 			$activityChangeMysqlData['awards'] = json_encode($activityChangeMysqlData['awards'], JSON_UNESCAPED_UNICODE);
 			$checkRes['update_params_data'] = $activityParamsData;
