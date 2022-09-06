@@ -49,39 +49,33 @@ class LotteryClientService
         ];
     }
 
-    /**
-     * 开始抽奖
-     * @param $params
-     * @return array
-     * @throws RunTimeException
-     */
-    public static function hitAwardInfo($params)
-    {
-        $params['time'] = time();
-        $activityInfo = LotteryActivityService::getActivityConfigInfo($params['op_activity_id']);
-        //检查活动信息
-        LotteryActivityService::checkActivityInfo($activityInfo, $params['time']);
-
-        //整理抽奖所需的基本数据
-        $awardParams = LotteryActivityService::getAwardParams($params, $activityInfo);
-
-        $hitInfo = [];
-        for ($i = 0; $i < 3; $i++) {
-            $hitInfo = LotteryCoreService::LotteryCore($awardParams);
-            //扣除奖品库存
-            $updateRow = LotteryAwardInfoService::decreaseRestNum($hitInfo);
-            if (!empty($updateRow)) {
-                break;
-            }
-        }
-        //更新相关数据
-        $hitInfo['record_id'] = LotteryAwardRecordService::updateHitAwardInfo($awardParams, $hitInfo);
-
-        //投递到队列，发放奖品
-        LotteryActivityService::grantLotteryAward($params, $hitInfo);
-        $hitInfo['rest_times'] = $awardParams['rest_times'] - 1;
-        return $hitInfo;
-    }
+	/**
+	 * 开始抽奖
+	 * @param array $params
+	 * @return array
+	 * @throws RunTimeException
+	 */
+	public static function hitAwardInfo(array $params): array
+	{
+		$params['time'] = time();
+		$activityInfo = LotteryActivityService::getActivityConfigInfo($params['op_activity_id']);
+		//检查活动信息
+		LotteryActivityService::checkActivityInfo($activityInfo, $params['time']);
+		//整理抽奖所需的基本数据
+		$awardParams = LotteryActivityService::getAwardParams($params, $activityInfo);
+		$hitInfo = LotteryCoreService::LotteryCore($awardParams);
+		//扣除奖品库存
+		$updateRow = LotteryAwardInfoService::decreaseRestNum($hitInfo);
+		if (empty($updateRow)) {
+			return [];
+		}
+		//更新相关数据
+		$hitInfo['record_id'] = LotteryAwardRecordService::updateHitAwardInfo($awardParams, $hitInfo, $activityInfo);
+		//投递到队列，发放奖品
+		LotteryActivityService::grantLotteryAward($params, $hitInfo);
+		$hitInfo['rest_times'] = $awardParams['rest_times'] - 1;
+		return $hitInfo;
+	}
 
     /**
      * 获取收货地址信息

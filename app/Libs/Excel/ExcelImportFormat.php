@@ -48,7 +48,7 @@ class ExcelImportFormat
                 if (empty($sheetData)) {
                     return [];
                 }
-                //表格第一列和目标key做交集检测
+                //表格第一列和目标key做差集检测
                 $keyDiff = array_diff($targetKeysList, $titleKeys);
                 if (!empty($keyDiff)) {
                     SimpleLogger::info("targetKeys and titleKeys diff", [$keyDiff]);

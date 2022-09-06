@@ -73,9 +73,17 @@ class Lottery extends ControllerBase
         $userInfo = StudentService::getUuid($tokenInfo['app_id'],$tokenInfo['user_id']);
         $params['student_id'] = $tokenInfo['user_id'];
         $params['uuid'] = $userInfo['uuid'];
-
-        try {
-            $hitAwardInfo = LotteryClientService::hitAwardInfo($params);
+		try {
+			//最多循环三次抽奖逻辑
+			for ($i = 3; $i >= 1; $i--) {
+				$hitAwardInfo = LotteryClientService::hitAwardInfo($params);
+				if (!empty($hitAwardInfo)) {
+					break;
+				}
+			}
+			if (empty($hitAwardInfo)) {
+				throw new RunTimeException(['system_busy']);
+			}
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

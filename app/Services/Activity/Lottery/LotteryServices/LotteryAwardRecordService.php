@@ -8,7 +8,10 @@ use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\CountingActivityAwardModel;
+use App\Models\LotteryAwardInfoModel;
 use App\Models\LotteryAwardRecordModel;
+use App\Services\ErpService\ErpGoodsV1Service;
+use App\Services\Queue\GrantAwardTopic;
 use App\Services\UniqueIdGeneratorService\DeliverIdGeneratorService;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
@@ -144,9 +147,10 @@ class LotteryAwardRecordService
      * 中奖记录入表
      * @param $params
      * @param $hitInfo
+     * @param $activityInfo
      * @return int|mixed|string|null
      */
-    public static function addAwardRecord($params, $hitInfo)
+    public static function addAwardRecord($params, $hitInfo, $activityInfo)
     {
         if ($hitInfo['type'] == Constants::AWARD_TYPE_TYPE_ENTITY) {
             $uniqueId = (new DeliverIdGeneratorService())->getDeliverId();
@@ -155,14 +159,15 @@ class LotteryAwardRecordService
             $shippingStatus = Constants::SHIPPING_STATUS_DELIVERED;
         }
         $data = [
-            'op_activity_id'  => $params['op_activity_id'],
-            'uuid'            => $params['uuid'],
-            'use_type'        => $params['use_type'],
-            'award_id'        => $hitInfo['id'],
-            'award_type'      => $hitInfo['type'],
-            'unique_id'       => $uniqueId ?? 0,
-            'shipping_status' => $shippingStatus,
-            'create_time'     => time(),
+			'op_activity_id'   => $params['op_activity_id'],
+			'uuid'             => $params['uuid'],
+			'use_type'         => $params['use_type'],
+			'award_id'         => $hitInfo['id'],
+			'award_type'       => $hitInfo['type'],
+			'unique_id'        => $uniqueId ?? 0,
+			'shipping_status'  => $shippingStatus,
+			'create_time'      => time(),
+			'activity_version' => $activityInfo['version'],
         ];
         return LotteryAwardRecordModel::insertRecord($data);
     }
@@ -171,9 +176,10 @@ class LotteryAwardRecordService
      * 更新中奖后活动表的相关数据
      * @param $params
      * @param $hitInfo
+     * @param $activityInfo
      * @return bool
      */
-    public static function updateHitAwardInfo($params, $hitInfo)
+    public static function updateHitAwardInfo($params, $hitInfo, $activityInfo)
     {
         $fields = [];
         if ($hitInfo['num'] > 0) {
@@ -192,7 +198,7 @@ class LotteryAwardRecordService
         $db = MysqlDB::getDB();
         $db->beginTransaction();
         try {
-            $recordId = self::addAwardRecord($params, $hitInfo);
+            $recordId = self::addAwardRecord($params, $hitInfo, $activityInfo);
             LotteryActivityService::updateAfterHitInfo($params['op_activity_id'], $fields);
             $db->commit();
         } catch (\Exception $e) {
@@ -315,7 +321,8 @@ class LotteryAwardRecordService
             'ar.unique_id',
             'ar.award_type',
             'ar.uuid',
-            'ai.level',
+			'ar.grant_state',
+			'ai.level',
             'ai.name',
             'ai.type',
         ], $page, $pageSize);
@@ -425,41 +432,80 @@ class LotteryAwardRecordService
 
     /**
      * 修改收货地址:实物&待发货条件才可以修改
-     * @param $id
-     * @param $addressDetail
-     * @return bool
-     * @throws RunTimeException
-     */
-    public static function updateAwardShippingAddress($id, $addressDetail): bool
+	 * @param $id
+	 * @param $addressId
+	 * @return bool
+	 * @throws RunTimeException
+	 */
+    public static function updateAwardShippingAddress($id, $addressId): bool
     {
-        $recordData = LotteryAwardRecordModel::getRecord(['id' => $id],
-            ['op_activity_id', 'award_type', 'shipping_status', 'draw_time']);
-        if ($recordData['award_type'] != Constants::AWARD_TYPE_TYPE_ENTITY) {
-            throw new RuntimeException(["not_entity_award_stop_update_shipping_address"]);
-        }
-        if ($recordData['shipping_status'] != Constants::SHIPPING_STATUS_BEFORE) {
+		$recordData = LotteryAwardRecordModel::getRecord(['id' => $id],
+			['id', 'erp_address_id', 'op_activity_id', 'award_id', 'award_type', 'shipping_status', 'draw_time', 'uuid', 'unique_id', 'grant_state']);
+		if ($recordData['award_type'] != Constants::AWARD_TYPE_TYPE_ENTITY) {
+			throw new RuntimeException(["not_entity_award_stop_update_shipping_address"]);
+		}
+		if ($recordData['shipping_status'] != Constants::SHIPPING_STATUS_BEFORE) {
             throw new RuntimeException(["not_waiting_send_stop_update_shipping_address"]);
         }
-        //获取活动数据
-        $activityData = LotteryActivityModel::getRecord(['op_activity_id' => $recordData['op_activity_id']],
-            ['end_time'], false);
-        if (time() > ($activityData['end_time'] + 7 * Util::TIMESTAMP_ONEDAY)) {
-            throw new RuntimeException(["not_entity_award_stop_update_shipping_address"]);
-        }
-        //请求erp新增地址
-        $erp = new Erp();
-        $result = $erp->modifyStudentAddress($addressDetail);
-        if (empty($result) || $result['code'] != 0 || empty($result['data']['address_id'])) {
-            throw new RuntimeException([$result['errors'][0]['err_no']]);
-        }
-        $addressDetail['id'] = $result['data']['address_id'];
-        $res = LotteryAwardRecordModel::batchUpdateRecord([
-            'erp_address_id' => $result['data']['address_id'],
-            'address_detail' => json_encode($addressDetail),
-            'draw_time'      => empty($recordData['draw_time']) ? time() : $recordData['draw_time']
+		$time = time();
+		$erp = new Erp();
+		$result = $erp->getStudentAddressList($recordData['uuid']);
+		if (!isset($result['data']['list'])) {
+			throw new RuntimeException(["erp_system_busy"]);
+		}
+		$addressList = array_column($result['data']['list'], null, 'id');
+		if (empty($addressList[$addressId])) {
+			throw new RuntimeException(["address_id_is_error"]);
+		}
+		$res = LotteryAwardRecordModel::batchUpdateRecord([
+            'erp_address_id' => $addressId,
+            'address_detail' => json_encode($addressList[$addressId]),
+            'draw_time'      => empty($recordData['draw_time']) ? $time : $recordData['draw_time'] + 1
         ], ['id' => $id, 'shipping_status' => Constants::SHIPPING_STATUS_BEFORE]);
-        return !empty($res);
-    }
+		if (empty($res)) {
+			return false;
+		}
+		self::lotteryGrantAward($recordData, $addressId);
+        return true;
+	}
+
+	/**
+	 * @param array $recordData
+	 * @param int $addressId
+	 */
+	private static function lotteryGrantAward(array $recordData, int $addressId)
+	{
+		//获取活动数据：如果活动处于「已结束」状态且活动结束7天以上，修改用户收货地址后，立即推送到ERP
+		$activityData = LotteryActivityModel::getRecord(['op_activity_id' => $recordData['op_activity_id']],
+			['end_time', 'app_id'], false);
+		$time = time();
+		if ($time > ($activityData['end_time'] + 7 * Util::TIMESTAMP_ONEDAY) && $recordData['grant_state'] == Constants::STATUS_FALSE) {
+			try {
+				$topicObj = new GrantAwardTopic();
+				//获取商品数据
+				$awardDetail = json_decode(LotteryAwardInfoModel::getRecord(['id' => $recordData['award_id']], ['award_detail'])['award_detail'], true);
+				$goodsData = ErpGoodsV1Service::getGoodsDataByIds([$awardDetail['common_award_id']]);
+				$studentData = ErpStudentModel::getRecord(['uuid' => $recordData['uuid']], ['mobile']);
+				$nsqData = [
+					'record_id'      => $recordData['id'],
+					'type'           => $recordData['award_type'],
+					'unique_id'      => $recordData['unique_id'],
+					'plat_id'        => Constants::UNIQUE_ID_PREFIX,
+					'app_id'         => $activityData['app_id'],
+					'sale_shop'      => LotteryActivityModel::BUSINESS_MAP_SHOP[$activityData['app_id']],
+					'goods_id'       => $awardDetail['common_award_id'],
+					'goods_code'     => $goodsData[0]['code'],
+					'mobile'         => $studentData['mobile'],
+					'uuid'           => $recordData['uuid'],
+					'amount'         => $awardDetail['common_award_amount'],
+					'erp_address_id' => $addressId,
+				];
+				$topicObj->lotteryGrantAward($nsqData)->publish();
+			} catch (\Exception $e) {
+				SimpleLogger::error("grant award error",[$e->getMessage()]);
+			}
+		}
+	}
 
     /**
      * 获取未签收的实物获奖记录
@@ -495,13 +541,11 @@ class LotteryAwardRecordService
 
 
     /**
-     * 获取未发货的实物获奖记录:领奖时间在当前时间24小时之前
+     * 获取未发货的实物获奖记录
      * @return array
      */
     public static function getUnshippedAwardRecord(): array
     {
-        return LotteryAwardRecordModel::getUnshippedAwardRecord(strtotime('-24 hour'),
-            Constants::SHIPPING_STATUS_BEFORE, Constants::AWARD_TYPE_TYPE_ENTITY);
-
+        return LotteryAwardRecordModel::getUnshippedAwardRecord(Constants::SHIPPING_STATUS_BEFORE, Constants::AWARD_TYPE_TYPE_ENTITY);
     }
 }

@@ -118,7 +118,12 @@ function getTotalTimes($opActivityId, $appId, $uuid, $startPayTime, $endPayTime)
     $orderToTimes = LotteryActivityService::orderToTimes($opActivityId, $orderInfo);
     $filerTimes = count($orderToTimes);
     //获取导入抽奖机会
-    $importTimes = LotteryImportUserService::importUserTimes($opActivityId, $uuid);
+	$importData = LotteryImportUserService::importUserTimes($opActivityId, $uuid);
+	$importTimes = 0;
+	if(!empty($importData)){
+		$importTimes = array_sum(array_column($importData,'rest_times'));
+	}
+
     return $filerTimes + $importTimes;
 }
 

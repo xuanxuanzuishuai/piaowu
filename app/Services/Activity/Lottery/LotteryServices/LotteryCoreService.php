@@ -25,14 +25,8 @@ class LotteryCoreService
         }
 
         //经过算法计算奖品
-        if ($params['use_type'] == LotteryAwardRecordModel::USE_TYPE_FILTER) {
-            SimpleLogger::info('LotteryCore consume filter times', []);
-            $hitInfo = self::LotteryFilterRuleCore($params);
-        } elseif ($params['use_type'] == LotteryAwardRecordModel::USE_TYPE_IMPORT) {
-            SimpleLogger::info('LotteryCore consume import times', []);
-            $hitInfo = self::LotteryImportCore($params);
-        }
-
+		SimpleLogger::info('LotteryCore consume filter times', []);
+		$hitInfo = self::LotteryFilterRuleCore($params);
         return $hitInfo ?? [];
     }
 
@@ -111,10 +105,12 @@ class LotteryCoreService
         for ($i = 0; $i < count($readyAwardList); $i++) {
             $length += $readyAwardList[$i]['weight'];
         }
-        //此段代码为测试阶段使用，正式环境注释
-//        foreach ($readyAwardList as $key => $value) {
-//            $readyAwardList[$key]['weight_rate'] = number_format($value['weight'] / $length, 2);
-//        }
+        //此段代码为测试阶段使用，正式环境禁用
+		if ($_ENV['ENV_NAME'] != 'prod') {
+			foreach ($readyAwardList as $key => $value) {
+				$readyAwardList[$key]['weight_rate'] = number_format($value['weight'] / $length, 2);
+			}
+		}
         SimpleLogger::info('LotteryCore ready award rate', $readyAwardList);
         for ($i = 0; $i < count($readyAwardList); $i++) {
             $random = rand(1, $length);

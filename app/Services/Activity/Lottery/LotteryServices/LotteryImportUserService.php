@@ -10,20 +10,20 @@ use App\Models\OperationActivityModel;
 class LotteryImportUserService
 {
     /**
-     * 获取用户导入的抽奖机会
+     * 获取用户导入的抽奖配置数据
      * @param $opActivityId
      * @param $uuid
-     * @return int|number
-     */
-    public static function importUserTimes($opActivityId, $uuid)
-    {
-        $where = [
-            'op_activity_id' => $opActivityId,
-            'uuid'           => $uuid,
-            'status'         => Constants::STATUS_TRUE,
-        ];
-        return LotteryImportUserModel::getImportUserTimes($where);
-    }
+     * @return array
+	 */
+	public static function importUserTimes($opActivityId, $uuid): array
+	{
+		$where = [
+			'op_activity_id' => $opActivityId,
+			'uuid'           => $uuid,
+			'status'         => Constants::STATUS_TRUE,
+		];
+		return LotteryImportUserModel::getRecords($where, ['rest_times', 'order_amount']);
+	}
 
     /**
      * 追加导流用户
