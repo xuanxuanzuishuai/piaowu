@@ -10,16 +10,17 @@ class SaBpDataTopic extends BaseTopic
 
     const EVENT_POSTER_PUSH = 'ai_server_poster_push';  //海报主动推送
     const EVENT_ASSISTANT_SMS = 'ai_server_push_assistant'; // 给助教推送学员短信
+	const EVENT_UPDATE_USER_PROFILE = 'update_user_profile'; //神策用户属性
 
-    /**
-     * SaBpDataTopic constructor.
-     * @param null $publishTime
-     * @throws Exception
-     */
-    public function __construct($publishTime = null)
-    {
-        parent::__construct(self::TOPIC_NAME, $publishTime);
-    }
+	/**
+	 * SaBpDataTopic constructor.
+	 * @param null $publishTime
+	 * @throws Exception
+	 */
+	public function __construct($publishTime = null, $isClusterModel = false)
+	{
+		parent::__construct(self::TOPIC_NAME, $publishTime, QueueService::FROM_OP, $isClusterModel);
+	}
 
     /**
      * 后台主动推送海报
@@ -39,4 +40,16 @@ class SaBpDataTopic extends BaseTopic
         $this->setMsgBody($data);
         return $this;
     }
+
+	/**
+	 * 用户注册渠道属性上报
+	 * @param $data
+	 * @return $this
+	 */
+	public function updateUserProfile($data): SaBpDataTopic
+	{
+		$this->setEventType(self::EVENT_UPDATE_USER_PROFILE);
+		$this->setMsgBody($data);
+		return $this;
+	}
 }
