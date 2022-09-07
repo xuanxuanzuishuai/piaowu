@@ -8,13 +8,16 @@
 
 namespace App\Services\Activity\RealWeekActivity;
 
+use App\Libs\AliOSS;
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\RealDictConstants;
 use App\Libs\SimpleLogger;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\OperationActivityModel;
 use App\Models\RealSharePosterModel;
+use App\Models\RealStudentCanJoinActivityHistoryModel;
 use App\Models\RealWeekActivityModel;
 use App\Models\RealWeekActivityRuleVersionAbModel;
 use App\Services\Activity\RealWeekActivity\TraitService\RealWeekActivityCURDService;
@@ -139,5 +142,95 @@ class RealWeekActivityClientService
             SimpleLogger::info("checkStudentIsUploadPoster", ['msg' => "supplement_activity", $studentId, $activityId]);
         }
         return true;
+    }
+
+    /**
+     * 获取学生参与活动历史记录
+     * @param $studentUuid
+     * @param $params
+     * @return array
+     */
+    public static function getStudentJoinActivityHistory($studentUuid, $params)
+    {
+        $returnData = [
+            'total_count' => 0,
+            'list'        => [],
+        ];
+        if (empty($studentUuid)) {
+            return $returnData;
+        }
+        $where = [
+            'activity_type'      => OperationActivityModel::SHARE_POSTER_ACTIVITY_TYPE_WEEK,
+            'activity_id'        => $params['activity_id'] ?? 0,
+            'join_progress'      => $params['join_progress'] ?? 0,
+            'last_verify_status' => $params['last_verify_status'] ?? 0,
+            'page'               => $params['page'] ?? 1,
+            'count'              => $params['count'] ?? 0,
+            'ORDER'              => ['activity_status' => 'ASC', 'activity_create_time' => 'DESC']
+        ];
+        $data = RealStudentCanJoinActivityHistoryModel::getStudentJoinActivityHistory($studentUuid, $where);
+        $returnData['total_count'] = $data['total_count'];
+        if (!empty($data['list'])) {
+            $activityIds = array_column($data['list'], 'activity_id');
+            $activityList = RealWeekActivityModel::getActivityFirstAward($activityIds);
+            $activityList = array_column($activityList, null, 'activity_id');
+            foreach ($data['list'] as &$item) {
+                $item['activity_name'] = $activityList[$item['activity_id']]['name'];
+                $item['award_prize_type'] = $activityList[$item['activity_id']]['award_prize_type'];
+                $item['first_award_amount'] = $activityList[$item['activity_id']]['first_award_amount'];
+                $item['award_prize_type_zh'] = OperationActivityModel::formatAwardPrizeType($item['award_prize_type']);
+                $item['last_verify_status_zh'] = OperationActivityModel::formatVerifyStatus($item['last_verify_status']) ?? '';
+                $item['activity_status_zh'] = OperationActivityModel::formatActivityStatus($item['activity_status']) ?? '';
+            }
+            unset($item);
+        }
+        $returnData['list'] = $data['list'];
+        return $returnData;
+    }
+
+    /**
+     * 获取学生命中活动的参与记录
+     * @param $studentUuid
+     * @param $activityId
+     * @param $page
+     * @param $count
+     * @return array
+     */
+    public static function getStudentActivityJoinRecords($studentUuid, $activityId, $page, $count)
+    {
+        $returnData = [
+            'total_count' => 0,
+            'list'        => [],
+        ];
+        $activityHistory = RealStudentCanJoinActivityHistoryModel::getStudentWeekActivityHistory($studentUuid, $activityId);
+        if (empty($activityHistory)) {
+            return $returnData;
+        }
+        list($list, $returnData['total_count']) = RealSharePosterModel::getPosterList([
+            'activity_id' => $activityId,
+            'uuid'        => $studentUuid,
+        ]);
+        if (!empty($list)) {
+            foreach ($list as $item) {
+                $returnData['list'][] = [
+                    'activity_count_task'     => $activityHistory['task_num'],
+                    'join_num'                => $activityHistory['join_num'],
+                    'task_num'                => $item['task_num'],
+                    'activity_id'             => $item['activity_id'],
+                    'student_id'              => $item['student_id'],
+                    'verify_status'           => $item['poster_status'],
+                    'operator_name'           => $item['operator_name'],
+                    'reason'                  => $item['reason'],
+                    'verify_status_zh'        => OperationActivityModel::formatVerifyStatus($item['poster_status']),
+                    'reason_str'              => OperationActivityModel::formatVerifyReason($item['reason']),
+                    'remark'                  => $item['remark'],
+                    'format_create_time'      => date("Y-m-d H:i:s", $item['create_time']),
+                    'format_verify_time'      => date("Y-m-d H:i:s", $item['check_time']),
+                    'format_share_poster_url' => AliOSS::replaceCdnDomainForDss($item['img_url'])
+                ];
+            }
+            unset($item);
+        }
+        return $returnData;
     }
 }

@@ -56,27 +56,37 @@ class RealStatisticsStudentReferralService extends StatisticsStudentReferralBase
 
     /**
      * 获取真人周周领奖白明单
-     * @param $isPayStatus
-     * @param $isRemainNum
+     * @param int $isPayStatus
+     * @param bool $isRemainNum
+     * @param int $studentId
      * @return array
      */
-    public function getRealWhiteList($isPayStatus = Constants::REAL_COURSE_YES_PAY, $isRemainNum = true)
+    public function getRealWhiteList($isPayStatus = Constants::REAL_COURSE_YES_PAY, $isRemainNum = true, $studentId = 0)
     {
-        $sql = 'SELECT s.student_id,s.uuid,s.country_code, sp.first_pay_time FROM ' . ErpGenericWhitelistModel::getTableNameWithDb() . ' as w ' .
-            ' inner join ' . ErpStudentModel::getTableNameWithDb() . ' as s on s.uuid=w.scene' .
-            ' inner join ' . ErpStudentAppModel::getTableNameWithDb() . ' as sp on sp.app_id=' . Constants::REAL_APP_ID . ' sp.student_id=s.id' .
-            ' WHERE w.app_id=' . Constants::REAL_APP_ID . ' and enabled=' . Constants::STATUS_TRUE;
+        $sql = 'SELECT s.id as student_id,s.uuid,s.country_code, sp.first_pay_time,w.scene_value FROM ' . ErpGenericWhitelistModel::getTableNameWithDb() . ' as w ' .
+            ' inner join ' . ErpStudentModel::getTableNameWithDb() . ' as s on s.uuid=w.scene_key' .
+            ' inner join ' . ErpStudentAppModel::getTableNameWithDb() . ' as sp on sp.app_id=' . Constants::REAL_APP_ID . ' and sp.student_id=s.id' .
+            ' WHERE w.app_id=' . Constants::REAL_APP_ID . ' and w.enabled=' . Constants::STATUS_TRUE;
+        if (!empty($studentId)) {
+            $sql .= ' and s.id=' . $studentId;
+        }
         $list = MysqlDB::getDB()->queryAll($sql);
         foreach ($list as $key => &$item) {
             $whiteInfo = json_decode($item['scene_value'], true);
-            if ($isPayStatus == Constants::REAL_COURSE_YES_PAY && empty($whiteInfo['order_courses']['pay_source'])) {
-                unset($list[$key]);
-                continue;
+            foreach ($whiteInfo['order_courses'] as $_course) {
+                foreach ($_course as $_w) {
+                    if ($isPayStatus == Constants::REAL_COURSE_YES_PAY && empty($_w['pay_source'])) {
+                        continue;
+                    }
+                    if ($isRemainNum && empty($_w['remain_num'])) {
+                        continue;
+                    }
+                    // 是付费，并且有课程数
+                    break 2;
+                }
             }
-            if ($isRemainNum && empty($whiteInfo['remain_num'])) {
-                unset($list[$key]);
-                continue;
-            }
+            unset($_w);
+
             $item['scene_value'] = $whiteInfo;
             $item['first_pay_time'] = ErpStudentService::computeFirstTime($item['first_pay_time'], $whiteInfo);
         }

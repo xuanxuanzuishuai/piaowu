@@ -134,10 +134,11 @@ class ErpUserService
 
     /**
      * 获取当前所有有付费正式课剩余课程数的学生列表
-     * @param $studentId
+     * @param int $studentId
+     * @param array $firstPayTimeRange
      * @return array
      */
-    public static function getIsPayAndCourseRemaining($studentId = 0): array
+    public static function getIsPayAndCourseRemaining($studentId = 0, $firstPayTimeRange = []): array
     {
         $stuTable = ErpStudentModel::getTableNameWithDb();
         $stuAppTable = ErpStudentAppModel::getTableNameWithDb();
@@ -151,15 +152,21 @@ class ErpUserService
             " inner join $courseTable c on s.id = c.student_id and c.`status` = 1" .
             " left JOIN $courseExtTable e on c.id = e.student_course_id" .
             // " left join $cleanTable cl on cl.student_id=s.id" .
-            " where" .
-            // 付费用户
-            " a.first_pay_time > 0 " .
-            // 付费正式课
-            " and c.business_type=1 and json_extract(c.business_tag,'$.price') >0 and json_search(c.business_tag,'one', 'free_type') IS NULL" .
+            " where";
+
+        // 付费用户
+        if (!empty($firstPayRange)) {
+            $sql .= " a.first_pay_time>=" . $firstPayTimeRange['start'] . ' and a.first_pay_time<=' . $firstPayTimeRange['end'];
+        } else {
+            $sql .= " a.first_pay_time > 0 ";
+        }
+
+        // 付费正式课
+        $sql .= " and c.business_type=1 and json_extract(c.business_tag,'$.price') >0 and json_search(c.business_tag,'one', 'free_type') IS NULL" .
             // 有剩余付费正式课程数量
             " and (c.lesson_count > 0 or e.lesson_decimal > 0)";
         if (!empty($studentId)) {
-            $sql .= ' and s.id='. $studentId . ' limit 1';
+            $sql .= ' and s.id=' . $studentId . ' limit 1';
         }
         $list = MysqlDB::getDB()->queryAll($sql);
         return is_array($list) ? $list : [];

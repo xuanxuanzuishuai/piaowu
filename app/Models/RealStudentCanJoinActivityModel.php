@@ -38,7 +38,7 @@ class RealStudentCanJoinActivityModel extends Model
      */
     public static function updateStudentHitWeekActivity($studentInfo, $activityInfo)
     {
-        if (empty($activityInfo)) {
+        if (empty($activityInfo) || empty($studentInfo)) {
             return;
         }
         $time = time();

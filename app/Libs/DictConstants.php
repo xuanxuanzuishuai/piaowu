@@ -762,6 +762,7 @@ class DictConstants {
             'erp_service',
             'crm_service',
             'dawn_service',
+            'general_service',
         ],
     ];
 

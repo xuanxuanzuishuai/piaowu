@@ -184,6 +184,7 @@ class RealSharePosterModel extends Model
             sp.verify_reason reason,
             sp.remark,
             sp.type,
+            sp.task_num,
             s.name student_name,
             s.mobile,
             s.uuid,

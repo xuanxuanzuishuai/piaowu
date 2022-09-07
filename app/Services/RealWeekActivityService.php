@@ -27,6 +27,7 @@ use App\Models\TemplatePosterModel;
 use App\Models\RealWeekActivityModel;
 use App\Services\Activity\RealWeekActivity\RealWeekActivityClientService;
 use App\Services\Queue\QueueService;
+use App\Services\Queue\WeekActivityTopic;
 use App\Services\StudentServices\ErpStudentService;
 use App\Services\TraitService\TraitRealWeekActivityTestAbService;
 
@@ -507,6 +508,10 @@ class RealWeekActivityService
             return true;
         }
         if ($enableStatus == OperationActivityModel::ENABLE_STATUS_ON) {
+            // 禁用的活动不能再启用
+            if ($activityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_DISABLE) {
+                throw new RunTimeException(['activity_enable_not_start']);
+            }
             // 如果是启用活动 - 校验活动是否允许启动
             self::checkActivityIsAllowEnable($activityInfo);
         }
@@ -515,7 +520,14 @@ class RealWeekActivityService
         if (is_null($res)) {
             throw new RunTimeException(['update_failure']);
         }
-
+        // 如果活动是正在运行中
+        $time = time();
+        if ($activityId['start_time'] <= $time && $time <= $activityInfo['end_time']) {
+            (new WeekActivityTopic())->activityEnableStatusEdit([
+                'app_id'        => Constants::REAL_APP_ID,
+                'activity_id'   => $activityId,
+            ])->publish();
+        }
         return true;
     }
 

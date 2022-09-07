@@ -14,6 +14,7 @@ use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Models\Erp\ErpReferralUserRefereeModel;
 use App\Models\Erp\ErpStudentCourseModel;
+use App\Models\Erp\ErpStudentModel;
 
 class SyncBinlogTableDataService
 {
@@ -21,6 +22,8 @@ class SyncBinlogTableDataService
     const EVENT_TYPE_SYNC_ERP_REFERRAL_USER_REFEREE = 'op_sync_erp_erp_referral_user_referee';
     const EVENT_TYPE_SYNC_ERP_STUDENT_ATTRIBUTE     = 'op_sync_erp_erp_student_attribute';
     const EVENT_TYPE_SYNC_ERP_STUDENT_COURSE        = 'op_sync_erp_erp_student_course';
+    const EVENT_TYPE_SYNC_ERP_STUDENT_COURSE_EXT    = 'op_sync_erp_erp_student_course_ext';
+    const EVENT_TYPE_SYNC_ERP_GENERIC_WHITELIST     = 'op_sync_erp_erp_generic_whitelist';
 
     /**
      * 同步真人清退用户表（erp_student_course_tmp）到cache
@@ -73,7 +76,7 @@ class SyncBinlogTableDataService
         // 清退又购买的用户重新计算用户命中的真人周周活动
         $studentCleanInfo['buy_after_clean'] = 1;
         if (!empty($studentCleanInfo['buy_after_clean'])) {
-            CheckStudentIsCanActivityService::checkRealStudentHitWeek($rowsData['student_id']);
+            (new RealUpdateStudentCanJoinActivityService(['student_id' => $rowsData['student_id']]))->run();
         }
         return true;
     }
@@ -162,8 +165,70 @@ class SyncBinlogTableDataService
         $pikaObj = Pika::initObj($params);
         $rowsData = $pikaObj->getRows();
 
-        // 开始更新学生转介绍关系统计数据
-        CheckStudentIsCanActivityService::checkRealStudentHitWeek($rowsData['student_id']);
+        // 正式课 + 价格>0 + 非免费课包
+        if ($rowsData['business_type'] == ErpStudentCourseModel::BUSINESS_TYPE_NORMAL) {
+            $businessTag = json_encode($rowsData['business_tag'], true);
+            if (!empty($businessTag['price']) && !isset($businessTag['free_type'])) {
+                // 开始更新学生转介绍关系统计数据
+                (new RealUpdateStudentCanJoinActivityService(['student_id' => $rowsData['student_id']]))->run();
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * 监听学生课程数量变化（erp_student_course_ext）
+     * @param $params
+     * @return bool
+     */
+    public function opSyncErpErpStudentCourseExt($params)
+    {
+        $eventType = self::EVENT_TYPE_SYNC_ERP_STUDENT_COURSE_EXT;
+        // 先记录请求日志
+        SimpleLogger::info("SyncBinlogTableDataService::opSyncErpErpStudentCourseExt", [
+            'msg'        => 'start',
+            'params'     => $params,
+            "event_type" => $eventType,
+        ]);
+        // 解析数据
+        $pikaObj = Pika::initObj($params);
+        $rowsData = $pikaObj->getRows();
+
+        // 正式课 + 价格>0 + 非免费课包
+        $courseInfo = ErpStudentCourseModel::getRecord(['id' => $rowsData['student_course_id']]);
+        if ($courseInfo['business_type'] == ErpStudentCourseModel::BUSINESS_TYPE_NORMAL) {
+            $businessTag = json_encode($courseInfo['business_tag'], true);
+            if (!empty($businessTag['price']) && !isset($businessTag['free_type'])) {
+                // 开始更新学生转介绍关系统计数据
+                (new RealUpdateStudentCanJoinActivityService(['student_id' => $courseInfo['student_id']]))->run();
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * 监听白名单变化（erp_generic_whitelist）
+     * @param $params
+     * @return bool
+     */
+    public function opSyncErpErpGenericWhitelist($params)
+    {
+        $eventType = self::EVENT_TYPE_SYNC_ERP_GENERIC_WHITELIST;
+        // 先记录请求日志
+        SimpleLogger::info("SyncBinlogTableDataService::opSyncErpErpGenericWhitelist", [
+            'msg'        => 'start',
+            'params'     => $params,
+            "event_type" => $eventType,
+        ]);
+        // 解析数据
+        $pikaObj = Pika::initObj($params);
+        $rowsData = $pikaObj->getRows();
+
+        $studentInfo = ErpStudentModel::getRecord(['uuid' => $rowsData['scene_key']], ['id']);
+        // 计算学生命中活动
+        (new RealUpdateStudentCanJoinActivityService(['student_id' => $studentInfo['id']]))->run();
 
         return true;
     }

@@ -187,8 +187,10 @@ class RealWeekActivityModel extends Model
             'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
             'ORDER' => ['start_time' => "DESC"],
             'start_time[<]' => !empty($time) ? $time : time(),    // 确保当前活动已经开始 - 过滤掉预先创建但未到开始时间的活动
-            'LIMIT' => $limit
         ];
+        if (!is_null($limit)) {
+            $where['LIMIT'] = $limit;
+        }
         if (!empty($time)) {
             $where['start_time[<]'] = $time;
             $where['end_time[>]'] = $time;
@@ -301,5 +303,23 @@ class RealWeekActivityModel extends Model
         $list = $db->queryAll($listSql);
         SimpleLogger::info("getActivityList_sql", [$where, $listSql, $list]);
         return [intval($res[0]['total_count']), is_array($list) ? $list : []];
+    }
+
+    /**
+     * 获取活动的基本信息和首次奖励
+     * @param $activityIds
+     * @return array
+     */
+    public static function getActivityFirstAward($activityIds)
+    {
+        if (empty($activityIds)) return [];
+        $weekTable = self::$table;
+        $awardTable = RealSharePosterPassAwardRuleModel::$table;
+        $sql = 'select w.award_prize_type,w.activity_id,w.name as activity_name,a.success_pass_num,min(a.award_amount) as first_award_amount from ' . $weekTable . ' as w' .
+            ' left join ' . $awardTable . ' as a on a.activity_id=w.activity_id' .
+            ' where w.activity_id in (' . implode(',', $activityIds) . ')' .
+            ' group by w.activity_id';
+        $data = MysqlDB::getDB()->queryAll($sql);
+        return is_array($data) ? $data : [];
     }
 }

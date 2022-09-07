@@ -46,6 +46,7 @@ class RouterFactory
     const CLIENT_REF_API = 'ref'; // 真人业务线学生app端
     const CLIENT_ROUTING = 'client'; // 真人/智能业务线客户端请求路由
     const CLIENT_DAWN = 'dawn_crm'; // 清晨业务线客户端请求路由
+    const CLIENT_GENERAL = 'general_crm'; // 3S系统真人业务线客户端请求路由
 
 
     /**
@@ -73,6 +74,7 @@ class RouterFactory
         self::CLIENT_REF_API                => REFRoute::class, // referral_backend
         self::CLIENT_ROUTING                => ClientRouter::class, // 客户端路由
         self::CLIENT_DAWN                   => DawnCrmRouter::class, // 客户端路由
+        self::CLIENT_GENERAL                => GeneralCrmRouter::class, // 3s真人项目
 
     ];
 

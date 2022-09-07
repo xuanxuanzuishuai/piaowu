@@ -67,6 +67,7 @@ use App\Services\RefereeAwardService;
 use App\Services\SendSmsService;
 use App\Services\StudentAccountAwardPointsLogService;
 use App\Services\StudentService;
+use App\Services\SyncTableData\RealUpdateStudentCanJoinActivityService;
 use App\Services\SyncTableData\SyncBinlogTableDataService;
 use App\Services\ThirdPartBillService;
 use App\Services\UserRefereeService;
@@ -1064,6 +1065,15 @@ class Consumer extends ControllerBase
                 break;
             case WeekActivityTopic::EVENT_GET_WHITE_GRANT_STATUS:
                 WhiteGrantRecordService::getWeekRedPkgStatus($data);
+                break;
+            case WeekActivityTopic::EVENT_ACTIVITY_ENABLE_STATUS_EDIT:
+                // 活动启用或者禁用
+                $appId = $data['app_id'] ?? 0;
+                switch ($appId) {
+                    case Constants::REAL_APP_ID:
+                        (new RealUpdateStudentCanJoinActivityService(['activity_id' => $data['activity_id'] ?? 0]))->run();
+                        break;
+                }
                 break;
             default:
                 SimpleLogger::error('unknown event type', ['params' => $params]);

@@ -23,9 +23,9 @@ class RealStudentCanJoinActivityHistoryModel extends Model
     {
         self::batchUpdateRecord(
             [
-                'week_progress'         => Constants::STUDENT_WEEK_PROGRESS_STOP_JOIN,
-                'week_batch_update_day' => date("Ymd"),
-                'week_update_time'      => time(),
+                'join_progress'    => Constants::STUDENT_WEEK_PROGRESS_STOP_JOIN,
+                'batch_update_day' => date("Ymd"),
+                'update_time'      => time(),
             ],
             $where
         );
@@ -85,6 +85,12 @@ class RealStudentCanJoinActivityHistoryModel extends Model
         return true;
     }
 
+    /**
+     * 新增一条命中周周领奖记录
+     * @param $studentUuid
+     * @param $update
+     * @return bool
+     */
     public static function createHitWeek($studentUuid, $update)
     {
         self::insertRecord([
@@ -103,6 +109,13 @@ class RealStudentCanJoinActivityHistoryModel extends Model
         return true;
     }
 
+    /**
+     * 标记学生指定活动参与状态为"终止参与"
+     * 终止参与： 表示用户在活动进行中用户不再满足参与条件
+     * @param $studentUuid
+     * @param $activityId
+     * @return void
+     */
     public static function stopJoinWeekActivity($studentUuid, $activityId)
     {
         self::batchUpdateRecord(
@@ -114,5 +127,37 @@ class RealStudentCanJoinActivityHistoryModel extends Model
                 'activity_id'  => $activityId,
             ]
         );
+    }
+
+    /**
+     * 获取学生参与活动历史记录
+     * @param $studentUuid
+     * @param $otherWhere
+     * @return array
+     */
+    public static function getStudentJoinActivityHistory($studentUuid, $otherWhere)
+    {
+        $returnData = [
+            'total_count' => 0,
+            'list'        => [],
+        ];
+        $where = [
+            'student_uuid' => $studentUuid,
+        ];
+        if (!empty($otherWhere['activity_id'])) $where['activity_id'] = $otherWhere['activity_id'];
+        if (!empty($otherWhere['join_progress'])) $where['join_progress'] = $otherWhere['join_progress'];
+        if (!empty($otherWhere['last_verify_status'])) $where['last_verify_status'] = $otherWhere['last_verify_status'];
+        $returnData['total_count'] = self::getCount($where);
+        if (empty($returnData['total_count'])) {
+            return $returnData;
+        }
+
+        if (!empty($otherWhere['count'])) {
+            $page = $otherWhere['page'] ?? 1;
+            $where['LIMIT'] = [($page - 1) * $otherWhere['count'], $otherWhere['count']];
+        }
+        if (!empty($otherWhere['ORDER'])) $where['ORDER'] = $otherWhere['ORDER'];
+        $returnData['list'] = self::getRecords($where);
+        return $returnData;
     }
 }
