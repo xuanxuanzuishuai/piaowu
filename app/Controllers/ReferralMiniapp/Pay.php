@@ -109,6 +109,7 @@ class Pay extends ControllerBase
                     $channel_id = $params['channel_id'] ?? DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT');
                     $sceneData  = [
                         'c' => $channel_id,
+                        'open_id' => $openId
                     ];
                 }
                 BillMapService::mapDataRecord($sceneData, $orderId, $student['id']);

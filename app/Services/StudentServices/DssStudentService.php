@@ -9,6 +9,7 @@ use App\Libs\Dss;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Risk;
 use App\Libs\SimpleLogger;
+use App\Models\BillMapModel;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
 use App\Models\Dss\DssStudentLeadsModel;
@@ -78,11 +79,12 @@ class DssStudentService
     public static function getStudentRepeatBuyPkg($uuid, $pkg, $extendParams = [])
     {
         $isRepeat = self::STUDENT_COLLECT_WOOL_NO;
+        $openId = $extendParams['open_id'] ?? '';
         $newPkg = 0;
         // 检查用户是否是薅羊毛用户， 如果是走提价策略
         $studentIsRepeatInfo = (new Risk())->getStudentIsRepeat([
             'uuid'    => $uuid,
-            'open_id' => $extendParams['open_id'] ?? '',
+            'open_id' => $openId,
         ]);
         if (isset($studentIsRepeatInfo['tag']) && $studentIsRepeatInfo['tag'] == self::STUDENT_COLLECT_WOOL_YES) {
             SimpleLogger::info("getStudentRepeatBuyPkg", ['msg' => 'student_is_repeat', 'info' => $studentIsRepeatInfo]);
@@ -113,6 +115,17 @@ class DssStudentService
             }
 
         }
+
+        //此open_id是否已经购买
+        if (!empty($openId)) {
+            $count = BillMapModel::getCount(['open_id' => $openId, 'is_success' => 1]);
+            if ($count >= 1) {
+                SimpleLogger::info('open_id over buy limit ', ['open_id' => $openId]);
+                $isRepeat = self::STUDENT_COLLECT_WOOL_YES;
+                $newPkg = DssDictService::getKeyValue(DictConstants::DSS_WEB_STUDENT_CONFIG, 'pkg_9_student_is_repeat_new_pkg');
+            }
+        }
+
 
         return [
             'is_repeat' => $isRepeat,
