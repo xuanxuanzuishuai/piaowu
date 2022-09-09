@@ -1275,7 +1275,7 @@ class Util
     }
 
     /**
-     * 设置锁
+     * 设置锁 - 加锁成功返回true; 失败false
      * @param string $lockName redis key
      * @param int $ttl 过期时间默认5分钟
      * @param int $tryNum 重试次数，每次重休眠1秒

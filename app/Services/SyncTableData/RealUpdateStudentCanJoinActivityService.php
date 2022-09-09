@@ -12,8 +12,7 @@ use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
-use App\Libs\voiceSMS;
-use App\Models\Erp\ErpGenericWhitelistModel;
+use App\Libs\Util;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\OperationActivityModel;
 use App\Models\RealSharePosterPassAwardRuleModel;
@@ -25,6 +24,8 @@ use App\Services\SyncTableData\TraitService\StatisticsStudentReferralBaseAbstrac
 
 class RealUpdateStudentCanJoinActivityService
 {
+    // 计算单一学生学生可参与活动的锁
+    const LOCK_HANDLE_STUDENT_CAN_JOIN_ACTIVITY = 'lock_handle_student_can_join_activity_';
     protected $payStudentList      = [];
     protected $weekActivityList    = [];
     protected $handleStudentUuid   = [];
@@ -161,12 +162,21 @@ class RealUpdateStudentCanJoinActivityService
         if (empty($this->computeStudentId)) {
             return;
         }
-        $this->computeStudentHitWeekActivity();
-
-        // 更新为不可参与
-        $sInfo = ErpStudentModel::getRecord(['id' => $this->computeStudentId], ['uuid']);
-        $hitInfo = RealStudentCanJoinActivityModel::getRecord(['student_uuid' => $sInfo['uuid']], ['week_activity_id']);
-        CheckStudentIsCanActivityService::cleanStudentWeekActivityId($sInfo['uuid'], $hitInfo['week_activity_id']);
+        // 加5秒锁，失败重试6次
+        $key = self::getRealLockKey($this->computeStudentId, self::LOCK_HANDLE_STUDENT_CAN_JOIN_ACTIVITY);
+        if (!Util::setLock($key, 5, 6)) {
+            SimpleLogger::info('runStudentHitWeek is lock fail', [$this->computeStudentId]);
+            return;
+        }
+        try {
+            $this->computeStudentHitWeekActivity();
+            // 更新为不可参与
+            $sInfo = ErpStudentModel::getRecord(['id' => $this->computeStudentId], ['uuid']);
+            $hitInfo = RealStudentCanJoinActivityModel::getRecord(['student_uuid' => $sInfo['uuid']], ['week_activity_id']);
+            CheckStudentIsCanActivityService::cleanStudentWeekActivityId($sInfo['uuid'], $hitInfo['week_activity_id']);
+        } finally {
+            Util::unLock($key);
+        }
     }
 
     /**
@@ -367,5 +377,16 @@ class RealUpdateStudentCanJoinActivityService
             return false;
         }
         return true;
+    }
+
+    /**
+     * 获取真人业务线学生锁
+     * @param $studentIdOrUUID
+     * @param $lockKey
+     * @return string
+     */
+    public static function getRealLockKey($studentIdOrUUID, $lockKey)
+    {
+        return $lockKey . Constants::REAL_APP_ID . '_' . $studentIdOrUUID;
     }
 }
