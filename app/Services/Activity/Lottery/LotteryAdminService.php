@@ -8,6 +8,7 @@ use App\Libs\DictConstants;
 use App\Libs\Erp;
 use App\Libs\Excel\ExcelImportFormat;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\LotteryActivityModel;
@@ -20,6 +21,7 @@ use App\Services\Activity\Lottery\LotteryServices\LotteryAwardInfoService;
 use App\Services\Activity\Lottery\LotteryServices\LotteryAwardRecordService;
 use App\Services\Activity\Lottery\LotteryServices\LotteryImportUserService;
 use App\Services\EmployeeService;
+use App\Services\Queue\SystemStatics\AuditRecorder\AuditRecorderDownloadProducerService;
 
 /**
  * 转盘抽奖活动管理后台服务文件
@@ -689,12 +691,14 @@ class LotteryAdminService
 	/**
 	 * 导出活动中奖记录表格
 	 * @param $searchParams
+	 * @param $employeeUuid
 	 * @return string
 	 * @throws RunTimeException
 	 */
-	public static function exportRecords($searchParams): string
+	public static function exportRecords($searchParams, $employeeUuid): string
 	{
 		$recordData = LotteryAwardRecordService::search($searchParams, 1, 0);
+		$lastQuery = LotteryActivityModel::getLog();
 		if (empty($recordData['list'])) {
 			throw new RunTimeException(["record_not_found"]);
 		}
@@ -730,13 +734,15 @@ class LotteryAdminService
 				'express_number'     => '[' . $fv['logistics_company'] . ']' . $fv['express_number'],
 			];
 		}
-		$fileName = $recordData['activity_name'] . '(' . date("Y-m-d H:i:s") . mt_rand(1, 100) . ')参与记录.xlsx';
+		$fileName = $recordData['activity_name'] . '(' . date("Y-m-d H:i:s") . '_'.mt_rand(1, 100) . ')参与记录.xlsx';
 		$tmpFileSavePath = ExcelImportFormat::createExcelTable($dataResult, $title,
 			ExcelImportFormat::OUTPUT_TYPE_SAVE_FILE);
 		$ossPath = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_TMP_EXCEL . '/' . $fileName;
 		AliOSS::uploadFile($ossPath, $tmpFileSavePath);
 		unlink($tmpFileSavePath);
-		return AliOSS::replaceCdnDomainForDss($ossPath);
+		$ossPath = AliOSS::signUrls($ossPath);
+		AuditRecorderDownloadProducerService::downloadRecorder($employeeUuid, $lastQuery, $ossPath, SimpleLogger::$writeUid, AuditRecorderDownloadProducerService::DATA_TYPE_OSS, 'xlsx');
+		return $ossPath;
 	}
 
 	/**

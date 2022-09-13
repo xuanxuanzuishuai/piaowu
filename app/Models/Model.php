@@ -311,4 +311,13 @@ class Model
         }
         return true;
     }
+
+	/**
+	 * 返回所有执行的查询
+	 * @return mixed
+	 */
+	public static function getLog()
+	{
+		return (MysqlDB::getDB())->log();
+	}
 }

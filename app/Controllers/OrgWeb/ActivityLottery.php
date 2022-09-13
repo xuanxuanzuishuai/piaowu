@@ -547,7 +547,7 @@ class ActivityLottery extends ControllerBase
 			return $response->withJson($result, StatusCode::HTTP_OK);
 		}
 		try {
-			$ossUrl = LotteryAdminService::exportRecords($params);
+			$ossUrl = LotteryAdminService::exportRecords($params, $this->ci['employee']['uuid']);
 		} catch (RunTimeException $e) {
 			return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
 		}
