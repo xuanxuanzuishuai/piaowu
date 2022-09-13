@@ -15,6 +15,7 @@ use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\BillMapModel;
 use App\Models\Dss\DssUserQrTicketModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpUserEventTaskAwardGoldLeafModel;
@@ -1817,5 +1818,42 @@ class Dss extends ControllerBase
 
         return HttpHelper::buildResponse($response, []);
     }
+
+
+	/**
+	 * 获取订单购买渠道
+	 * @param Request $request
+	 * @param Response $response
+	 * @return Response
+	 */
+	public function getOrderBuyChannel(Request $request, Response $response):Response
+	{
+		$rules = [
+			[
+				'key' => 'student_id',
+				'type' => 'required',
+				'error_code' => 'student_id_is_required'
+			],
+			[
+				'key' => 'student_id',
+				'type' => 'min',
+				'value' => 1,
+				'error_code' => 'student_id_min_1'
+			],
+			[
+				'key' => 'parent_bill_id',
+				'type' => 'required',
+				'error_code' => 'parent_bill_id_is_required'
+			]
+		];
+		$params = $request->getParams();
+		$result = Valid::appValidate($params, $rules);
+		if ($result['code'] != Valid::CODE_SUCCESS) {
+			return $response->withJson($result, StatusCode::HTTP_OK);
+		}
+		$billMapInfo = BillMapModel::getRecord(['student_id' => $params['student_id'], 'bill_id' => $params['parent_bill_id']], ['buy_channel']);
+		return HttpHelper::buildResponse($response, $billMapInfo);
+	}
+
 }
 
