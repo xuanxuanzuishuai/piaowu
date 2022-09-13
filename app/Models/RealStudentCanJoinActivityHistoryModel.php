@@ -78,6 +78,7 @@ class RealStudentCanJoinActivityHistoryModel extends Model
             }
             self::updateRecord($hasHistory['id'], [
                 'join_progress'    => $joinProgress,
+                'activity_status'  => $update['activity_status'],
                 'batch_update_day' => $update['batch_update_day'] ?? date('Ymd'),
                 'update_time'      => $update['update_time'] ?? time(),
             ]);
@@ -94,17 +95,19 @@ class RealStudentCanJoinActivityHistoryModel extends Model
     public static function createHitWeek($studentUuid, $update)
     {
         self::insertRecord([
-            'student_uuid'        => $studentUuid,
-            'activity_type'       => OperationActivityModel::SHARE_POSTER_ACTIVITY_TYPE_WEEK,
-            'activity_id'         => $update['activity_id'],
-            'activity_start_time' => $update['activity_start_time'],
-            'activity_end_time'   => $update['activity_end_time'],
-            'task_num'            => $update['task_num'],
-            'join_num'            => $update['join_num'] ?? 0,
-            'join_progress'       => 1,
-            'last_verify_status'  => 0,
-            'batch_update_day'    => $update['batch_update_day'] ?? date('Ymd'),
-            'update_time'         => $update['update_time'] ?? time(),
+            'student_uuid'         => $studentUuid,
+            'activity_type'        => OperationActivityModel::SHARE_POSTER_ACTIVITY_TYPE_WEEK,
+            'activity_id'          => $update['activity_id'],
+            'activity_start_time'  => $update['activity_start_time'],
+            'activity_end_time'    => $update['activity_end_time'],
+            'task_num'             => $update['task_num'],
+            'join_num'             => $update['join_num'] ?? 0,
+            'join_progress'        => 1,
+            'last_verify_status'   => 0,
+            'batch_update_day'     => $update['batch_update_day'] ?? date('Ymd'),
+            'update_time'          => $update['update_time'] ?? time(),
+            'activity_status'      => $update['activity_status'],
+            'activity_create_time' => $update['activity_create_time'],
         ]);
         return true;
     }
@@ -114,18 +117,21 @@ class RealStudentCanJoinActivityHistoryModel extends Model
      * 终止参与： 表示用户在活动进行中用户不再满足参与条件
      * @param $studentUuid
      * @param $activityId
+     * @param int $runTime
      * @return void
      */
-    public static function stopJoinWeekActivity($studentUuid, $activityId)
+    public static function stopJoinWeekActivity($studentUuid, $activityId, $runTime = 0)
     {
+        $where = [
+            'student_uuid' => $studentUuid,
+            'activity_id'  => $activityId,
+        ];
+        if (!empty($runTime)) $where['update_time'] = $runTime;
         self::batchUpdateRecord(
             [
                 'join_progress' => self::JOIN_PROGRESS_STOP,
             ],
-            [
-                'student_uuid' => $studentUuid,
-                'activity_id'  => $activityId,
-            ]
+            $where
         );
     }
 

@@ -36,6 +36,7 @@ class RealUpdateStudentCanJoinActivityService
 
     // construct 初始化数据
     protected $computeStudentId    = 0;
+    protected $computeActivityId   = 0;
     protected $computeActivityInfo = [];
 
     public function getAttribute($variableName)
@@ -49,19 +50,31 @@ class RealUpdateStudentCanJoinActivityService
      */
     public function initWeekActivityList()
     {
-        $activityId = $init['activity_id'] ?? 0;
+        $fields = [
+            'activity_id',
+            'clean_is_join',
+            'activity_country_code',
+            'target_user_type',
+            'target_use_first_pay_time_start',
+            'target_use_first_pay_time_end',
+            'award_prize_type',
+            'start_time',
+            'end_time',
+            'enable_status',
+            'create_time',
+        ];
         /**
          * 如果操作了某一个活动，
          * 如果是启用活动则只处理当前活动对应的用户即可 - 活动列表只有当前活动
          * 如果是禁用活动则处理需要处理已经命中的所有用户 - 活动列表应该是所有进行中启用的活动
          */
-        if ($activityId) {
+        if ($this->computeActivityId) {
             // 获取已经开始的活动 - 活动还未开始或已结束不应该再改变参与状态
             $this->computeActivityInfo = RealWeekActivityModel::getRecord([
-                'activity_id'    => $activityId,
+                'activity_id'    => $this->computeActivityId,
                 'start_time[<=]' => $this->runTime,
                 'end_time[>]'    => $this->runTime,
-            ]);
+            ], $fields);
             if ($this->computeActivityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_ON) {
                 $this->weekActivityList = [$this->computeActivityInfo];
                 $this->getFirstPayTimeRange();
@@ -70,17 +83,7 @@ class RealUpdateStudentCanJoinActivityService
         // 没有设定活动id 或者 禁用活动
         if (empty($activityId) || (!empty($this->computeActivityInfo) && $this->computeActivityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_DISABLE)) {
             /** 读取所有活动 */
-            $this->weekActivityList = RealWeekActivityModel::getStudentCanSignWeekActivity(null, $this->runTime, [
-                'activity_id',
-                'clean_is_join',
-                'activity_country_code',
-                'target_user_type',
-                'target_use_first_pay_time_start',
-                'target_use_first_pay_time_end',
-                'award_prize_type',
-                'start_time',
-                'end_time',
-            ]);
+            $this->weekActivityList = RealWeekActivityModel::getStudentCanSignWeekActivity(null, $this->runTime, $fields);
         }
 
         if (empty($this->weekActivityList)) return;
@@ -132,6 +135,7 @@ class RealUpdateStudentCanJoinActivityService
     public function __construct($init = [])
     {
         $this->computeStudentId = intval($init['student_id'] ?? 0);
+        $this->computeActivityId = intval($init['activity_id'] ?? 0);
         $this->runTime = time();
         // 初始化活动列表
         $this->initWeekActivityList();
@@ -173,7 +177,7 @@ class RealUpdateStudentCanJoinActivityService
             // 更新为不可参与
             $sInfo = ErpStudentModel::getRecord(['id' => $this->computeStudentId], ['uuid']);
             $hitInfo = RealStudentCanJoinActivityModel::getRecord(['student_uuid' => $sInfo['uuid']], ['week_activity_id']);
-            CheckStudentIsCanActivityService::cleanStudentWeekActivityId($sInfo['uuid'], $hitInfo['week_activity_id']);
+            CheckStudentIsCanActivityService::cleanStudentWeekActivityId($sInfo['uuid'], $hitInfo['week_activity_id'], $this->runTime);
         } finally {
             Util::unLock($key);
         }

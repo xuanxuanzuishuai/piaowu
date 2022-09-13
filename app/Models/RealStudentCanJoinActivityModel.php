@@ -3,6 +3,8 @@
 namespace App\Models;
 
 
+use Medoo\Medoo;
+
 class RealStudentCanJoinActivityModel extends Model
 {
     public static $table = "real_student_can_join_activity";
@@ -67,15 +69,55 @@ class RealStudentCanJoinActivityModel extends Model
 
         // 历史记录中不存在则新增，存在更新
         RealStudentCanJoinActivityHistoryModel::createOrUpdateHitWeek($studentUuid, $activityInfo['activity_id'], [
-            'student_uuid'        => $studentUuid,
-            'activity_type'       => OperationActivityModel::SHARE_POSTER_ACTIVITY_TYPE_WEEK,
-            'activity_id'         => $activityInfo['activity_id'],
-            'activity_start_time' => $activityInfo['start_time'],
-            'activity_end_time'   => $activityInfo['end_time'],
-            'task_num'            => $activityInfo['activity_task_total'],
-            'join_num'            => 0,
-            'last_verify_status'  => 0,
-            'update_time'         => $time,
+            'student_uuid'         => $studentUuid,
+            'activity_type'        => OperationActivityModel::SHARE_POSTER_ACTIVITY_TYPE_WEEK,
+            'activity_id'          => $activityInfo['activity_id'],
+            'activity_start_time'  => $activityInfo['start_time'],
+            'activity_end_time'    => $activityInfo['end_time'],
+            'task_num'             => $activityInfo['activity_task_total'],
+            'join_num'             => 0,
+            'last_verify_status'   => 0,
+            'update_time'          => $time,
+            'activity_status'      => $activityInfo['enable_status'],
+            'activity_create_time' => $activityInfo['create_time'],
         ]);
+    }
+
+    /**
+     * 更新学生最后一次参与审核状态为拒绝
+     * @param $studentUuid
+     * @param $activityId
+     * @return bool
+     */
+    public static function updateLastVerifyStatusIsRefused($studentUuid, $activityId)
+    {
+        self::batchUpdateRecord(
+            ['week_last_verify_status' => RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED],
+            ['student_uuid' => $studentUuid, 'week_activity_id' => $activityId]
+        );
+        RealStudentCanJoinActivityHistoryModel::batchUpdateRecord(
+            ['last_verify_status' => RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED],
+            ['student_uuid' => $studentUuid, 'activity_id' => $activityId]
+        );
+        return true;
+    }
+
+    /**
+     * 更新学生最后一次参与审核状态为通过
+     * @param $studentUuid
+     * @param $activityId
+     * @return bool
+     */
+    public static function updateLastVerifyStatusIsPass($studentUuid, $activityId)
+    {
+        self::batchUpdateRecord(
+            ['week_last_verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED, 'week_join_num' => Medoo::raw("week_join_num+1")],
+            ['student_uuid' => $studentUuid, 'week_activity_id' => $activityId]
+        );
+        RealStudentCanJoinActivityHistoryModel::batchUpdateRecord(
+            ['last_verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED, 'join_num' => Medoo::raw("join_num+1")],
+            ['student_uuid' => $studentUuid, 'activity_id' => $activityId]
+        );
+        return true;
     }
 }

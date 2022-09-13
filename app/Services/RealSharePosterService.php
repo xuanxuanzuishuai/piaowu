@@ -25,6 +25,7 @@ use App\Models\OperationActivityModel;
 use App\Models\QrInfoOpCHModel;
 use App\Models\RealSharePosterAwardModel;
 use App\Models\RealSharePosterModel;
+use App\Models\RealStudentCanJoinActivityModel;
 use App\Models\RealUserAwardMagicStoneModel;
 use App\Models\RealWeekActivityModel;
 use App\Models\WeChatConfigModel;
@@ -289,6 +290,9 @@ class RealSharePosterService
                 "check_success_numbers" => $checkSuccessNumbers,
                 'verify_status'=>RealSharePosterModel::VERIFY_STATUS_QUALIFIED,
                 ];
+
+            // 修改参与进度
+            RealStudentCanJoinActivityModel::updateLastVerifyStatusIsPass($poster['uuid'], $poster['activity_id']);
         }
         //批量投递消费消费队列
         QueueService::addRealUserPosterAward($sendAwardQueueData);
@@ -359,6 +363,9 @@ class RealSharePosterService
                 ]
             ]);
         }
+        // 更新用户活动最后一次参与状态
+        RealStudentCanJoinActivityModel::updateLastVerifyStatusIsRefused($poster['uuid'], $poster['activity_id']);
+
         return $update > 0;
     }
 

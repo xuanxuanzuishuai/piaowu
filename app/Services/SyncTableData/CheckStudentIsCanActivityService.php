@@ -13,14 +13,24 @@ use App\Models\RealStudentCanJoinActivityModel;
 
 class CheckStudentIsCanActivityService
 {
-    public static function cleanStudentWeekActivityId($studentUuid, $activityId)
+    /**
+     * 清除学生当前可参与活动，
+     * 同时如果用户之前已经命中过该活动则标记学生当前活动参与状态为终止参与
+     * @param $studentUuid
+     * @param $activityId
+     * @param $runTime
+     * @return void
+     */
+    public static function cleanStudentWeekActivityId($studentUuid, $activityId, $runTime = 0)
     {
         if (empty($studentUuid)) {
             return;
         }
-        RealStudentCanJoinActivityModel::cleanAllStudentWeekActivityId(['student_uuid' => $studentUuid]);
+        $cleanWhere = ['student_uuid' => $studentUuid];
+        if (!empty($cleanWhere)) $cleanWhere['week_update_time[<]'] = $runTime;
+        RealStudentCanJoinActivityModel::cleanAllStudentWeekActivityId($cleanWhere);
         if (!empty($activityId)) {
-            RealStudentCanJoinActivityHistoryModel::stopJoinWeekActivity($studentUuid, $activityId);
+            RealStudentCanJoinActivityHistoryModel::stopJoinWeekActivity($studentUuid, $activityId, $runTime);
         }
     }
 }
