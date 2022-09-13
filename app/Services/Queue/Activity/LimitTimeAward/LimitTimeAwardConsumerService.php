@@ -22,6 +22,7 @@ use App\Services\Activity\Lottery\LotteryServices\LotteryGrantAwardService;
 use App\Services\AutoCheckPicture;
 use App\Services\CommonServiceForApp;
 use App\Services\DictService;
+use App\Services\Queue\ErpStudentAccountTopic;
 use App\Services\Queue\QueueService;
 
 class LimitTimeAwardConsumerService
@@ -162,7 +163,7 @@ class LimitTimeAwardConsumerService
                     'type'                => Constants::AWARD_TYPE_MAGIC_STONE,
                     'student_uuid'        => $sharePosterRecordInfo['student_uuid'],
                     'sub_type'            => Constants::ERP_ACCOUNT_NAME_MAGIC,
-                    'source_type'         => ErpStudentAccountModel::SOURCE_TYPE_LIMIT_TIME_ACTIVITY_AWARD,
+                    'source_type'         => ErpStudentAccountTopic::UPLOAD_POSTER_ACTION,
                     'remark'              => '转介绍限时活动',
                     'common_award_amount' => $sharePosterRecordInfo['award_amount'],
                     'batch_id'            => Util::getBatchId(),
