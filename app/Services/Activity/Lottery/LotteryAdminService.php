@@ -740,7 +740,7 @@ class LotteryAdminService
 		$ossPath = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_TMP_EXCEL . '/' . $fileName;
 		AliOSS::uploadFile($ossPath, $tmpFileSavePath);
 		unlink($tmpFileSavePath);
-		$ossPath = AliOSS::signUrls($ossPath);
+		$ossPath = AliOSS::signUrls($ossPath, "", "", "", true);
 		AuditRecorderDownloadProducerService::downloadRecorder($employeeUuid, $lastQuery, $ossPath, SimpleLogger::$writeUid, AuditRecorderDownloadProducerService::DATA_TYPE_OSS, 'xlsx');
 		return $ossPath;
 	}
