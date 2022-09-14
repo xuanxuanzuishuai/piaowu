@@ -37,7 +37,7 @@ class AuditRecorderDownloadProducerService
 				"repo_name"      => Constants::SELF_SYSTEM_REPO_NAME,//应用的仓库地址
 				"uuid"           => $employeeUuid,//下载者的uuid
 				"download_time"  => time(),//以秒为单位的时间戳
-				"uri"            => $_SERVER['REQUEST_SCHEME'] . ':/' . $_SERVER['SERVER_NAME'] . $_SERVER['REQUEST_URI'],//下载文件操作入口地址
+				"uri"            => $_SERVER['REQUEST_URI'],//下载文件操作入口地址
 				"statement"      => $statement,//下载文件对应的sql语句
 				"file_extension" => $fileExtension,//下载文件扩展，也可能是excel等
 				"request_uid"    => $requestLogUid, //用于链路追踪的唯一id
