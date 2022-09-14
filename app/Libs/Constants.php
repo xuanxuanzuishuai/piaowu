@@ -4,6 +4,8 @@ namespace App\Libs;
 
 class Constants
 {
+	//本系统项目在git完整仓库名称
+	const SELF_SYSTEM_REPO_NAME='operation_backend';
     //本系统的应用id
     const SELF_APP_ID = 19;
     //智能陪练应用id

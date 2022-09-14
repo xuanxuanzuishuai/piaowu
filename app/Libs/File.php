@@ -35,39 +35,6 @@ class File
     }
 
     /**
-     * 导出文件
-     * @param $fileName
-     * @param $data
-     */
-    public static function exportFile($fileName, $data)
-    {
-        ini_set('max_execution_time', 0);
-
-        // 开启缓冲区
-        ob_end_clean();
-        ob_start();
-
-        // 设置header头
-        header("Content-type: text/csv; charset=GB18030");
-        header('Content-Disposition: attachment;filename="' . $fileName . '"');
-        header('Cache-Control: max-age=0');
-
-        // 获取文件句柄直接输出到浏览器
-        $fp = fopen('php://output', 'w+');
-
-        // 写入表头
-        foreach ($data as $key => $value) {
-            fputcsv($fp, $value);
-        }
-
-        // 清空缓冲区
-        ob_flush();
-        flush();
-        ob_end_clean();
-        fclose($fp) or die("Can't close php://output");
-    }
-
-    /**
      * 导入文件，得到数据内容
      * @param $files
      * @return array
