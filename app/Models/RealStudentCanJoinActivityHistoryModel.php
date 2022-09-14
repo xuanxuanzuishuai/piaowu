@@ -64,18 +64,7 @@ class RealStudentCanJoinActivityHistoryModel extends Model
             $update['type'] = OperationActivityModel::SHARE_POSTER_ACTIVITY_TYPE_WEEK;
             self::createHitWeek($studentUuid, $update);
         } else {
-            $joinProgress = $update['join_progress'] ?? 0;
-            if (empty($joinProgress)) {
-                if ($hasHistory['join_num'] > 0) {
-                    if ($hasHistory['task_num'] == $hasHistory['join_num']) {
-                        $joinProgress = self::JOIN_PROGRESS_FINISH;
-                    } else {
-                        $joinProgress = self::JOIN_PROGRESS_NO_FINISH;
-                    }
-                } else {
-                    $joinProgress = self::JOIN_PROGRESS_NO;
-                }
-            }
+            $joinProgress = $update['join_progress'] ?? self::computeJoinProgress($hasHistory);
             self::updateRecord($hasHistory['id'], [
                 'join_progress'    => $joinProgress,
                 'activity_status'  => $update['activity_status'],
@@ -126,7 +115,7 @@ class RealStudentCanJoinActivityHistoryModel extends Model
             'student_uuid' => $studentUuid,
             'activity_id'  => $activityId,
         ];
-        if (!empty($runTime)) $where['update_time'] = $runTime;
+        if (!empty($runTime)) $where['update_time[<]'] = $runTime;
         self::batchUpdateRecord(
             [
                 'join_progress' => self::JOIN_PROGRESS_STOP,
@@ -165,5 +154,24 @@ class RealStudentCanJoinActivityHistoryModel extends Model
         if (!empty($otherWhere['ORDER'])) $where['ORDER'] = $otherWhere['ORDER'];
         $returnData['list'] = self::getRecords($where);
         return $returnData;
+    }
+
+    /**
+     * 计算活动参与进度
+     * @param $joinActivityInfo
+     * @return int
+     */
+    public static function computeJoinProgress($joinActivityInfo)
+    {
+        if ($joinActivityInfo['join_num'] > 0) {
+            if ($joinActivityInfo['task_num'] == $joinActivityInfo['join_num']) {
+                $joinProgress = self::JOIN_PROGRESS_FINISH;
+            } else {
+                $joinProgress = self::JOIN_PROGRESS_NO_FINISH;
+            }
+        } else {
+            $joinProgress = self::JOIN_PROGRESS_NO;
+        }
+        return $joinProgress;
     }
 }

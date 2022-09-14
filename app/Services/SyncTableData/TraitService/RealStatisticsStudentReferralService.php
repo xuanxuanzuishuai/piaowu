@@ -119,11 +119,12 @@ class RealStatisticsStudentReferralService extends StatisticsStudentReferralBase
         if (empty($refereeId['id'])) {
             $refereeId = ErpStudentModel::getRecord(['uuid' => $refereeUuid], ['id'])['id'] ?? 0;
         }
+        $stuAttrList = ErpStudentAttributeModel::getStudentAttrTrailFinishedAndNormal();
         // 查询推荐人下所有被推荐人信息和生命周期
         $attrSql = 'select r.user_id,s.uuid as student_uuid,a.attribute_id' .
             ' from ' . $refTable . ' as r' .
             ' left join ' . $stuTable . ' as s on s.id=r.user_id' .
-            ' left join ' . $stuAttrTable . ' as a on a.user_uuid=s.uuid and a.attribute_id in (15,16,17,18)' .
+            ' left join ' . $stuAttrTable . ' as a on a.user_uuid=s.uuid and a.attribute_id in (' . implode(',', $stuAttrList) . ')' .
             ' where r.referee_id=' . $refereeId;
         $list = $db->queryAll($attrSql);
         $_insertData['referral_num'] = count($list);

@@ -13,6 +13,7 @@ use App\Libs\Pika;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Models\Erp\ErpReferralUserRefereeModel;
+use App\Models\Erp\ErpStudentAttributeModel;
 use App\Models\Erp\ErpStudentCourseModel;
 use App\Models\Erp\ErpStudentModel;
 
@@ -137,13 +138,16 @@ class SyncBinlogTableDataService
         if ($pikaObj->isDelete()) {
             return true;
         }
-
-        // 开始更新学生转介绍关系统计数据
-        $urInfo = ErpReferralUserRefereeModel::getStudentReferral($rowsData['user_id']);
-        if ($urInfo) {
-            StatisticsStudentReferralService::updateStatisticsStudentReferral($pikaObj->getAppId(), ['ur_id' => $urInfo['id']]);
+        $stuAttrList = ErpStudentAttributeModel::getStudentAttrTrailFinishedAndNormal();
+        // 只有指定生命周期才需要重新计算 - 减少处理逻辑
+        if (in_array($rowsData['attribute_id'], $stuAttrList)) {
+            $userInfo = ErpStudentModel::getStudentInfoByUuid($rowsData['user_uuid']);
+            // 开始更新学生转介绍关系统计数据
+            $urInfo = ErpReferralUserRefereeModel::getStudentReferral($userInfo['id']);
+            if ($urInfo) {
+                StatisticsStudentReferralService::updateStatisticsStudentReferral($pikaObj->getAppId(), $urInfo);
+            }
         }
-
         return true;
     }
 

@@ -177,7 +177,7 @@ class RealUpdateStudentCanJoinActivityService
             // 更新为不可参与
             $sInfo = ErpStudentModel::getRecord(['id' => $this->computeStudentId], ['uuid']);
             $hitInfo = RealStudentCanJoinActivityModel::getRecord(['student_uuid' => $sInfo['uuid']], ['week_activity_id']);
-            CheckStudentIsCanActivityService::cleanStudentWeekActivityId($sInfo['uuid'], $hitInfo['week_activity_id'], $this->runTime);
+            self::cleanStudentWeekActivityId($sInfo['uuid'], $hitInfo['week_activity_id'], $this->runTime);
         } finally {
             Util::unLock($key);
         }
@@ -392,5 +392,26 @@ class RealUpdateStudentCanJoinActivityService
     public static function getRealLockKey($studentIdOrUUID, $lockKey)
     {
         return $lockKey . Constants::REAL_APP_ID . '_' . $studentIdOrUUID;
+    }
+
+    /**
+     * 清除学生当前可参与活动，
+     * 同时如果用户之前已经命中过该活动则标记学生当前活动参与状态为终止参与
+     * @param $studentUuid
+     * @param $activityId
+     * @param $runTime
+     * @return void
+     */
+    public static function cleanStudentWeekActivityId($studentUuid, $activityId, $runTime = 0)
+    {
+        if (empty($studentUuid)) {
+            return;
+        }
+        $cleanWhere = ['student_uuid' => $studentUuid];
+        if (!empty($cleanWhere)) $cleanWhere['week_update_time[<]'] = $runTime;
+        RealStudentCanJoinActivityModel::cleanAllStudentWeekActivityId($cleanWhere);
+        if (!empty($activityId)) {
+            RealStudentCanJoinActivityHistoryModel::stopJoinWeekActivity($studentUuid, $activityId, $runTime);
+        }
     }
 }

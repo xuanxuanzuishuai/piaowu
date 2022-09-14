@@ -7,7 +7,6 @@
 namespace App\Services\SyncTableData;
 
 use App\Libs\Exceptions\RunTimeException;
-use App\Models\Erp\ErpReferralUserRefereeModel;
 use App\Services\StudentService;
 use App\Services\SyncTableData\TraitService\StatisticsStudentReferralBaseAbstract;
 
@@ -16,18 +15,15 @@ class StatisticsStudentReferralService extends StatisticsStudentReferralBaseAbst
     /**
      * 更新转介绍统计数据
      * @param $appId
-     * @param $params
+     * @param array $referralInfo erp库中referral_user_referee 表数据
      * @return bool
      * @throws RunTimeException
      */
-    public static function updateStatisticsStudentReferral($appId, $params): bool
+    public static function updateStatisticsStudentReferral($appId, $referralInfo): bool
     {
-        $urId = $params['ur_id'];
-        // 检查是否有推荐人
-        $referralInfo = ErpReferralUserRefereeModel::getRecord(['id' => $urId]);
-        // 没有推荐人不处理
+        // 没有数据不处理
         if (empty($referralInfo)) {
-            return false;
+            return true;
         }
         // 获取用户信息
         $referralUser = StudentService::getUuid($appId, $referralInfo['referee_id'], ['uuid']);
