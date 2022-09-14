@@ -27,20 +27,26 @@ class BaseTopic
     private $msgBody;
     private $nsqd;
 
+    const SINGLE_NSQ = 1;
+    const CLUSTER_NSQ = 2;
+    const CLEAN_NSQ = 3;
+
     /**
      * BaseTopic constructor.
      * @param $topicName
      * @param null $publishTime
      * @param int $sourceAppId
-     * @param false $isClusterModel     是否是集群模式：false不是 true是
+     * @param false $isClusterModel     是否是集群模式：1单节点 2集群 3洗数据专用
      * @throws Exception
      */
-    protected function __construct($topicName, $publishTime = null, $sourceAppId = QueueService::FROM_OP, $isClusterModel=false)
+    protected function __construct($topicName, $publishTime = null, $sourceAppId = QueueService::FROM_OP, $isClusterModel = self::SINGLE_NSQ)
     {
         //获取消息队列topic前缀和主机地址
         $dictConfig = DictConstants::getTypesMap([DictConstants::QUEUE_CONFIG['type']]);
-        if ($isClusterModel === true) {
+        if ($isClusterModel === self::CLUSTER_NSQ) {
             $lookupds = $dictConfig[DictConstants::QUEUE_CONFIG['type']]['NSQ_LOOKUPS_CLUSTER']['value'];
+        } elseif ($isClusterModel === self::CLEAN_NSQ) {
+            $lookupds = $dictConfig[DictConstants::QUEUE_CONFIG['type']]['NSQ_LOOKUPS_CLEAN']['value'];
         } else {
             $lookupds = $dictConfig[DictConstants::QUEUE_CONFIG['type']]['NSQ_LOOKUPS']['value'];
         }

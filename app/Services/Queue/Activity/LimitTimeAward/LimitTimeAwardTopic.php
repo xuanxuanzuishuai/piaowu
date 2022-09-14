@@ -20,6 +20,6 @@ class LimitTimeAwardTopic extends BaseTopic
      */
     public function __construct($publishTime = null)
     {
-        parent::__construct(self::TOPIC_NAME, $publishTime, QueueService::FROM_OP, true);
+        parent::__construct(self::TOPIC_NAME, $publishTime, QueueService::FROM_OP, self::CLUSTER_NSQ);
     }
 }

@@ -12,12 +12,13 @@ class SaBpDataTopic extends BaseTopic
     const EVENT_ASSISTANT_SMS = 'ai_server_push_assistant'; // 给助教推送学员短信
 	const EVENT_UPDATE_USER_PROFILE = 'update_user_profile'; //神策用户属性
 
-	/**
-	 * SaBpDataTopic constructor.
-	 * @param null $publishTime
-	 * @throws Exception
-	 */
-	public function __construct($publishTime = null, $isClusterModel = false)
+    /**
+     * SaBpDataTopic constructor.
+     * @param null $publishTime
+     * @param int $isClusterModel
+     * @throws Exception
+     */
+	public function __construct($publishTime = null, $isClusterModel = self::SINGLE_NSQ)
 	{
 		parent::__construct(self::TOPIC_NAME, $publishTime, QueueService::FROM_OP, $isClusterModel);
 	}
