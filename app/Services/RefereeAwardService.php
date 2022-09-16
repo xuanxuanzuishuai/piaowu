@@ -3,6 +3,7 @@ namespace App\Services;
 
 use App\Libs\Constants;
 use App\Libs\DictConstants;
+use App\Libs\Dss;
 use App\Libs\Erp;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\SimpleLogger;
@@ -11,7 +12,6 @@ use App\Models\Dss\DssCategoryV1Model;
 use App\Models\Dss\DssErpPackageV1Model;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssPackageExtModel;
-use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Dss\DssWechatOpenIdListModel;
 use App\Models\EmployeeModel;
@@ -122,12 +122,12 @@ class RefereeAwardService
         }
         //购买年包
         if ($package['package_type'] == DssPackageExtModel::PACKAGE_TYPE_NORMAL) {
-            $billInfo = DssGiftCodeModel::getGiftCodeDetailByBillId($parentBillId);
+            $billInfo = (new Dss())->getBillDetail($parentBillId);
             $isCustom = $billInfo[0]['is_custom'] ?? DssErpPackageV1Model::PACKAGE_IS_CUSTOM;
             if ($isCustom == DssErpPackageV1Model::PACKAGE_IS_CUSTOM) {   //年包是自定义包,不发奖励
                 return false;
             }
-            $hadPurchaseCount = DssGiftCodeModel::getUserNormalPayNum($student['id']);
+            $hadPurchaseCount = (new Dss())->getBillBillCount($student['id'], DssGiftCodeModel::DURATION_TYPE_NORMAL);
             if ($hadPurchaseCount <= 1) {
                 return true;
             }
@@ -157,7 +157,7 @@ class RefereeAwardService
         }
         //购买年包
         if ($package['sub_type'] == DssCategoryV1Model::DURATION_TYPE_NORMAL) {
-            $hadPurchaseCount = DssGiftCodeModel::getUserNormalPayNum($studentId);
+            $hadPurchaseCount = (new Dss())->getBillBillCount($studentId, DssGiftCodeModel::DURATION_TYPE_NORMAL);
             if ($hadPurchaseCount == 0) {   //未购买过年包
                 return true;
             }

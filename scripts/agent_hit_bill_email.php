@@ -19,6 +19,7 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\DictConstants;
+use App\Libs\Dss;
 use App\Libs\MysqlDB;
 use App\Libs\PhpMail;
 use App\Libs\SimpleLogger;
@@ -27,7 +28,6 @@ use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Models\AgentAwardBillExtModel;
 use App\Models\AgentModel;
-use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssStudentModel;
 use App\Services\AgentService;
 use Dotenv\Dotenv;
@@ -180,7 +180,7 @@ if (!empty($historyHitCount)) {
         $totalOrderData = array_merge($totalOrderData, $orderData);
     }
     //查询订单的详细数据
-    $giftCodeDetail = array_column(DssGiftCodeModel::getGiftCodeDetailByBillId(array_column($totalOrderData, 'parent_bill_id')), null, 'parent_bill_id');
+    $giftCodeDetail = array_column((new Dss())->getBillDetail(array_column($totalOrderData, 'parent_bill_id')), null, 'parent_bill_id');
     //查询成单代理商的数据&查询归属代理商数据
     $recommendBillsSignerAgentIdArr = array_column($totalOrderData, 'signer_agent_id');
     $recommendBillsFirstAgentIdArr = array_column($totalOrderData, 'first_agent_id');

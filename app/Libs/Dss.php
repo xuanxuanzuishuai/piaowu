@@ -30,6 +30,8 @@ class Dss
     const GET_STUDENT_REPEAT_INFO = '/api/operation/check_student_repeat'; //检测用户是否为被标记为重复用户(是否是薅羊毛用户)
     const GET_USER_FIRST_PAY_TIME = '/op/user/get_user_first_pay_time'; //获取用户首次付费时间
     const GET_USER_BASE_INFO = '/op/user/get_info'; //获取用户基本信息
+    const GET_BILL_DETAIL = '/op/bill/detail'; //获取订单详情
+    const GET_BILL_BILL_COUNT = '/op/bill/bill_count'; //获取订单数量
 
     private $host;
 
@@ -322,5 +324,45 @@ class Dss
         }
         SimpleLogger::info('getStudentBaseInfo', [$studentUUID, $res]);
         return !empty($res['data']) ? $res['data'] : [];
+    }
+
+    /**
+     * 获取订单详情
+     * @param $parentBillIds
+     * @return array|mixed
+     */
+    public function getBillDetail($parentBillIds)
+    {
+        $params = [
+            'parent_bill_id' => implode(',', $parentBillIds),
+        ];
+        $res = self::commonAPI(self::GET_BILL_DETAIL, $params);
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            SimpleLogger::error('getBillDetail_error', [$res, $params]);
+            return [];
+        }
+        SimpleLogger::info('getBillDetail', [$params, $res]);
+        return !empty($res['data']) ? $res['data'] : [];
+    }
+
+    /**
+     * 获取订单数量
+     * @param $studentId
+     * @param $type
+     * @return $this|int|mixed
+     */
+    public function getBillBillCount($studentId, $type)
+    {
+        $params = [
+            'student_id'    => $studentId,
+            'duration_type' => $type,
+        ];
+        $res = self::commonAPI(self::GET_BILL_BILL_COUNT, $params);
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            SimpleLogger::error('getBillBillCount_error', [$res, $params]);
+            return 0;
+        }
+        SimpleLogger::info('getBillBillCount', [$params, $res]);
+        return $res['data']['count'] ?? 0;
     }
 }

@@ -28,6 +28,15 @@ class DssGiftCodeModel extends DssModel
     const PACKAGE_V1 = 1;
     const PACKAGE_V1_NOT = 0;
 
+    // 未定义时长（机构赠送，产品包信息丢失）
+    const DURATION_TYPE_UNDEFINED = 0;
+    // 体验时长
+    const DURATION_TYPE_TRIAL = 1;
+    // 正式时长
+    const DURATION_TYPE_NORMAL = 2;
+    // 赠送时长
+    const DURATION_TYPE_GIFT = 3;
+
     /**
      * 生成渠道
      * 1 机构
