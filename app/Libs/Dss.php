@@ -333,6 +333,9 @@ class Dss
      */
     public function getBillDetail($parentBillIds)
     {
+        if (!is_array($parentBillIds)) {
+            $parentBillIds = [$parentBillIds];
+        }
         $params = [
             'parent_bill_id' => implode(',', $parentBillIds),
         ];
