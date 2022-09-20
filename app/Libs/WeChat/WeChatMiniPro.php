@@ -1124,7 +1124,7 @@ class WeChatMiniPro
      */
     public function setUnionid($openId, $unionId)
     {
-        SimpleLogger::info("setUnionid", [$openId, $unionId]);
+        SimpleLogger::info("setUnionid-" . $this->appId, [$openId, $unionId]);
         if (empty($openId) || empty($unionId)) {
             return false;
         }
