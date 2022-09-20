@@ -17,6 +17,8 @@ class DouStoreTopic extends BaseTopic
     const TOPIC_NAME = "dou_store";
     //实物发货
     const EVENT_TYPE_DELIVER_MATERIAL_OBJECT = 'deliver_material_object';
+    //订单已支付
+    const EVENT_TYPE_EVENT_ORDER_PAID = 'event_order_paid';
 
     /**
      * @param null $publishTime
