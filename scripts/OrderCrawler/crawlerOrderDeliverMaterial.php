@@ -88,7 +88,7 @@ foreach ($orderList as $ov) {
 		]
 	];
 	//投递队列
-	$nsqObj->nsqDataSet($tmpMsgBody, DouStoreTopic::EVENT_TYPE_EVENT_ORDER_PAID);
+	$nsqObj->nsqDataSet($tmpMsgBody, DouStoreTopic::EVENT_TYPE_EVENT_ORDER_PAID)->publish();
 	$pushSuccessOrderIds[] = $ov['order_code'];
 }
 if (!empty($pushSuccessOrderIds)) {
