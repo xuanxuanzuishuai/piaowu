@@ -414,4 +414,23 @@ class RealUpdateStudentCanJoinActivityService
             RealStudentCanJoinActivityHistoryModel::stopJoinWeekActivity($studentUuid, $activityId, $runTime);
         }
     }
+
+    /**
+     * 更新最后上传截图审核状态
+     * @param $studentUuid
+     * @param $activityId
+     * @param $verifyStatus
+     * @return bool
+     */
+    public static function updateLastVerifyStatus($studentUuid, $activityId, $verifyStatus)
+    {
+        // 更新用户活动最后一次参与状态 - 拒绝
+        if ($verifyStatus == RealStudentCanJoinActivityModel::LAST_VERIFY_STATUS_UNQUALIFIED) {
+            RealStudentCanJoinActivityModel::updateLastVerifyStatusIsRefused($studentUuid, $activityId);
+        } elseif ($verifyStatus == RealStudentCanJoinActivityModel::LAST_VERIFY_STATUS_WAIT) {
+            // 更新用户活动最后一次参与状态 - 待审核
+            RealStudentCanJoinActivityModel::updateLastVerifyStatusIsWait($studentUuid, $activityId);
+        }
+        return true;
+    }
 }

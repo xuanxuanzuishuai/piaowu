@@ -92,7 +92,7 @@ class RealStudentCanJoinActivityHistoryModel extends Model
             'task_num'             => $update['task_num'],
             'join_num'             => $update['join_num'] ?? 0,
             'join_progress'        => 1,
-            'last_verify_status'   => 0,
+            'last_verify_status'   => $update['last_verify_status'] ?? RealStudentCanJoinActivityModel::LAST_VERIFY_STATUS_NO_UPLOAD,
             'batch_update_day'     => $update['batch_update_day'] ?? date('Ymd'),
             'update_time'          => $update['update_time'] ?? time(),
             'activity_status'      => $update['activity_status'],
@@ -133,7 +133,7 @@ class RealStudentCanJoinActivityHistoryModel extends Model
     public static function getStudentJoinActivityHistory($studentUuid, $otherWhere)
     {
         $returnData = [
-            'total_count' => 0,
+            // 'total_count' => 0,
             'list'        => [],
         ];
         $where = [

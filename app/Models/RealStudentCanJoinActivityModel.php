@@ -9,6 +9,12 @@ class RealStudentCanJoinActivityModel extends Model
 {
     public static $table = "real_student_can_join_activity";
 
+    // 最后审核状态  1待审核 2合格 3不合格 4未发圈
+    const  LAST_VERIFY_STATUS_WAIT = RealSharePosterModel::VERIFY_STATUS_WAIT;
+    const  LAST_VERIFY_STATUS_QUALIFIED = RealSharePosterModel::VERIFY_STATUS_QUALIFIED;
+    const  LAST_VERIFY_STATUS_UNQUALIFIED = RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED;
+    const  LAST_VERIFY_STATUS_NO_UPLOAD = 4;
+
     /**
      * 清除所有学生周周领奖活动id
      * @param $where
@@ -23,7 +29,7 @@ class RealStudentCanJoinActivityModel extends Model
                 'week_activity_end_time'   => 0,
                 'week_task_num'            => 0,
                 'week_join_num'            => 0,
-                'week_last_verify_status'  => 0,
+                'week_last_verify_status'  => self::LAST_VERIFY_STATUS_NO_UPLOAD,
                 'week_progress'            => 0,
                 'week_batch_update_day'    => date("Ymd"),
                 'week_update_time'         => time(),
@@ -53,7 +59,7 @@ class RealStudentCanJoinActivityModel extends Model
             'week_activity_end_time'   => $activityInfo['end_time'],
             'week_task_num'            => $activityInfo['activity_task_total'],
             'week_join_num'            => 0,
-            'week_last_verify_status'  => 0,
+            'week_last_verify_status'  => self::LAST_VERIFY_STATUS_NO_UPLOAD,
             'week_progress'            => 1,
             'week_batch_update_day'    => date('Ymd'),
             'week_update_time'         => $time,
@@ -76,7 +82,7 @@ class RealStudentCanJoinActivityModel extends Model
             'activity_end_time'    => $activityInfo['end_time'],
             'task_num'             => $activityInfo['activity_task_total'],
             'join_num'             => 0,
-            'last_verify_status'   => 0,
+            'last_verify_status'   => self::LAST_VERIFY_STATUS_NO_UPLOAD,
             'update_time'          => $time,
             'activity_status'      => $activityInfo['enable_status'],
             'activity_create_time' => $activityInfo['create_time'],
@@ -122,6 +128,25 @@ class RealStudentCanJoinActivityModel extends Model
         );
         RealStudentCanJoinActivityHistoryModel::batchUpdateRecord(
             ['last_verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED, 'join_num' => Medoo::raw("join_num+1"), 'join_progress' => $joinProgress],
+            ['student_uuid' => $studentUuid, 'activity_id' => $activityId]
+        );
+        return true;
+    }
+
+    /**
+     * 更新学生最后一次参与审核状态为待审核
+     * @param $studentUuid
+     * @param $activityId
+     * @return bool
+     */
+    public static function updateLastVerifyStatusIsWait($studentUuid, $activityId)
+    {
+        self::batchUpdateRecord(
+            ['week_last_verify_status' => self::LAST_VERIFY_STATUS_WAIT],
+            ['student_uuid' => $studentUuid, 'week_activity_id' => $activityId]
+        );
+        RealStudentCanJoinActivityHistoryModel::batchUpdateRecord(
+            ['last_verify_status' => self::LAST_VERIFY_STATUS_WAIT],
             ['student_uuid' => $studentUuid, 'activity_id' => $activityId]
         );
         return true;

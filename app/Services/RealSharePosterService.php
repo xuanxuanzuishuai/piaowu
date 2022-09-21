@@ -30,6 +30,7 @@ use App\Models\RealUserAwardMagicStoneModel;
 use App\Models\RealWeekActivityModel;
 use App\Models\WeChatConfigModel;
 use App\Services\Queue\QueueService;
+use App\Services\SyncTableData\RealUpdateStudentCanJoinActivityService;
 
 class RealSharePosterService
 {
@@ -364,8 +365,7 @@ class RealSharePosterService
             ]);
         }
         // 更新用户活动最后一次参与状态
-        RealStudentCanJoinActivityModel::updateLastVerifyStatusIsRefused($poster['uuid'], $poster['activity_id']);
-
+        RealUpdateStudentCanJoinActivityService::updateLastVerifyStatus($poster['uuid'], $poster['activity_id'], $status);
         return $update > 0;
     }
 
