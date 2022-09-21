@@ -1047,6 +1047,24 @@ class QueueService
         return true;
     }
 
+
+    /**
+     *
+     * @param $data
+     * @return bool
+     */
+    public static function studentRegistered($data)
+    {
+        try {
+            $topic = new DouStoreTopic();
+            $topic->studentRegistered($data)->publish();
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data);
+            return false;
+        }
+        return true;
+    }
+
     /***********************************************************************/
     /******************** 真人业务的消息队列 end ******************************/
     /***********************************************************************/

@@ -17,6 +17,8 @@ class DouStoreTopic extends BaseTopic
     const TOPIC_NAME = "dou_store";
     //实物发货
     const EVENT_TYPE_DELIVER_MATERIAL_OBJECT = 'deliver_material_object';
+    //用户已注册
+    const EVENT_TYPE_STUDENT_REGISTERED = 'event_student_registered';
 
     /**
      * @param null $publishTime
@@ -28,14 +30,13 @@ class DouStoreTopic extends BaseTopic
     }
 
     /**
-     * 投递消息
+     * 抖店用户已注册
      * @param $data
-     * @param $eventType
      * @return $this
      */
-    public function messageDelivery($data, $eventType): DouStoreTopic
+    public function studentRegistered($data): DouStoreTopic
     {
-        $this->setEventType($eventType);
+        $this->setEventType(self::EVENT_TYPE_STUDENT_REGISTERED);
         $this->setMsgBody($data);
         return $this;
     }

@@ -40,6 +40,7 @@ use App\Services\BillMapService;
 use App\Services\CashGrantService;
 use App\Services\CountingActivityAwardService;
 use App\Services\CountingActivitySignService;
+use App\Services\DouService;
 use App\Services\ExchangeCourseService;
 use App\Services\MessageService;
 use App\Services\MiniAppQrService;
@@ -1356,6 +1357,28 @@ class Consumer extends ControllerBase
 
     /**
      * 记录抖店智能体验课订单信息
+     * topic: dou_store
+     * event_type: event_order_paid
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function douRegister(Request $request, Response $response): Response
+    {
+        $params = self::commonParamsCheck($request, $response);
+        if (is_object($params)) {
+            return $params;
+        }
+        $msg = $params['msg_body'];
+        $uuid = DouService::register($msg);
+        if (!empty($uuid)) {
+            DouService::studentRegistered($msg, $uuid);
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 记录抖店智能体验课订单信息
      * topic: order_dou
      * event_type: event_order_paid
      * 备注：暂时只记录订单渠道
@@ -1369,45 +1392,18 @@ class Consumer extends ControllerBase
         if (is_object($params)) {
             return $params;
         }
-        $paramMapInfo = $params['msg_body'];
-        $douShopId = $paramMapInfo['dou_shop_id'] ?? 0;
-        $uuid = $paramMapInfo['student']['uuid'] ?? '';
-        SimpleLogger::info('record_dou_shop_order', ['msg' => 'request_start', 'params' => $params]);
-        // 必要参数检测， 不满足不记录
-        if (empty($douShopId)) {
-            SimpleLogger::info('record_dou_shop_order', ['msg' => 'dou_shop_id_empty']);
+
+        if ($params['event_type'] !== 'event_order_paid') {
+            SimpleLogger::info('event_type error', []);
             return HttpHelper::buildResponse($response, []);
         }
-        // 获取用户是否存在
-        $studentInfo = StudentService::getStudentInfo($uuid);
-        if (empty($studentInfo)) {
-            SimpleLogger::info('record_dou_shop_order', ['msg' => 'student_not_found', 'uuid' => $uuid, 'student' => $studentInfo]);
-            return HttpHelper::buildResponse($response, []);
-        }
-        $shopChannel = json_decode(DictConstants::get(DictConstants::DOU_SHOP_CONFIG, 'shop_channel'), true);
-        SimpleLogger::info('record_dou_shop_order', ['msg' => 'shop_channel', 'shop_channel' => $shopChannel]);
-        // 排除非指定抖店渠道订单
-        if (empty($shopChannel[$douShopId])) {
-            SimpleLogger::info('record_dou_shop_order', ['msg' => 'dou_shop_id_invalid']);
-            return HttpHelper::buildResponse($response, []);
-        }
-        // 查询订单是否存在不记录 - 订单号
-        $billMapInfo = BillMapModel::getRecord(['bill_id' => $paramMapInfo['order_id']], ['id']);
-        if (!empty($billMapInfo)) {
-            SimpleLogger::info('record_dou_shop_order', ['msg' => 'bill_is_exist', 'bill_map_info' => $billMapInfo]);
-            return HttpHelper::buildResponse($response, []);
-        }
-        // 保存订单信息
-        $res = BillMapService::mapDataRecord(['c' => $shopChannel[$douShopId], 'is_success' => BillMapModel::IS_SUCCESS_YES], $paramMapInfo['order_id'], $studentInfo['id']);
-        if (!$res) {
-            SimpleLogger::info('record_dou_shop_order', ['msg' => 'save_bill_map_fail']);
-            return HttpHelper::buildResponse($response, []);
-        }
-        // 查询是否已经有体验课订单
-        $hadPurchasePackageByType = DssGiftCodeModel::hadPurchasePackageByType($studentInfo['id'], DssPackageExtModel::PACKAGE_TYPE_TRIAL, false, ['limit' => 2]);
-        if (!empty($hadPurchasePackageByType) && count($hadPurchasePackageByType) >= 2) {
-            // 购买体验课超过2次，发送短息
-            SendSmsService::sendDouRepeatBuy($studentInfo['id']);
+
+        if ($params['msg_body']['package']['app_id'] == Constants::SMART_APP_ID) {
+            //记录智能付费渠道
+            DouService::recordPayChannelSmart($params);
+        } elseif ($params['msg_body']['package']['app_id'] == Constants::QC_APP_ID) {
+            //记录清晨付费渠道
+            DouService::recordPayChannelQc($params['msg_body']);
         }
         return HttpHelper::buildResponse($response, []);
     }
