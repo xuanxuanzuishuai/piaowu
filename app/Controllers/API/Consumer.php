@@ -1369,7 +1369,12 @@ class Consumer extends ControllerBase
         if (is_object($params)) {
             return $params;
         }
-        $msg = $params['msg_body'];
+		if ($params['event_type'] !== 'event_order_paid') {
+			SimpleLogger::info('event_type error', []);
+			return HttpHelper::buildResponse($response, []);
+		}
+
+		$msg = $params['msg_body'];
         $uuid = DouService::register($msg);
         if (!empty($uuid)) {
             DouService::studentRegistered($msg, $uuid);
