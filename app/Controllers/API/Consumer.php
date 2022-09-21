@@ -1375,9 +1375,11 @@ class Consumer extends ControllerBase
 		}
 
 		$msg = $params['msg_body'];
-        $uuid = DouService::register($msg);
+        $channelIdMap = json_decode(DictConstants::get(DictConstants::DOU_SHOP_CONFIG, 'shop_channel'), true);
+        $channelId = $channelIdMap[$msg['shop_id']] ?? 0;
+        $uuid = DouService::register($msg, $channelId);
         if (!empty($uuid)) {
-            DouService::studentRegistered($msg, $uuid);
+            DouService::studentRegistered($msg, $uuid, $channelId);
         }
         return HttpHelper::buildResponse($response, []);
     }
@@ -1406,10 +1408,11 @@ class Consumer extends ControllerBase
         if ($params['msg_body']['package']['app_id'] == Constants::SMART_APP_ID) {
             //记录智能付费渠道
             DouService::recordPayChannelSmart($params);
-        } elseif ($params['msg_body']['package']['app_id'] == Constants::QC_APP_ID) {
-            //记录清晨付费渠道
-            DouService::recordPayChannelQc($params['msg_body']);
         }
+//        elseif ($params['msg_body']['package']['app_id'] == Constants::QC_APP_ID) {
+//            //记录清晨付费渠道
+//            DouService::recordPayChannelQc($params['msg_body']);
+//        }
         return HttpHelper::buildResponse($response, []);
     }
 

@@ -26,7 +26,14 @@ use App\Services\Queue\QueueService;
 
 class DouService
 {
-    public static function register($msg)
+    /**
+     * 获取用户UUID
+     * @param $msg
+     * @param $channelId
+     * @return mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public static function register($msg, $channelId)
     {
         $xyzReceiverMsgDecode = Util::authcode($msg['xyz_receiver_msg'], 'DECODE',
             CrawlerOrderModel::CRAWLER_ORDER_AUTH_KEY);
@@ -35,10 +42,9 @@ class DouService
             return '';
         }
 
-        $channelIdMap = json_decode(DictConstants::get(DictConstants::DOU_SHOP_CONFIG, 'shop_channel'), true);
         $params = [
             'mobile'     => $xyzReceiverMsgArr['tel'],
-            'channel_id' => $channelIdMap[$msg['shop_id']] ?? 0,
+            'channel_id' => $channelId
         ];
         switch ($msg['xyz_package']['app_id']) {
             case Constants::SMART_APP_ID:
@@ -95,9 +101,10 @@ class DouService
      * 投递注册完成事件
      * @param $msg
      * @param $uuid
+     * @param $channelId
      * @return bool
      */
-    public static function studentRegistered($msg, $uuid)
+    public static function studentRegistered($msg, $uuid, $channelId)
     {
         $data = [
             'third_party_shop' => $msg['third_party_shop'],
@@ -107,6 +114,9 @@ class DouService
             'xyz_receiver_msg' => $msg['xyz_receiver_msg'],
             'guany_product_id' => $msg['guany_product_id'],
             'update_time'      => time(),
+            'order_metadata'   => [
+                'channel_id' => $channelId,
+            ],
             'xyz_student'      => [
                 'uuid' => $uuid,
             ],
