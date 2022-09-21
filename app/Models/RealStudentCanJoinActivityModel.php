@@ -9,11 +9,11 @@ class RealStudentCanJoinActivityModel extends Model
 {
     public static $table = "real_student_can_join_activity";
 
-    // 最后审核状态  1待审核 2合格 3不合格 4未发圈
+    // 最后审核状态  1待审核 2合格 3不合格 -1未发圈
     const  LAST_VERIFY_STATUS_WAIT = RealSharePosterModel::VERIFY_STATUS_WAIT;
     const  LAST_VERIFY_STATUS_QUALIFIED = RealSharePosterModel::VERIFY_STATUS_QUALIFIED;
     const  LAST_VERIFY_STATUS_UNQUALIFIED = RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED;
-    const  LAST_VERIFY_STATUS_NO_UPLOAD = 4;
+    const  LAST_VERIFY_STATUS_NO_UPLOAD = -1;
 
     /**
      * 清除所有学生周周领奖活动id
@@ -119,8 +119,12 @@ class RealStudentCanJoinActivityModel extends Model
     public static function updateLastVerifyStatusIsPass($studentUuid, $activityId, $studentJoinActivityInfo = [])
     {
         if (empty($studentJoinActivityInfo)) {
-            $studentJoinActivityInfo = self::getRecord(['student_uuid' => $studentUuid, 'week_activity_id' => $activityId]);
+            $studentJoinActivityInfo = RealStudentCanJoinActivityHistoryModel::getRecord(['student_uuid' => $studentUuid, 'activity_id' => $activityId]);
         }
+        if (empty($studentJoinActivityInfo)) {
+            return false;
+        }
+        $studentJoinActivityInfo['join_num'] +=1;
         $joinProgress = RealStudentCanJoinActivityHistoryModel::computeJoinProgress($studentJoinActivityInfo);
         self::batchUpdateRecord(
             ['week_last_verify_status' => RealSharePosterModel::VERIFY_STATUS_QUALIFIED, 'week_join_num' => Medoo::raw("week_join_num+1"), 'week_progress' => $joinProgress],
