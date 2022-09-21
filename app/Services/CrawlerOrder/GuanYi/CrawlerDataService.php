@@ -115,7 +115,7 @@ class CrawlerDataService extends CrawlerBaseService
                         'dd_shop_id'       => $this->ddShopId,
                         'receiver_address' => $decryptData['receiverAddress'],
                         'receiver_name'    => $decryptData['receiverName'],
-                        'goods_code'       => $dv['itemCodeCombo'],
+                        'goods_code'       => $tmpGoodsCode,
                         'source'           => $this->source,
                         'is_send_erp'      => Constants::STATUS_FALSE,
                         'crawler_time'     => $this->nowTime,
