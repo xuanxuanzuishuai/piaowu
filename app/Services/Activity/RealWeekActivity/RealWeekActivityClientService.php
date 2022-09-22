@@ -175,12 +175,14 @@ class RealWeekActivityClientService
             $activityList = RealWeekActivityModel::getActivityFirstAward($activityIds);
             $activityList = array_column($activityList, null, 'activity_id');
             foreach ($data['list'] as &$item) {
-                $item['activity_name'] = $activityList[$item['activity_id']]['name'];
+                $item['activity_name'] = $activityList[$item['activity_id']]['activity_name'];
                 $item['award_prize_type'] = $activityList[$item['activity_id']]['award_prize_type'];
                 $item['first_award_amount'] = $activityList[$item['activity_id']]['first_award_amount'];
                 $item['award_prize_type_zh'] = OperationActivityModel::formatAwardPrizeType($item['award_prize_type']);
                 $item['last_verify_status_zh'] = OperationActivityModel::formatVerifyStatus($item['last_verify_status']) ?? '';
                 $item['activity_status_zh'] = OperationActivityModel::formatActivityStatus($item['activity_status']) ?? '';
+                $item['format_activity_end_time'] = date("Y-m-d", $item['activity_end_time']);
+                $item['format_activity_start_time'] = date("Y-m-d", $item['activity_start_time']);
             }
             unset($item);
         }
@@ -232,5 +234,33 @@ class RealWeekActivityClientService
             unset($item);
         }
         return $returnData;
+    }
+
+    /**
+     * 获取学生可参与活动历史记录列表（活动名称+活动id）
+     * 下拉选项列表
+     * @param $studentUuid
+     * @return array
+     */
+    public static function getStudentJoinActivityHistoryList($studentUuid)
+    {
+        $newList = [];
+        if (empty($studentUuid)) {
+            return $newList;
+        }
+        $list = RealStudentCanJoinActivityHistoryModel::getRecords(['student_uuid' => $studentUuid], ['activity_id']);
+        if (empty($list)) {
+            return $newList;
+        }
+        $activityList = RealWeekActivityModel::getRecords(['activity_id' => array_column($list, 'activity_id')], ['activity_id', 'name']);
+        $activityList = array_column($activityList, null, 'activity_id');
+        foreach ($list as $item) {
+            $newList[] = [
+                'activity_id' => $item['activity_id'],
+                'name'        => $activityList[$item['activity_id']]['name'] ?? ''
+            ];
+        }
+        unset($item);
+        return $newList;
     }
 }

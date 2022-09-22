@@ -118,5 +118,30 @@ class GeneralCrm extends ControllerBase
         $data = RealWeekActivityClientService::getStudentActivityJoinRecords($params['student_uuid'], $params['activity_id'], $page, $count);
         return HttpHelper::buildResponse($response, $data);
     }
+
+    /**
+     * 获取学生可参与活动历史记录列表（活动名称+活动id）
+     * 下拉选项列表
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getStudentJoinActivityHistoryList(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key'        => 'student_uuid',
+                'type'       => 'required',
+                'error_code' => 'student_uuid_is_required'
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $data = RealWeekActivityClientService::getStudentJoinActivityHistoryList($params['student_uuid']);
+        return HttpHelper::buildResponse($response, $data);
+    }
 }
 

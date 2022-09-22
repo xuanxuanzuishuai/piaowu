@@ -65,6 +65,11 @@ class RealStudentCanJoinActivityModel extends Model
             'week_update_time'         => $time,
         ];
         $info = self::getRecord(['student_uuid' => $studentUuid]);
+        // 命中的活动没有变化只更新时间
+        if (!empty($info) && $info['week_activity_id'] == $activityInfo['activity_id']) {
+            self::updateWeekUpdateTime($studentUuid, $activityInfo['activity_id'], $time);
+            return;
+        }
         if (empty($info)) {
             // 用户首次命中活动
             self::insertRecord($data);
@@ -151,6 +156,27 @@ class RealStudentCanJoinActivityModel extends Model
         );
         RealStudentCanJoinActivityHistoryModel::batchUpdateRecord(
             ['last_verify_status' => self::LAST_VERIFY_STATUS_WAIT],
+            ['student_uuid' => $studentUuid, 'activity_id' => $activityId]
+        );
+        return true;
+    }
+
+    /**
+     * 只更新周周领奖的最后操作时间和日期
+     * @param $studentUuid
+     * @param $activityId
+     * @param $updateTime
+     * @return bool
+     */
+    public static function updateWeekUpdateTime($studentUuid, $activityId, $updateTime = 0)
+    {
+        $updateTime <= 0 && $updateTime = time();
+        self::batchUpdateRecord(
+            ['week_batch_update_day' => date("Ymd", $updateTime),'week_update_time' => $updateTime],
+            ['student_uuid' => $studentUuid, 'week_activity_id' => $activityId]
+        );
+        RealStudentCanJoinActivityHistoryModel::batchUpdateRecord(
+            ['batch_update_day' => date("Ymd", $updateTime),'update_time' => $updateTime],
             ['student_uuid' => $studentUuid, 'activity_id' => $activityId]
         );
         return true;
