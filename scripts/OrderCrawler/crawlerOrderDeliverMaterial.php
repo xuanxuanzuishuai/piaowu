@@ -69,7 +69,7 @@ foreach ($orderList as $ov) {
 	$tmpGoodsCodeMapPackageData = $packageData[$goodsCodeDictConfig[$ov['goods_code']]];
 	//字段说明文档:https://dowbo10hxj.feishu.cn/docx/doxcn5AhW7F1AqWSyzkJD3rWagK
 	$tmpMsgBody = [
-		"third_party_shop" => "dou",//第三方店铺类型
+		"third_party_shop" => "doudian",//第三方店铺类型
 		"guany_product_id" => $ov['goods_code'],
 		"xyz_receiver_msg" => Util::authcode(json_encode([
 			'name' => $ov['receiver_name'],
@@ -88,7 +88,7 @@ foreach ($orderList as $ov) {
 		]
 	];
 	//投递队列
-	$nsqObj->nsqDataSet($tmpMsgBody, DouStoreTopic::EVENT_TYPE_EVENT_ORDER_PAID)->publish();
+	$nsqObj->nsqDataSet($tmpMsgBody, DouStoreTopic::EVENT_TYPE_THIRDPARTYORDER_PAID)->publish();
 	$pushSuccessOrderIds[] = $ov['order_code'];
 }
 if (!empty($pushSuccessOrderIds)) {

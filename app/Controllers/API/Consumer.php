@@ -50,6 +50,7 @@ use App\Services\QrInfoService;
 use App\Services\Queue\Activity\LimitTimeAward\LimitTimeAwardConsumerService;
 use App\Services\Queue\AgentTopic;
 use App\Services\Queue\CheckPosterSyncTopic;
+use App\Services\Queue\DouStoreTopic;
 use App\Services\Queue\DurationTopic;
 use App\Services\Queue\GrantAwardTopic;
 use App\Services\Queue\MessageReminder\MessageReminderConsumerService;
@@ -1369,7 +1370,7 @@ class Consumer extends ControllerBase
         if (is_object($params)) {
             return $params;
         }
-		if ($params['event_type'] !== 'event_order_paid') {
+		if ($params['event_type'] !== DouStoreTopic::EVENT_TYPE_THIRDPARTYORDER_PAID) {
 			SimpleLogger::info('event_type error', []);
 			return HttpHelper::buildResponse($response, []);
 		}
@@ -1409,10 +1410,7 @@ class Consumer extends ControllerBase
             //记录智能付费渠道
             DouService::recordPayChannelSmart($params);
         }
-//        elseif ($params['msg_body']['package']['app_id'] == Constants::QC_APP_ID) {
-//            //记录清晨付费渠道
-//            DouService::recordPayChannelQc($params['msg_body']);
-//        }
+
         return HttpHelper::buildResponse($response, []);
     }
 

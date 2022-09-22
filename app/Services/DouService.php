@@ -178,27 +178,4 @@ class DouService
         }
         return true;
     }
-
-    /**
-     * 记录清晨抖店付费渠道
-     * @param $params
-     * @return bool
-     */
-    public static function recordPayChannelQc($params)
-    {
-        $channelIdMap = json_decode(DictConstants::get(DictConstants::DOU_SHOP_CONFIG, 'shop_channel'), true);
-        $channelId = $channelIdMap[$params['dou_shop_id']] ?? 0;
-        if (empty($channelId)) {
-            return false;
-        }
-
-        $requestParams = [
-            'uuid'                 => $params['student']['uuid'],
-            'order_type'           => 1,
-            'order_id'             => $params['order_id'] ?? '',
-            'attribute_channel_id' => $channelId,
-        ];
-        (new AdTrack())->recordQcPayChannelForDou($requestParams);
-        return true;
-    }
 }

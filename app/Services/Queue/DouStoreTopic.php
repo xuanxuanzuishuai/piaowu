@@ -15,12 +15,10 @@ namespace App\Services\Queue;
 class DouStoreTopic extends BaseTopic
 {
     const TOPIC_NAME = "dou_store";
-    //实物发货
-    const EVENT_TYPE_DELIVER_MATERIAL_OBJECT = 'deliver_material_object';
     //用户已注册
-    const EVENT_TYPE_STUDENT_REGISTERED = 'event_student_registered';
+    const EVENT_TYPE_THIRDPARTYORDER_STUDENTREGISTERED = 'event_thirdPartyOrder_studentRegistered';
     //订单已支付
-    const EVENT_TYPE_EVENT_ORDER_PAID = 'event_order_paid';
+    const EVENT_TYPE_THIRDPARTYORDER_PAID = 'event_thirdPartyOrder_paid';
 
     /**
      * @param null $publishTime
@@ -38,7 +36,7 @@ class DouStoreTopic extends BaseTopic
      */
     public function studentRegistered($data): DouStoreTopic
     {
-        $this->setEventType(self::EVENT_TYPE_STUDENT_REGISTERED);
+        $this->setEventType(self::EVENT_TYPE_THIRDPARTYORDER_STUDENTREGISTERED);
         $this->setMsgBody($data);
         return $this;
     }
