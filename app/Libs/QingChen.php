@@ -83,6 +83,16 @@ class QingChen
     }
 
     /**
+     * 注册用户
+     * @param $params
+     * @return false|mixed
+     */
+    public function register($params)
+    {
+        return self::commonAPI(self::API_QC_REGISTER_ORDER, $params, 'POST');
+    }
+
+    /**
      * 创建学生&订单
      * @param $params
      * @return array|mixed
