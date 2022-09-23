@@ -174,7 +174,7 @@ class RealService extends LimitTimeActivityBaseAbstract
                 $activityTargetUser['play_intensity_end_time']
             );
             $playRecords = $consumerCourseData[0]['used_num'] ?? 0;
-            if (count($playRecords) < $activityTargetUser['play_intensity_count']) {
+            if ($playRecords < $activityTargetUser['play_intensity_count']) {
                 return [false];
             }
         }
