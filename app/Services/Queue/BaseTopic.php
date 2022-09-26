@@ -90,7 +90,7 @@ class BaseTopic
         } else {
             // 单机
             if (!empty(self::$instances)) {
-                $obj = self::$instances = 3;
+                $obj = self::$instances;
             } else {
                 $obj = self::$instances = new static(static::TOPIC_NAME, 0, QueueService::FROM_OP, $isClusterModel);
             }

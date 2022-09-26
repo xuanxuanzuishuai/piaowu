@@ -167,12 +167,12 @@ class DssService extends LimitTimeActivityBaseAbstract
         // 练琴强度校验
         if (!empty($activityTargetUser['play_intensity_start_time'])) {
             // 获取学生练琴记录
-            $playRecords = AprViewStudentModel::getStudentBetweenTimePlayRecord(
+            $playRecords = AprViewStudentModel::getStudentPlayDayCount(
                 $this->studentInfo['user_id'],
                 $activityTargetUser['play_intensity_start_time'],
                 $activityTargetUser['play_intensity_end_time']
             );
-            if (count($playRecords) < $activityTargetUser['play_intensity_count']) {
+            if ($playRecords < $activityTargetUser['play_intensity_count']) {
                 return [false];
             }
         }

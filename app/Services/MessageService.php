@@ -469,6 +469,7 @@ class MessageService
             // 只要有一个推送返回的错误码是指定的错误码，本次所有消息都不推送
             if (!empty($res1['errcode']) && $res1['errcode'] == Constants::WX_RESPONSE_ERRCODE) {
                 $res = MessageRecordLogModel::PUSH_FAIL;
+                SimpleLogger::info("wechat send error", [$res1]);
                 break;
             }
         }
