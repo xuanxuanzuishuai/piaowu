@@ -124,5 +124,10 @@ class APIRouter extends RouterBase
             'call' => Consumer::class . ':limitTimeAwardActivity',
             'middles' => [],
         ],
+        '/api/consumer/morning' => [
+            'method' => ['post'],
+            'call' => Consumer::class . ':morning',
+            'middles' => [],
+        ],
     ];
 }

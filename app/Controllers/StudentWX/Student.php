@@ -24,6 +24,7 @@ use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\DictModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
+use App\Services\MorningReferral\MorningReferralStatisticsService;
 use App\Services\Queue\Track\DeviceCommonTrackTopic;
 use App\Services\ReferralActivityService;
 use App\Services\ReferralService;
@@ -420,31 +421,39 @@ class Student extends ControllerBase
      */
     public function getSceneInfo(Request $request, Response $response)
     {
-        $rules = [
-            [
-                'key' => 'scene',
-                'type' => 'required',
-                'error_code' => 'record_not_found'
-            ]
-        ];
-        $params = $request->getParams();
-        $result = Valid::Validate($params, $rules);
-        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-            return $response->withJson($result, StatusCode::HTTP_OK);
+        try {
+            $rules = [
+                [
+                    'key' => 'scene',
+                    'type' => 'required',
+                    'error_code' => 'record_not_found'
+                ]
+            ];
+            $params = $request->getParams();
+            $result = Valid::Validate($params, $rules);
+            if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+                return $response->withJson($result, StatusCode::HTTP_OK);
+            }
+            $sceneData = ShowMiniAppService::getSceneData($params['scene'] ?? '');
+            if (!empty($sceneData['app_id']) && $sceneData['app_id'] != Constants::QC_APP_ID) {
+                $sceneData = [];
+            }
+            // 生成二维码状态对应的中文
+            $userStatusList = MorningDictConstants::getSet(MorningDictConstants::MORNING_STUDENT_STATUS);
+            $sceneData['user_status_zh'] = $userStatusList[$sceneData['user_status']] ?? '未知-' . $sceneData['user_status'];
+            // 获取学生状态
+            $studentInfo = (new Morning())->getStudentList([$sceneData['user_uuid']])[0] ?? [];
+            if (!isset($studentInfo['status'])) {
+                throw new RunTimeException(['student_status_disable']);
+            }
+            $sceneData['user_current_moment_status'] = $studentInfo['status'];
+            // 学生状态对应的产品包id
+            $packageInfo = MorningReferralStatisticsService::getStudentStatusMatchPackage($sceneData['user_current_moment_status']);
+            $sceneData['package_id'] = intval($packageInfo['package_id'] ?? 0);
+            $sceneData['package_show_price'] = intval($packageInfo['package_show_price'] ?? 0);
+        } catch (RunTimeException $exception) {
+            return HttpHelper::buildErrorResponse($response, $exception->getWebErrorData());
         }
-        $sceneData = ShowMiniAppService::getSceneData($params['scene'] ?? '');
-        if (!empty($sceneData['app_id']) && $sceneData['app_id'] != Constants::QC_APP_ID) {
-            $sceneData = [];
-        }
-        // 生成二维码状态对应的中文
-        $userStatusList = MorningDictConstants::getSet(MorningDictConstants::MORNING_STUDENT_STATUS);
-        $sceneData['user_status_zh'] = $userStatusList[$sceneData['user_status']] ?? '未知-' . $sceneData['user_status'];
-        // 获取学生状态
-        $studentInfo = (new Morning())->getStudentList([$sceneData['user_uuid']])[0] ?? [];
-        $sceneData['user_current_moment_status'] = $studentInfo['status'] ?? 0;
-        // 学生状态对应的产品包id
-        $sceneData['package_id'] = intval(MorningDictConstants::get(MorningDictConstants::MORNING_STUDENT_STATUS_PACKAGE, $sceneData['user_current_moment_status']));
-
         return HttpHelper::buildResponse($response, $sceneData);
     }
 }

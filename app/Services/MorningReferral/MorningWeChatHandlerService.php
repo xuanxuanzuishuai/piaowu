@@ -134,7 +134,6 @@ class MorningWeChatHandlerService
             SimpleLogger::info('interActionDealMessage student weixin rule empty: ', [$msgBody, $data]);
             return;
         }
-        $data['rule_info']['content'] = json_decode($data['rule_info']['content'], true);
         self::sendWxMessage($data);
     }
 

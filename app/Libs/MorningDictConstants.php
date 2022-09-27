@@ -45,8 +45,27 @@ class MorningDictConstants extends DictConstants
     const MORNING_STUDENT_STATUS_PACKAGE = [
         'type' => 'morning_student_status_package',
         'keys' => [
-            Constants::MORNING_STUDENT_STATUS_NORMAL,
-            Constants::MORNING_STUDENT_STATUS_NORMAL_EXPIRE,
+            Constants::MORNING_STUDENT_STATUS_NORMAL,        // 年卡状态对应的产品
+            Constants::MORNING_STUDENT_STATUS_TRAIL_EXPIRE,  // 非年卡
+        ]
+    ];
+
+
+    // 5日打卡活动
+    const MORNING_FIVE_DAY_ACTIVITY = [
+        'type' => 'morning_five_day_activity',
+        'keys' => [
+            '5day_poster_w_h',
+            '5day_water_poster_thumb',
+            '5day_water_poster_nickname',
+            '5day_water_poster_lesson_name',
+            '5day_water_poster_knowledge',
+            '5day_water_poster_intonation',
+            '5day_water_poster_rhythm',
+            '5day_water_poster_qr',
+            '5day_water_poster_channel',
+            '5day_award_node',
+            '5day_node_num',
         ]
     ];
 }

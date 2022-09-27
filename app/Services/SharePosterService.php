@@ -1347,4 +1347,84 @@ class SharePosterService
         $data['reason_str'] = implode('/', $data['reason_str']);
         return $data;
     }
+
+    /**
+     * 生成海报/海报打水印
+     * @param $posterPath
+     * @param $posterConfig
+     * @param $waterMark
+     * @return array
+     */
+    public static function generateSharePoster($posterPath, $posterConfig, $waterMark = [])
+    {
+        SimpleLogger::info("generateStudentSharePoster_start", [$posterConfig, $waterMark]);
+        $waterMarkStr = [];
+        foreach ($waterMark as $wm) {
+            $waterMarkStr[] = implode(",", $wm);
+        }
+        $imgSize = [
+            "w_" . $posterConfig['width'],
+            "h_" . $posterConfig['height'],
+            "limit_0",//强制图片缩放
+        ];
+        $imgSizeStr = implode(",", $imgSize) . '/';
+        $resImgFile = AliOSS::signUrls($posterPath, "", "", "", false, $waterMarkStr, $imgSizeStr);
+        return [
+            'poster_save_full_path' => $resImgFile,
+            'unique'                => md5($resImgFile) . '-' . ceil(microtime(true) * 1000) . ".jpg",
+        ];
+    }
+
+    /**
+     * 获取文字水印
+     * @param $string
+     * @param array $dict
+     * @param string $key
+     * @param array $config 具体的配置，如果没传需要根据 $dict和$key计算
+     * @return string[]
+     */
+    public static function generatePosterTextWater($string,array $dict = [], string $key = '', array $config = [])
+    {
+        if (empty($config)) {
+            $dictConfig = DictConstants::get( $dict, $key);
+            $config = json_decode($dictConfig, true);
+        }
+        $r = [
+            "text_" . str_replace(["+", "/"], ["-", "_"], base64_encode($string)),
+            "type_d3F5LW1pY3JvaGVp", // 文泉微米黑
+            "x_" . $config['x'],
+            "y_" . $config['y'],
+            "g_" . $config['g']
+        ];
+        if (!empty($config['color'])) {
+            $r[] = "color_" . $config['color'];
+        }
+        if (!empty($config['s'])) {
+            $r[] = "size_" . $config['s'];
+        }
+        return $r;
+    }
+
+    /**
+     * 获取图片水印
+     * @param string $ossFileName
+     * @param array $dict
+     * @param string $key
+     * @return string[]
+     */
+    public static function generatePosterImgWater(string $ossFileName, array $dict, string $key)
+    {
+        $dictConfig = DictConstants::get($dict, $key);
+        $posterConfig = json_decode($dictConfig, true);
+        return [
+            // 普通图片样例
+            // "image_" . str_replace(["+", "/"], ["-", "_"], base64_encode($ossFileName . "?x-oss-process=image/resize,w_" . $posterConfig['qr_w'] . ",h_" . $posterConfig['qr_h'])),
+            // 头像样例
+            // "image_" . str_replace(["+", "/"], ["-", "_"], base64_encode($thumb . "?x-oss-process=image/resize,w_90,h_90/circle,r_100/format,png")),
+            "image_" . str_replace(["+", "/"], ["-", "_"], base64_encode($ossFileName . '?x-oss-process='.$posterConfig['x-oss-process'])),
+            "x_" . $posterConfig['x'],
+            "y_" . $posterConfig['y'],
+            "g_nw",
+        ];
+    }
 }

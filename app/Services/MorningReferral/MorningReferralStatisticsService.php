@@ -10,6 +10,7 @@ namespace App\Services\MorningReferral;
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Morning;
+use App\Libs\MorningDictConstants;
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
 use App\Models\Dss\DssStudentModel;
@@ -239,5 +240,21 @@ class MorningReferralStatisticsService
         }
         $list = MorningReferralStatisticsModel::getRecords(['student_uuid' => array_unique($studentUuids)], ['student_uuid', 'referee_student_uuid']);
         return is_array($list) ? $list : [];
+    }
+
+    /**
+     * 获取学生当前身份匹配的产品包
+     * @param $studentStatus
+     * @return mixed
+     */
+    public static function getStudentStatusMatchPackage($studentStatus)
+    {
+        // 年卡 （年卡、年卡已过期）
+        if (in_array($studentStatus, [Constants::MORNING_STUDENT_STATUS_NORMAL, Constants::MORNING_STUDENT_STATUS_NORMAL_EXPIRE])) {
+            $dict = MorningDictConstants::get(MorningDictConstants::MORNING_STUDENT_STATUS_PACKAGE, Constants::MORNING_STUDENT_STATUS_NORMAL);
+        } else {
+            $dict = MorningDictConstants::get(MorningDictConstants::MORNING_STUDENT_STATUS_PACKAGE, Constants::MORNING_STUDENT_STATUS_TRAIL_EXPIRE);
+        }
+        return json_decode($dict, true);
     }
 }
