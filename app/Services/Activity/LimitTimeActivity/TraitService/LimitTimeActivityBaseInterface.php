@@ -68,4 +68,11 @@ interface LimitTimeActivityBaseInterface
      * @return string
      */
     public function getActivityRecordListHtmlUrl(): string;
+
+    /**
+     * 检查用户是否是目标用户
+     * @param $activityTargetUser
+     * @return array
+     */
+    public function checkStudentIsTargetUser($activityTargetUser): array;
 }

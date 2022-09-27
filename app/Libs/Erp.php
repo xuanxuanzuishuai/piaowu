@@ -123,6 +123,8 @@ class Erp
     const STUDENT_LIFT_CYCLE = '/api/student/life/cycle';
     //添加学生属性
     const ADD_STUDENT_ATTRIBUTES = '/api/student/attributes';
+    // 转介绍获取学员课耗统计
+    const COURSE_CONSUMER_STATISTIC = '/api/student/course/consumer_statistic';
 
     private $host;
 
@@ -1129,5 +1131,33 @@ class Erp
         ];
         $res = self::commonAPI(self::ADD_STUDENT_ATTRIBUTES, $params, 'POST');
         return !empty($res['errors']) ? [] : $res['data'];
+    }
+
+    /**
+     * 转介绍获取学员课耗统计
+     * @param $studentIds
+     * @param $startTime
+     * @param $endTime
+     * @return array
+     */
+    public function getCourseConsumerStatistic($studentIds, $startTime, $endTime)
+    {
+        if (empty($studentIds)) return [];
+        $params = [
+            'student_ids' => [],
+            'start_time'  => $startTime,
+            'end_time'    => $endTime,
+        ];
+        $returnData = [];
+        $studentIdArr = array_chunk($studentIds, 500);
+        foreach ($studentIdArr as $_studentIds) {
+            $params['student_ids'] = $_studentIds;
+            $res = self::commonAPI(self::COURSE_CONSUMER_STATISTIC, $params, 'POST');
+            if (empty($res['errors']) && !empty($res['data']['list']) && is_array($res['data']['list'])) {
+                $returnData = array_merge($returnData, $res['data']['list']);
+            }
+        }
+        unset($_studentIds);
+        return $returnData;
     }
 }

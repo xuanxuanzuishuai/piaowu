@@ -125,18 +125,11 @@ class LimitTimeActivityClientService
 			//部分付费
 			if ($activityInfo['target_user_type'] == OperationActivityModel::TARGET_USER_PART) {
 				$filterWhere = json_decode($activityInfo['target_user'], true);
-				//首次付费时间校验/邀请人数量检验
-				if (!empty($filterWhere['target_user_first_pay_time_start']) &&
-					($serviceObj->studentInfo['first_pay_time'] < $filterWhere['target_user_first_pay_time_start'] ||
-						$serviceObj->studentInfo['first_pay_time'] > $filterWhere['target_user_first_pay_time_end'])) {
-					return [];
-				}
-				if (!empty((int)$filterWhere['invitation_num'])) {
-					$invitationNum = $serviceObj->getStudentReferralOrBuyTrailCount();
-					if ($invitationNum < $filterWhere['invitation_num']) {
-						return [];
-					}
-				}
+                // 检查是否有参与资格
+                list($isTargetUser) = $serviceObj->checkStudentIsTargetUser($filterWhere);
+                if (!$isTargetUser) {
+                    return [];
+                }
 			}
 			$activityInfo['ext'] = [
 				'award_rule' => Util::textDecode($activityInfo['award_rule']),

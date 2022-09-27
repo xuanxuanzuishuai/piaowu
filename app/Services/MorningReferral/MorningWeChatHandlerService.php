@@ -168,45 +168,7 @@ class MorningWeChatHandlerService
     private static function pushCustomMessage($messageRule, $data, $appId, $busiType)
     {
         SimpleLogger::info('pushCustomMessage params', [$messageRule, $data, $appId, $busiType]);
-        //即时发送
-        $res = MessageRecordLogModel::PUSH_SUCCESS;
-        $wechat = WeChatMiniPro::factory($appId, $busiType);
-        if (empty($wechat)) {
-            SimpleLogger::error('wechat create fail', ['pushCustomMessage']);
-            return false;
-        }
-        foreach ($messageRule['content'] as $item) {
-            if (empty($item['value'])) {
-                continue;
-            }
-            if ($item['type'] == WeChatConfigModel::CONTENT_TYPE_TEXT) { //发送文本消息
-                //转义数据
-                $content = Util::textDecode($item['value']);
-                $content = Util::pregReplaceTargetStr($content, $data);
-                $res1 = $wechat->sendText($data['open_id'], $content);
-                //全部推送成功才算成功
-                if (empty($res1) || !empty($res1['errcode'])) {
-                    $res = MessageRecordLogModel::PUSH_FAIL;
-                }
-            } elseif ($item['type'] == WeChatConfigModel::CONTENT_TYPE_IMG) { //发送图片消息
-                $posterImgFile = self::dealPosterByRule($data, $item);
-                if (empty($posterImgFile)) {
-                    SimpleLogger::error('empty poster file', ['pushCustomMessage', $data, $item]);
-                    continue;
-                }
-                $wxData = $wechat->getTempMedia('image', $posterImgFile['unique'], $posterImgFile['poster_save_full_path']);
-                //发送海报
-                if (!empty($wxData['media_id'])) {
-                    $res2 = $wechat->sendImage($data['open_id'], $wxData['media_id']);
-                    //全部推送成功才算成功
-                    if (empty($res2) || !empty($res2['errcode'])) {
-                        $res = MessageRecordLogModel::PUSH_FAIL;
-                    }
-                }
-            }
-        }
-
-        return $res;
+        return MessageService::pushCustomMessage($messageRule, $data, $appId, $busiType);
     }
 
     /**
@@ -216,7 +178,7 @@ class MorningWeChatHandlerService
      * 基于规则处理要发送的图片
      * @throws RunTimeException
      */
-    private static function dealPosterByRule($data, $item)
+    public static function dealPosterByRule($data, $item)
     {
         $studentUuid = $data['student_uuid'] ?? '';
         $studentId = 0;
