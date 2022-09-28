@@ -516,7 +516,7 @@ class LimitTimeActivityClientService
                 'share_poster_create_time'      => $_taskInfo['share_poster_create_time'],
                 'share_poster_verify_status'    => $_taskInfo['verify_status'],
                 'share_poster_verify_status_zh' => $_taskInfo['verify_status_zh'],
-                'name'                          => $_taskInfo['activity_name'],
+                'name'                          => $_taskInfo['activity_name'] . '-' . $_taskInfo['task_num'],
             ];
         }
         unset($_taskInfo);

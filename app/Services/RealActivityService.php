@@ -354,20 +354,22 @@ class RealActivityService
         ]);
         //有效活动的开始时间是否在24小时内：true是 false不是
         $activityTimeStatusIn24 = true;
-        $currentActivity = array_shift($nowAffectActivityData);
+        $currentActivity = array_shift($nowAffectActivityData) ?? [];
         if (!empty($currentActivity) && (($time - $currentActivity['start_time']) > (Util::TIMESTAMP_1H * 24))) {
             $activityTimeStatusIn24 = false;
         }
-        // 获取活动任务列表
-        $activityTaskList = RealSharePosterTaskListModel::getActivityTaskList($currentActivity['activity_id']);
         //获取可以补卡的活动
-        $reCardActivityList = self::getReCardActivityList(['student_id' => $studentInfo['id'], 'uuid' => $studentInfo['uuid'],])['list'];
+        $reCardActivity =  RealWeekActivityService::getStudentCanPartakeWeekActivityList([
+            'student_id' => $studentInfo['id'],
+            'uuid' => $studentInfo['uuid'],
+        ], 2);
+        $reCardActivity = array_shift($reCardActivity) ?? [];
         if ($activityTimeStatusIn24) {
             //当前活动开始24小时内
-            $totalActivityList = array_merge($reCardActivityList, $activityTaskList);
+            $totalActivityList = [$reCardActivity, $currentActivity];
         } else {
             //当前活动开始24小时后
-            $totalActivityList = array_merge($activityTaskList, $reCardActivityList);
+            $totalActivityList = [$currentActivity, $reCardActivity];
         }
         if (empty($totalActivityList)) {
             return [];
@@ -378,6 +380,9 @@ class RealActivityService
             'can_upload_task_list'  => [],
         ];
         foreach ($totalActivityList as $item) {
+            if (!isset($item['activity_id'])) {
+                continue;
+            }
             $_tmpData = self::getStudentActivityTaskList($studentInfo['id'], $item);
             if ($item['activity_id'] == $currentActivity['activity_id']) {
                 $result['verify_pass_task_list'] = $_tmpData['verify_pass_task_list'];
