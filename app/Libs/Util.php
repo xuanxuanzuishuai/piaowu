@@ -1632,4 +1632,30 @@ class Util
 
         return $ip ?: '0.0.0.0';
     }
+
+    /**
+     * 二维数组排序单列排序
+     * @param array $arr
+     * @param $key
+     * @param string $sort
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function arraySort(array $arr, $key, $sort = 'DESC')
+    {
+        $res = usort($arr, function ($a, $b) use ($key, $sort) {
+            if ($a[$key] == $b[$key]) return 0;
+            $isLess = ($a[$key] < $b[$key]);
+
+            if ($isLess) {
+                return $sort == 'ASC' ? -1 : 1;
+            } else {
+                return $sort == 'ASC' ? 1 : -1;
+            }
+        });
+        if (!$res) {
+            throw new RunTimeException(['invalid_data']);
+        }
+        return $arr;
+    }
 }

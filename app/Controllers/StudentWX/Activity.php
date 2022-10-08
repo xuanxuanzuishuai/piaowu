@@ -116,7 +116,7 @@ class Activity extends ControllerBase
         $params = $request->getParams();
         $params['user_info'] = $this->ci['user_info'];
         $data = WeekActivityService::getCanPartakeWeekActivity(['id' => $params['user_info']['user_id']]);
-        return HttpHelper::buildResponse($response, ['list' => $data]);
+        return HttpHelper::buildResponse($response, $data);
     }
 
     /**
