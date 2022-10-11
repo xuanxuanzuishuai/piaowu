@@ -13,12 +13,15 @@ use App\Libs\MorningDictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dawn\DawnLeadsModel;
+use App\Models\Erp\ErpEventTaskModel;
 use App\Models\MessagePushRulesModel;
 use App\Models\MorningSharePosterModel;
 use App\Models\MorningTaskAwardModel;
+use App\Models\MorningWechatAwardCashDealModel;
 use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\WeChatConfigModel;
+use App\Services\CashGrantService;
 use App\Services\SharePosterService;
 
 class MorningClockActivityService
@@ -29,6 +32,8 @@ class MorningClockActivityService
     const TASK_STATUS_WAIT_VERIFY    = 1;  // 等待审核、审核中
     const TASK_STATUS_VERIFY_SUCCESS = 2;  // 审核通过 - 已打卡
     const TASK_STATUS_VERIFY_FAIL    = 3;  // 审核未通过
+
+    const LOCK_SEND_CLOCK_ACTIVITY_RED_PACK = 'lock_morning_send_clock_activity_red_pack_';
 
     /**
      * 5日打卡活动详情
@@ -83,7 +88,6 @@ class MorningClockActivityService
         for ($i = 1; $i <= $nodeNum; $i++) {
             $tmpData = [
                 'day'         => $i,
-                'is_unlock'   => Constants::STATUS_FALSE,
                 'task_status' => self::TASK_STATUS_LOCK,
                 'unlock_time' => date("Y-m-d 09:i:s", time() + Util::TIMESTAMP_ONEDAY * $i),
             ];
@@ -94,7 +98,7 @@ class MorningClockActivityService
             // 是否已经过了9点
             $isNine = date("G") - 9 >= 0;
             if ($isDone && $isNine) {
-                $tmpData['is_unlock'] = Constants::STATUS_TRUE;
+                $tmpData['task_status'] = self::TASK_STATUS_PROGRESS;
             }
             // 是否已参与
             $daySharePoster = $sharePosterTask[$i] ?? [];
@@ -106,8 +110,6 @@ class MorningClockActivityService
                 } elseif ($daySharePoster['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
                     $tmpData['task_status'] = self::TASK_STATUS_VERIFY_FAIL;
                 }
-            } else {
-                $tmpData['task_status'] = self::TASK_STATUS_PROGRESS;
             }
             $returnData['node_list'][] = $tmpData;
         }
@@ -357,5 +359,111 @@ class MorningClockActivityService
             }
         }
         return $message;
+    }
+
+    /**
+     * 发放5日打卡活动红包
+     * @param array $params
+     * @return bool
+     */
+    public static function sendClockActivityReadPack(array $params)
+    {
+        SimpleLogger::info('sendClockActivityReadPack_params', $params);
+        $lockKey = '';
+        try {
+            // 接受参数
+            $studentUuid = $params['student_uuid'];
+            $taskAwardId = $params['task_award_id'];
+            $sharePosterRecordId = $params['share_poster_record_id'];
+            // 校验参数
+            if (empty($studentUuid) || empty($taskAwardId) || empty($sharePosterRecordId)) {
+                SimpleLogger::info('sendClockActivityReadPack_params_error', [$studentUuid, $taskAwardId]);
+                return false;
+            }
+            // 只处理审核通过的记录
+            $sharePosterRecordInfo = MorningSharePosterModel::getRecord(['id' => $sharePosterRecordId]);
+            if (empty($sharePosterRecordInfo) || $sharePosterRecordInfo['verify_status'] != SharePosterModel::VERIFY_STATUS_QUALIFIED) {
+                SimpleLogger::info('sendClockActivityReadPack_share_poster_record_error', [$studentUuid, $sharePosterRecordInfo]);
+                return false;
+            }
+            // 获取必要参数 open_id 等信息
+            $userOpenid = (new Morning())->getStudentOpenidByUuid([$studentUuid])[$studentUuid] ?? '';
+            if (empty($userOpenid)) {
+                SimpleLogger::info('sendClockActivityReadPack_openid_error', [$studentUuid, $userOpenid]);
+                return false;
+            }
+            $lockKey = self::LOCK_SEND_CLOCK_ACTIVITY_RED_PACK . $studentUuid . '-' . $taskAwardId;
+            // 加锁 - 失败不处理
+            Util::setLock($lockKey);
+            // 获取用户红包信息
+            $awardData = MorningTaskAwardModel::getRecord([
+                'id'           => $taskAwardId,
+                'student_uuid' => $studentUuid,
+                'award_type'   => ErpEventTaskModel::AWARD_TYPE_CASH,
+                'status'       => [OperationActivityModel::SEND_AWARD_STATUS_WAITING, OperationActivityModel::SEND_AWARD_STATUS_GIVE_FAIL],
+            ]);
+            if (empty($awardData)) {
+                SimpleLogger::info('sendClockActivityReadPack_award_empty', [$studentUuid, $awardData]);
+                return false;
+            }
+            // 金额不大于0-不发放
+            if ($awardData['award_amount'] <= 0) {
+                SimpleLogger::info('sendClockActivityReadPack_award_amount', [$studentUuid, $awardData]);
+                return false;
+            }
+            $now = time();
+            // 更新状态
+            MorningTaskAwardModel::updateRecord($awardData['id'], [
+                'status'       => OperationActivityModel::SEND_AWARD_STATUS_GIVE_ING,
+                'operator_id'  => $sharePosterRecordInfo['verify_user'],
+                'operate_time' => $now,
+                'update_time'  => $now,
+            ]);
+            // 生成奖励的交易号
+            $awardRecordInfo = MorningWechatAwardCashDealModel::getRecord(['user_uuid' => $studentUuid, 'task_award_id' => $taskAwardId]);
+            // 生成交易号
+            $mchBillNo = CashGrantService::genMchBillNo($taskAwardId, $awardRecordInfo, $awardData['award_amount']);
+            // 如果交易不存在新增
+            if (!empty($awardRecordInfo)) {
+                $awardRecordId = $awardRecordInfo['id'];
+            } else {
+                $recordData = [
+                    'task_award_id' => $taskAwardId,
+                    'user_uuid' => $studentUuid,
+                    'mch_billno' => $mchBillNo,
+                    'award_amount' => $awardData['award_amount'],
+                    'openid' => $userOpenid,
+                    'status' => 0,
+                    'result_code' => '',
+                    'create_time' => $now,
+                ];
+                $awardRecordId = MorningWechatAwardCashDealModel::insertRecord($recordData);
+                if (empty($awardRecordId)) {
+                    SimpleLogger::info('sendClockActivityReadPack_save_send_record_fail', $recordData);
+                    return false;
+                }
+            }
+            // 发送红包
+            list($status, $resultCode) = CashGrantService::sendWeChatRedPack($userOpenid, $mchBillNo,$awardData['award_amount'], 'REFERRER_PIC_WORD');
+            // 更新发放结果
+            $updateResData = [
+                'mch_billno' => $mchBillNo,
+                'status' => $status,
+                'result_code' => $resultCode,
+                'openid' => $userOpenid,
+                'update_time' => time(),
+            ];
+            $res = MorningWechatAwardCashDealModel::updateRecord($awardRecordId, $updateResData);
+            if (empty($res)) {
+                SimpleLogger::info('sendClockActivityReadPack_save_send_record_fail', $updateResData);
+                return false;
+            }
+        } catch (RunTimeException $e) {
+            // 抛出异常，记录日志
+        } finally {
+            // 解锁
+            Util::unLock($lockKey);
+        }
+        return true;
     }
 }

@@ -8,19 +8,22 @@ namespace App\Services\MorningReferral;
 use App\Libs\AliOSS;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MorningDictConstants;
-use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\Erp\ErpEventTaskModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\Morning\MorningStudentModel;
 use App\Models\MorningSharePosterModel;
 use App\Models\MorningTaskAwardModel;
+use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
+use App\Services\Queue\MorningReferralTopic;
+use App\Services\Queue\QueueService;
 use App\Services\SharePosterService;
 
 class MorningClockActivityManageService
 {
-    const KEY_POSTER_VERIFY_LOCK = 'morning_verify_poster_approved_lock';
+    const KEY_POSTER_VERIFY_LOCK = 'morning_verify_poster_approved_lock_';
 
     /**
      * 获取截图审核列表
@@ -158,6 +161,7 @@ class MorningClockActivityManageService
         $posters = MorningSharePosterModel::getRecords([
             'id'            => $posterIds,
             'activity_type' => MorningTaskAwardModel::MORNING_ACTIVITY_TYPE,
+            'verify_status' => SharePosterModel::VERIFY_STATUS_WAIT,
         ]);
         if (empty($posters)) {
             throw new RunTimeException(['get_share_poster_error']);
@@ -165,6 +169,7 @@ class MorningClockActivityManageService
         if (count($posters) != count($posterIds)) {
             throw new RunTimeException(['get_share_poster_error']);
         }
+        $needSendAwardData = [];
         $now = time();
         $updateData = [
             'verify_status' => SharePosterModel::VERIFY_STATUS_QUALIFIED,
@@ -174,30 +179,97 @@ class MorningClockActivityManageService
             'update_time'   => $now,
         ];
         //处理数据
-        $redis = RedisDB::getConn();
         foreach ($posters as $key => $poster) {
-            // 审核数据操作锁，解决并发导致的重复审核和发奖
-            $lockKey = self::KEY_POSTER_VERIFY_LOCK . $poster['id'];
-            $lock = $redis->set($lockKey, $poster['id'], 'EX', 120, 'NX');
-            if (empty($lock)) {
-                continue;
+            // 加锁， 按照学生为维度，同一时间只能处理一个学生，防止奖励计算错误
+            $lockKey = self::KEY_POSTER_VERIFY_LOCK . $poster['student_uuid'];
+            try {
+                // 加锁失败重试3次依然失败跳过
+                if (!Util::setLock($lockKey, 60, 3)) {
+                    continue;
+                }
+                // 更新审核结果
+                $where = [
+                    'id'            => $poster['id'],
+                    'verify_status' => $poster['verify_status'],
+                ];
+                $update = MorningSharePosterModel::batchUpdateRecord($updateData, $where);
+                // 更新失败，不处理
+                if (empty($update)) {
+                    SimpleLogger::info("sharePosterApproved_update_status_fail", [$updateData, $where]);
+                    continue;
+                }
+                // 计算奖励
+                $currentAward = self::computeStudentClockActivityAward($poster['student_uuid']);
+                if (empty($currentAward)) {
+                    SimpleLogger::info("sharePosterApproved_not_award_node", [$poster['student_uuid']]);
+                    continue;
+                }
+                // 生成待发放奖励
+                $taskAwardData = [
+                    'student_uuid'  => $poster['student_uuid'],
+                    'activity_type' => MorningTaskAwardModel::MORNING_ACTIVITY_TYPE,
+                    'status'        => OperationActivityModel::SEND_AWARD_STATUS_WAITING,
+                    'award_type'    => ErpEventTaskModel::AWARD_TYPE_CASH,
+                    'award_amount'  => $currentAward['award_amount'],
+                    'task_num'      => $currentAward['task_num'],
+                    'award_from'    => $poster['id'],
+                    'create_time'   => $now,
+                    'operator_id'   => $params['employee_id'],
+                    'operate_time'  => $now,
+                ];
+                $taskAwardId = MorningTaskAwardModel::insertRecord($taskAwardData);
+                if (empty($taskAwardId)) {
+                    SimpleLogger::info("sharePosterApproved_save_award_node", $taskAwardData);
+                    continue;
+                }
+                // 组装投递消息数组
+                $needSendAwardData[] = [
+                    'student_uuid'           => $poster['student_uuid'],
+                    'share_poster_record_id' => $poster['id'],
+                    'task_award_id'          => $taskAwardId,
+                ];
+            } finally {
+                Util::unLock($lockKey);
             }
-            $where = [
-                'id'            => $poster['id'],
-                'verify_status' => $poster['poster_status'],
-            ];
-            $update = MorningSharePosterModel::batchUpdateRecord($updateData, $where);
-            // 更新失败，不处理
-            if (empty($update)) {
-                SimpleLogger::info("sharePosterApproved_update_status_fail", [$updateData, $where]);
-                continue;
-            }
-            // TODO qingfeng.lian  这里如果审核通过后给用户发放红包 //批量投递消费消费队列
-            // 审核通过后 - 组装发放奖励的消息
         }
-        // TODO qingfeng.lian  这里如果审核通过后给用户发放红包 //批量投递消费消费队列
-        // QueueService::addRealUserPosterAward($sendAwardQueueData);
-        // QueueService::realSendPosterAwardMessage($sendWxMessageQueueData);
+        // 批量投递消费消费队列
+        foreach ($needSendAwardData as $_sendData) {
+            QueueService::morningPushMsg(MorningReferralTopic::EVENT_CLOCK_ACTIVITY_SEND_RED_PACK, $_sendData, rand(0, 5));
+        }
         return true;
+    }
+
+    /**
+     * 计算学生5日打卡活动奖励
+     * @param $studentUuid
+     * @return array|int[]
+     */
+    public static function computeStudentClockActivityAward($studentUuid)
+    {
+        $returnData = [
+            'task_num'     => 0,
+            'award_amount' => 0,
+        ];
+        // 获取奖励节点
+        $awardNode = json_decode(MorningDictConstants::get(MorningDictConstants::MORNING_FIVE_DAY_ACTIVITY, '5day_award_node'), true);
+        if (empty($awardNode)) {
+            return [];
+        }
+        // 获取奖励记录
+        $awardList = MorningTaskAwardModel::getStudentFiveDayAwardList($studentUuid);
+        $countAwardList = count($awardList);
+        if ($countAwardList == count($awardNode)) {
+            return [];
+        }
+        $awardTaskNode = array_column($awardNode, null, 'day');
+        // 获取参与记录
+        $recordCount = MorningSharePosterModel::getFiveDayUploadSharePosterList($studentUuid, [SharePosterModel::VERIFY_STATUS_QUALIFIED]);
+        $currentAwardNode = $awardTaskNode[count($recordCount)];
+        if (empty($currentAwardNode)) {
+            return [];
+        }
+        $returnData['task_num'] = $currentAwardNode['day'];
+        $returnData['award_amount'] = $currentAwardNode['award_num'];
+        return $returnData;
     }
 }

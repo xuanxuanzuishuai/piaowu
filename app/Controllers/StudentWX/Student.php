@@ -450,7 +450,7 @@ class Student extends ControllerBase
             // 学生状态对应的产品包id
             $packageInfo = MorningReferralStatisticsService::getStudentStatusMatchPackage($sceneData['user_current_moment_status']);
             $sceneData['package_id'] = intval($packageInfo['package_id'] ?? 0);
-            $sceneData['package_show_price'] = intval($packageInfo['package_show_price'] ?? 0);
+            $sceneData['package_show_price'] = $packageInfo['package_show_price'] ?? 0;
         } catch (RunTimeException $exception) {
             return HttpHelper::buildErrorResponse($response, $exception->getWebErrorData());
         }

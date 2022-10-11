@@ -22,6 +22,7 @@ use App\Models\Dss\DssWechatOpenIdListModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpEventModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
+use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\UserPointsExchangeOrderModel;
 use App\Models\UserPointsExchangeOrderWxModel;
@@ -698,5 +699,47 @@ class CashGrantService
             $mchBill = implode("a",array_values($mchBill));
         }
         return self::getMchBillNo($mchBill,$hasRedPackRecord,$amount);
+    }
+
+    /**
+     * 发送微信红包
+     * @param $userOpenid
+     * @param $mchBillNo
+     * @param $awardAmount
+     * @param $keyCode
+     * @return array
+     */
+    public static function sendWeChatRedPack($userOpenid, $mchBillNo, $awardAmount, $keyCode)
+    {
+        // 如果pre环境需要特定的user_id才可以接收
+        if (
+            ($_ENV['ENV_NAME'] == 'pre' && in_array($userOpenid, explode(',', RedisDB::getConn()->get('red_pack_white_open_id'))))
+            || $_ENV['ENV_NAME'] == 'prod'
+        ) {
+            $weChatPackage = new WeChatPackage(Constants::QC_APP_ID, Constants::QC_APP_BUSI_WX_ID);
+            list($actName, $sendName, $wishing) = self::getRedPackConfigWord($keyCode);
+            //请求微信发红包
+            $resultData = $weChatPackage->sendPackage($mchBillNo, $actName, $sendName, $userOpenid, $awardAmount, $wishing, 'redPack');
+            SimpleLogger::info('CashGrantService::sendWeChatRedPack wechat send red pack result data:', [$userOpenid, $resultData]);
+            $status = trim($resultData['result_code']) == WeChatAwardCashDealModel::RESULT_SUCCESS_CODE ? OperationActivityModel::SEND_AWARD_STATUS_GIVE : OperationActivityModel::SEND_AWARD_STATUS_GIVE_FAIL;
+            $resultCode = trim($resultData['err_code']);
+        } else {
+            SimpleLogger::info('sendClockActivityReadPack now env not satisfy', [$userOpenid, $mchBillNo]);
+            $status = ErpUserEventTaskAwardModel::STATUS_GIVE_FAIL;
+            $resultCode = WeChatAwardCashDealModel::RESULT_FAIL_CODE;
+        }
+        return [$status, $resultCode];
+    }
+
+    /**
+     * 获取微信交易号
+     * @param $awardId
+     * @param $hasRedPackRecord
+     * @param $amount
+     * @return mixed|string
+     */
+    public static function genMchBillNo($awardId, $hasRedPackRecord, $amount)
+    {
+        return self::getMchBillNo($awardId, $hasRedPackRecord, $amount);
     }
 }

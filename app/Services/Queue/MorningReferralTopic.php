@@ -12,6 +12,8 @@ class MorningReferralTopic extends BaseTopic
     const EVENT_WECHAT_PUSH_MSG_TO_STUDENT = 'wechat_open_collection_push_msg_to_student';
     // 5日打卡 -  day1~day3 - 邀请达标用户参与互动 - 微信公众号消息
     const EVENT_WECHAT_PUSH_MSG_JOIN_STUDENT = 'wechat_join_student_push_msg';
+    // 5日打卡 - 发放红包
+    const EVENT_CLOCK_ACTIVITY_SEND_RED_PACK = 'clock_activity_send_red_pack';
 
     /**
      * @param null $publishTime

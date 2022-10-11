@@ -331,7 +331,7 @@ class DictConstants {
     const WECHAT_APPID = [
         'type' => 'wechat_app_id',
         'keys' => [
-            '8_1', '8_8', '21_9','8_10', '8_12', '1_13', '8_11'
+            '8_1', '8_8', '21_9','8_10', '8_12', '1_13', '8_11','26_1'
         ]
     ];
     //不同应用的微信app_secret
@@ -395,6 +395,7 @@ class DictConstants {
     const WECHAT_MCHID = [
         'type' => 'wechat_mchid',
         'keys' => [
+            '26_1',
             '8_1'
         ]
     ];
@@ -402,6 +403,7 @@ class DictConstants {
     const WECHAT_API_CERT_PEM = [
         'type' => 'wechat_api_cert_pem',
         'keys' => [
+            '26_1',
             '8_1'
         ]
     ];
@@ -409,6 +411,7 @@ class DictConstants {
     const WECHAT_API_KEY_PEM = [
         'type' => 'wechat_api_key_pem',
         'keys' => [
+            '26_1',
             '8_1'
         ]
     ];

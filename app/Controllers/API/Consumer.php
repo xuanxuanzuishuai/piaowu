@@ -44,6 +44,7 @@ use App\Services\DouService;
 use App\Services\ExchangeCourseService;
 use App\Services\MessageService;
 use App\Services\MiniAppQrService;
+use App\Services\MorningReferral\MorningClockActivityService;
 use App\Services\MorningReferral\MorningPushMessageService;
 use App\Services\MorningReferral\MorningWeChatHandlerService;
 use App\Services\PushMessageService;
@@ -1458,6 +1459,9 @@ class Consumer extends ControllerBase
                 break;
             case MorningReferralTopic::EVENT_WECHAT_PUSH_MSG_JOIN_STUDENT:
                 MorningPushMessageService::eventWechatPushMsgJoinStudent($checkFormatParams['msg_body']);
+                break;
+            case MorningReferralTopic::EVENT_CLOCK_ACTIVITY_SEND_RED_PACK:
+                MorningClockActivityService::sendClockActivityReadPack($checkFormatParams['msg_body']);
                 break;
             default:
                 SimpleLogger::error('unknown event type', ['params' => $checkFormatParams]);
