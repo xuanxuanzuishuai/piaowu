@@ -12,6 +12,7 @@ use App\Libs\Morning;
 use App\Libs\MorningDictConstants;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\Dawn\DawnCollectionModel;
 use App\Models\Dawn\DawnLeadsModel;
 use App\Models\Erp\ErpEventTaskModel;
 use App\Models\MessagePushRulesModel;
@@ -29,6 +30,7 @@ class MorningClockActivityService
     // 5日打卡活动解锁状态
     const TASK_STATUS_LOCK           = 0;     // 待解锁、未解锁
     const TASK_STATUS_PROGRESS       = 4; // 进行中
+    const TASK_STATUS_NOT_STANDARD   = 5; // 未达标
     const TASK_STATUS_WAIT_VERIFY    = 1;  // 等待审核、审核中
     const TASK_STATUS_VERIFY_SUCCESS = 2;  // 审核通过 - 已打卡
     const TASK_STATUS_VERIFY_FAIL    = 3;  // 审核未通过
@@ -43,27 +45,29 @@ class MorningClockActivityService
     public static function getClockActivityIndex($studentUuid)
     {
         $returnData = [
-            'is_join'    => 0, // 0：不能参与，
+            'is_join'    => false, // false：不能参与，
             'award_node' => [],  // 奖励节点
             'node_list'  => [],  // 节点
         ];
-        // 班级信息
-        $collInfo = DawnLeadsModel::getRecord(['uuid' => $studentUuid]);
-        if (empty($collInfo) || empty($collInfo['collection_id'])) {
+        // 学生线索信息
+        $leadsInfo = DawnLeadsModel::getRecord(['uuid' => $studentUuid]);
+        if (empty($leadsInfo) || empty($leadsInfo['collection_id'])) {
             SimpleLogger::info("getCollectionActivityDetail_student_collection_is_empty", [$studentUuid]);
             return $returnData;
         }
+        // 班级信息
+        $collInfo = DawnCollectionModel::getRecord(['id' => $leadsInfo['collection_id']]);
+        if (empty($collInfo)) {
+            SimpleLogger::info("getCollectionActivityDetail_collection_is_empty", [$studentUuid]);
+            return $returnData;
+        }
         $returnData['is_join'] = true;
-        list($awardNode, $nodeNum) = MorningDictConstants::get(MorningDictConstants::MORNING_FIVE_DAY_ACTIVITY, ['5day_award_node', '5day_node_num']);
+        list($awardNode, $clockInNode) = MorningDictConstants::get(MorningDictConstants::MORNING_FIVE_DAY_ACTIVITY, ['5day_award_node', '5day_clock_in_node']);
         $awardNode = json_decode($awardNode, true);
+        $clockInNode = json_decode($clockInNode, true);
         // 获取奖励列表
         $studentAwardList = MorningTaskAwardModel::getStudentFiveDayAwardList($studentUuid);
-        $studentAwardListByDay = [];
-        foreach ($studentAwardList as $item) {
-            $ext = !empty($item['ext']) ? json_decode($item['ext'], true) : [];
-            $studentAwardListByDay[$ext['day']] = $item;
-        }
-        unset($item);
+        $studentAwardListByDay = array_column($studentAwardList, null, 'task_num');
         // 获取奖励状态
         foreach ($awardNode as $item) {
             $award = $studentAwardListByDay[$item['day']] ?? [];
@@ -74,6 +78,12 @@ class MorningClockActivityService
                 'status'    => self::getCollectionActivityStatus($awardStatus),
             ];
         }
+        /**
+         * 获取打卡状态
+         * 有参与记录以参与记录为准
+         * 没有参与记录看是否已解锁
+         * 如果已解锁看练琴状态
+         */
         // 获取学生练习信息
         $lessonList = (new Morning())->getStudentLessonSchedule([$studentUuid])[$studentUuid] ?? [];
         $lessonData = self::getLessonDoneStep($lessonList);
@@ -85,23 +95,16 @@ class MorningClockActivityService
         }
         unset($item);
         // 打卡进度
-        for ($i = 1; $i <= $nodeNum; $i++) {
+        foreach ($clockInNode as $_node => $_nodeInfo) {
+            $unlockTimeUnix = $collInfo['teaching_start_time'] + Util::TIMESTAMP_ONEDAY * $_node;
             $tmpData = [
-                'day'         => $i,
+                'day'         => $_node,
                 'task_status' => self::TASK_STATUS_LOCK,
-                'unlock_time' => date("Y-m-d 09:i:s", time() + Util::TIMESTAMP_ONEDAY * $i),
+                'unlock_time' => date("Y-m-d 09:i:s", $unlockTimeUnix),
             ];
-            // 是否满足解锁条件
-            // 是否已完成曲目的练习
-            $dayInfo = $lessonData[$i - 1] ?? [];
-            $isDone = $dayInfo['status'] == Constants::STATUS_TRUE;
-            // 是否已经过了9点
-            $isNine = date("G") - 9 >= 0;
-            if ($isDone && $isNine) {
-                $tmpData['task_status'] = self::TASK_STATUS_PROGRESS;
-            }
+            /** 是否满足解锁条件 */
             // 是否已参与
-            $daySharePoster = $sharePosterTask[$i] ?? [];
+            $daySharePoster = $sharePosterTask[$_node] ?? [];
             if (!empty($daySharePoster)) {
                 if ($daySharePoster['verify_status'] == SharePosterModel::VERIFY_STATUS_WAIT) {
                     $tmpData['task_status'] = self::TASK_STATUS_WAIT_VERIFY;
@@ -109,6 +112,18 @@ class MorningClockActivityService
                     $tmpData['task_status'] = self::TASK_STATUS_VERIFY_SUCCESS;
                 } elseif ($daySharePoster['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
                     $tmpData['task_status'] = self::TASK_STATUS_VERIFY_FAIL;
+                }
+            } else {
+                // 是否已完成曲目的练习
+                $dayInfo = $lessonData[$_node - 1] ?? [];
+                $isDone = $dayInfo['status'] == Constants::STATUS_TRUE;
+                if ($unlockTimeUnix >= time()) {
+                    // 已解锁， 未完成练琴显示未达标
+                    if ($isDone) {
+                        $tmpData['task_status'] = self::TASK_STATUS_PROGRESS;
+                    } else {
+                        $tmpData['task_status'] = self::TASK_STATUS_NOT_STANDARD;
+                    }
                 }
             }
             $returnData['node_list'][] = $tmpData;
@@ -211,10 +226,20 @@ class MorningClockActivityService
     public static function checkClockActivityIsLock($studentUuid, $day)
     {
         // 检查当天是否已经解锁  有分班，当天练琴完成
-        // 班级信息
-        $collInfo = DawnLeadsModel::getRecord(['uuid' => $studentUuid]);
-        if (empty($collInfo) || empty($collInfo['collection_id'])) {
+        //线索信息
+        $leadsInfo = DawnLeadsModel::getRecord(['uuid' => $studentUuid]);
+        if (empty($leadsInfo) || empty($leadsInfo['collection_id'])) {
             throw new RunTimeException(['student_collection_is_empty']);
+        }
+        // 班级信息
+        $collInfo = DawnCollectionModel::getRecord(['id' => $leadsInfo['collection_id']]);
+        if (empty($collInfo)) {
+            throw new RunTimeException(['student_collection_is_empty']);
+        }
+        // 班级是否解锁
+        $unlockTimeUnix = $collInfo['teaching_start_time'] + Util::TIMESTAMP_ONEDAY * $day;
+        if ($unlockTimeUnix < time()) {
+            throw new RunTimeException(['morning_clock_activity_day_unlock']);
         }
         // 获取学生练习信息
         $lessonList = (new Morning())->getStudentLessonSchedule([$studentUuid])[$studentUuid] ?? [];
@@ -240,8 +265,8 @@ class MorningClockActivityService
         self::checkClockActivityIsLock($studentUuid, $day);
         // 获取邀请语信息
         $message = self::generateClockActivityRuleMsgPoster($studentUuid, $day);
-        if (!empty($message['cotent']) && is_array($message['cotent'])) {
-            foreach ($message['cotent'] as $item) {
+        if (!empty($message['content']) && is_array($message['content'])) {
+            foreach ($message['content'] as $item) {
                 if ($item['key'] == 'content_2' && $item['type'] == 1) {
                     $shareWord = $item['value'];
                 } elseif ($item['type'] == 2) {
@@ -283,7 +308,7 @@ class MorningClockActivityService
             ];
             MorningSharePosterModel::updateRecord($record['id'], $sqlData);
         } else {
-            // 未上传 - 新增
+            // 未上传或审核未通过 - 新增
             $sqlData = [
                 'student_uuid'     => $studentUuid,
                 'image_path'       => $params['image_path'],
@@ -338,27 +363,32 @@ class MorningClockActivityService
     {
         if (empty($data)) {
             // 获取学生练琴曲目信息
-            $studentLesson = (new Morning())->getStudentLessonSchedule([$studentUuid]);
-            $lastLesson = [];
-            $data = [
-                'lesson' => [
-                    'report'      => $lastLesson['report'],
-                    'lesson_name' => $lastLesson['lesson_name'],
-                    'unlock_time' => $lastLesson['unlock_time'],
-                ],
-            ];
-        }
-        $message = self::getClockActivityShareRuleMsg($day);
-        foreach ($message['content'] as &$item) {
-            if ($item['type'] == WeChatConfigModel::CONTENT_TYPE_IMG) {
-                $_poster = MorningPushMessageService::generate5DaySharePoster($studentUuid, ['poster_id' => $item['poster_id'], 'path' => $item['value']], $data);
-                if (empty($_poster)) {
-                    throw new RunTimeException(['eventWechatPushMsgJoinStudent_create_share_poster_error'], [$studentUuid]);
-                }
-                $item['path'] = $_poster['poster_save_full_path'];
+            $studentLesson = (new Morning())->getStudentLessonSchedule([$studentUuid])[$studentUuid] ?? [];
+            $studentLesson = array_shift($studentLesson);
+            $dayLesson = $studentLesson[$day] ?? [];
+            if (!empty($dayLesson)) {
+                $data = [
+                    'lesson' => [
+                        'report'      => $dayLesson['report'],
+                        'lesson_name' => $dayLesson['lesson_name'],
+                        'unlock_time' => $dayLesson['unlock_time'],
+                    ],
+                ];
             }
         }
-        return $message;
+        if (!empty($data)) {
+            $message = self::getClockActivityShareRuleMsg($day);
+            foreach ($message['content'] as &$item) {
+                if ($item['type'] == WeChatConfigModel::CONTENT_TYPE_IMG) {
+                    $_poster = MorningPushMessageService::generate5DaySharePoster($studentUuid, ['poster_id' => $item['poster_id'], 'path' => $item['value']], $data);
+                    if (empty($_poster)) {
+                        throw new RunTimeException(['eventWechatPushMsgJoinStudent_create_share_poster_error'], [$studentUuid]);
+                    }
+                    $item['path'] = $_poster['poster_save_full_path'];
+                }
+            }
+        }
+        return $message ?? [];
     }
 
     /**
@@ -429,13 +459,13 @@ class MorningClockActivityService
             } else {
                 $recordData = [
                     'task_award_id' => $taskAwardId,
-                    'user_uuid' => $studentUuid,
-                    'mch_billno' => $mchBillNo,
-                    'award_amount' => $awardData['award_amount'],
-                    'openid' => $userOpenid,
-                    'status' => 0,
-                    'result_code' => '',
-                    'create_time' => $now,
+                    'user_uuid'     => $studentUuid,
+                    'mch_billno'    => $mchBillNo,
+                    'award_amount'  => $awardData['award_amount'],
+                    'openid'        => $userOpenid,
+                    'status'        => 0,
+                    'result_code'   => '',
+                    'create_time'   => $now,
                 ];
                 $awardRecordId = MorningWechatAwardCashDealModel::insertRecord($recordData);
                 if (empty($awardRecordId)) {
@@ -444,13 +474,13 @@ class MorningClockActivityService
                 }
             }
             // 发送红包
-            list($status, $resultCode) = CashGrantService::sendWeChatRedPack($userOpenid, $mchBillNo,$awardData['award_amount'], 'REFERRER_PIC_WORD');
+            list($status, $resultCode) = CashGrantService::sendWeChatRedPack($userOpenid, $mchBillNo, $awardData['award_amount'], 'REFERRER_PIC_WORD');
             // 更新发放结果
             $updateResData = [
-                'mch_billno' => $mchBillNo,
-                'status' => $status,
+                'mch_billno'  => $mchBillNo,
+                'status'      => $status,
                 'result_code' => $resultCode,
-                'openid' => $userOpenid,
+                'openid'      => $userOpenid,
                 'update_time' => time(),
             ];
             $res = MorningWechatAwardCashDealModel::updateRecord($awardRecordId, $updateResData);

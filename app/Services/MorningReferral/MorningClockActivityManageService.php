@@ -6,6 +6,7 @@
 namespace App\Services\MorningReferral;
 
 use App\Libs\AliOSS;
+use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MorningDictConstants;
 use App\Libs\SimpleLogger;
@@ -40,7 +41,7 @@ class MorningClockActivityManageService
         if (!empty($params['student_uuid'])) $searchUUID[] = $params['student_uuid'];
         // 如果存在学员手机号用手机号换取uuid
         if (!empty($params['student_mobile'])) {
-            $mobileInfo = ErpStudentModel::getRealUserInfoByMobile([$params['student_mobile']]);
+            $mobileInfo = ErpStudentModel::getUserInfoByMobiles([$params['student_mobile']], Constants::QC_APP_ID);
             // 手机号不存在，则结果必然是空
             if (empty($mobileInfo)) {
                 return $returnData;
@@ -106,6 +107,9 @@ class MorningClockActivityManageService
         $info['status_name'] = $studentInfo['name'] ?? '';
         $info['format_verify_reason'] = SharePosterService::reasonToStr($info['verify_reason']);
         !empty($info['remark']) && $info['format_verify_reason'][] = $info['remark'];
+
+        $clockInNode = json_decode(MorningDictConstants::get(MorningDictConstants::MORNING_FIVE_DAY_ACTIVITY, '5day_clock_in_node'), true);
+        $info['format_task_num'] = $clockInNode[$info['task_num']]['name'];
         return $info;
     }
 

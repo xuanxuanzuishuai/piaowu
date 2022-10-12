@@ -76,7 +76,6 @@ class ScriptMorningCollectionPushMsg
         foreach ($collList as $key => &$item) {
             // 检查班级当前已经开班几天
             $chaDay = $this->computeOpenDay($item['teaching_start_time']);
-            $chaDay ++;
             $item['cha_day'] = $chaDay;
             if ($chaDay == 0) {
                 // day0 - 推送开班通知
@@ -107,7 +106,7 @@ class ScriptMorningCollectionPushMsg
     }
 
     /**
-     * 计算开班第几天
+     * 计算开班第几天, 向上取整
      * @param $collectionStartTime
      * @return float
      */
@@ -183,8 +182,8 @@ class ScriptMorningCollectionPushMsg
                     continue;
                 }
                 // 计算曲目信息
-                list($isDoneNum, $lastLesson) = $this->computeLesson($studentLesson[$_stu['uuid']]);
-                if (empty($isDoneNum) || empty($lastLesson)) {
+                list($isDoneNum, $dayLesson) = $this->computeLesson($studentLesson[$_stu['uuid']], $day);
+                if (empty($dayLesson)) {
                     continue;
                 }
                 // 发送消息
@@ -195,9 +194,9 @@ class ScriptMorningCollectionPushMsg
                         'openid'        => $studentOpenid[$_stu['uuid']],
                         'day'           => $day,
                         'lesson'        => [
-                            'report'      => $lastLesson['report'],
-                            'lesson_name' => $lastLesson['lesson_name'],
-                            'unlock_time' => $lastLesson['unlock_time'],
+                            'report'      => $dayLesson['report'],
+                            'lesson_name' => $dayLesson['lesson_name'],
+                            'unlock_time' => $dayLesson['unlock_time'],
                         ],
                     ]
                     , $this->deferSecond
@@ -214,22 +213,26 @@ class ScriptMorningCollectionPushMsg
     /**
      * 计算曲目中有多少个已学习的课程，以及最后完成的课程信息
      * @param $lesson
+     * @param number $day 从0开始 0：第一天
      * @return array
      */
-    public function computeLesson($lesson)
+    public function computeLesson($lesson, $day)
     {
         $isDoneNum = 0;
-        $lastInfo = [];
+        $dayInfo = [];
         foreach ($lesson as $item) {
-            foreach ($item as $_info) {
+            foreach ($item as $key => $_info) {
                 // 是否是已学习
                 if ($_info['status'] == Constants::STUDENT_LESSON_SCHEDULE_STATUS_DONE) {
                     $isDoneNum++;
-                    $lastInfo = $_info;
+                    // 指定天的练琴信息
+                    if ($day == $key) {
+                        $dayInfo = $_info;
+                    }
                 }
             }
         }
-        return [$isDoneNum, $lastInfo];
+        return [$isDoneNum, $dayInfo];
     }
 }
 
