@@ -454,6 +454,7 @@ class RealActivityService
             'create_time' => $time,
             'update_time' => $time,
             'task_num' => $taskNum,
+            'last_upload_time' => $time,
         ];
         if (empty($uploadRecord) || $uploadRecord['verify_status'] == RealSharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
             $res = RealSharePosterModel::insertRecord($data);

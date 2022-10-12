@@ -8,6 +8,7 @@
 
 namespace App\Services\SyncTableData;
 
+use App\Controllers\OrgWeb\RealSharePoster;
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\RedisDB;
@@ -15,6 +16,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\OperationActivityModel;
+use App\Models\RealSharePosterModel;
 use App\Models\RealSharePosterPassAwardRuleModel;
 use App\Models\RealStudentCanJoinActivityHistoryModel;
 use App\Models\RealStudentCanJoinActivityModel;
@@ -420,6 +422,7 @@ class RealUpdateStudentCanJoinActivityService
      * @param $studentUuid
      * @param $activityId
      * @param $verifyStatus
+     * @param $uploadTime
      * @return bool
      */
     public static function updateLastVerifyStatus($studentUuid, $activityId, $verifyStatus)
@@ -430,6 +433,9 @@ class RealUpdateStudentCanJoinActivityService
         } elseif ($verifyStatus == RealStudentCanJoinActivityModel::LAST_VERIFY_STATUS_WAIT) {
             // 更新用户活动最后一次参与状态 - 待审核
             RealStudentCanJoinActivityModel::updateLastVerifyStatusIsWait($studentUuid, $activityId);
+        } elseif ($verifyStatus == RealStudentCanJoinActivityModel::LAST_VERIFY_STATUS_QUALIFIED) {
+            // 更新用户活动最后一次参与状态 - 通过
+            RealStudentCanJoinActivityModel::updateLastVerifyStatusIsPass($studentUuid, $activityId);
         }
         return true;
     }

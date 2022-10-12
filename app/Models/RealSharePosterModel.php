@@ -88,6 +88,7 @@ class RealSharePosterModel extends Model
             sp.create_time,
             sp.type,
             sp.task_num,
+            sp.last_upload_time,
             ac.name activity_name,
             s.uuid,
             s.mobile

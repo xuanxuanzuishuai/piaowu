@@ -168,10 +168,9 @@ class SyncBinlogTableDataService
         // 解析数据
         $pikaObj = Pika::initObj($params);
         $rowsData = $pikaObj->getRows();
-
         // 正式课 + 价格>0 + 非免费课包
         if ($rowsData['business_type'] == ErpStudentCourseModel::BUSINESS_TYPE_NORMAL) {
-            $businessTag = json_encode($rowsData['business_tag'], true);
+            $businessTag = json_decode($rowsData['business_tag'], true);
             if (!empty($businessTag['price']) && !isset($businessTag['free_type'])) {
                 // 开始更新学生转介绍关系统计数据
                 (new RealUpdateStudentCanJoinActivityService(['student_id' => $rowsData['student_id']]))->run();

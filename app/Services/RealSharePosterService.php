@@ -293,7 +293,14 @@ class RealSharePosterService
                 ];
 
             // 修改参与进度
-            RealStudentCanJoinActivityModel::updateLastVerifyStatusIsPass($poster['uuid'], $poster['activity_id']);
+            $lastUploadRecord = RealSharePosterModel::getRecord([
+                'student_id' => $poster['student_id'],
+                'activity_id' => $poster['activity_id'],
+                'last_upload_time[>]' => $poster['last_upload_time'],
+            ]);
+            if (empty($lastUploadRecord)) {
+                RealUpdateStudentCanJoinActivityService::updateLastVerifyStatus($poster['uuid'], $poster['activity_id'], RealSharePosterModel::VERIFY_STATUS_QUALIFIED);
+            }
         }
         //批量投递消费消费队列
         QueueService::addRealUserPosterAward($sendAwardQueueData);
@@ -365,7 +372,14 @@ class RealSharePosterService
             ]);
         }
         // 更新用户活动最后一次参与状态
-        RealUpdateStudentCanJoinActivityService::updateLastVerifyStatus($poster['uuid'], $poster['activity_id'], $status);
+        $lastUploadRecord = RealSharePosterModel::getRecord([
+            'student_id' => $poster['student_id'],
+            'activity_id' => $poster['activity_id'],
+            'last_upload_time[>]' => $poster['last_upload_time'],
+        ]);
+        if (empty($lastUploadRecord)) {
+            RealUpdateStudentCanJoinActivityService::updateLastVerifyStatus($poster['uuid'], $poster['activity_id'], $status);
+        }
         return $update > 0;
     }
 
