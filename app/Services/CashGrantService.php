@@ -721,7 +721,7 @@ class CashGrantService
             //请求微信发红包
             $resultData = $weChatPackage->sendPackage($mchBillNo, $actName, $sendName, $userOpenid, $awardAmount, $wishing, 'redPack');
             SimpleLogger::info('CashGrantService::sendWeChatRedPack wechat send red pack result data:', [$userOpenid, $resultData]);
-            $status = trim($resultData['result_code']) == WeChatAwardCashDealModel::RESULT_SUCCESS_CODE ? OperationActivityModel::SEND_AWARD_STATUS_GIVE : OperationActivityModel::SEND_AWARD_STATUS_GIVE_FAIL;
+            $status = trim($resultData['result_code']) == WeChatAwardCashDealModel::RESULT_SUCCESS_CODE ? OperationActivityModel::SEND_AWARD_STATUS_GIVE_ING : OperationActivityModel::SEND_AWARD_STATUS_GIVE_FAIL;
             $resultCode = trim($resultData['err_code']);
         } else {
             SimpleLogger::info('sendClockActivityReadPack now env not satisfy', [$userOpenid, $mchBillNo]);

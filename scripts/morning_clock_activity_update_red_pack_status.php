@@ -43,7 +43,7 @@ class ScriptMorningClockActivityUpdateRedPackStatus
         // 记录日志
         SimpleLogger::info("ScriptMorningClockActivityUpdateRedPackStatus_start", []);
         // 获取十天内有更新的发放中的红包记录
-        $recordList = MorningWechatAwardCashDealModel::getStatusIsGiveingRedPack(Util::TIMESTAMP_ONEDAY * 10);
+        $recordList = MorningWechatAwardCashDealModel::getStatusIsGivingRedPack(Util::TIMESTAMP_ONEDAY * 10);
         if (empty($recordList)) {
             return true;
         }

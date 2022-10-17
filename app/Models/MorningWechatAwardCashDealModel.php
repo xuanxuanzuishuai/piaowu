@@ -6,7 +6,6 @@
 namespace App\Models;
 
 
-
 class MorningWechatAwardCashDealModel extends Model
 {
     public static $table = 'morning_wechat_award_cash_deal';
@@ -16,13 +15,13 @@ class MorningWechatAwardCashDealModel extends Model
      * @param $updateTimeStart
      * @return array
      */
-    public static function getStatusIsGiveingRedPack($updateTimeStart = 0)
+    public static function getStatusIsGivingRedPack($updateTimeStart = 0)
     {
         $where = [
-            'status' => MorningTaskAwardModel::STATUS_GIVE_ING,
+            'status' => [MorningTaskAwardModel::STATUS_GIVE_ING, MorningTaskAwardModel::STATUS_GIVE, MorningTaskAwardModel::STATUS_GIVE_FAIL],
         ];
         if (!empty($updateTimeStart)) {
-            $where['update_time[>=]'] = $updateTimeStart;
+            $where['update_time[>=]'] = time() - $updateTimeStart;
         }
         $list = self::getRecords($where);
         return is_array($list) ? $list : [];

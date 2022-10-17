@@ -18,6 +18,7 @@ use App\Models\MorningSharePosterModel;
 use App\Models\MorningTaskAwardModel;
 use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
+use App\Services\DictService;
 use App\Services\Queue\MorningReferralTopic;
 use App\Services\Queue\QueueService;
 use App\Services\SharePosterService;
@@ -214,8 +215,9 @@ class MorningClockActivityManageService
                     'activity_type' => MorningTaskAwardModel::MORNING_ACTIVITY_TYPE,
                     'status'        => OperationActivityModel::SEND_AWARD_STATUS_WAITING,
                     'award_type'    => ErpEventTaskModel::AWARD_TYPE_CASH,
-                    'award_amount'  => $currentAward['award_amount'],
+                    'award_amount'  => Util::fen($currentAward['award_amount']),
                     'task_num'      => $currentAward['task_num'],
+                    'award_node'    => $currentAward['node'],
                     'award_from'    => $poster['id'],
                     'create_time'   => $now,
                     'operator_id'   => $params['employee_id'],
@@ -268,12 +270,33 @@ class MorningClockActivityManageService
         $awardTaskNode = array_column($awardNode, null, 'day');
         // 获取参与记录
         $recordCount = MorningSharePosterModel::getFiveDayUploadSharePosterList($studentUuid, [SharePosterModel::VERIFY_STATUS_QUALIFIED]);
-        $currentAwardNode = $awardTaskNode[count($recordCount)];
+        $currentAwardNode = $awardTaskNode[count($recordCount) + 1] ?? [];
         if (empty($currentAwardNode)) {
             return [];
         }
         $returnData['task_num'] = $currentAwardNode['day'];
         $returnData['award_amount'] = $currentAwardNode['award_num'];
         return $returnData;
+    }
+
+    /**
+     * 获取清晨截图审核和红包审核列表的下拉选项
+     * @param array $dict
+     * @return array
+     */
+    public static function dropDown(array $dict)
+    {
+        $list = [];
+        if (empty($dict)) {
+            return $list;
+        }
+        foreach ($dict as $_type => $_keyCodeStr) {
+            $_keyCodeList = explode(',', $_keyCodeStr);
+            foreach ($_keyCodeList as $_keyCode) {
+                $_data = DictService::getKeyValue($_type, $_keyCode) ?? '';
+                $list[$_type][$_keyCode] = array_column(json_decode($_data, true), 'name', 'node');
+            }
+        }
+        return $list;
     }
 }

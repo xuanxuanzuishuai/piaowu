@@ -464,6 +464,7 @@ class OrgWebRouter extends RouterBase
         '/op_web/morning/share_poster_list'     => ['method' => ['get'], 'call' => MorningClockActivity::class . ':getSharePosterList'],
         '/op_web/morning/share_poster_approved' => ['method' => ['post'], 'call' => MorningClockActivity::class . ':sharePosterApproved'],
         '/op_web/morning/share_poster_refused'  => ['method' => ['post'], 'call' => MorningClockActivity::class . ':sharePosterRefused'],
+        '/op_web/morning/drop-down'             => ['method' => ['get'], 'call' => MorningClockActivity::class . ':dropDown'],
         // 清晨5日打卡 - 红包管理
         '/op_web/morning/red_pack_list'          => ['method' => ['get'], 'call' => MorningTaskAwardActivityManage::class . ':redPackList'],
         '/op_web/morning/red_pack_update_status' => ['method' => ['post'], 'call' => MorningTaskAwardActivityManage::class . ':redPackUpdateStatus'],

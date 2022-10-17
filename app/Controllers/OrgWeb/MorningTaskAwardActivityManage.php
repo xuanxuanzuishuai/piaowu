@@ -31,7 +31,6 @@ class MorningTaskAwardActivityManage extends ControllerBase
         $params = $request->getParams();
         $params['employee_id'] = self::getEmployeeId();
         try {
-            list($params['page'], $params['count']) = Util::formatPageCount($params);
             $data = MorningTaskAwardActivityManageService::redPackList($params);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
@@ -49,9 +48,9 @@ class MorningTaskAwardActivityManage extends ControllerBase
     {
         $rules = [
             [
-                'key'        => 'poster_ids',
+                'key'        => 'ids',
                 'type'       => 'required',
-                'error_code' => 'poster_ids_is_required',
+                'error_code' => 'ids_is_required',
             ],
         ];
         //验证合法性

@@ -18,7 +18,7 @@ class MorningClockActivity extends ControllerBase
 {
     /**
      * 获取截图审核列表
-     * @param Request  $request
+     * @param Request $request
      * @param Response $response
      * @return Response
      */
@@ -37,7 +37,7 @@ class MorningClockActivity extends ControllerBase
 
     /**
      * 审核拒绝
-     * @param Request  $request
+     * @param Request $request
      * @param Response $response
      * @return Response
      */
@@ -68,7 +68,7 @@ class MorningClockActivity extends ControllerBase
 
     /**
      * 审核通过
-     * @param Request  $request
+     * @param Request $request
      * @param Response $response
      * @return Response
      */
@@ -94,5 +94,35 @@ class MorningClockActivity extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
         return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 获取清晨截图审核和红包审核列表的下拉选项
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function dropDown(Request $request, Response $response)
+    {
+
+        $rules = [
+            [
+                'key'        => 'dp',
+                'type'       => 'required',
+                'error_code' => 'dp_type_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        try {
+            $data = MorningClockActivityManageService::dropDown($params['dp']);
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
+        }
+        return HttpHelper::buildResponse($response, $data);
     }
 }

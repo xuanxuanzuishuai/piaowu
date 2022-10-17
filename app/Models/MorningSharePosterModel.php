@@ -75,7 +75,6 @@ class MorningSharePosterModel extends Model
         if (empty($total[0]['count'])) {
             return [0, []];
         }
-        // TODO qingfeng.lian ,这里需要链表查询学生名称和手机号
         $offset = ($page - 1) * $count;
         !empty($params['LIMIT']) && $where .= " LIMIT " . $offset . "," . $count;
         $where .= " ORDER BY " . $order;

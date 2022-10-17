@@ -22,7 +22,7 @@ class WechatOpenidListModel extends Model
     public static function subscribe($openid, $appid)
     {
         $time = time();
-        $hasSub = self::getRecords(['openid' => $openid, 'appid' => $appid]);
+        $hasSub = self::getRecord(['openid' => $openid, 'appid' => $appid]);
         if (empty($hasSub)) {
             self::insertRecord([
                 'openid'              => $openid,
@@ -58,5 +58,24 @@ class WechatOpenidListModel extends Model
                 'appid'  => $appid,
             ]
         );
+    }
+
+    /**
+     * 获取关注列表
+     * @param $openid
+     * @param $appid
+     * @return array
+     */
+    public static function getSubList($openid, $appid)
+    {
+        if (empty($openid)) {
+            return [];
+        }
+        $list = self::getRecords([
+            'openid' => $openid,
+            'appid'  => $appid,
+            'status' => self::SUBSCRIBE_WE_CHAT,
+        ]);
+        return is_array($list) ? $list : [];
     }
 }

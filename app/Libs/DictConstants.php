@@ -395,7 +395,6 @@ class DictConstants {
     const WECHAT_MCHID = [
         'type' => 'wechat_mchid',
         'keys' => [
-            '26_1',
             '8_1'
         ]
     ];
@@ -403,7 +402,6 @@ class DictConstants {
     const WECHAT_API_CERT_PEM = [
         'type' => 'wechat_api_cert_pem',
         'keys' => [
-            '26_1',
             '8_1'
         ]
     ];
@@ -411,7 +409,6 @@ class DictConstants {
     const WECHAT_API_KEY_PEM = [
         'type' => 'wechat_api_key_pem',
         'keys' => [
-            '26_1',
             '8_1'
         ]
     ];
