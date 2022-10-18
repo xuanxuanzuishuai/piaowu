@@ -53,6 +53,7 @@ class LimitTimeActivityClientService
 		$data['student_info'] = [
 			'nickname'   => $serviceObj->studentInfo['name'],
 			'headimgurl' => $serviceObj->studentInfo['thumb_oss_url'],
+            'uuid'       => $serviceObj->studentInfo['uuid'],
 		];
 		$data['is_have_activity'] = true;
 		//检测当前活动的任务列表是否都已完成
