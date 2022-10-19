@@ -39,8 +39,9 @@ class MorningTaskAwardModel extends Model
     }
 
     /**
+     * 更新奖励状态为不发放
      * @param $taskAwardId
-     * @param $reason
+     * @param $remark
      * @param $operatorId
      * @return void
      */
@@ -121,7 +122,7 @@ class MorningTaskAwardModel extends Model
                 'award.remark',
                 'award.create_time',
                 'e.name (operator_name)',
-                'result_codes' => Medoo::raw("ifnull(group_concat(wacd.id),'')"),
+                'result_codes' => Medoo::raw("ifnull(group_concat(wacd.result_code),'')"),
             ], $fields),
             $where
         );

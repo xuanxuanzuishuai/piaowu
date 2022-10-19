@@ -81,7 +81,7 @@ class MorningSharePosterModel extends Model
 
         $fields = implode(',', array_merge([
             'sp.*',
-            'e.name as verify_user_name',
+            "ifnull(e.name, '') verify_user_name",
         ], $fields));
         $list = $db->queryAll("SELECT " . $fields . " FROM " . $spTable .
             " left join " . $eTable . " on sp.verify_user=e.id" .

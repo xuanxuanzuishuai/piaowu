@@ -94,7 +94,7 @@ class MorningTaskAwardActivityManageService
         // 如果存在学员手机号用手机号换取uuid
         if (!empty($params['student_mobile'])) {
             $mobileInfo = ErpStudentModel::getUserInfoByMobiles([$params['student_mobile']], Constants::QC_APP_ID);
-            // 手机号不存在，则结果必然是空
+            // 手机号不存在，则结果必然为空
             if (empty($mobileInfo)) {
                 return $returnData;
             }
@@ -171,14 +171,7 @@ class MorningTaskAwardActivityManageService
             // 补全发放信息 - 发放金额
             $item['award_amount'] = Util::yuan($item['award_amount']);
             // 补全发放信息 - 发放微信返回结果
-            $getCodesZh = function ($resultCodes){
-                $resultCodeArr = explode(',', $resultCodes);
-                foreach ($resultCodeArr as $_code) {
-                    $_codeZh[] = WeChatAwardCashDealModel::getWeChatErrorMsg($_code);
-                }
-                return !empty($_codeZh) ? $_codeZh : [];
-            };
-            $item['result_codes_zh'] = $getCodesZh($item['result_codes']);
+            $item['result_codes_zh'] = WeChatAwardCashDealModel::batchGetWeChatErrorMsg($item['result_codes']);
             // 操作时间
             $item['format_operate_time'] = date("Y-m-d H:i:s", $item['operate_time']);
             // 创建时间

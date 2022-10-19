@@ -270,12 +270,13 @@ class MorningClockActivityManageService
         $awardTaskNode = array_column($awardNode, null, 'day');
         // 获取参与记录
         $recordCount = MorningSharePosterModel::getFiveDayUploadSharePosterList($studentUuid, [SharePosterModel::VERIFY_STATUS_QUALIFIED]);
-        $currentAwardNode = $awardTaskNode[count($recordCount) + 1] ?? [];
+        $currentAwardNode = $awardTaskNode[count($recordCount)] ?? [];
         if (empty($currentAwardNode)) {
             return [];
         }
         $returnData['task_num'] = $currentAwardNode['day'];
         $returnData['award_amount'] = $currentAwardNode['award_num'];
+        $returnData['node'] = count($recordCount);
         return $returnData;
     }
 

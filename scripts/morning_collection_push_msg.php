@@ -16,13 +16,13 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
-use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Morning;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dawn\DawnCollectionModel;
 use App\Models\Dawn\DawnLeadsModel;
+use App\Services\MorningReferral\MorningClockActivityService;
 use App\Services\Queue\MorningReferralTopic;
 use App\Services\Queue\QueueService;
 use Dotenv\Dotenv;
@@ -100,7 +100,7 @@ class ScriptMorningCollectionPushMsg
     {
         $list = DawnCollectionModel::getRecords([
             'teaching_start_time[<=]' => $this->time,
-            'teaching_end_time[>]'    => $this->time
+            'teaching_end_time[>]'    => $this->time,
         ]);
         return is_array($list) ? $list : [];
     }
@@ -182,7 +182,7 @@ class ScriptMorningCollectionPushMsg
                     continue;
                 }
                 // 计算曲目信息
-                list($isDoneNum, $dayLesson) = $this->computeLesson($studentLesson[$_stu['uuid']], $day);
+                list($isDoneNum, $dayLesson) = MorningClockActivityService::getLessonDoneStep($studentLesson[$_stu['uuid']], $day);
                 if (empty($dayLesson)) {
                     continue;
                 }
@@ -208,31 +208,6 @@ class ScriptMorningCollectionPushMsg
             $this->computeDefTime();
         }
         return true;
-    }
-
-    /**
-     * 计算曲目中有多少个已学习的课程，以及最后完成的课程信息
-     * @param $lesson
-     * @param number $day 从0开始 0：第一天
-     * @return array
-     */
-    public function computeLesson($lesson, $day)
-    {
-        $isDoneNum = 0;
-        $dayInfo = [];
-        foreach ($lesson as $item) {
-            foreach ($item as $key => $_info) {
-                // 是否是已学习
-                if ($_info['status'] == Constants::STUDENT_LESSON_SCHEDULE_STATUS_DONE) {
-                    $isDoneNum++;
-                    // 指定天的练琴信息
-                    if ($day == $key) {
-                        $dayInfo = $_info;
-                    }
-                }
-            }
-        }
-        return [$isDoneNum, $dayInfo];
     }
 }
 

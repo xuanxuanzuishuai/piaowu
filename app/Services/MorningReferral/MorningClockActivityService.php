@@ -45,6 +45,7 @@ class MorningClockActivityService
     public static function getClockActivityIndex($studentUuid)
     {
         $returnData = [
+            'uuid'       => $studentUuid,
             'is_join'    => false, // false：不能参与，
             'award_node' => [],  // 奖励节点
             'node_list'  => [],  // 节点
@@ -86,7 +87,7 @@ class MorningClockActivityService
          */
         // 获取学生练习信息
         $lessonList = (new Morning())->getStudentLessonSchedule([$studentUuid])[$studentUuid] ?? [];
-        $lessonData = self::getLessonDoneStep($lessonList);
+        list($lessonData) = self::getLessonDoneStep($lessonList);
         // 获取参与记录
         $sharePosterList = MorningSharePosterModel::getFiveDayUploadSharePosterList($studentUuid);
         $sharePosterTask = [];
@@ -117,7 +118,7 @@ class MorningClockActivityService
                 // 是否已完成曲目的练习
                 $dayInfo = $lessonData[$_node - 1] ?? [];
                 $isDone = $dayInfo['status'] == Constants::STATUS_TRUE;
-                if ($unlockTimeUnix >= time()) {
+                if ($unlockTimeUnix <= time()) {
                     // 已解锁， 未完成练琴显示未达标
                     if ($isDone) {
                         $tmpData['task_status'] = self::TASK_STATUS_PROGRESS;
@@ -132,18 +133,17 @@ class MorningClockActivityService
     }
 
     /**
-     * 获取5日打卡活动奖励发放状态
+     * 获取5日打卡活动奖励用户侧展示的发放状态
+     * 已发放待领取、发放成功 展示 已发放，其他状态都是待发放
      * @param $status
      * @return int
      */
     public static function getCollectionActivityStatus($status)
     {
-        if (in_array($status, [OperationActivityModel::SEND_AWARD_STATUS_WAITING, OperationActivityModel::SEND_AWARD_STATUS_GIVE_FAIL])) {
-            $sendStatus = OperationActivityModel::SEND_AWARD_STATUS_WAITING;
-        } elseif (in_array($status, [OperationActivityModel::SEND_AWARD_STATUS_GIVE, OperationActivityModel::SEND_AWARD_STATUS_GIVE_ING,])) {
+        if (in_array($status, [OperationActivityModel::SEND_AWARD_STATUS_GIVE, OperationActivityModel::SEND_AWARD_STATUS_GIVE_ING,])) {
             $sendStatus = OperationActivityModel::SEND_AWARD_STATUS_GIVE;
         } else {
-            $sendStatus = OperationActivityModel::SEND_AWARD_STATUS_NOT_OWN;
+            $sendStatus = OperationActivityModel::SEND_AWARD_STATUS_WAITING;
         }
         return $sendStatus;
     }
@@ -151,18 +151,23 @@ class MorningClockActivityService
     /**
      * 获取课程曲目完成情况
      * @param $lessonList
+     * @param null $day  第几天从1开始
      * @return array
      */
-    public static function getLessonDoneStep($lessonList)
+    public static function getLessonDoneStep($lessonList, $day = 0)
     {
         $returnData = [];
-        if (empty($lessonList)) return $returnData;
+        $dayLesson = [];
+        if (empty($lessonList)) return [];
         foreach ($lessonList as $lesson) {
             foreach ($lesson as $key => $item) {
                 // 课程状态 1 待解锁 2 待学习 3 已学习 6 学习中
-                if ($item['status'] == 2) {
+                if ($item['status'] == Constants::STUDENT_LESSON_SCHEDULE_STATUS_DONE) {
                     // 曲目完成练习
                     $_tmpData['status'] = Constants::STATUS_TRUE;
+                    if ($key == $day-1) {
+                        $dayLesson = $item;
+                    }
                 } else {
                     $_tmpData['status'] = Constants::STATUS_FALSE;
                 }
@@ -172,7 +177,7 @@ class MorningClockActivityService
             // 只处理一个课程的练习曲目， 如果后续增加了练琴曲目，那再调整
             break;
         }
-        return $returnData;
+        return [$returnData, $dayLesson];
     }
 
     /**
@@ -238,15 +243,14 @@ class MorningClockActivityService
         }
         // 班级是否解锁
         $unlockTimeUnix = $collInfo['teaching_start_time'] + Util::TIMESTAMP_ONEDAY * $day;
-        if ($unlockTimeUnix < time()) {
+        if ($unlockTimeUnix > time()) {
             throw new RunTimeException(['morning_clock_activity_day_unlock']);
         }
         // 获取学生练习信息
         $lessonList = (new Morning())->getStudentLessonSchedule([$studentUuid])[$studentUuid] ?? [];
-        $lessonData = self::getLessonDoneStep($lessonList);
-        $dayLesson = $lessonData[$day - 1] ?? [];
+        list(,$dayLesson) = self::getLessonDoneStep($lessonList, $day);
         // 学生是否练琴
-        if (empty($dayLesson) || $dayLesson['status'] != Constants::STATUS_TRUE) {
+        if (empty($dayLesson) || $dayLesson['status'] != Constants::STUDENT_LESSON_SCHEDULE_STATUS_DONE) {
             throw new RunTimeException(['morning_clock_activity_no_play']);
         }
     }
@@ -364,8 +368,7 @@ class MorningClockActivityService
         if (empty($data)) {
             // 获取学生练琴曲目信息
             $studentLesson = (new Morning())->getStudentLessonSchedule([$studentUuid])[$studentUuid] ?? [];
-            $studentLesson = array_shift($studentLesson);
-            $dayLesson = $studentLesson[$day] ?? [];
+            list(, $dayLesson) = self::getLessonDoneStep($studentLesson, $day);
             if (!empty($dayLesson)) {
                 $data = [
                     'lesson' => [
@@ -474,7 +477,7 @@ class MorningClockActivityService
                 }
             }
             // 发送红包
-            list($status, $resultCode) = CashGrantService::sendWeChatRedPack($userOpenid, $mchBillNo, $awardData['award_amount'], 'REFERRER_PIC_WORD');
+            list($status, $resultCode) = CashGrantService::sendWeChatRedPack($userOpenid, $mchBillNo, $awardData['award_amount'], 'morning_clock_in_red_pack');
             // 更新发放结果
             $updateResData = [
                 'mch_billno'  => $mchBillNo,

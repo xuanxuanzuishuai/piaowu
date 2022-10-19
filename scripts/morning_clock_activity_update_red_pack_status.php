@@ -63,7 +63,6 @@ class ScriptMorningClockActivityUpdateRedPackStatus
             // 更新发放结果
             $res = MorningTaskAwardModel::updateRecord($item['task_award_id'], [
                 'status'      => $wechatData['status'],
-                'reason'      => $wechatData['result_code'],
                 'update_time' => $now,
             ]);
             SimpleLogger::info('ScriptMorningClockActivityUpdateRedPackStatus upload task award status', [$res, $item['task_award_id'], $wechatData]);

@@ -166,4 +166,21 @@ class WeChatAwardCashDealModel extends Model
         }
         return $msg;
     }
+
+    /**
+     * 批量获取多个错误码
+     * @param string $resultCodes
+     * @return array
+     */
+    public static function batchGetWeChatErrorMsg(string $resultCodes)
+    {
+        if (empty($resultCodes)) {
+            return [];
+        }
+        $resultCodeArr = explode(',', $resultCodes);
+        foreach ($resultCodeArr as $_code) {
+            $_codeZh[] = self::getWeChatErrorMsg($_code);
+        }
+        return !empty($_codeZh) ? $_codeZh : [];
+    }
 }
