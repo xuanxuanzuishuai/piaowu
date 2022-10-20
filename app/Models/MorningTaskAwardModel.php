@@ -66,6 +66,25 @@ class MorningTaskAwardModel extends Model
     }
 
     /**
+     * 更新奖励状态为发放中
+     * @param $taskAwardId
+     * @param $remark
+     * @param $operatorId
+     * @return void
+     */
+    public static function updateStatusIsGiving($taskAwardId, $remark, $operatorId)
+    {
+        $now = time();
+        self::updateRecord($taskAwardId, [
+            'status'       => self::STATUS_GIVE_ING,
+            'remark'       => $remark,
+            'operator_id'  => $operatorId,
+            'operate_time' => $now,
+            'update_time'  => $now,
+        ]);
+    }
+
+    /**
      * 搜索列表
      * @param $params
      * @param $page

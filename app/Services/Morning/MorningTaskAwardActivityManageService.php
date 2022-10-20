@@ -57,7 +57,7 @@ class MorningTaskAwardActivityManageService
         }
 
         foreach ($awardRecordList as $item) {
-            if (!in_array($item['status'], [MorningTaskAwardModel::STATUS_GIVE, MorningTaskAwardModel::STATUS_GIVE_ING])) {
+            if (in_array($item['status'], [MorningTaskAwardModel::STATUS_GIVE, MorningTaskAwardModel::STATUS_GIVE_ING])) {
                 // 发放成功或发放中待领取的不能更新操作状态
                 continue;
             }
@@ -67,6 +67,8 @@ class MorningTaskAwardActivityManageService
                     'task_award_id'          => $item['id'],
                     'share_poster_record_id' => $item['award_from'],
                 ];
+                // 更新为待发放
+                MorningTaskAwardModel::updateStatusIsGiving($item['id'], $remark, $operationId);
                 QueueService::morningPushMsg(MorningReferralTopic::EVENT_CLOCK_ACTIVITY_SEND_RED_PACK, $_sendData, rand(0, 5));
             } else {
                 // 更新为不发放
@@ -153,9 +155,9 @@ class MorningTaskAwardActivityManageService
         $awardNode = array_column($awardNode, null, 'node');
         foreach ($list as &$item) {
             // 补全学生信息
-            $mobile = $uuidNames[$item['student_uuid']]['mobile'] ?? '';
+            $mobile = $uuidMobiles[$item['student_uuid']]['mobile'] ?? '';
             $item['mobile'] = !empty($mobile) ? Util::hideUserMobile($mobile) : '';
-            $item['status_name'] = $uuidMobiles[$item['student_uuid']]['name'] ?? '';
+            $item['student_name'] = $uuidNames[$item['student_uuid']]['name'] ?? '';
             // 补全微信信息 - 是否绑定微信
             $item['bind_wechat_status'] = DssUserWeiXinModel::STATUS_DISABLE;
             $openid = $uuidOpenIds[$item['student_uuid']]['open_id'] ?? '';

@@ -7,6 +7,7 @@ namespace App\Services\Morning;
 
 use App\Libs\AliOSS;
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MorningDictConstants;
 use App\Libs\SimpleLogger;
@@ -294,6 +295,13 @@ class MorningClockActivityManageService
         foreach ($dict as $_type => $_keyCodeStr) {
             $_keyCodeList = explode(',', $_keyCodeStr);
             foreach ($_keyCodeList as $_keyCode) {
+                // 红包发放状态
+                if ($_keyCode == 'send_award_status') {
+                    $_tmp = DictConstants::getSet(DictConstants::SEND_AWARD_STATUS);
+                    unset($_tmp[OperationActivityModel::SEND_AWARD_STATUS_NOT_OWN]);
+                    $list[$_type][$_keyCode] = $_tmp;
+                    continue;
+                }
                 $_data = DictService::getKeyValue($_type, $_keyCode) ?? '';
                 $list[$_type][$_keyCode] = array_column(json_decode($_data, true), 'name', 'node');
             }

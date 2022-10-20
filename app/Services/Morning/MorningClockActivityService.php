@@ -44,11 +44,13 @@ class MorningClockActivityService
      */
     public static function getClockActivityIndex($studentUuid)
     {
+        $userInfo = (new Morning())->getStudentList([$studentUuid])[0] ?? [];
         $returnData = [
             'uuid'       => $studentUuid,
             'is_join'    => false, // false：不能参与，
             'award_node' => [],  // 奖励节点
             'node_list'  => [],  // 节点
+            'user_status_zh' => MorningDictConstants::get(MorningDictConstants::MORNING_STUDENT_STATUS, $userInfo['status']) ?? '',
         ];
         // 学生线索信息
         $leadsInfo = DawnLeadsModel::getRecord(['uuid' => $studentUuid]);
