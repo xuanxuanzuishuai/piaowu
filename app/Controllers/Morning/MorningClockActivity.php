@@ -3,13 +3,13 @@
  * 清晨转介绍接口
  */
 
-namespace App\Controllers\MorningReferral;
+namespace App\Controllers\Morning;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
-use App\Services\MorningReferral\MorningClockActivityService;
+use App\Services\Morning\MorningClockActivityService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;

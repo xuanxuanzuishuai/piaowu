@@ -5,7 +5,7 @@
 
 namespace App\Routers;
 
-use App\Controllers\MorningReferral\MorningClockActivity;
+use App\Controllers\Morning\MorningClockActivity;
 use App\Middleware\MorningAuthMiddleWare;
 
 class MorningRouter extends RouterBase

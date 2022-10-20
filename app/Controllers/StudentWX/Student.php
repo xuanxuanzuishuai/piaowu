@@ -24,7 +24,7 @@ use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\DictModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
-use App\Services\MorningReferral\MorningReferralStatisticsService;
+use App\Services\Morning\MorningReferralStatisticsService;
 use App\Services\Queue\Track\DeviceCommonTrackTopic;
 use App\Services\ReferralActivityService;
 use App\Services\ReferralService;

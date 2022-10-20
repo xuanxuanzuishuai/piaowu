@@ -3,7 +3,7 @@
  * 清晨5日打卡活动
  */
 
-namespace App\Services\MorningReferral;
+namespace App\Services\Morning;
 
 use App\Libs\AliOSS;
 use App\Libs\Constants;

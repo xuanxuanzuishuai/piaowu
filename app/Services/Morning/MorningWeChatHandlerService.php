@@ -5,7 +5,7 @@
  * date: 2022/7/29
  */
 
-namespace App\Services\MorningReferral;
+namespace App\Services\Morning;
 
 
 use App\Libs\Constants;

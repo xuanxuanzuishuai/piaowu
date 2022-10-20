@@ -9,7 +9,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
-use App\Services\MorningReferral\MorningClockActivityManageService;
+use App\Services\Morning\MorningClockActivityManageService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;

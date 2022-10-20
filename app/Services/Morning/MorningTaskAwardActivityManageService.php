@@ -5,7 +5,7 @@
  * date: 2022/10/14
  */
 
-namespace App\Services\MorningReferral;
+namespace App\Services\Morning;
 
 use App\Libs\Constants;
 use App\Libs\Exceptions\RunTimeException;
@@ -112,8 +112,8 @@ class MorningTaskAwardActivityManageService
             if (empty($searchUUID)) return $returnData;
         }
         $where['student_uuid'] = $searchUUID;
-        !empty($params['create_time_start']) && $where['create_time_start'] = strtotime($params['create_time_start']);
-        !empty($params['create_time_end']) && $where['create_time_end'] = strtotime($params['create_time_end']);
+        !empty($params['create_time_start']) && $where['create_time_start'] = $params['create_time_start'];
+        !empty($params['create_time_end']) && $where['create_time_end'] = $params['create_time_end'];
         !empty($params['status']) && $where['status'] = $params['status'];
         !empty($params['operator_name']) && $where['operator_name'] = $params['operator_name'];
         !empty($params['operate_time_start']) && $where['operate_time_start'] = $params['operate_time_start'];

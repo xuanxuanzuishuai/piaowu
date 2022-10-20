@@ -22,7 +22,7 @@ use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\Dawn\DawnCollectionModel;
 use App\Models\Dawn\DawnLeadsModel;
-use App\Services\MorningReferral\MorningClockActivityService;
+use App\Services\Morning\MorningClockActivityService;
 use App\Services\Queue\MorningReferralTopic;
 use App\Services\Queue\QueueService;
 use Dotenv\Dotenv;

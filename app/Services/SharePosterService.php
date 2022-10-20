@@ -51,7 +51,6 @@ class SharePosterService
     public static $whiteUUIDList = [];  // 白名单用户列表
 
     /**
-     * TODO qingfeng.lian  delete function
      * 上传截图列表
      * @param $params
      * @return array

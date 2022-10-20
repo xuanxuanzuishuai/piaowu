@@ -12,7 +12,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
-use App\Services\MorningReferral\MorningTaskAwardActivityManageService;
+use App\Services\Morning\MorningTaskAwardActivityManageService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;

@@ -7,7 +7,7 @@ namespace App\Controllers\StudentWX;
 
 use App\Controllers\ControllerBase;
 use App\Libs\SimpleLogger;
-use App\Services\MorningReferral\MorningWeChatHandlerService;
+use App\Services\Morning\MorningWeChatHandlerService;
 use Exception;
 use Slim\Http\Request;
 use Slim\Http\Response;

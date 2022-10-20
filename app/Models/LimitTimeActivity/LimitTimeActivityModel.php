@@ -239,7 +239,6 @@ class LimitTimeActivityModel extends Model
             SimpleLogger::info("$logTitle insert limit time activity award rule version config fail", ['data' => $awardRuleVersionData]);
             throw new RunTimeException(["update activity fail"]);
         }
-        // TODO qingfeng.lian 当海报有变化时 考虑通知日志系统
         $db->commit();
         return true;
     }

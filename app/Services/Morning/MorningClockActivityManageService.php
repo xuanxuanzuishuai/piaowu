@@ -3,7 +3,7 @@
  * 后台管理
  */
 
-namespace App\Services\MorningReferral;
+namespace App\Services\Morning;
 
 use App\Libs\AliOSS;
 use App\Libs\Constants;
@@ -61,8 +61,8 @@ class MorningClockActivityManageService
             if (empty($searchUUID)) return $returnData;
         }
         $where['student_uuid'] = $searchUUID;
-        !empty($params['create_time_start']) && $where['create_time_start'] = strtotime($params['create_time_start']);
-        !empty($params['create_time_end']) && $where['create_time_end'] = strtotime($params['create_time_end']);
+        !empty($params['create_time_start']) && $where['create_time_start'] = $params['create_time_start'];
+        !empty($params['create_time_end']) && $where['create_time_end'] = $params['create_time_end'];
         !empty($params['task_num']) && $where['task_num'] = $params['task_num'];
         !empty($params['verify_status']) && $where['verify_status'] = $params['verify_status'];
 
@@ -105,7 +105,7 @@ class MorningClockActivityManageService
         }
         $info['img_url'] = AliOSS::replaceCdnDomainForDss($info['image_path']);
         $info['mobile'] = !empty($studentInfo['mobile']) ? Util::hideUserMobile($studentInfo['mobile']) : '';
-        $info['status_name'] = $studentInfo['name'] ?? '';
+        $info['student_name'] = $studentInfo['name'] ?? '';
         $info['format_verify_reason'] = SharePosterService::reasonToStr($info['verify_reason']);
         !empty($info['remark']) && $info['format_verify_reason'][] = $info['remark'];
 
