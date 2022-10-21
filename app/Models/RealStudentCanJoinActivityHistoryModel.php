@@ -9,11 +9,6 @@ class RealStudentCanJoinActivityHistoryModel extends Model
 {
     public static $table = "real_student_can_join_activity_history";
 
-    const JOIN_PROGRESS_NO        = 1; // 未参与
-    const JOIN_PROGRESS_NO_FINISH = 2; // 参与未完成
-    const JOIN_PROGRESS_FINISH    = 3; // 已完成
-    const JOIN_PROGRESS_STOP      = 4; // 资格终止
-
     /**
      * 停止学生周周领奖活动参与进度
      * @param $where
@@ -112,13 +107,14 @@ class RealStudentCanJoinActivityHistoryModel extends Model
     public static function stopJoinWeekActivity($studentUuid, $activityId, $runTime = 0)
     {
         $where = [
-            'student_uuid' => $studentUuid,
-            'activity_id'  => $activityId,
+            'student_uuid'     => $studentUuid,
+            'activity_id'      => $activityId,
+            'join_progress[!]' => Constants::STUDENT_WEEK_PROGRESS_COMPLETE_JOIN,
         ];
         if (!empty($runTime)) $where['update_time[<]'] = $runTime;
         self::batchUpdateRecord(
             [
-                'join_progress' => self::JOIN_PROGRESS_STOP,
+                'join_progress' => Constants::STUDENT_WEEK_PROGRESS_STOP_JOIN,
             ],
             $where
         );
@@ -134,7 +130,7 @@ class RealStudentCanJoinActivityHistoryModel extends Model
     {
         $returnData = [
             // 'total_count' => 0,
-            'list'        => [],
+            'list' => [],
         ];
         $where = [
             'student_uuid' => $studentUuid,
@@ -165,12 +161,12 @@ class RealStudentCanJoinActivityHistoryModel extends Model
     {
         if ($joinActivityInfo['join_num'] > 0) {
             if ($joinActivityInfo['task_num'] == $joinActivityInfo['join_num']) {
-                $joinProgress = self::JOIN_PROGRESS_FINISH;
+                $joinProgress = Constants::STUDENT_WEEK_PROGRESS_COMPLETE_JOIN;
             } else {
-                $joinProgress = self::JOIN_PROGRESS_NO_FINISH;
+                $joinProgress = Constants::STUDENT_WEEK_PROGRESS_JOINING;
             }
         } else {
-            $joinProgress = self::JOIN_PROGRESS_NO;
+            $joinProgress = Constants::STUDENT_WEEK_PROGRESS_NO_JOIN;
         }
         return $joinProgress;
     }

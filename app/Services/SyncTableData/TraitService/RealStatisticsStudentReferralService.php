@@ -75,10 +75,14 @@ class RealStatisticsStudentReferralService extends StatisticsStudentReferralBase
             $whiteInfo = json_decode($item['scene_value'], true);
             foreach ($whiteInfo['order_courses'] as $_course) {
                 foreach ($_course as $_w) {
+                    // 要求付费用户 - 非付费的移除
                     if ($isPayStatus == Constants::REAL_COURSE_YES_PAY && empty($_w['pay_source'])) {
+                        unset($list[$key]);
                         continue;
                     }
+                    // 要求有剩余数量 - 没有剩余数量移除
                     if ($isRemainNum && empty($_w['remain_num'])) {
+                        unset($list[$key]);
                         continue;
                     }
                     // 是付费，并且有课程数

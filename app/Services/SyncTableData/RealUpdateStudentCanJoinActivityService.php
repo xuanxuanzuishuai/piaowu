@@ -215,8 +215,9 @@ class RealUpdateStudentCanJoinActivityService
             if (!empty($this->weekActivityList)) {
                 $activityIds = array_column($this->weekActivityList, 'activity_id');
                 RealStudentCanJoinActivityHistoryModel::stopStudentJoinWeekActivityProgress([
-                    'activity_id'    => $activityIds,
-                    'update_time[<]' => $this->runTime,
+                    'activity_id'      => $activityIds,
+                    'update_time[<]'   => $this->runTime,
+                    'join_progress[!]' => Constants::STUDENT_WEEK_PROGRESS_COMPLETE_JOIN,
                 ]);
             }
         } catch (RunTimeException $exception) {
@@ -244,8 +245,9 @@ class RealUpdateStudentCanJoinActivityService
             if (!empty($this->weekActivityList)) {
                 $activityIds = array_column($this->weekActivityList, 'activity_id');
                 RealStudentCanJoinActivityHistoryModel::stopStudentJoinWeekActivityProgress([
-                    'activity_id'    => $activityIds,
-                    'update_time[<]' => $this->runTime,
+                    'activity_id'      => $activityIds,
+                    'update_time[<]'   => $this->runTime,
+                    'join_progress[!]' => Constants::STUDENT_WEEK_PROGRESS_COMPLETE_JOIN,
                 ]);
             }
         } catch (RunTimeException $exception) {
@@ -419,23 +421,27 @@ class RealUpdateStudentCanJoinActivityService
 
     /**
      * 更新最后上传截图审核状态
+     * 如果不是最后一次上传的记录，不更新审核状态
      * @param $studentUuid
      * @param $activityId
      * @param $verifyStatus
-     * @param $uploadTime
+     * @param $lastUploadRecord
      * @return bool
      */
-    public static function updateLastVerifyStatus($studentUuid, $activityId, $verifyStatus)
+    public static function updateLastVerifyStatus($studentUuid, $activityId, $verifyStatus, $lastUploadRecord)
     {
-        // 更新用户活动最后一次参与状态 - 拒绝
-        if ($verifyStatus == RealStudentCanJoinActivityModel::LAST_VERIFY_STATUS_UNQUALIFIED) {
-            RealStudentCanJoinActivityModel::updateLastVerifyStatusIsRefused($studentUuid, $activityId);
-        } elseif ($verifyStatus == RealStudentCanJoinActivityModel::LAST_VERIFY_STATUS_WAIT) {
-            // 更新用户活动最后一次参与状态 - 待审核
-            RealStudentCanJoinActivityModel::updateLastVerifyStatusIsWait($studentUuid, $activityId);
-        } elseif ($verifyStatus == RealStudentCanJoinActivityModel::LAST_VERIFY_STATUS_QUALIFIED) {
+        // 更新用户活动最后一次参与状态 - 拒绝 - 如果不是最后一次上传的记录，不更新审核状态
+        if (empty($lastUploadRecord)) {
+            if ($verifyStatus == RealStudentCanJoinActivityModel::LAST_VERIFY_STATUS_UNQUALIFIED) {
+                RealStudentCanJoinActivityModel::updateLastVerifyStatusIsRefused($studentUuid, $activityId);
+            } elseif ($verifyStatus == RealStudentCanJoinActivityModel::LAST_VERIFY_STATUS_WAIT) {
+                // 更新用户活动最后一次参与状态 - 待审核
+                RealStudentCanJoinActivityModel::updateLastVerifyStatusIsWait($studentUuid, $activityId);
+            }
+        }
+        if ($verifyStatus == RealStudentCanJoinActivityModel::LAST_VERIFY_STATUS_QUALIFIED) {
             // 更新用户活动最后一次参与状态 - 通过
-            RealStudentCanJoinActivityModel::updateLastVerifyStatusIsPass($studentUuid, $activityId);
+            RealStudentCanJoinActivityModel::updateLastVerifyStatusIsPass($studentUuid, $activityId, [], empty($lastUploadRecord));
         }
         return true;
     }

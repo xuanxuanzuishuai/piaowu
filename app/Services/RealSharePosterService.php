@@ -298,9 +298,7 @@ class RealSharePosterService
                 'activity_id' => $poster['activity_id'],
                 'last_upload_time[>]' => $poster['last_upload_time'],
             ]);
-            if (empty($lastUploadRecord)) {
-                RealUpdateStudentCanJoinActivityService::updateLastVerifyStatus($poster['uuid'], $poster['activity_id'], RealSharePosterModel::VERIFY_STATUS_QUALIFIED);
-            }
+            RealUpdateStudentCanJoinActivityService::updateLastVerifyStatus($poster['uuid'], $poster['activity_id'], RealSharePosterModel::VERIFY_STATUS_QUALIFIED, $lastUploadRecord);
         }
         //批量投递消费消费队列
         QueueService::addRealUserPosterAward($sendAwardQueueData);
@@ -377,9 +375,7 @@ class RealSharePosterService
             'activity_id' => $poster['activity_id'],
             'last_upload_time[>]' => $poster['last_upload_time'],
         ]);
-        if (empty($lastUploadRecord)) {
-            RealUpdateStudentCanJoinActivityService::updateLastVerifyStatus($poster['uuid'], $poster['activity_id'], $status);
-        }
+        RealUpdateStudentCanJoinActivityService::updateLastVerifyStatus($poster['uuid'], $poster['activity_id'], $status, $lastUploadRecord);
         return $update > 0;
     }
 
