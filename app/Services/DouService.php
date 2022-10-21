@@ -112,7 +112,7 @@ class DouService
             'p_id'             => $msg['p_id'],
             's_ids'            => $msg['s_ids'],
             'xyz_receiver_msg' => $msg['xyz_receiver_msg'],
-            'guany_product_id' => $msg['guany_product_id'],
+            'guanyi_product_id' => $msg['guanyi_product_id'],
             'update_time'      => time(),
             'order_metadata'   => [
                 'channel_id' => $channelId,
