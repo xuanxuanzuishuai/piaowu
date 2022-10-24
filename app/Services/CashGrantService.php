@@ -28,6 +28,7 @@ use App\Models\UserPointsExchangeOrderModel;
 use App\Models\UserPointsExchangeOrderWxModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Libs\WeChatPackage;
+use App\Models\WechatOpenidListModel;
 use App\Services\Queue\RedPackTopic;
 use App\Services\Queue\QueueService;
 
@@ -711,6 +712,16 @@ class CashGrantService
      */
     public static function sendWeChatRedPack($userOpenid, $mchBillNo, $awardAmount, $keyCode)
     {
+        if (empty($userOpenid)) {
+            //未绑定微信不发送
+            return [OperationActivityModel::SEND_AWARD_STATUS_GIVE_FAIL, WeChatAwardCashDealModel::NOT_BIND_WE_CHAT];
+        } else {
+            // 是否关注
+            $subInfo = WechatOpenidListModel::getSubList($userOpenid, Constants::QC_APP_ID);
+            if (empty($subInfo)) {
+                return [OperationActivityModel::SEND_AWARD_STATUS_GIVE_FAIL, WeChatAwardCashDealModel::NOT_SUBSCRIBE_WE_CHAT];
+            }
+        }
         // 如果pre环境需要特定的user_id才可以接收
         if (
             ($_ENV['ENV_NAME'] == 'pre' && in_array($userOpenid, explode(',', RedisDB::getConn()->get('red_pack_white_open_id'))))

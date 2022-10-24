@@ -18,6 +18,7 @@ use App\Models\Erp\ErpUserEventTaskAwardModel;
 use App\Models\Morning\MorningStudentModel;
 use App\Models\Morning\MorningUserWechatModel;
 use App\Models\MorningTaskAwardModel;
+use App\Models\MorningWechatAwardCashDealModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Models\WechatOpenidListModel;
 use App\Services\Queue\MorningReferralTopic;
@@ -120,6 +121,7 @@ class MorningTaskAwardActivityManageService
         !empty($params['operator_name']) && $where['operator_name'] = $params['operator_name'];
         !empty($params['operate_time_start']) && $where['operate_time_start'] = $params['operate_time_start'];
         !empty($params['operate_time_end']) && $where['operate_time_end'] = $params['operate_time_end'];
+        !empty($params['award_node']) && $where['award_node'] = $params['award_node'];
         // 获取总数和列表
         list($returnData['total_count'], $returnData['list']) = MorningTaskAwardModel::searchList($where, $page, $count);
         $returnData['list'] = self::formatTaskAwardInfo($returnData['list']);
@@ -137,6 +139,7 @@ class MorningTaskAwardActivityManageService
             return [];
         }
         $uuids = array_column($list, 'student_uuid');
+        $awardRecordIds = array_column($list, 'id');
         // 获取学生手机号
         $uuidMobiles = ErpStudentModel::getRecords(['uuid' => $uuids], ['uuid', 'mobile']);
         $uuidMobiles = !empty($uuidMobiles) ? array_column($uuidMobiles, null, 'uuid') : [];
@@ -153,6 +156,15 @@ class MorningTaskAwardActivityManageService
         // 奖励节点
         $awardNode = json_decode(MorningDictConstants::get(MorningDictConstants::MORNING_FIVE_DAY_ACTIVITY, '5day_award_node'), true);
         $awardNode = array_column($awardNode, null, 'node');
+        // 获取发奖记录
+        $wechatRecordList = MorningWechatAwardCashDealModel::getRecords(['task_award_id'=>$awardRecordIds]);
+        $wechatRecordTaskIdList = [];
+        if (!empty($wechatRecordList)) {
+            foreach ($wechatRecordList as $_wr) {
+                $wechatRecordTaskIdList[$_wr['task_award_id']]['result_codes'][] = $_wr['result_code'];
+            }
+            unset($_wr);
+        }
         foreach ($list as &$item) {
             // 补全学生信息
             $mobile = $uuidMobiles[$item['student_uuid']]['mobile'] ?? '';
@@ -173,7 +185,7 @@ class MorningTaskAwardActivityManageService
             // 补全发放信息 - 发放金额
             $item['award_amount'] = Util::yuan($item['award_amount']);
             // 补全发放信息 - 发放微信返回结果
-            $item['result_codes_zh'] = WeChatAwardCashDealModel::batchGetWeChatErrorMsg($item['result_codes']);
+            $item['result_codes_zh'] = WeChatAwardCashDealModel::batchGetWeChatErrorMsg($wechatRecordTaskIdList[$item['id']]['result_codes'] ?? []);
             // 操作时间
             $item['format_operate_time'] = date("Y-m-d H:i:s", $item['operate_time']);
             // 创建时间

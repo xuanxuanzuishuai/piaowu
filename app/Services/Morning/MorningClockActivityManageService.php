@@ -214,7 +214,7 @@ class MorningClockActivityManageService
                 $taskAwardData = [
                     'student_uuid'  => $poster['student_uuid'],
                     'activity_type' => MorningTaskAwardModel::MORNING_ACTIVITY_TYPE,
-                    'status'        => OperationActivityModel::SEND_AWARD_STATUS_WAITING,
+                    'status'        => OperationActivityModel::SEND_AWARD_STATUS_GIVE_ING,
                     'award_type'    => ErpEventTaskModel::AWARD_TYPE_CASH,
                     'award_amount'  => Util::fen($currentAward['award_amount']),
                     'task_num'      => $currentAward['task_num'],

@@ -122,12 +122,10 @@ class MorningTaskAwardModel extends Model
 
         $where['LIMIT'] = [($page - 1) * $count, $count];
         $where['ORDER'] = $order;
-        $where['GROUP'] = ['wacd.task_award_id'];
         $list = $db->select(
             self::$table . ' (award)',
             [
                 '[>]' . EmployeeModel::$table . ' (e)'                      => ['award.operator_id' => 'id'],
-                '[>]' . MorningWechatAwardCashDealModel::$table . ' (wacd)' => ['award.id' => 'task_award_id'],
             ],
             array_merge([
                 "award.id",
@@ -141,7 +139,6 @@ class MorningTaskAwardModel extends Model
                 'award.remark',
                 'award.create_time',
                 'e.name (operator_name)',
-                'result_codes' => Medoo::raw("ifnull(group_concat(wacd.result_code),'')"),
             ], $fields),
             $where
         );
