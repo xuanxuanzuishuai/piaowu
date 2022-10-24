@@ -15,6 +15,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\RC4;
 use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssGiftCodeModel;
@@ -25,6 +26,7 @@ use App\Services\ErpOrderV1Service;
 use App\Services\PayServices;
 use App\Services\Queue\Track\DeviceCommonTrackTopic;
 use App\Services\ShowMiniAppService;
+use App\Services\StudentServices\DssStudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -63,13 +65,19 @@ class Pay extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            $student = DssStudentModel::getRecord(['uuid' => $params['uuid']]);
+            $student = DssStudentModel::getRecord(['id' => $this->ci['referral_miniapp_userid']]);
             if (empty($student)) {
                 throw new RunTimeException(['record_not_found']);
             }
-            $openId = $params['open_id'] ?? '';
+            $openId = $this->ci['referral_miniapp_openid'];
+            $params['open_id'] = $openId; // 为了接口安全，做二次羊毛验证
+            $newPkg = DssStudentService::getStudentRepeatBuyPkg($student['uuid'], $params['pkg'], $params)['new_pkg'];
 
-            $packageId = PayServices::getPackageIDByParameterPkg($params['pkg']);
+            if ($newPkg != $params['pkg']) {
+                Util::sendFsWaringText('貌似有人抓接口，想薅羊毛', $_ENV["FEISHU_DEVELOPMENT_TECHNOLOGY_ALERT_ROBOT"]);
+            }
+
+            $packageId = PayServices::getPackageIDByParameterPkg($newPkg);
             // 微信支付，用code换取支付用公众号的open_id
             if (empty($openId) && !empty($params['wx_code'])) {
                 $appId    = Constants::SMART_APP_ID;
@@ -106,7 +114,7 @@ class Pay extends ControllerBase
             $sceneData = ShowMiniAppService::getSceneData($params['scene'] ?? '');
             if (!empty($orderId)) {
                 if (empty($sceneData)) {
-                    $channel_id = $params['channel_id'] ?? DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT');
+                    $channel_id = !empty($params['channel_id']) ? $params['channel_id'] : DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT');
                     $sceneData  = [
                         'c' => $channel_id,
                     ];
