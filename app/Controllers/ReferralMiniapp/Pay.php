@@ -72,13 +72,17 @@ class Pay extends ControllerBase
             $openId = $this->ci['referral_miniapp_openid'];
             $paramsOpenid = $params['open_id'];
             $params['open_id'] = $openId; // 为了接口安全，做二次羊毛验证
-            $newPkg = DssStudentService::getStudentRepeatBuyPkg($student['uuid'], $params['pkg'], $params)['new_pkg'];
+            list($isRepeat, $oldPkg, $newPkg) = DssStudentService::getStudentRepeatBuyPkg($student['uuid'], $params['pkg'], $params);
 
-            if (($newPkg != $params['pkg']) || ($paramsOpenid != $openId)) {
+            $pkg = $isRepeat == DssStudentService::STUDENT_COLLECT_WOOL_YES ? $newPkg : $oldPkg;
+
+
+
+            if (($oldPkg != $newPkg) || ($paramsOpenid != $openId)) {
                 Util::sendFsWaringText('貌似有人抓接口，想薅羊毛', $_ENV["FEISHU_DEVELOPMENT_TECHNOLOGY_ALERT_ROBOT"]);
             }
 
-            $packageId = PayServices::getPackageIDByParameterPkg($newPkg);
+            $packageId = PayServices::getPackageIDByParameterPkg($pkg);
             // 微信支付，用code换取支付用公众号的open_id
             if (empty($openId) && !empty($params['wx_code'])) {
                 $appId    = Constants::SMART_APP_ID;
@@ -100,7 +104,7 @@ class Pay extends ControllerBase
             $payType      = PayServices::PAY_TYPE_DIRECT;
             $employeeUuid = !empty($params['employee_id']) ? RC4::decrypt($_ENV['COOKIE_SECURITY_KEY'], $params['employee_id']) : null;
             $channel      = !empty($params['channel_id']) ? $params['channel_id'] : ErpPackageV1Model::CHANNEL_WX;
-            if ($params['pkg'] == PayServices::PACKAGE_0) {
+            if ($pkg == PayServices::PACKAGE_0) {
                 // 0元体验课订单
                 $remark = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'zero_order_remark');
                 $res = ErpOrderV1Service::createZeroOrder($packageId, $student, $remark);
