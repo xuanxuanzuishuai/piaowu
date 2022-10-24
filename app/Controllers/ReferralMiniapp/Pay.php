@@ -65,15 +65,16 @@ class Pay extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
         try {
-            $student = DssStudentModel::getRecord(['id' => $this->ci['referral_miniapp_userid']]);
+            $student = DssStudentModel::getRecord(['uuid' => $params['uuid']]);
             if (empty($student)) {
                 throw new RunTimeException(['record_not_found']);
             }
             $openId = $this->ci['referral_miniapp_openid'];
+            $paramsOpenid = $params['open_id'];
             $params['open_id'] = $openId; // 为了接口安全，做二次羊毛验证
             $newPkg = DssStudentService::getStudentRepeatBuyPkg($student['uuid'], $params['pkg'], $params)['new_pkg'];
 
-            if ($newPkg != $params['pkg']) {
+            if (($newPkg != $params['pkg']) || ($paramsOpenid != $openId)) {
                 Util::sendFsWaringText('貌似有人抓接口，想薅羊毛', $_ENV["FEISHU_DEVELOPMENT_TECHNOLOGY_ALERT_ROBOT"]);
             }
 
