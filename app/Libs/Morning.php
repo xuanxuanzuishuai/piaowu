@@ -13,6 +13,9 @@ class Morning
     const STUDENT_UUID           = '/api/student/uuid'; // 获取学生的uuid
     const WECHAT_ACCESS_ATOKEN   = '/api/common/wechat/access_token'; // 获取清晨公众号的access_token
     const MINI_APP_ACCESS_ATOKEN = '/api/common/mini_app/access_token'; // 获取清晨小程序access token
+    // 根据token获取uuid http://yapi.xiaoyezi.com/project/786/interface/api/25157
+    const TOKEN_TO_STUDENT_UUID = '/api/op/student/uuid';
+
 
     private $host;
 
@@ -119,5 +122,28 @@ class Morning
         SimpleLogger::info('getMiniAppAccessToken', [$res]);
         $studentList = !empty($res['data']) ? $res['data'] : [];
         return is_array($studentList) ? $studentList : [];
+    }
+
+    /**
+     * 获取清晨token对应的用户uuid
+     * @param $token
+     * @param $authType
+     * @return array
+     */
+    public function getTokenUuid($token, $authType)
+    {
+        SimpleLogger::info('getTokenUuid params', [$token]);
+        $params = [
+            'token'     => $token,
+            'auth_type' => $authType,
+        ];
+        $res = self::commonAPI(self::TOKEN_TO_STUDENT_UUID, $params, 'POST');
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            SimpleLogger::error('getTokenUuid_error', [$res, $params]);
+            return [];
+        }
+        SimpleLogger::info('getTokenUuid', [$res]);
+        $data = !empty($res['data']) ? $res['data'] : [];
+        return is_array($data) ? $data : [];
     }
 }

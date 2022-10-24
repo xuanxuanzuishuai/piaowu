@@ -6,10 +6,10 @@
  * Time: 6:14 PM
  */
 
-namespace App\Models;
+namespace App\Models\AdTrack;
 
 
-class TrackUserModel extends AdModel
+class RealTrackUserModel extends AdModel
 {
     public static $table = "real_track_user";
 

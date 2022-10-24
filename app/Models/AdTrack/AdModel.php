@@ -7,7 +7,7 @@
  * Time: 上午11:49
  */
 
-namespace App\Models;
+namespace App\Models\AdTrack;
 
 use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
