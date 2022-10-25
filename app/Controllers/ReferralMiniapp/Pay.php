@@ -72,7 +72,7 @@ class Pay extends ControllerBase
             $openId = $this->ci['referral_miniapp_openid'];
             $paramsOpenid = $params['open_id'];
             $params['open_id'] = $openId; // 为了接口安全，做二次羊毛验证
-            list($isRepeat, $oldPkg, $newPkg) = DssStudentService::getStudentRepeatBuyPkg($student['uuid'], $params['pkg'], $params);
+            list($isRepeat, $oldPkg, $newPkg) = array_values(DssStudentService::getStudentRepeatBuyPkg($student['uuid'], $params['pkg'], $params));
 
             $pkg = $isRepeat == DssStudentService::STUDENT_COLLECT_WOOL_YES ? $newPkg : $oldPkg;
 

@@ -710,7 +710,8 @@ class DictConstants {
             'mini_package_id_v1',
             'mini_001_package_id',
             'mini_1_package_id',
-            'package_id_v2'
+            'package_id_v2',
+            'pkg_9_student_is_repeat_new_pkg'
         ]
     ];
     const WEB_STUDENT_CONFIG = [
