@@ -22,9 +22,11 @@ use App\Services\SharePosterService;
 
 class MorningPushMessageService
 {
-    const MORNING_PUSH_USER_ALL    = 1;    // 全部用户
-    const MORNING_PUSH_USER_TRAIL  = 2;    // 清晨体验卡用户
-    const MORNING_PUSH_USER_NORMAL = 3;    // 清晨年卡用户
+    // 推送用户要结合appid进行区分，不同appid下值代表的用户群体是不一样的
+    const MORNING_PUSH_USER_ALL      = 1;    // 清晨非年卡、体验卡用户
+    const MORNING_PUSH_USER_TRAIL    = 2;    // 清晨体验卡用户
+    const MORNING_PUSH_USER_NORMAL   = 3;    // 清晨年卡用户
+    const MORNING_PUSH_USER_CLOCK_IN = 4;    // 清晨体验营打卡返现活动用户
 
     /**
      * 获取目标用户的中文
@@ -47,7 +49,7 @@ class MorningPushMessageService
             $openid = $msgBody['openid'] ?? '';
             $studentName = $msgBody['student_name'] ?? '';
             // 获取推送文案
-            $message = MessagePushRulesModel::getRuleInfoByEnName(Constants::QC_APP_ID, 'morning_clock_in_collection_day1', MessagePushRulesModel::PUSH_TARGET_ALL);
+            $message = MessagePushRulesModel::getRuleInfoByEnName(Constants::QC_APP_ID, 'morning_clock_in_collection_day1', MorningPushMessageService::MORNING_PUSH_USER_CLOCK_IN);
             if (empty($msgBody)) {
                 return;
             }

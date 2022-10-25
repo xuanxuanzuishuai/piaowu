@@ -15,6 +15,7 @@ class MorningDictConstants extends DictConstants
             '1',    // 全部用户
             '2',    // 清晨体验卡用户
             '3',    // 清晨年卡用户
+            '4',    // 清晨体验营打卡返现活动用户
         ]
     ];
 

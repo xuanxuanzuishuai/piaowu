@@ -6,6 +6,7 @@
 namespace App\Models;
 
 use App\Libs\MysqlDB;
+use App\Libs\Util;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
 use Medoo\Medoo;
 
@@ -99,7 +100,7 @@ class MorningTaskAwardModel extends Model
         !empty($params['student_uuid']) && $where['award.student_uuid'] = $params['student_uuid'];
         !empty($params['task_num']) && $where['award.task_num'] = $params['task_num'];
         !empty($params['award_node']) && $where['award.award_node'] = $params['award_node'];
-        !empty($params['status']) && $where['award.status'] = $params['status'];
+        (isset($params['status']) && !Util::emptyExceptZero($params['status'])) && $where['award.status'] = $params['status'];
         !empty($params['operate_time_start']) && $where['award.operate_time[>=]'] = $params['operate_time_start'];
         !empty($params['operate_time_end']) && $where['award.operate_time[<=]'] = $params['operate_time_end'];
         !empty($params['create_time_start']) && $where['award.create_time[>=]'] = $params['create_time_start'];

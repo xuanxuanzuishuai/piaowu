@@ -350,7 +350,7 @@ class MorningClockActivityService
                 $ruleName = 'morning_clock_in_collection_day4';
                 break;
         }
-        $message = MessagePushRulesModel::getRuleInfoByEnName(Constants::QC_APP_ID, $ruleName, MessagePushRulesModel::PUSH_TARGET_ALL);
+        $message = MessagePushRulesModel::getRuleInfoByEnName(Constants::QC_APP_ID, $ruleName, MorningPushMessageService::MORNING_PUSH_USER_CLOCK_IN);
         if (empty($message)) {
             return [];
         }

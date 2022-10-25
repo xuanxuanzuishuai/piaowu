@@ -117,11 +117,11 @@ class MorningTaskAwardActivityManageService
         $where['student_uuid'] = $searchUUID;
         !empty($params['create_time_start']) && $where['create_time_start'] = $params['create_time_start'];
         !empty($params['create_time_end']) && $where['create_time_end'] = $params['create_time_end'];
-        !empty($params['status']) && $where['status'] = $params['status'];
         !empty($params['operator_name']) && $where['operator_name'] = $params['operator_name'];
         !empty($params['operate_time_start']) && $where['operate_time_start'] = $params['operate_time_start'];
         !empty($params['operate_time_end']) && $where['operate_time_end'] = $params['operate_time_end'];
         !empty($params['award_node']) && $where['award_node'] = $params['award_node'];
+        (isset($params['status']) && !Util::emptyExceptZero($params['status'])) && $where['status'] = $params['status'];
         // 获取总数和列表
         list($returnData['total_count'], $returnData['list']) = MorningTaskAwardModel::searchList($where, $page, $count);
         $returnData['list'] = self::formatTaskAwardInfo($returnData['list']);
