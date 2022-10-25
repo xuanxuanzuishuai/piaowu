@@ -33,7 +33,7 @@ $menuList = [
                 [
                     "type" => "view",
                     "name" => "🎁年卡活动",
-                    "url"  => "https://referral.xiaoyezi.com/operation/activity/awards/index?awtype=week&show_activity=true"
+                    "url"  => "https://referral.xiaoyezi.com/operation/activity/awards/index?awtype=week&show_activity=true&123"
                 ],
                 [
                     "type" => "view",
@@ -48,7 +48,14 @@ $menuList = [
                 [
                     "type" => "view",
                     "name" => "🎉加入体验营",
-                    "url"  => "https://referral.xiaoyezi.com/market/landingWechatTab?ad=0&channel_id=1720"
+                    "url"  => "https://mp.weixin.qq.com/s/ECdaIhKD4xqXRaOrQLQiVQ"
+                ],
+                [
+                    "type" => "miniprogram",
+                    "name" => "🍀小叶子家长交流圈",
+                    "url"  => "https://referral.xiaoyezi.com",
+                    "appid" => "wxd0ad7e76d51ae4cc",
+                    "pagepath" => "pages-community/pages/home/index?appId=app0FqOI2L39814&communityId=c_632039ac12f29_2gEXkqxx1789"
                 ]
             ],
         ],
