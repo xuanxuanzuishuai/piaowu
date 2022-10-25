@@ -181,11 +181,6 @@ class MorningLanding extends ControllerBase
         $params = $request->getParams();
         $rules = [
             [
-                'key'        => 'package_id',
-                'type'       => 'required',
-                'error_code' => 'package_id_is_required',
-            ],
-            [
                 'key'        => 'uuid',
                 'type'       => 'required',
                 'error_code' => 'uuid_is_required',

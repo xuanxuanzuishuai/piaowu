@@ -22,7 +22,7 @@ class MorningAuthMiddleWare extends MiddlewareBase
         // 获取header token
         try {
             $tokenHeader = $request->getHeaderLine('token');
-            $authType = $request->getHeaderLine('auth') ?? 1;
+            $authType = $request->getHeaderLine('auth') ?: 1;
             $token = $tokenHeader ?? null;
             if (empty($token)) {
                 throw new RunTimeException(['token_expired']);

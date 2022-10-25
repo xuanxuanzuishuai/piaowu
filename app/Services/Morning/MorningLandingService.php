@@ -66,7 +66,7 @@ class MorningLandingService
         $orderInfo = PurchaseLog::getRecord([
             'app_id'     => Constants::QC_APP_ID,
             'uuid'       => $params['uuid'],
-            'package_id' => $params['package_id'],
+            'order_type' => 1,
         ], ['id', 'order_id']);
 
         if (empty($orderInfo['order_id'])) {
@@ -81,7 +81,7 @@ class MorningLandingService
             'order_id'          => $orderInfo['order_id'],
             'contain_entity'    => $orderKind,
             'address_completed' => $orderRecord['student_addr_id'] ? true : false,
-            'expired'           => self::getTemporaryCode($params['uuid']) ? true : false,
+            'expired'           => self::getTemporaryCode($params['uuid']) ? false : true,
         ];
         return $data ?? [];
     }

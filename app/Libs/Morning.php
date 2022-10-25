@@ -24,11 +24,11 @@ class Morning
         $this->host = DictConstants::get(DictConstants::SERVICE, "morning_host");
     }
 
-    private function commonAPI($api, $data = [], $method = 'GET')
+    private function commonAPI($api, $data = [], $method = 'GET', $header = [])
     {
         try {
             $fullUrl = $this->host . $api;
-            return HttpHelper::requestJson($fullUrl, $data, $method);
+            return HttpHelper::requestJson($fullUrl, $data, $method, $header);
         } catch (\Exception $e) {
             SimpleLogger::error(__FILE__ . ':' . __LINE__, [$e->getMessage()]);
         }
@@ -133,13 +133,13 @@ class Morning
     public function getTokenStudentInfo($token, $auth)
     {
         SimpleLogger::info('getTokenUuid params', [$token]);
-        $params = [
-            'token'     => $token,
-            'auth' => $auth,
+        $header = [
+            'token' => $token,
+            'auth'  => $auth,
         ];
-        $res = self::commonAPI(self::TOKEN_TO_STUDENT_INFO, $params, 'POST');
+        $res = self::commonAPI(self::TOKEN_TO_STUDENT_INFO, [], 'GET', $header);
         if ($res['code'] != Valid::CODE_SUCCESS) {
-            SimpleLogger::error('getTokenUuid_error', [$res, $params]);
+            SimpleLogger::error('getTokenUuid_error', [$res, $header]);
             return [];
         }
         SimpleLogger::info('getTokenUuid', [$res]);
