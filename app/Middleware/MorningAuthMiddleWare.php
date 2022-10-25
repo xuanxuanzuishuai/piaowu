@@ -22,13 +22,13 @@ class MorningAuthMiddleWare extends MiddlewareBase
         // 获取header token
         try {
             $tokenHeader = $request->getHeaderLine('token');
-            $authType = $request->getHeaderLine('auth-type') ?? 'wx';
+            $authType = $request->getHeaderLine('auth') ?? 1;
             $token = $tokenHeader ?? null;
             if (empty($token)) {
                 throw new RunTimeException(['token_expired']);
             }
             // 根据token换取用户的uuid
-            $userInfo = (new Morning())->getTokenUuid($token, $authType);
+            $userInfo = (new Morning())->getTokenStudentInfo($token, $authType);
             if (empty($userInfo) || empty($userInfo['uuid'])) {
                 throw new RunTimeException(['token_expired']);
             }

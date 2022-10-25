@@ -13,8 +13,8 @@ class Morning
     const STUDENT_UUID           = '/api/student/uuid'; // 获取学生的uuid
     const WECHAT_ACCESS_ATOKEN   = '/api/common/wechat/access_token'; // 获取清晨公众号的access_token
     const MINI_APP_ACCESS_ATOKEN = '/api/common/mini_app/access_token'; // 获取清晨小程序access token
-    // 根据token获取uuid http://yapi.xiaoyezi.com/project/786/interface/api/25157
-    const TOKEN_TO_STUDENT_UUID = '/api/op/student/uuid';
+    // 根据token获取uuid http://yapi.sys.xyzops.com/project/786/interface/api/19046
+    const TOKEN_TO_STUDENT_INFO = '/student/student_info';
 
 
     private $host;
@@ -127,17 +127,17 @@ class Morning
     /**
      * 获取清晨token对应的用户uuid
      * @param $token
-     * @param $authType
+     * @param $auth
      * @return array
      */
-    public function getTokenUuid($token, $authType)
+    public function getTokenStudentInfo($token, $auth)
     {
         SimpleLogger::info('getTokenUuid params', [$token]);
         $params = [
             'token'     => $token,
-            'auth_type' => $authType,
+            'auth' => $auth,
         ];
-        $res = self::commonAPI(self::TOKEN_TO_STUDENT_UUID, $params, 'POST');
+        $res = self::commonAPI(self::TOKEN_TO_STUDENT_INFO, $params, 'POST');
         if ($res['code'] != Valid::CODE_SUCCESS) {
             SimpleLogger::error('getTokenUuid_error', [$res, $params]);
             return [];

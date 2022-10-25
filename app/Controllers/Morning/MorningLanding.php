@@ -153,7 +153,7 @@ class MorningLanding extends ControllerBase
             if ($temporaryCode != $params['temporary_code']) {
                 throw new RunTimeException(['save_address_fail']);
             }
-            //加点订单收货地址是否填写
+            //校验订单收货地址是否填写
             $orderRecord = ErpOrderV1Service::getOrderInfo($params['order_id']);
             if (empty($orderRecord['student_addr_id'])) {
                 //保存收货地址
