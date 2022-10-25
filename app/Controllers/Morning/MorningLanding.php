@@ -15,6 +15,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Valid;
 use App\Services\AreaService;
+use App\Services\ErpOrderV1Service;
 use App\Services\Morning\MorningLandingService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -132,6 +133,11 @@ class MorningLanding extends ControllerBase
                 'key'        => 'order_id',
                 'type'       => 'required',
                 'error_code' => 'order_id_is_required',
+            ],
+            [
+                'key'        => 'temporary_code',
+                'type'       => 'required',
+                'error_code' => 'temporary_code_is_required',
             ]
         ];
 
@@ -142,12 +148,21 @@ class MorningLanding extends ControllerBase
         }
 
         try {
-            //保存收货地址
-            $addressId = MorningLandingService::modifyAddress($params);
-            //通知ERP发货
-            MorningLandingService::updateOrderAddress($params['order_id'], $addressId);
-            //移除临时码
-            MorningLandingService::removeTemporaryCode($params['uuid']);
+            //校验唯一码是否有效
+            $temporaryCode = MorningLandingService::getTemporaryCode($params['uuid']);
+            if ($temporaryCode != $params['temporary_code']) {
+                throw new RunTimeException(['save_address_fail']);
+            }
+            //加点订单收货地址是否填写
+            $orderRecord = ErpOrderV1Service::getOrderInfo($params['order_id']);
+            if (empty($orderRecord['student_addr_id'])) {
+                //保存收货地址
+                $addressId = MorningLandingService::modifyAddress($params);
+                //通知ERP发货
+                MorningLandingService::updateOrderAddress($params['order_id'], $addressId);
+                //移除临时码
+                MorningLandingService::removeTemporaryCode($params['uuid']);
+            }
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
@@ -193,7 +208,11 @@ class MorningLanding extends ControllerBase
     public function temporaryCode(Request $request, Response $response)
     {
         $uuid = $this->ci['student_uuid'];
-        $data = MorningLandingService::genTemporaryCode($uuid);
+        $temporaryCode = MorningLandingService::genTemporaryCode($uuid);
+        $data = [
+            'uuid'           => $uuid,
+            'temporary_code' => $temporaryCode,
+        ];
         return HttpHelper::buildResponse($response, $data);
     }
 }

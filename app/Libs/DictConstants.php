@@ -1366,6 +1366,14 @@ class DictConstants {
         ]
     ];
 
+    // 清晨landing页配置
+    const QC_LANDING_CONFIG = [
+        'type' => 'qc_landing_config',
+        'keys' => [
+            'collect_address_url',
+        ]
+    ];
+
     /**
      * 单个获取op系统dict配置数据
      * @param $type

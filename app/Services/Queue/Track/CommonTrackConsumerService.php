@@ -21,7 +21,7 @@ class CommonTrackConsumerService extends CommonTrackTopic
     public function purchase($paramsData)
     {
         //投递校验订单地址是否填写的信息
-        MorningLandingService::checkOrderAddress($paramsData['msg_body']['uuid']);
+        MorningLandingService::checkOrderAddress($paramsData['msg_body']['uuid'], $paramsData['msg_body']['package_id']);
 
         //获取学生基础信息
         $studentBaseData = ErpStudentService::getStudentByUuid($paramsData['msg_body']['uuid']);

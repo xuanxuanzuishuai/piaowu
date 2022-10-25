@@ -23,5 +23,6 @@ class SmsInc
     const SMART_PAY_RECALL = 'smart_pay_recall';                            //年卡召回页面按钮点击短信模板ID
     const OP_JOIN_ACTIVITY = 'op_join_activity';                            //参加活动的提醒短信模板ID
     const OP_EXCHANGE_RESULT = 'op_exchange_result';                        //兑课导入结果通知短信
-    const DOU_REPEAT_BUY     = 'dou_repeat_buy';    // 抖店重复购买体验课短息模板id
+    const DOU_REPEAT_BUY = 'dou_repeat_buy';                                // 抖店重复购买体验课短息模板id
+    const QC_LANDING_ADDRESS = 'qc_landing_address';                        // 清晨landing页收货地址填写提醒
 }

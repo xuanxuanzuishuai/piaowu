@@ -44,6 +44,7 @@ use App\Services\DouService;
 use App\Services\ExchangeCourseService;
 use App\Services\MessageService;
 use App\Services\MiniAppQrService;
+use App\Services\Morning\MorningLandingService;
 use App\Services\MorningReferral\MorningWeChatHandlerService;
 use App\Services\PushMessageService;
 use App\Services\QrInfoService;
@@ -366,6 +367,10 @@ class Consumer extends ControllerBase
                     break;
                 case PushMessageTopic::EVENT_TASK_GOLD_LEAF:
                     MessageService::sendTaskGoldLeafMessage($params['msg_body']);
+                    break;
+                case PushMessageTopic::EVENT_QC_LANDING_ORDER_ADDRESS:
+                    MorningLandingService::consumeCheckOrderAddress($params['msg_body']);
+                    break;
             }
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
