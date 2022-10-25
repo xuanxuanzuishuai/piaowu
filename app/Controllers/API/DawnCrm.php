@@ -10,7 +10,7 @@ use App\Controllers\ControllerBase;
 use App\Libs\HttpHelper;
 use App\Libs\SimpleLogger;
 use App\Libs\Valid;
-use App\Services\MorningReferral\MorningReferralStatisticsService;
+use App\Services\Morning\MorningReferralStatisticsService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;

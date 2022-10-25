@@ -7,7 +7,7 @@ namespace App\Controllers\StudentWX;
 
 use App\Controllers\ControllerBase;
 use App\Libs\SimpleLogger;
-use App\Services\MorningReferral\MorningWeChatHandlerService;
+use App\Services\Morning\MorningWeChatHandlerService;
 use Exception;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -71,7 +71,10 @@ class WxCallback extends ControllerBase
                     default:
                         break;
                 }
-            }
+            } elseif ($msgType == "text") {
+				//文本消息
+				$actResult = MorningWeChatHandlerService::text($data);
+			}
         } catch (Exception $e) {
             SimpleLogger::error("weixin callback event controller fail.", [$actResult ?? [], $e->getMessage()]);
         }

@@ -44,7 +44,7 @@ use App\Services\DouService;
 use App\Services\ExchangeCourseService;
 use App\Services\MessageService;
 use App\Services\MiniAppQrService;
-use App\Services\MorningReferral\MorningWeChatHandlerService;
+use App\Services\Morning\MorningWeChatHandlerService;
 use App\Services\PushMessageService;
 use App\Services\QrInfoService;
 use App\Services\Queue\Activity\LimitTimeAward\LimitTimeAwardConsumerService;
