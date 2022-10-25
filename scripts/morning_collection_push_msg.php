@@ -136,8 +136,11 @@ class ScriptMorningCollectionPushMsg
         try {
             // 获取所有班级内的学员
             $studentList = $this->getCollectionStudentList($collectionId);
+            $studentUuids = array_column($studentList, 'uuid');
             // 获取学员对应的openid
-            $studentOpenid = (new Morning())->getStudentOpenidByUuid(array_column($studentList, 'uuid'));
+            $studentOpenid = (new Morning())->getStudentOpenidByUuid($studentUuids);
+            // 获取学生信息
+            $studentData = (new Morning())->getStudentInfo($studentUuids);
             foreach ($studentList as $_stu) {
                 if (empty($studentOpenid[$_stu['uuid']])) {
                     continue;
@@ -148,6 +151,7 @@ class ScriptMorningCollectionPushMsg
                         'collection_id' => $collectionId,
                         'uuid'          => $_stu['uuid'],
                         'openid'        => $studentOpenid[$_stu['uuid']],
+                        'student_name'  => $studentData[$_stu['uuid']]['name'] ?? '',
                     ]
                     , $this->deferSecond
                 );
@@ -177,6 +181,8 @@ class ScriptMorningCollectionPushMsg
             $studentOpenid = (new Morning())->getStudentOpenidByUuid($uuids);
             // 获取学生练琴曲目信息
             $studentLesson = (new Morning())->getStudentLessonSchedule($uuids);
+            // 获取学生信息
+            $studentData = (new Morning())->getStudentInfo($uuids);
             foreach ($studentList as $_stu) {
                 if (empty($studentOpenid[$_stu['uuid']])) {
                     continue;
@@ -191,6 +197,7 @@ class ScriptMorningCollectionPushMsg
                     [
                         'collection_id' => $collectionId,
                         'uuid'          => $_stu['uuid'],
+                        'student_name'  => $studentData[$_stu['uuid']]['name'] ?? '',
                         'openid'        => $studentOpenid[$_stu['uuid']],
                         'day'           => $day,
                         'lesson'        => [

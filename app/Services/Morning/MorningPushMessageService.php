@@ -45,13 +45,17 @@ class MorningPushMessageService
     {
         try {
             $openid = $msgBody['openid'] ?? '';
+            $studentName = $msgBody['student_name'] ?? '';
             // 获取推送文案
-            $message = MessagePushRulesModel::getRuleInfo(Constants::QC_APP_ID, '开班通知', MessagePushRulesModel::PUSH_TARGET_ALL);
+            $message = MessagePushRulesModel::getRuleInfoByEnName(Constants::QC_APP_ID, 'morning_clock_in_collection_day1', MessagePushRulesModel::PUSH_TARGET_ALL);
             if (empty($msgBody)) {
                 return;
             }
             // 发送微信客服消息
-            MessageService::pushCustomMessage($message, ['open_id' => $openid], Constants::QC_APP_ID, Constants::QC_APP_BUSI_WX_ID, false);
+            MessageService::pushCustomMessage($message, [
+                'open_id' => $openid,
+                'name'    => $studentName,
+            ], Constants::QC_APP_ID, Constants::QC_APP_BUSI_WX_ID, false);
         } catch (RunTimeException $e) {
             SimpleLogger::info(['eventWechatPushMsgToStudent_wechat_push_custom_message_error'], [$msgBody, $e->getMessage()]);
         }
@@ -69,10 +73,14 @@ class MorningPushMessageService
             $openid = $msgBody['openid'] ?? '';
             $day = $msgBody['day'] ?? 0;
             $uuid = $msgBody['uuid'] ?? '';
+            $studentName = $msgBody['student_name'] ?? '';
             // 生成海报
             $message = MorningClockActivityService::generateClockActivityRuleMsgPoster($uuid, $day, $msgBody);
             // 发送微信客服消息
-            MessageService::pushCustomMessage($message, ['open_id' => $openid], Constants::QC_APP_ID, Constants::QC_APP_BUSI_WX_ID, false);
+            MessageService::pushCustomMessage($message, [
+                'open_id' => $openid,
+                'name'    => $studentName,
+            ], Constants::QC_APP_ID, Constants::QC_APP_BUSI_WX_ID, false);
         } catch (RunTimeException $e) {
             SimpleLogger::info(['eventWechatPushMsgJoinStudent_wechat_push_custom_message_error'], [$msgBody, $e->getMessage()]);
         }

@@ -99,4 +99,20 @@ class MessagePushRulesModel extends Model
         }
         return is_array($info) ? $info : [];
     }
+
+    /**
+     * 获取规则信息
+     * @param $appId
+     * @param $enName
+     * @param $target
+     * @return array
+     */
+    public static function getRuleInfoByEnName($appId, $enName, $target)
+    {
+        $info = self::getRecord(['app_id' => $appId, 'is_active' => self::STATUS_ENABLE, 'uniq_en_name' => $enName, 'target' => $target]);
+        if (!empty($info)) {
+            $info['content'] = json_decode($info['content'], true);
+        }
+        return is_array($info) ? $info : [];
+    }
 }

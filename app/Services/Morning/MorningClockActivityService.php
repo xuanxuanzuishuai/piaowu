@@ -341,16 +341,16 @@ class MorningClockActivityService
         $ruleName = '';
         switch ($day) {
             case 1:
-                $ruleName = '开班第二天通知';
+                $ruleName = 'morning_clock_in_collection_day2';
                 break;
             case 2:
-                $ruleName = '开班第三天通知';
+                $ruleName = 'morning_clock_in_collection_day3';
                 break;
             case 3:
-                $ruleName = '开班第四天通知';
+                $ruleName = 'morning_clock_in_collection_day4';
                 break;
         }
-        $message = MessagePushRulesModel::getRuleInfo(Constants::QC_APP_ID, $ruleName, MessagePushRulesModel::PUSH_TARGET_ALL);
+        $message = MessagePushRulesModel::getRuleInfoByEnName(Constants::QC_APP_ID, $ruleName, MessagePushRulesModel::PUSH_TARGET_ALL);
         if (empty($message)) {
             return [];
         }
