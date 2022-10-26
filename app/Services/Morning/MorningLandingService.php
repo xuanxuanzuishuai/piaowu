@@ -9,7 +9,6 @@
 namespace App\Services\Morning;
 
 
-use App\Libs\Constants;
 use App\Libs\DictConstants;
 use App\Libs\Dss;
 use App\Libs\Erp;
@@ -63,24 +62,22 @@ class MorningLandingService
     public static function getOrderDetail($params)
     {
         //获取订单信息
-        $orderInfo = PurchaseLog::getRecord([
-            'app_id'     => Constants::QC_APP_ID,
-            'uuid'       => $params['uuid'],
-            'order_type' => 1,
-        ], ['id', 'order_id']);
-
-        if (empty($orderInfo['order_id'])) {
-            throw new RunTimeException(['order_not_exist']);
+        $orderInfo = PurchaseLog::getTrailInfoByUuid($params['uuid']);
+        if (empty($orderInfo) || !str_contains($orderInfo['ref'], 'landingbox01')) {
+            $containEntity = false;
+            $address_completed = false;
+        } else {
+            $containEntity = self::getOrderInfo($orderInfo['order_id']);
+            $orderRecord = ErpOrderV1Service::getOrderInfo($orderInfo['order_id']);
+            $address_completed = $orderRecord['student_addr_id'] ? true : false;
         }
 
         //获取订单地址信息
-        $orderKind = self::getOrderInfo($orderInfo['order_id']);
-        $orderRecord = ErpOrderV1Service::getOrderInfo($orderInfo['order_id']);
         $data = [
             'uuid'              => $params['uuid'],
-            'order_id'          => $orderInfo['order_id'],
-            'contain_entity'    => $orderKind,
-            'address_completed' => $orderRecord['student_addr_id'] ? true : false,
+            'order_id'          => $orderInfo['order_id'] ?? '',
+            'contain_entity'    => $containEntity,
+            'address_completed' => $address_completed,
             'expired'           => self::getTemporaryCode($params['uuid']) ? false : true,
         ];
         return $data ?? [];
