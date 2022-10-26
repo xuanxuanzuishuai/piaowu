@@ -52,16 +52,14 @@ class MorningTaskAwardActivityManageService
             'id'            => $recordIds,
             'activity_type' => $activityType,
             'award_type'    => ErpEventTaskModel::AWARD_TYPE_CASH,
+            // 只读取待发放、发放失败、审核中的记录
+            'status' =>  [MorningTaskAwardModel::STATUS_WAITING, MorningTaskAwardModel::STATUS_REVIEWING, MorningTaskAwardModel::STATUS_GIVE_FAIL],
         ]);
-        if (empty($awardRecordList)) {
-            return true;
+        if (count($recordIds) != count($awardRecordList)) {
+            throw new RunTimeException(['over_max_allow_num']);
         }
 
         foreach ($awardRecordList as $item) {
-            if (in_array($item['status'], [MorningTaskAwardModel::STATUS_GIVE, MorningTaskAwardModel::STATUS_GIVE_ING])) {
-                // 发放成功或发放中待领取的不能更新操作状态
-                continue;
-            }
             if ($status == MorningTaskAwardModel::STATUS_GIVE_ING) {
                 $_sendData = [
                     'student_uuid'           => $item['student_uuid'],

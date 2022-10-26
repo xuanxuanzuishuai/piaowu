@@ -424,8 +424,8 @@ class Student extends ControllerBase
         try {
             $rules = [
                 [
-                    'key' => 'scene',
-                    'type' => 'required',
+                    'key'        => 'scene',
+                    'type'       => 'required',
                     'error_code' => 'record_not_found'
                 ]
             ];
@@ -438,15 +438,28 @@ class Student extends ControllerBase
             if (!empty($sceneData['app_id']) && $sceneData['app_id'] != Constants::QC_APP_ID) {
                 $sceneData = [];
             }
+            if (!empty($sceneData)) {
+                // 获取学生状态
+                $studentInfo = (new Morning())->getStudentList([$sceneData['user_uuid']])[0] ?? [];
+                if (!isset($studentInfo['status'])) {
+                    throw new RunTimeException(['student_status_disable']);
+                }
+                $sceneData['user_current_moment_status'] = $studentInfo['status'];
+            } else {
+                // 如果没有邀请人信息，按照非年卡(注册)计算
+                $sceneData['user_current_moment_status'] = Constants::MORNING_STUDENT_STATUS_REGISTE;
+                $sceneData = [
+                    'user_current_moment_status' => Constants::MORNING_STUDENT_STATUS_REGISTE,
+                    'channel_id'                 => MorningDictConstants::get(MorningDictConstants::MORNING_FIVE_DAY_ACTIVITY, '5day_water_poster_channel') ?? 0,
+                    'user_status'                => Constants::MORNING_STUDENT_STATUS_REGISTE,
+                    'user_current_status'        => Constants::MORNING_STUDENT_STATUS_REGISTE,
+                    'poster_id'                  => 0,
+                    'user_uuid'                  => '',
+                ];
+            }
             // 生成二维码状态对应的中文
             $userStatusList = MorningDictConstants::getSet(MorningDictConstants::MORNING_STUDENT_STATUS);
             $sceneData['user_status_zh'] = $userStatusList[$sceneData['user_status']] ?? '未知-' . $sceneData['user_status'];
-            // 获取学生状态
-            $studentInfo = (new Morning())->getStudentList([$sceneData['user_uuid']])[0] ?? [];
-            if (!isset($studentInfo['status'])) {
-                throw new RunTimeException(['student_status_disable']);
-            }
-            $sceneData['user_current_moment_status'] = $studentInfo['status'];
             // 学生状态对应的产品包id
             $packageInfo = MorningReferralStatisticsService::getStudentStatusMatchPackage($sceneData['user_current_moment_status']);
             $sceneData['package_id'] = intval($packageInfo['package_id'] ?? 0);
