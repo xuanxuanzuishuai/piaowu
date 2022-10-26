@@ -15,6 +15,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\RC4;
 use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use App\Libs\Valid;
 use App\Libs\WeChat\WeChatMiniPro;
 use App\Models\Dss\DssGiftCodeModel;
@@ -25,6 +26,7 @@ use App\Services\ErpOrderV1Service;
 use App\Services\PayServices;
 use App\Services\Queue\Track\DeviceCommonTrackTopic;
 use App\Services\ShowMiniAppService;
+use App\Services\StudentServices\DssStudentService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Http\StatusCode;
@@ -67,9 +69,20 @@ class Pay extends ControllerBase
             if (empty($student)) {
                 throw new RunTimeException(['record_not_found']);
             }
-            $openId = $params['open_id'] ?? '';
+            $openId = $this->ci['referral_miniapp_openid'];
+            $paramsOpenid = $params['open_id'];
+            $params['open_id'] = $openId; // 为了接口安全，做二次羊毛验证
+            list($isRepeat, $oldPkg, $newPkg) = array_values(DssStudentService::getStudentRepeatBuyPkg($student['uuid'], $params['pkg'], $params));
 
-            $packageId = PayServices::getPackageIDByParameterPkg($params['pkg']);
+            $pkg = $isRepeat == DssStudentService::STUDENT_COLLECT_WOOL_YES ? $newPkg : $oldPkg;
+
+
+
+            if (($oldPkg != $newPkg) || ($paramsOpenid != $openId)) {
+                Util::sendFsWaringText('貌似有人抓接口，想薅羊毛', $_ENV["FEISHU_DEVELOPMENT_TECHNOLOGY_ALERT_ROBOT"]);
+            }
+
+            $packageId = PayServices::getPackageIDByParameterPkg($pkg);
             // 微信支付，用code换取支付用公众号的open_id
             if (empty($openId) && !empty($params['wx_code'])) {
                 $appId    = Constants::SMART_APP_ID;
@@ -91,7 +104,7 @@ class Pay extends ControllerBase
             $payType      = PayServices::PAY_TYPE_DIRECT;
             $employeeUuid = !empty($params['employee_id']) ? RC4::decrypt($_ENV['COOKIE_SECURITY_KEY'], $params['employee_id']) : null;
             $channel      = !empty($params['channel_id']) ? $params['channel_id'] : ErpPackageV1Model::CHANNEL_WX;
-            if ($params['pkg'] == PayServices::PACKAGE_0) {
+            if ($pkg == PayServices::PACKAGE_0) {
                 // 0元体验课订单
                 $remark = DictConstants::get(DictConstants::WEB_STUDENT_CONFIG, 'zero_order_remark');
                 $res = ErpOrderV1Service::createZeroOrder($packageId, $student, $remark);
@@ -106,7 +119,7 @@ class Pay extends ControllerBase
             $sceneData = ShowMiniAppService::getSceneData($params['scene'] ?? '');
             if (!empty($orderId)) {
                 if (empty($sceneData)) {
-                    $channel_id = $params['channel_id'] ?? DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT');
+                    $channel_id = !empty($params['channel_id']) ? $params['channel_id'] : DictConstants::get(DictConstants::STUDENT_INVITE_CHANNEL, 'REFERRAL_MINIAPP_STUDENT_INVITE_STUDENT');
                     $sceneData  = [
                         'c' => $channel_id,
                     ];

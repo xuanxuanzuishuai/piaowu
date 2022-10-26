@@ -44,7 +44,8 @@ class ReferralMinAppRouter extends RouterBase
          ],
         '/referral_miniapp/landing/create_bill' => [
             'method'  => ['get', 'post'],
-            'call'    => Pay::class . ':createBill'
+            'call'    => Pay::class . ':createBill',
+            'middles' => [ReferralMinAppAuthCheckMiddleware::class]
         ],
         '/referral_miniapp/landing/buy_name' => [
             'method'  => ['get', 'post'],

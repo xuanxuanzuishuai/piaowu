@@ -1582,7 +1582,7 @@ class Util
         $msg = [
             'msg_type' => 'text',
             'content'  => [
-                'text' => $message ?? '',
+                'text' => $message . '_log_uid_' . SimpleLogger::getWriteUid() ?? '',
             ],
         ];
         HttpHelper::requestJson($webHook, $msg, 'POST');
