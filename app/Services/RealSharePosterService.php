@@ -289,6 +289,13 @@ class RealSharePosterService
                 "check_success_numbers" => $checkSuccessNumbers,
                 'verify_status'=>RealSharePosterModel::VERIFY_STATUS_QUALIFIED,
                 ];
+            // 埋点
+            QueueService::sendSharePosterVerifyStatusData(Constants::REAL_APP_ID, [
+                'uuid'          => $poster['uuid'],
+                'activity_id'   => $poster['activity_id'],
+                'activity_name' => $poster['activity_name'],
+                'verify_time'   => $now,
+            ]);
         }
         //批量投递消费消费队列
         QueueService::addRealUserPosterAward($sendAwardQueueData);

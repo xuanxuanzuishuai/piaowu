@@ -1068,4 +1068,82 @@ class QueueService
     /***********************************************************************/
     /******************** 真人业务的消息队列 end ******************************/
     /***********************************************************************/
+
+    /**
+     * 埋点 - 投递用户属性-转介绍人数（leads数）
+     * @param $appId
+     * @param $list
+     * @param $isClusterModel
+     * @return bool
+     * @throws Exception
+     */
+    public static function sendLeadsData($appId, $list, $isClusterModel = SaBpDataTopic::SINGLE_NSQ)
+    {
+        if ($appId == Constants::SMART_APP_ID) {
+            $everyLeadsKey = 'ai_share_leads';
+        } elseif ($appId == Constants::REAL_APP_ID) {
+            $everyLeadsKey = 'pa_share_leads';
+        } elseif ($appId == Constants::QC_APP_ID) {
+            $everyLeadsKey = 'qc_share_leads';
+        } else {
+            return false;
+        }
+        $topic = new SaBpDataTopic(null, $isClusterModel);
+        foreach ($list as $sv) {
+            $tmpNsqMsgBody = [
+                'uuid_v2' => (string)$sv['uuid'],
+                'every'   => [
+                    $everyLeadsKey => (int)$sv['num']
+                ],
+            ];
+            try {
+                $topic->updateUserProfile($tmpNsqMsgBody)->publish($sv['defer_time'] ?? 0);
+            } catch (Exception $e) {
+                SimpleLogger::error('sendLeadsData error', [
+                    'errMsg'  => $e->getMessage(),
+                    'msgBody' => $tmpNsqMsgBody,
+                ]);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 埋点 - 投递用户周周领奖和限时领奖审核情况
+     * @param $appId
+     * @param $list
+     * @param $isClusterModel
+     * @return bool
+     * @throws Exception
+     */
+    public static function sendSharePosterVerifyStatusData($appId, $list, $isClusterModel = SaBpDataTopic::SINGLE_NSQ)
+    {
+        if ($appId == Constants::SMART_APP_ID) {
+            $eventType = SaBpDataTopic::EVENT_AI_USER_SHARE_POSTER_VERIFY_STATUS;
+        } elseif ($appId == Constants::REAL_APP_ID) {
+            $eventType = SaBpDataTopic::EVENT_REAL_USER_SHARE_POSTER_VERIFY_STATUS;
+        } elseif ($appId == Constants::QC_APP_ID) {
+            $eventType = SaBpDataTopic::EVENT_QC_USER_SHARE_POSTER_VERIFY_STATUS;
+        } else {
+            return false;
+        }
+        $topic = new SaBpDataTopic($isClusterModel);
+        foreach ($list as $sv) {
+            $tmpNsqMsgBody = [
+                'uuid' => $sv['uuid'],
+                'activity_id' => $sv['activity_id'],
+                'activity_name' => $sv['activity_name'],
+                'audit_time' => $sv['verify_time'],
+            ];
+            try {
+                $topic->setPushEventData($eventType, $tmpNsqMsgBody)->publish();
+            } catch (Exception $e) {
+                SimpleLogger::error('sendSharePosterVerifyStatusData error', [
+                    'errMsg'  => $e->getMessage(),
+                    'msgBody' => $tmpNsqMsgBody,
+                ]);
+            }
+        }
+        return true;
+    }
 }

@@ -743,6 +743,13 @@ class LimitTimeActivityAdminService
                         'replace_params' => $replaceParams,
                     ]);
                 }
+                // 埋点
+                QueueService::sendSharePosterVerifyStatusData($appId, [
+                    'uuid'          => $poster['student_uuid'],
+                    'activity_id'   => $poster['activity_id'],
+                    'activity_name' => $activityInfo['activity_name'],
+                    'verify_time'   => $now,
+                ]);
             } finally {
                 $res = Util::unLock($lockKey);
                 SimpleLogger::info("$logTitle try finally lock", [$poster, $lockKey, $res]);

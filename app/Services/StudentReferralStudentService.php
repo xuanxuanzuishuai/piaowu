@@ -9,6 +9,7 @@
 namespace App\Services;
 
 
+use App\Libs\Constants;
 use App\Libs\SimpleLogger;
 use App\Models\Dss\DssGiftCodeModel;
 use App\Models\Dss\DssStudentModel;
@@ -16,6 +17,7 @@ use App\Models\Erp\ErpReferralUserRefereeModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Models\StudentReferralStudentDetailModel;
 use App\Models\StudentReferralStudentStatisticsModel;
+use App\Services\Queue\QueueService;
 
 class StudentReferralStudentService
 {
@@ -147,6 +149,9 @@ class StudentReferralStudentService
                     'create_type' => $qrTicketIdentityData['create_type'] ?? 0
                 ]
             );
+            // 计算推荐人的推荐人数
+            $refList = StudentReferralStudentStatisticsModel::getReferralCount($qrTicketIdentityData['user_id']);
+            QueueService::sendLeadsData(Constants::SMART_APP_ID, $refList);
         } elseif ($bindReferralInfo['last_stage'] < StudentReferralStudentStatisticsModel::STAGE_TRIAL) {
             //修改学生最新的节点数据为体验卡
             $statisticsId = StudentReferralStudentStatisticsModel::updateRecord($bindReferralInfo['id'],

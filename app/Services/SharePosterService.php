@@ -830,6 +830,13 @@ class SharePosterService
                 QueueService::sendUserWxMsg(Constants::SMART_APP_ID, $poster['student_id'], $msgId, [
                     'replace_params' => $replaceParams,
                 ]);
+                // 埋点
+                QueueService::sendSharePosterVerifyStatusData(Constants::SMART_APP_ID, [
+                    'uuid'          => $poster['uuid'],
+                    'activity_id'   => $poster['activity_id'],
+                    'activity_name' => $poster['activity_name'],
+                    'verify_time'   => $now,
+                ]);
             } finally {
                 $res = Util::unLock($lockKey);
                 SimpleLogger::info("DSS_approvalPoster_try_finally_lock", [$poster, $lockKey, $res]);

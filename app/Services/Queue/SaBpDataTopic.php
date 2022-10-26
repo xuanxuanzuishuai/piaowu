@@ -11,6 +11,9 @@ class SaBpDataTopic extends BaseTopic
     const EVENT_POSTER_PUSH = 'ai_server_poster_push';  //海报主动推送
     const EVENT_ASSISTANT_SMS = 'ai_server_push_assistant'; // 给助教推送学员短信
 	const EVENT_UPDATE_USER_PROFILE = 'update_user_profile'; //神策用户属性
+    const EVENT_REAL_USER_SHARE_POSTER_VERIFY_STATUS = 'pa_share_pass_detail'; // 真人分享有奖活动审核情况
+    const EVENT_AI_USER_SHARE_POSTER_VERIFY_STATUS   = 'ai_share_pass_detail'; // 智能分享有奖活动审核情况
+    const EVENT_QC_USER_SHARE_POSTER_VERIFY_STATUS   = 'qc_share_pass_detail'; // 清晨分享有奖活动审核情况
 
     /**
      * SaBpDataTopic constructor.
@@ -53,4 +56,17 @@ class SaBpDataTopic extends BaseTopic
 		$this->setMsgBody($data);
 		return $this;
 	}
+
+    /**
+     * 设置推送event_type和需要发送的数据
+     * @param $eventType
+     * @param $data
+     * @return $this
+     */
+    public function setPushEventData($eventType, $data)
+    {
+        $this->setEventType($eventType);
+        $this->setMsgBody($data);
+        return $this;
+    }
 }

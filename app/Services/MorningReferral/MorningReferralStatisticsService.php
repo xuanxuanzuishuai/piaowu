@@ -19,8 +19,10 @@ use App\Models\MorningReferralDetailModel;
 use App\Models\MorningReferralStatisticsModel;
 use App\Models\QrInfoOpCHModel;
 use App\Models\StudentReferralStudentStatisticsModel;
+use App\Services\Queue\QueueService;
 use App\Services\Queue\Track\CommonTrackConsumerService;
 use Exception;
+use Medoo\Medoo;
 
 class MorningReferralStatisticsService
 {
@@ -106,6 +108,12 @@ class MorningReferralStatisticsService
             SimpleLogger::info("create morning referral create student referral fail", [$createReferral]);
             return false;
         }
+        // 计算推荐人的推荐人数
+        $refList = MorningReferralStatisticsModel::getReferralCountList([$referralInfo['uuid']], [
+            'num' => Medoo::raw('count(*)'),
+            'uuid' => Medoo::raw('referee_student_uuid')
+        ]);
+        QueueService::sendLeadsData(Constants::QC_APP_ID, $refList);
         return true;
     }
 

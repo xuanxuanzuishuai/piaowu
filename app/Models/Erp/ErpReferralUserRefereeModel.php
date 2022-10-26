@@ -84,4 +84,28 @@ class ErpReferralUserRefereeModel extends ErpModel
         ]);
         return is_array($arr) ? $arr : [];
     }
+
+    /**
+     * 批量获取转介绍人数
+     * @param $refereeIds
+     * @param $limit
+     * @return array|null
+     */
+    public static function getReferralCountList($refereeIds, $limit = 0)
+    {
+        $refTable = self::getTableNameWithDb();
+        $stuTable = ErpStudentModel::getTableNameWithDb();
+        $db = self::dbRO();
+        if (is_array($refereeIds)) {
+            $refereeIds = implode(',', $refereeIds);
+        }
+        $sql = 'select s.uuid,count(*) as num from ' . $refTable . ' as r' .
+            ' left join ' . $stuTable . ' as s on s.id=r.referee_id' .
+            ' where app_id='. Constants::REAL_APP_ID;
+        $sql .= " AND `referee_id` IN ({$refereeIds}) GROUP BY `referee_id`";
+        if (!empty($limit)) {
+            $sql .= ' LIMIT 0,' . $limit;
+        }
+        return $db->queryAll($sql);
+    }
 }
