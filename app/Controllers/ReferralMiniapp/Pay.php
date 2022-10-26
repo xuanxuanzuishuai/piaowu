@@ -79,7 +79,7 @@ class Pay extends ControllerBase
 
 
             if (($oldPkg != $newPkg) || ($paramsOpenid != $openId)) {
-                Util::sendFsWaringText('貌似有人抓接口，想薅羊毛', $_ENV["FEISHU_DEVELOPMENT_TECHNOLOGY_ALERT_ROBOT"]);
+                Util::sendFsWaringText('貌似有人抓接口，想薅羊毛_' . $pkg . '_' . $oldPkg . '_' . $newPkg . '_' . $paramsOpenid . '_' . $openId, $_ENV["FEISHU_DEVELOPMENT_TECHNOLOGY_ALERT_ROBOT"]);
             }
 
             $packageId = PayServices::getPackageIDByParameterPkg($pkg);
