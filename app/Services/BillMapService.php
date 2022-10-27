@@ -75,16 +75,18 @@ class BillMapService
             return false;
         }
         $insertData = [
-            'param_map_id' => $paramInfo['qr_id'] ?? $paramInfo['id'],  //qr_id 存在说明是预生成二维码
-            'bill_id' => $parentBillId,
-            'student_id' => $studentId,
-            'user_id' => $paramInfo['user_id'],
-            'create_time' => time(),
-            'type' => $paramInfo['type'],
-            'buy_channel'=>$paramInfo['c'] ?? 0,
-            'is_success' => $isSuccess,
-            'test_name' => $sceneData['test_name'] ?? '',
-            'test_type' => $sceneData['test_type'] ?? '',
+            'param_map_id'  => $paramInfo['qr_id'] ?? $paramInfo['id'],  //qr_id 存在说明是预生成二维码
+            'bill_id'       => $parentBillId,
+            'student_id'    => $studentId,
+            'user_id'       => $paramInfo['user_id'],
+            'create_time'   => time(),
+            'type'          => $paramInfo['type'],
+            'buy_channel'   => $paramInfo['c'] ?? 0,
+            'is_success'    => $isSuccess,
+            'test_name'     => $sceneData['test_name'] ?? '',
+            'test_type'     => $sceneData['test_type'] ?? '',
+            'sale_strategy' => $sceneData['sale_strategy'] ?? '',
+            'sale_from'     => $sceneData['sale_from'] ?? '',
         ];
         if (!empty($openId)) {
             $insertData['open_id'] = $openId;
