@@ -1426,4 +1426,28 @@ class SharePosterService
             "g_nw",
         ];
     }
+
+    /**
+     * 通用的审核原因转字符串
+     * @param $reason
+     * @param string $remark
+     * @return array
+     */
+    public static function formatReason($reason, $remark = '')
+    {
+        if (!empty($reason)) {
+            if (is_string($reason)) {
+                $reason = explode(',', $reason);
+            }
+            $dict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);
+            $str = [];
+            foreach ($reason as $item) {
+                $str[] = $dict[$item] ?? $item;
+            }
+        }
+        if (!empty($remark)) {
+            $str[] = $remark;
+        }
+        return $str ?? [];
+    }
 }

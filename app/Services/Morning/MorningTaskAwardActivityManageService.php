@@ -56,7 +56,7 @@ class MorningTaskAwardActivityManageService
             'status' =>  [MorningTaskAwardModel::STATUS_WAITING, MorningTaskAwardModel::STATUS_REVIEWING, MorningTaskAwardModel::STATUS_GIVE_FAIL],
         ]);
         if (count($recordIds) != count($awardRecordList)) {
-            throw new RunTimeException(['over_max_allow_num']);
+            throw new RunTimeException(['red_pack_only_fail_try_send']);
         }
 
         foreach ($awardRecordList as $item) {

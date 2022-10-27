@@ -586,3 +586,4 @@ win_prize_rule_is_required='中奖规则必填'
 material_send_interval_hours_is_required='实物发货间隔时间必填'
 morning_clock_activity_day_unlock='选择的日期尚未解锁';
 morning_clock_activity_no_play='不练琴是不能打卡的哦';
+red_pack_only_fail_try_send='仅可对发放失败的用户进行手动发放'

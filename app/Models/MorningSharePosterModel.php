@@ -12,10 +12,11 @@ class MorningSharePosterModel extends Model
     /**
      * 获取学生清晨5日打卡上传截图记录
      * @param       $studentUuid
-     * @param       $verifyStatus
+     * @param array $verifyStatus
+     * @param null $taskNum
      * @return array
      */
-    public static function getFiveDayUploadSharePosterList($studentUuid, $verifyStatus = [])
+    public static function getFiveDayUploadSharePosterList($studentUuid, $verifyStatus = [], $taskNum = null)
     {
         $where = [
             'student_uuid'  => $studentUuid,
@@ -25,6 +26,7 @@ class MorningSharePosterModel extends Model
         if (!empty($verifyStatus)) {
             $where['verify_status'] = $verifyStatus;
         }
+        !empty($taskNum) && $where['task_num'] = $taskNum;
         $list = self::getRecords($where);
         return is_array($list) ? $list : [];
     }
@@ -76,9 +78,8 @@ class MorningSharePosterModel extends Model
             return [0, []];
         }
         $offset = ($page - 1) * $count;
-        !empty($params['LIMIT']) && $where .= " LIMIT " . $offset . "," . $count;
         $where .= " ORDER BY " . $order;
-
+        $where .= " LIMIT " . $offset . "," . $count;
         $fields = implode(',', array_merge([
             'sp.*',
             "ifnull(e.name, '') verify_user_name",

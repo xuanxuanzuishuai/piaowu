@@ -107,8 +107,7 @@ class MorningClockActivityManageService
         $info['img_url'] = AliOSS::replaceCdnDomainForDss($info['image_path']);
         $info['mobile'] = !empty($studentInfo['mobile']) ? Util::hideUserMobile($studentInfo['mobile']) : '';
         $info['student_name'] = $studentInfo['name'] ?? '';
-        $info['format_verify_reason'] = SharePosterService::reasonToStr($info['verify_reason']);
-        !empty($info['remark']) && $info['format_verify_reason'][] = $info['remark'];
+        $info['format_verify_reason'] = SharePosterService::formatReason($info['verify_reason'], $info['remark']);
 
         $clockInNode = json_decode(MorningDictConstants::get(MorningDictConstants::MORNING_FIVE_DAY_ACTIVITY, '5day_clock_in_node'), true);
         $info['format_task_num'] = $clockInNode[$info['task_num']]['name'];

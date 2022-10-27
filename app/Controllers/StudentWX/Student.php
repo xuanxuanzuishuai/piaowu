@@ -422,18 +422,7 @@ class Student extends ControllerBase
     public function getSceneInfo(Request $request, Response $response)
     {
         try {
-            $rules = [
-                [
-                    'key'        => 'scene',
-                    'type'       => 'required',
-                    'error_code' => 'record_not_found'
-                ]
-            ];
             $params = $request->getParams();
-            $result = Valid::Validate($params, $rules);
-            if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
-                return $response->withJson($result, StatusCode::HTTP_OK);
-            }
             $sceneData = ShowMiniAppService::getSceneData($params['scene'] ?? '');
             if (!empty($sceneData['app_id']) && $sceneData['app_id'] != Constants::QC_APP_ID) {
                 $sceneData = [];
@@ -450,7 +439,7 @@ class Student extends ControllerBase
                 $sceneData['user_current_moment_status'] = Constants::MORNING_STUDENT_STATUS_REGISTE;
                 $sceneData = [
                     'user_current_moment_status' => Constants::MORNING_STUDENT_STATUS_REGISTE,
-                    'channel_id'                 => MorningDictConstants::get(MorningDictConstants::MORNING_FIVE_DAY_ACTIVITY, '5day_water_poster_channel') ?? 0,
+                    'channel_id'                 => MorningDictConstants::get(MorningDictConstants::MORNING_REFERRAL_CONFIG, 'not_found_referral_channel'),
                     'user_status'                => Constants::MORNING_STUDENT_STATUS_REGISTE,
                     'user_current_status'        => Constants::MORNING_STUDENT_STATUS_REGISTE,
                     'poster_id'                  => 0,

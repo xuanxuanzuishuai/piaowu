@@ -191,18 +191,12 @@ class MorningClockActivityService
      */
     public static function getClockActivityDayDetail($studentUuid, $params)
     {
-        // 检查当天是否已经解锁  有分班，当天练琴完成
-        self::checkClockActivityIsLock($studentUuid, $params['day']);
         // 获取参与记录
-        $sharePosterList = MorningSharePosterModel::getFiveDayUploadSharePosterList($studentUuid);
-        $sharePosterRecord = [];
-        foreach ($sharePosterList as $item) {
-            if ($item['task_num'] == $params['day']) {
-                $sharePosterRecord = $item;
-                break;
-            }
+        $sharePosterRecord = MorningSharePosterModel::getFiveDayUploadSharePosterList($studentUuid, [], $params['day'])[0] ?? 0;
+        if (empty($sharePosterRecord)) {
+            // 检查当天是否已经解锁  有分班，当天练琴完成
+            self::checkClockActivityIsLock($studentUuid, $params['day']);
         }
-        unset($item);
         // 组装数据
         $returnData = [
             'day'                  => $params['day'],
@@ -216,15 +210,14 @@ class MorningClockActivityService
             $returnData['task_status'] = $sharePosterRecord['verify_status'];
             $returnData['share_poster_url'] = AliOSS::replaceCdnDomainForDss($sharePosterRecord['image_path']);
             if ($sharePosterRecord['verify_status'] == SharePosterModel::VERIFY_STATUS_UNQUALIFIED) {
-                $returnData['format_verify_reason'] = SharePosterService::reasonToStr($sharePosterRecord['verify_reason']);
-                !empty($sharePosterRecord['remark']) && $returnData['format_verify_reason'][] = $sharePosterRecord['remark'];
+                $returnData['format_verify_reason'] = SharePosterService::formatReason($sharePosterRecord['verify_reason'], $sharePosterRecord['remark']);
             }
         }
         return $returnData;
     }
 
     /**
-     * 检查打开功能是否解锁
+     * 检查打卡功能是否解锁
      * @param $studentUuid
      * @param $day
      * @return void
@@ -267,8 +260,12 @@ class MorningClockActivityService
     public static function getClockActivityShareWord($studentUuid, $params)
     {
         $day = $params['day'];
-        // 判断是否解锁
-        self::checkClockActivityIsLock($studentUuid, $day);
+        // 获取参与记录
+        $sharePosterRecord = MorningSharePosterModel::getFiveDayUploadSharePosterList($studentUuid, [], $day)[0] ?? [];
+        if (empty($sharePosterRecord)) {
+            // 检查当天是否已经解锁  有分班，当天练琴完成
+            self::checkClockActivityIsLock($studentUuid, $params['day']);
+        }
         // 获取邀请语信息
         $message = self::generateClockActivityRuleMsgPoster($studentUuid, $day);
         if (!empty($message['content']) && is_array($message['content'])) {
@@ -298,8 +295,12 @@ class MorningClockActivityService
     {
         $day = $params['day'];
         $time = time();
-        // 检查是否解锁 - 只有解锁了才可以上传
-        self::checkClockActivityIsLock($studentUuid, $day);
+        // 获取参与记录
+        $sharePosterRecord = MorningSharePosterModel::getFiveDayUploadSharePosterList($studentUuid, [], $day)[0] ?? [];
+        if (empty($sharePosterRecord)) {
+            // 检查当天是否已经解锁  有分班，当天练琴完成
+            self::checkClockActivityIsLock($studentUuid, $params['day']);
+        }
         // 检查是否已经上传
         $record = MorningSharePosterModel::getFiveDayUploadSharePosterByTask($studentUuid, $day)[0] ?? [];
         // 检查上传状态， 审核通过的不能再上传

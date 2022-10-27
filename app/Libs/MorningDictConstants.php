@@ -25,7 +25,8 @@ class MorningDictConstants extends DictConstants
         'keys' => [
             'PUSH_MSG_USER_SHARE_CHANNEL_ID',
             'WX_BIND_USER_URL',
-            'OPEN_ID_NOT_BIND_USER_MSG_ID'
+            'OPEN_ID_NOT_BIND_USER_MSG_ID',
+            'not_found_referral_channel',   // 转介绍小程序没有发现推荐人信息时的兜底渠道id
         ]
     ];
 
