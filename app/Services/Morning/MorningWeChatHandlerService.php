@@ -5,7 +5,7 @@
  * date: 2022/7/29
  */
 
-namespace App\Services\MorningReferral;
+namespace App\Services\Morning;
 
 
 use App\Libs\Constants;
@@ -47,6 +47,22 @@ class MorningWeChatHandlerService
         return '';
     }
 
+	/**
+	 * 文字交互
+	 * @param $data
+	 * @return string
+	 */
+	public static function text($data):string
+	{
+		// 推送关注消息
+		try {
+			(new PushMessageTopic)->pushRuleWx($data, PushMessageTopic::EVENT_WECHAT_MORNING_INTERACTION)->publish();
+		} catch (Exception $e) {
+			SimpleLogger::info('text interaction publish error', [$e->getMessage(), $data]);
+		}
+		return '';
+	}
+
     /**
      * @param $data
      * @return string
@@ -75,68 +91,101 @@ class MorningWeChatHandlerService
      * @throws RunTimeException
      */
     public static function interActionDealMessage($msgBody)
-    {
-        $openId = $msgBody['FromUserName'];
-        $msgType = $msgBody['MsgType'];
-        $event = $msgBody['Event'];
-        $keyEvent = $msgBody['EventKey'];
+	{
+		$data = [
+			'open_id'   => $msgBody['FromUserName'],
+			'app_id'    => Constants::QC_APP_ID,
+			'busi_type' => Constants::QC_APP_BUSI_WX_ID
+		];
+		switch ($msgBody['MsgType']) {
+			case  "text":
+				self::textInterActionDealMessageConsumer($data);
+				break;
+			case  "event":
+				self::eventInterActionDealMessageConsumer($msgBody, $data);
+				break;
+			default:
+		}
+	}
 
-        SimpleLogger::info('interActionDealMessage student weixin event: ', [$msgBody]);
-        if ($msgType != 'event') {
-            return;
-        }
-        // 根据open_id获取用户信息
-        $userUuid = (new Morning())->getStudentUuidByOpenId([$openId])[$openId] ?? '';
-        if (empty($userUuid) && $event != 'subscribe') {
-            // 首关不检查是否绑定账号，非首关检查openid是否绑定了账号，未绑定账号引导绑定
-            self::sendBindAccountMsg($openId);
-            return;
-        }
-        // 根据用户信息获取用户状态
-        $userUuidInfo = (new Morning())->getStudentList([$userUuid])[0] ?? [];
-        // 根据用户状态获取需要推送的消息
-        $ruleStatus = MorningPushMessageService::MORNING_PUSH_USER_ALL;
-        if (in_array($userUuidInfo['status'], [Constants::MORNING_STUDENT_STATUS_NORMAL, Constants::MORNING_STUDENT_STATUS_NORMAL_EXPIRE])) {
-            // 年卡，年卡过期
-            $ruleStatus = MorningPushMessageService::MORNING_PUSH_USER_NORMAL;
-        } elseif (in_array($userUuidInfo['status'], [Constants::MORNING_STUDENT_STATUS_TRAIL, Constants::MORNING_STUDENT_STATUS_TRAIL_EXPIRE])) {
-            // 体验卡，体验卡过期
-            $ruleStatus = MorningPushMessageService::MORNING_PUSH_USER_TRAIL;
-        }
-        // 消息推送体
-        $data = [
-            'open_id'      => $openId,
-            'app_id'       => Constants::QC_APP_ID,
-            'busi_type'    => Constants::QC_APP_BUSI_WX_ID,
-            'student_uuid' => $userUuidInfo['uuid'] ?? '',
-            'user_status'  => $userUuidInfo['status'],
-            'channel_id'   => 0,
-            'rule_info'    => [],
-        ];
-        // 获取规则id
-        if ($event == 'subscribe') {
-            /** 关注 */
-            $data['rule_info'] = MessagePushRulesModel::getRuleInfo(Constants::QC_APP_ID, '首次关注', $ruleStatus);
-        } elseif ($event == 'CLICK') {
-            /** 自定义点击事件 */
-            switch ($keyEvent) {
-                case 'PUSH_MSG_USER_SHARE':
-                    // 推荐好友
-                    $data['rule_info'] = MessagePushRulesModel::getRuleInfo(Constants::QC_APP_ID, '推荐好友', $ruleStatus);
-                    $data['channel_id'] = MorningDictConstants::get(MorningDictConstants::MORNING_REFERRAL_CONFIG, 'PUSH_MSG_USER_SHARE_CHANNEL_ID');
-                    break;
-                default:
-                    break;
-            }
-        }
-        // 推送规则不能为空
-        if (empty($data['rule_info'])) {
-            SimpleLogger::info('interActionDealMessage student weixin rule empty: ', [$msgBody, $data]);
-            return;
-        }
-        $data['rule_info']['content'] = json_decode($data['rule_info']['content'], true);
-        self::sendWxMessage($data);
-    }
+	/**
+	 * 事件交互消费者
+	 * @param array $msgBody
+	 * @param array $data
+	 * @throws RunTimeException
+	 */
+	private static function eventInterActionDealMessageConsumer(array $msgBody, array $data)
+	{
+		$openId = $msgBody['FromUserName'];
+		$msgType = $msgBody['MsgType'];
+		$event = $msgBody['Event'];
+		$keyEvent = $msgBody['EventKey'];
+		SimpleLogger::info('interActionDealMessage student weixin event: ', [$msgBody]);
+		if ($msgType != 'event' && $msgType != "text") {
+			return;
+		}
+		// 根据open_id获取用户信息
+		$userUuid = (new Morning())->getStudentUuidByOpenId([$openId])[$openId] ?? '';
+		if (empty($userUuid) && $event != 'subscribe') {
+			// 首关不检查是否绑定账号，非首关检查openid是否绑定了账号，未绑定账号引导绑定
+			self::sendBindAccountMsg($openId);
+			return;
+		}
+		// 根据用户信息获取用户状态
+		$userUuidInfo = (new Morning())->getStudentList([$userUuid])[0] ?? [];
+		// 根据用户状态获取需要推送的消息
+		$ruleStatus = MorningPushMessageService::MORNING_PUSH_USER_ALL;
+		if (in_array($userUuidInfo['status'], [Constants::MORNING_STUDENT_STATUS_NORMAL, Constants::MORNING_STUDENT_STATUS_NORMAL_EXPIRE])) {
+			// 年卡，年卡过期
+			$ruleStatus = MorningPushMessageService::MORNING_PUSH_USER_NORMAL;
+		} elseif (in_array($userUuidInfo['status'], [Constants::MORNING_STUDENT_STATUS_TRAIL, Constants::MORNING_STUDENT_STATUS_TRAIL_EXPIRE])) {
+			// 体验卡，体验卡过期
+			$ruleStatus = MorningPushMessageService::MORNING_PUSH_USER_TRAIL;
+		}
+		// 消息推送体
+		$data["student_uuid"] = $userUuidInfo['uuid'] ?? '';
+		$data["user_status"] = $userUuidInfo['status'];
+		$data["channel_id"] = 0;
+		$data["rule_info"] = [];
+		// 获取规则id
+		if ($event == 'subscribe') {
+			/** 关注 */
+			$data['rule_info'] = MessagePushRulesModel::getRuleInfo(Constants::QC_APP_ID, '首次关注', $ruleStatus);
+		} elseif ($event == 'CLICK') {
+			/** 自定义点击事件 */
+			switch ($keyEvent) {
+				case 'PUSH_MSG_USER_SHARE':
+					// 推荐好友
+					$data['rule_info'] = MessagePushRulesModel::getRuleInfo(Constants::QC_APP_ID, '推荐好友', $ruleStatus);
+					$data['channel_id'] = MorningDictConstants::get(MorningDictConstants::MORNING_REFERRAL_CONFIG, 'PUSH_MSG_USER_SHARE_CHANNEL_ID');
+					break;
+				default:
+					break;
+			}
+		}
+		// 推送规则不能为空
+		if (empty($data['rule_info'])) {
+			SimpleLogger::info('interActionDealMessage student weixin rule empty: ', [$msgBody, $data]);
+			return;
+		}
+		self::sendWxMessage($data);
+	}
+
+	/**
+	 * 文字交互消费者
+	 * @param array $data
+	 * @throws RunTimeException
+	 */
+	private static function textInterActionDealMessageConsumer(array $data)
+	{
+		$data['rule_info'] = MessagePushRulesModel::getRuleInfo(Constants::QC_APP_ID, '文字交互自动回复', MorningPushMessageService::MORNING_PUSH_USER_ALL);
+		// 推送规则不能为空
+		if (empty($data['rule_info'])) {
+			SimpleLogger::info('text interActionDealMessage student wx rule empty: ', [$data]);
+			return;
+		}
+		self::sendWxMessage($data, MessageRecordModel::ACTIVITY_TYPE_AUTO_PUSH, false);
+	}
 
     /**
      * 发送微信消息
@@ -145,12 +194,12 @@ class MorningWeChatHandlerService
      * @return void
      * @throws RunTimeException
      */
-    public static function sendWxMessage($data, $activityType = MessageRecordModel::ACTIVITY_TYPE_AUTO_PUSH)
+    public static function sendWxMessage($data, $activityType = MessageRecordModel::ACTIVITY_TYPE_AUTO_PUSH,$imgCreateQr = true)
     {
         $messageRule = $data['rule_info'];
         //发送客服消息
         if ($messageRule['type'] == MessagePushRulesModel::PUSH_TYPE_CUSTOMER) {
-            $res = self::pushCustomMessage($messageRule, $data, $data['app_id'], $data['busi_type']);
+            $res = self::pushCustomMessage($messageRule, $data, $data['app_id'], $data['busi_type'],$imgCreateQr);
             //推送日志记录
             MessageRecordService::addRecordLog($data['open_id'], $activityType, $data['rule_id'], $res);
         }
@@ -161,14 +210,15 @@ class MorningWeChatHandlerService
      * @param $data
      * @param $appId
      * @param $busiType
+     * @param $imgCreateQr
      * @return bool
      * 基于规则 发送客服消息
      * @throws RunTimeException
      */
-    private static function pushCustomMessage($messageRule, $data, $appId, $busiType)
+    private static function pushCustomMessage($messageRule, $data, $appId, $busiType,$imgCreateQr = true)
     {
         SimpleLogger::info('pushCustomMessage params', [$messageRule, $data, $appId, $busiType]);
-        return MessageService::pushCustomMessage($messageRule, $data, $appId, $busiType);
+        return MessageService::pushCustomMessage($messageRule, $data, $appId, $busiType, $imgCreateQr);
     }
 
     /**

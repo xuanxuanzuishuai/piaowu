@@ -36,8 +36,8 @@ use App\Models\SharePosterModel;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\WeChatConfigModel;
-use App\Services\MorningReferral\MorningPushMessageService;
-use App\Services\MorningReferral\MorningWeChatHandlerService;
+use App\Services\Morning\MorningPushMessageService;
+use App\Services\Morning\MorningWeChatHandlerService;
 use App\Services\Queue\QueueService;
 use App\Services\Queue\SaBpDataTopic;
 use Exception;
@@ -422,11 +422,12 @@ class MessageService
      * @param $data
      * @param null $appId
      * @param null $busiType
+	 * @param bool $imgCreateQr 图片是否需要对应的qr_id
      * @return bool
      * 基于规则 发送客服消息
      * @throws RunTimeException
      */
-    public static function pushCustomMessage($messageRule, $data, $appId = null, $busiType = null)
+	public static function pushCustomMessage($messageRule, $data, $appId = null, $busiType = null, $imgCreateQr = true)
     {
         $appId = DssUserWeiXinModel::dealAppId($appId);
         $busiType = !empty($busiType) ? $busiType : PushMessageService::APPID_BUSI_TYPE_DICT[$appId];
@@ -451,7 +452,15 @@ class MessageService
                     $res = MessageRecordLogModel::PUSH_FAIL;
                 }
             } elseif ($item['type'] == WeChatConfigModel::CONTENT_TYPE_IMG) { //发送图片消息
-                $posterImgFile = self::dealPosterByRule($data, $item, $appId, $busiType);
+				if (!$imgCreateQr) {
+					$imgPath = $item['path'] ?? $item['value'];
+					$posterImgFile = [
+						'unique' => ceil(microtime(true) * 1000) . '-' . intval($item['poster_id'] ?? 0) . '.jpg',
+						'poster_save_full_path' => AliOSS::signUrls($imgPath, '', '', '', true),
+					];
+				} else {
+					$posterImgFile = self::dealPosterByRule($data, $item, $appId, $busiType);
+				}
                 if (empty($posterImgFile)) {
                     SimpleLogger::error('empty poster file', ['pushCustomMessage', $data, $item]);
                     continue;

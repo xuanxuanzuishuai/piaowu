@@ -3,7 +3,7 @@
 namespace App\Services\Queue\Track;
 
 use App\Libs\SimpleLogger;
-use App\Services\MorningReferral\MorningReferralStatisticsService;
+use App\Services\Morning\MorningReferralStatisticsService;
 use App\Services\StudentServices\CollectionService;
 use App\Services\StudentServices\ErpStudentService;
 
