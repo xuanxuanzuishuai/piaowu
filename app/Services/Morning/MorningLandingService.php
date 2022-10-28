@@ -161,14 +161,12 @@ class MorningLandingService
     /**
      * 投递检查地址的延迟信息
      * @param $uuid
-     * @param $packageId
      * @return bool
      */
-    public static function checkOrderAddress($uuid, $packageId)
+    public static function checkOrderAddress($uuid)
     {
         $data = [
             'uuid'       => $uuid,
-            'package_id' => $packageId,
         ];
         QueueService::qcLandingOrderAddress($data);
         return true;

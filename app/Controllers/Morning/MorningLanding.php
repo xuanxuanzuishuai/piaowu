@@ -151,18 +151,19 @@ class MorningLanding extends ControllerBase
             //校验唯一码是否有效
             $temporaryCode = MorningLandingService::getTemporaryCode($params['uuid']);
             if ($temporaryCode != $params['temporary_code']) {
-                throw new RunTimeException(['save_address_fail']);
+                throw new RunTimeException(['temporary_code_expired']);
             }
             //校验订单收货地址是否填写
             $orderRecord = ErpOrderV1Service::getOrderInfo($params['order_id']);
-            if (empty($orderRecord['student_addr_id'])) {
-                //保存收货地址
-                $addressId = MorningLandingService::modifyAddress($params);
-                //通知ERP发货
-                MorningLandingService::updateOrderAddress($params['order_id'], $addressId);
-                //移除临时码
-                MorningLandingService::removeTemporaryCode($params['uuid']);
+            if (!empty($orderRecord['student_addr_id'])) {
+                throw new RunTimeException(['order_address_exist']);
             }
+            //保存收货地址
+            $addressId = MorningLandingService::modifyAddress($params);
+            //通知ERP发货
+            MorningLandingService::updateOrderAddress($params['order_id'], $addressId);
+            //移除临时码
+            MorningLandingService::removeTemporaryCode($params['uuid']);
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getWebErrorData());
         }
