@@ -39,7 +39,7 @@ $dotenv->overload();
 class ScriptTmpSaBpLimitSharePosterVerifyStatus
 {
     private $appId          = null;
-    private $limit          = 1000;
+    private $limit          = 500;
     private $time           = 0;
     private $lastIdCatchKey = '';
 
@@ -75,6 +75,7 @@ class ScriptTmpSaBpLimitSharePosterVerifyStatus
             if (!empty($studentList)) {
                 // 投递
                 QueueService::sendSharePosterVerifyStatusData($this->appId, $studentList, SaBpDataTopic::CLEAN_NSQ);
+                echo 'send ' . count($studentList) . ' success; and lastId:' . $this->getLastId() . PHP_EOL;
                 sleep(1);
             } else {
                 echo 'student list is empty' . PHP_EOL;
@@ -99,22 +100,16 @@ class ScriptTmpSaBpLimitSharePosterVerifyStatus
 
     public function getStudentList()
     {
-        if (in_array($this->appId, [Constants::SMART_APP_ID, Constants::REAL_APP_ID])) {
-            $db = MysqlDB::getDB(MysqlDB::CONFIG_SLAVE);
-            $shareTable = LimitTimeActivitySharePosterModel::getTableNameWithDb();
-            $stuTable = DssStudentModel::getTableNameWithDb();
-            $actTable = OperationActivityModel::getTableNameWithDb();
-            $sql = 'select sp.id,sp.student_uuid,sp.activity_id, oa.name activity_name,sp.verify_time' .
-                ' from ' . $shareTable . ' as sp' .
-                ' left join ' . $actTable . ' oa on sp.activity_id=oa.id' .
-                ' where appid=' . $this->appId . ' and sp.type=3 and sp.verify_status=2 and sp.id>' . $this->getLastId() . ' order by sp.id desc';
-            $data = $db->queryAll($sql);
-            if (!empty($data)) {
-                $idsList = array_column($data, 'id');
-                $this->setLastId(intval(max($idsList)));
-            }
-        } elseif ($this->appId == Constants::QC_APP_ID) {
-            // 清晨暂时没有限时领奖活动
+        $shareTable = LimitTimeActivitySharePosterModel::$table;
+        $actTable = OperationActivityModel::$table;
+        $sql = 'select sp.id,sp.student_uuid,sp.activity_id, oa.name activity_name,sp.verify_time' .
+            ' from ' . $shareTable . ' as sp' .
+            ' left join ' . $actTable . ' oa on sp.activity_id=oa.id' .
+            ' where sp.app_id=' . $this->appId . ' and sp.verify_status=2 and sp.id>' . $this->getLastId() . ' order by sp.id asc limit 0,' . $this->limit;
+        $data = MysqlDB::getDB()->queryAll($sql);
+        if (!empty($data)) {
+            $idsList = array_column($data, 'id');
+            $this->setLastId(intval(max($idsList)));
         }
         return $data ?? [];
     }

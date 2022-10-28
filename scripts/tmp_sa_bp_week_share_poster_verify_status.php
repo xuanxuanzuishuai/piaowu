@@ -38,7 +38,7 @@ $dotenv->overload();
 class ScriptTmpSaBpWeekSharePosterVerifyStatus
 {
     private $appId          = null;
-    private $limit          = 1000;
+    private $limit          = 500;
     private $time           = 0;
     private $lastIdCatchKey = '';
 
@@ -74,6 +74,7 @@ class ScriptTmpSaBpWeekSharePosterVerifyStatus
             if (!empty($studentList)) {
                 // 投递
                 QueueService::sendSharePosterVerifyStatusData($this->appId, $studentList, SaBpDataTopic::CLEAN_NSQ);
+                echo 'send ' . count($studentList) . ' success; and lastId:' . $this->getLastId() . PHP_EOL;
                 sleep(1);
             } else {
                 echo 'student list is empty' . PHP_EOL;
@@ -107,14 +108,14 @@ class ScriptTmpSaBpWeekSharePosterVerifyStatus
                 ' from ' . $shareTable . ' as sp' .
                 ' left join ' . $stuTable . '  as s on s.id=sp.student_id' .
                 ' left join ' . $actTable . ' oa on sp.activity_id=oa.id' .
-                ' where sp.type=3 and sp.verify_status=2 and sp.id>' . $this->getLastId() . ' order by sp.id desc';
+                ' where sp.type=3 and sp.verify_status=2 and sp.id>' . $this->getLastId() . ' order by sp.id asc limit 0,' . $this->limit;
             $data = $db->queryAll($sql);
             if (!empty($data)) {
                 $idsList = array_column($data, 'id');
                 $this->setLastId(intval(max($idsList)));
             }
         } elseif ($this->appId == Constants::REAL_APP_ID) {
-            $db = MysqlDB::getDB(MysqlDB::CONFIG_SLAVE);
+            $db = MysqlDB::getDB(MysqlDB::CONFIG_ERP_SLAVE);
             $shareTable = RealSharePosterModel::getTableNameWithDb();
             $stuTable = ErpStudentModel::getTableNameWithDb();
             $actTable = OperationActivityModel::getTableNameWithDb();
@@ -122,7 +123,7 @@ class ScriptTmpSaBpWeekSharePosterVerifyStatus
                 ' from ' . $shareTable . ' as sp' .
                 ' left join ' . $stuTable . '  as s on s.id=sp.student_id' .
                 ' left join ' . $actTable . ' oa on sp.activity_id=oa.id' .
-                ' where sp.type=3 and sp.verify_status=2 and sp.id>' . $this->getLastId() . ' order by sp.id desc';
+                ' where sp.type=3 and sp.verify_status=2 and sp.id>' . $this->getLastId() . ' order by sp.id asc limit 0,' . $this->limit;
             $data = $db->queryAll($sql);
             if (!empty($data)) {
                 $idsList = array_column($data, 'id');

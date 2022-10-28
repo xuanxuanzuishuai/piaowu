@@ -18,11 +18,15 @@ define('LANG_ROOT', PROJECT_ROOT . '/lang');
 require_once PROJECT_ROOT . '/vendor/autoload.php';
 
 use App\Libs\Constants;
+use App\Libs\MysqlDB;
 use App\Libs\RedisDB;
 use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Models\Dss\DssStudentModel;
 use App\Models\Erp\ErpReferralUserRefereeModel;
+use App\Models\Erp\ErpStudentModel;
 use App\Models\MorningReferralStatisticsModel;
+use App\Models\StudentInviteModel;
 use App\Models\StudentReferralStudentStatisticsModel;
 use App\Services\Queue\QueueService;
 use App\Services\Queue\SaBpDataTopic;
@@ -35,7 +39,7 @@ $dotenv->overload();
 class ScriptTmpSaBpReferral
 {
     private $appId          = null;
-    private $limit          = 1000;
+    private $limit          = 500;
     private $time           = 0;
     private $lastIdCatchKey = '';
 
@@ -71,6 +75,7 @@ class ScriptTmpSaBpReferral
             if (!empty($studentList)) {
                 // 投递
                 QueueService::sendLeadsData($this->appId, $studentList, SaBpDataTopic::CLEAN_NSQ);
+                echo 'send ' . count($studentList) . ' success; and lastId:' . $this->getLastId() . PHP_EOL;
                 sleep(1);
             } else {
                 echo 'student list is empty' . PHP_EOL;
@@ -96,39 +101,49 @@ class ScriptTmpSaBpReferral
     public function getStudentList()
     {
         if ($this->appId == Constants::SMART_APP_ID) {
-            $refIdList = StudentReferralStudentStatisticsModel::getRecords([
-                'referee_id[>]' => $this->getLastId(),
-                'GROUP'         => 'referee_id',
-                'ORDER'         => ['referee_id' => 'ASC'],
-                'LIMIT'         => [0, $this->limit],
-            ], ['referee_id']);
-            if (!empty($refIdList)) {
-                $refIdList = array_column($refIdList, 'referee_id');
+            $db = MysqlDB::getDB(MysqlDB::CONFIG_SLAVE);
+            $refTable = StudentReferralStudentStatisticsModel::getTableNameWithDb();
+            $stuTable = DssStudentModel::getTableNameWithDb();
+            $sql = 'select ref.referee_id, stu.uuid, count(*) as num ' .
+                ' from ' . $refTable . ' as ref' .
+                ' left join ' . $stuTable . ' as stu on stu.id=ref.referee_id' .
+                ' where ref.referee_id>' . $this->getLastId() .
+                ' group by ref.referee_id' .
+                ' order by ref.referee_id asc' .
+                ' limit 0,' . $this->limit;
+            $data = $db->queryAll($sql);
+            if (!empty($data)) {
+                $refIdList = array_column($data, 'referee_id');
                 $this->setLastId(intval(max($refIdList)));
-                $data = StudentReferralStudentStatisticsModel::getReferralCount($refIdList);
             }
         } elseif ($this->appId == Constants::REAL_APP_ID) {
-            $refIdList = ErpReferralUserRefereeModel::getRecords([
-                'referee_id[>]' => $this->getLastId(),
-                'GROUP'         => 'referee_id',
-                'ORDER'         => ['referee_id' => 'ASC'],
-                'LIMIT'         => [0, $this->limit],
-            ], ['referee_id']);
-            if (!empty($refIdList)) {
-                $refIdList = array_column($refIdList, 'referee_id');
+            $db = MysqlDB::getDB(MysqlDB::CONFIG_ERP_SLAVE);
+            $refTable = ErpReferralUserRefereeModel::getTableNameWithDb();
+            $stuTable = ErpStudentModel::getTableNameWithDb();
+            $sql = 'select ref.referee_id, stu.uuid, count(*) as num ' .
+                ' from ' . $refTable . ' as ref' .
+                ' left join ' . $stuTable . ' as stu on stu.id=ref.referee_id' .
+                ' where app_id=' . $this->appId . ' and referee_type=' . StudentInviteModel::REFEREE_TYPE_STUDENT . ' and ref.referee_id>' . $this->getLastId() .
+                ' group by ref.referee_id' .
+                ' order by ref.referee_id asc' .
+                ' limit 0,' . $this->limit;
+            $data = $db->queryAll($sql);
+            if (!empty($data)) {
+                $refIdList = array_column($data, 'referee_id');
                 $this->setLastId(intval(max($refIdList)));
-                $data = ErpReferralUserRefereeModel::getReferralCountList($refIdList);
             }
         } elseif ($this->appId == Constants::QC_APP_ID) {
-            $refIdList = MorningReferralStatisticsModel::getRecords([
-                'id[>]' => $this->getLastId(),
-                'ORDER' => ['id' => 'ASC'],
-                'LIMIT' => [0, $this->limit],
-            ], ['referee_student_uuid', 'id']);
-            if (!empty($refIdList)) {
-                $idList = array_column($refIdList, 'id');
-                $this->setLastId(intval(max($idList)));
-                $data = MorningReferralStatisticsModel::getReferralCountList(array_column($refIdList, 'referee_student_uuid'));
+            $db = MysqlDB::getDB();
+            $sql = 'select id,student_uuid as uuid, count(*) as num' .
+                ' from ' . MorningReferralStatisticsModel::$table .
+                ' where id >' . $this->getLastId() .
+                ' group by student_uuid' .
+                ' order by id asc' .
+                ' limit 0,' . $this->limit;
+            $data = $db->queryAll($sql);
+            if (!empty($data)) {
+                $refIdList = array_column($data, 'id');
+                $this->setLastId(intval(max($refIdList)));
             }
         }
         return $data ?? [];

@@ -832,10 +832,12 @@ class SharePosterService
                 ]);
                 // 埋点
                 QueueService::sendSharePosterVerifyStatusData(Constants::SMART_APP_ID, [
-                    'uuid'          => $poster['uuid'],
-                    'activity_id'   => $poster['activity_id'],
-                    'activity_name' => $poster['activity_name'],
-                    'verify_time'   => $now,
+                    [
+                        'uuid'          => $poster['uuid'],
+                        'activity_id'   => $poster['activity_id'],
+                        'activity_name' => $poster['activity_name'],
+                        'verify_time'   => $now,
+                    ]
                 ]);
             } finally {
                 $res = Util::unLock($lockKey);

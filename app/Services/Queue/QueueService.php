@@ -1097,6 +1097,9 @@ class QueueService
                 ],
             ];
             try {
+                if (empty($tmpNsqMsgBody['uuid_v2'])) {
+                    throw new Exception("uuid is empty");
+                }
                 $topic->updateUserProfile($tmpNsqMsgBody)->publish($sv['defer_time'] ?? 0);
             } catch (Exception $e) {
                 SimpleLogger::error('sendLeadsData error', [
@@ -1127,15 +1130,18 @@ class QueueService
         } else {
             return false;
         }
-        $topic = new SaBpDataTopic($isClusterModel);
+        $topic = new SaBpDataTopic(null, $isClusterModel);
         foreach ($list as $sv) {
             $tmpNsqMsgBody = [
-                'uuid' => $sv['uuid'],
-                'activity_id' => $sv['activity_id'],
-                'activity_name' => $sv['activity_name'],
-                'audit_time' => $sv['verify_time'],
+                'uuid'          => (string)$sv['uuid'],
+                'activity_id'   => (int)$sv['activity_id'],
+                'activity_name' => (string)$sv['activity_name'],
+                'audit_time'    => (int)$sv['verify_time'],
             ];
             try {
+                if (empty($tmpNsqMsgBody['uuid'])) {
+                    throw new Exception("uuid is empty");
+                }
                 $topic->setPushEventData($eventType, $tmpNsqMsgBody)->publish();
             } catch (Exception $e) {
                 SimpleLogger::error('sendSharePosterVerifyStatusData error', [

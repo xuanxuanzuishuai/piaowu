@@ -249,11 +249,12 @@ class StudentReferralStudentStatisticsModel extends Model
 
     /**
      * 批量获取转介绍人数
-     * @param $refereeIds
-     * @param $activityId
+     * @param      $refereeIds
+     * @param null $activityId
+     * @param null $refereeType
      * @return array|null
      */
-    public static function getReferralCount($refereeIds, $activityId = null)
+    public static function getReferralCount($refereeIds, $activityId = null, $refereeType = null)
     {
         $refTable = self::getTableNameWithDb();
         $stuTable = DssStudentModel::getTableNameWithDb();
@@ -267,6 +268,9 @@ class StudentReferralStudentStatisticsModel extends Model
                 WHERE 1=1 ";
         if (!is_null($activityId)) {
             $sql .= " AND `activity_id` = {$activityId} ";
+        }
+        if (!is_null($refereeType)) {
+            $sql .= " AND `referee_type` = " . StudentInviteModel::REFEREE_TYPE_STUDENT;
         }
         $sql .= " AND `referee_id` IN ({$refereeIds}) GROUP BY `referee_id`";
         return $db->queryAll($sql);
