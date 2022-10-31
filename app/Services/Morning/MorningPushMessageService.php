@@ -120,7 +120,8 @@ class MorningPushMessageService
         $_config = $report['rhythm_count'] >= 10 ? $_config['two'] : $_config['one'];
         $water[] = SharePosterService::generatePosterTextWater($report['rhythm_count'], [], '', $_config);
         // 曲目
-        $water[] = SharePosterService::generatePosterTextWater('解锁曲目 :《' . $params['lesson']['lesson_name'] . '》', MorningDictConstants::MORNING_FIVE_DAY_ACTIVITY, '5day_water_poster_lesson_name');
+        $lessonName = mb_strlen($params['lesson']['lesson_name']) > 8 ? mb_substr($params['lesson']['lesson_name'], 0, 8) . '...' : trim($params['lesson']['lesson_name']);
+        $water[] = SharePosterService::generatePosterTextWater('解锁曲目 :《' . $lessonName . '》', MorningDictConstants::MORNING_FIVE_DAY_ACTIVITY, '5day_water_poster_lesson_name');
         // 小程序码
         $qrInfo = MiniAppQrService::getUserMiniAppQr(
             Constants::QC_APP_ID,
