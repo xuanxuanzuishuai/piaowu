@@ -6,9 +6,9 @@ namespace App\Services;
 
 use App\Libs\MysqlDB;
 use App\Libs\SimpleLogger;
-use App\Models\TrackAndroidModel;
+use App\Models\AdTrack\RealTrackAndroidModel;
+use App\Models\AdTrack\RealTrackUserModel;
 use App\Models\TrackIosModel;
-use App\Models\TrackUserModel;
 use App\Models\TrackWebModel;
 
 class RealAd
@@ -148,7 +148,7 @@ class RealAd
                 'track_state' => $exist['track_state'] | self::trackStateFlag(self::TRACK_EVENT_ACTIVE),
                 'active_time' => time()
             ];
-            TrackUserModel::updateRecord($exist['tu_id'], $update);
+            RealTrackUserModel::updateRecord($exist['tu_id'], $update);
             return true;
         }
         return false;
@@ -158,7 +158,7 @@ class RealAd
     {
         SimpleLogger::info("[trackEvent_Register] start:", $completeParams);
         $time      = time();
-        $trackUser = TrackUserModel::getRecord(['user_id' => $completeParams['user_id']]);
+        $trackUser = RealTrackUserModel::getRecord(['user_id' => $completeParams['user_id']]);
         if (!empty($trackUser)) {
             SimpleLogger::info("[trackEvent_Register] user has registered", []);
             return false;
@@ -187,7 +187,7 @@ class RealAd
                 'user_id'       => $completeParams['user_id'],
                 'register_time' => $time,
             ];
-            TrackUserModel::updateRecord($exist['tu_id'], $update);
+            RealTrackUserModel::updateRecord($exist['tu_id'], $update);
             return true;
         } elseif ($success && !empty($exist['user_id'])) {
             //设备上再次发生注册行为
@@ -202,7 +202,7 @@ class RealAd
                 'create_time'    => $time,
                 'register_time'  => $time,
             ];
-            TrackUserModel::insertRecord($insert);
+            RealTrackUserModel::insertRecord($insert);
             return true;
         }
         return false;
@@ -235,7 +235,7 @@ class RealAd
                 'track_state'   => $exist['track_state'] | self::trackStateFlag(self::TRACK_EVENT_FORM_COMPLETE),
                 'register_time' => time(),
             ];
-            TrackUserModel::updateRecord($exist['tu_id'], $update);
+            RealTrackUserModel::updateRecord($exist['tu_id'], $update);
             return true;
         }
         return false;
@@ -263,7 +263,7 @@ class RealAd
                 'track_state'    => $exist['track_state'] | self::trackStateFlag(self::TRACK_EVENT_PAY),
                 'trial_pay_time' => time()
             ];
-            TrackUserModel::updateRecord($exist['tu_id'], $update);
+            RealTrackUserModel::updateRecord($exist['tu_id'], $update);
             return true;
         }
         return false;
@@ -321,7 +321,7 @@ class RealAd
             return NULL;
         }
 
-        return TrackAndroidModel::matchAndroidInfo(['OR' => $or]);
+        return RealTrackAndroidModel::matchAndroidInfo(['OR' => $or]);
     }
 
     public static function addAndroidInfo($eventType, $info)
@@ -346,7 +346,7 @@ class RealAd
                 $androidData['ext'] = $info['ext'];
             }
 
-            $id = TrackAndroidModel::insertRecord($androidData);
+            $id = RealTrackAndroidModel::insertRecord($androidData);
 
             $userDate = [
                 'platform_type' => self::PLAT_ID_ANDROID,
@@ -358,7 +358,7 @@ class RealAd
                 'create_time'   => $time,
             ];
 
-            TrackUserModel::insertRecord($userDate);
+            RealTrackUserModel::insertRecord($userDate);
             $db->commit();
         } catch (\Exception $e) {
             $db->rollBack();
@@ -447,7 +447,7 @@ class RealAd
 //                'track_state'   => ($eventType > 0) ? self::trackStateFlag($eventType) : 0,
 //                'create_time'   => $time,
 //            ];
-//            TrackUserModel::insertRecord($userDate);
+//            RealTrackUserModel::insertRecord($userDate);
 //            $db->commit();
 //        } catch (\Exception $e) {
 //            $db->rollBack();
@@ -490,7 +490,7 @@ class RealAd
 //                'create_time'   => $time,
 //                'register_time' => $time,
 //            ];
-//            TrackUserModel::insertRecord($userDate);
+//            RealTrackUserModel::insertRecord($userDate);
 //            $db->commit();
 //        } catch (\Exception $e) {
 //            $db->rollBack();
@@ -503,7 +503,7 @@ class RealAd
     /****************************************************以下为TrackUser相关回传****************************************************************/
     public static function matchUser($params)
     {
-        $trackUser = TrackUserModel::getRecord(['user_id' => $params['user_id']]);
+        $trackUser = RealTrackUserModel::getRecord(['user_id' => $params['user_id']]);
         if (empty($trackUser)) {
             return [];
         }
@@ -511,7 +511,7 @@ class RealAd
         unset($trackUser['id']);
         switch ($trackUser['platform_type']) {
             case self::PLAT_ID_ANDROID:
-                $trackBase = TrackAndroidModel::getRecord(['id' => $trackUser['platform_id']]);
+                $trackBase = RealTrackAndroidModel::getRecord(['id' => $trackUser['platform_id']]);
                 break;
 //            case self::PLAT_ID_IOS:
 //                $trackBase = TrackIosModel::getRecord(['id'=>$trackUser['platform_id']]);

@@ -3,7 +3,7 @@
 namespace App\Services\Queue\Track;
 
 use App\Libs\SimpleLogger;
-use App\Services\Morning\MorningReferralStatisticsService;
+use App\Services\Morning\MorningLandingService;
 use App\Services\StudentServices\CollectionService;
 use App\Services\StudentServices\ErpStudentService;
 
@@ -19,6 +19,9 @@ class CommonTrackConsumerService extends CommonTrackTopic
      */
     public function purchase($paramsData)
     {
+        //投递校验订单地址是否填写的信息
+        MorningLandingService::checkOrderAddress($paramsData['msg_body']['uuid']);
+
         //获取学生基础信息
         $studentBaseData = ErpStudentService::getStudentByUuid($paramsData['msg_body']['uuid']);
         if (empty($studentBaseData)) {

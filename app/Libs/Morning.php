@@ -13,6 +13,9 @@ class Morning
     const STUDENT_UUID           = '/api/student/uuid'; // 获取学生的uuid
     const WECHAT_ACCESS_ATOKEN   = '/api/common/wechat/access_token'; // 获取清晨公众号的access_token
     const MINI_APP_ACCESS_ATOKEN = '/api/common/mini_app/access_token'; // 获取清晨小程序access token
+    // 根据token获取uuid http://yapi.sys.xyzops.com/project/786/interface/api/19046
+    const TOKEN_TO_STUDENT_INFO = '/student/student_info';
+
 
     private $host;
 
@@ -21,11 +24,11 @@ class Morning
         $this->host = DictConstants::get(DictConstants::SERVICE, "morning_host");
     }
 
-    private function commonAPI($api, $data = [], $method = 'GET')
+    private function commonAPI($api, $data = [], $method = 'GET', $header = [])
     {
         try {
             $fullUrl = $this->host . $api;
-            return HttpHelper::requestJson($fullUrl, $data, $method);
+            return HttpHelper::requestJson($fullUrl, $data, $method, $header);
         } catch (\Exception $e) {
             SimpleLogger::error(__FILE__ . ':' . __LINE__, [$e->getMessage()]);
         }
@@ -119,5 +122,28 @@ class Morning
         SimpleLogger::info('getMiniAppAccessToken', [$res]);
         $studentList = !empty($res['data']) ? $res['data'] : [];
         return is_array($studentList) ? $studentList : [];
+    }
+
+    /**
+     * 获取清晨token对应的用户uuid
+     * @param $token
+     * @param $auth
+     * @return array
+     */
+    public function getTokenStudentInfo($token, $auth)
+    {
+        SimpleLogger::info('getTokenUuid params', [$token]);
+        $header = [
+            'token' => $token,
+            'auth'  => $auth,
+        ];
+        $res = self::commonAPI(self::TOKEN_TO_STUDENT_INFO, [], 'GET', $header);
+        if ($res['code'] != Valid::CODE_SUCCESS) {
+            SimpleLogger::error('getTokenUuid_error', [$res, $header]);
+            return [];
+        }
+        SimpleLogger::info('getTokenUuid', [$res]);
+        $data = !empty($res['data']) ? $res['data'] : [];
+        return is_array($data) ? $data : [];
     }
 }

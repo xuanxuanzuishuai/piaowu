@@ -421,4 +421,31 @@ class SendSmsService
         }
         return true;
     }
+
+    /**
+     * 清晨landing页收货地址填写短信
+     * @param $targetMobile
+     * @param $msgArr
+     * @param string $countryCode
+     * @return bool
+     */
+    public static function sendQcLandingAddress($targetMobile, $msgArr, $countryCode = NewSMS::DEFAULT_COUNTRY_CODE)
+    {
+        $keyCode = SmsInc::QC_LANDING_ADDRESS;      //清晨landing页收货地址填写提醒
+        $template = self::getTemplateInfoByKeyCode($keyCode);
+        $items = ['mobile' => $targetMobile, 'params' => $msgArr];
+        if (empty($template)) {
+            return false;
+        }
+        self::sendSms(
+            SmsInc::SEND_TYPE_SINGLE,
+            $keyCode,
+            $template['id'],
+            $items,
+            $countryCode
+        );
+        $content = self::valueReplaceVar($template['content'], $items['params']);
+        SimpleLogger::info($keyCode, ['content' => $content, 'mobile' => $targetMobile]);
+        return true;
+    }
 }

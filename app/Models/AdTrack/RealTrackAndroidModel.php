@@ -6,21 +6,20 @@
  * Time: 6:14 PM
  */
 
-namespace App\Models;
+namespace App\Models\AdTrack;
 
 
 use App\Libs\MysqlDB;
 use App\Services\RealAd;
-use App\Services\TrackService;
 
-class TrackAndroidModel extends AdModel
+class RealTrackAndroidModel extends AdModel
 {
     public static $table = "real_track_android";
 
     public static function matchAndroidInfo($where)
     {
-        $trackAndroid = self::$table;
-        $trackUser    = TrackUserModel::$table;
+        $realTrackAndroid = self::$table;
+        $trackUser    = RealTrackUserModel::$table;
 
         $whereNew['u.platform_type'] = RealAd::PLAT_ID_ANDROID;
         foreach ($where as $key => $value) {
@@ -30,7 +29,7 @@ class TrackAndroidModel extends AdModel
         }
 
         $db = MysqlDB::getDB(self::$defaultInstance);
-        return $db->get("$trackAndroid(a)", [
+        return $db->get("$realTrackAndroid(a)", [
             "[><]$trackUser(u)" => ['a.id' => 'platform_id']
         ], [
             "a.id",

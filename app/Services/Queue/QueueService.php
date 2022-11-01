@@ -1068,4 +1068,21 @@ class QueueService
     /***********************************************************************/
     /******************** 真人业务的消息队列 end ******************************/
     /***********************************************************************/
+
+    /**
+     * 清晨landing页订单地址校验延迟信息
+     * @param $data
+     * @return bool
+     */
+    public static function qcLandingOrderAddress($data)
+    {
+        try {
+            $topic = new PushMessageTopic();
+            $topic->qcLandingOrderAddress($data)->publish(300);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), $data);
+            return false;
+        }
+        return true;
+    }
 }

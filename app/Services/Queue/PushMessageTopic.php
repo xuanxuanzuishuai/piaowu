@@ -56,6 +56,8 @@ class PushMessageTopic extends BaseTopic
     const EVENT_WECHAT_LIFE_INTERACTION = 'wechat_life_interaction';  // 真人微信交互
     const EVENT_WECHAT_MORNING_INTERACTION = 'wechat_morning_interaction';  // 清晨微信交互
 
+    const EVENT_QC_LANDING_ORDER_ADDRESS = 'qc_landing_order_address';  // 清晨landing页订单地址校验延迟信息
+
     public function __construct($publishTime = null)
     {
         parent::__construct(self::TOPIC_NAME, $publishTime);
@@ -184,6 +186,19 @@ class PushMessageTopic extends BaseTopic
      * @return $this
      */
     public function sendGoldLeafWxMessage($data, $eventType = self::EVENT_TASK_GOLD_LEAF)
+    {
+        $this->setEventType($eventType);
+        $this->setMsgBody($data);
+        return $this;
+    }
+
+    /**
+     * 清晨landing页订单地址校验延迟信息
+     * @param $data
+     * @param string $eventType
+     * @return $this
+     */
+    public function qcLandingOrderAddress($data, $eventType = self::EVENT_QC_LANDING_ORDER_ADDRESS)
     {
         $this->setEventType($eventType);
         $this->setMsgBody($data);
