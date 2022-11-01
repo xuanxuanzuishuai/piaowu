@@ -151,7 +151,7 @@ class StudentReferralStudentService
                 ]
             );
             // 计算推荐人的推荐人数
-            $refList = StudentReferralStudentStatisticsModel::getReferralCount($qrTicketIdentityData['user_id'], null, StudentInviteModel::REFEREE_TYPE_STUDENT);
+            $refList = StudentReferralStudentStatisticsModel::getReferralCount($qrTicketIdentityData['user_id']);
             QueueService::sendLeadsData(Constants::SMART_APP_ID, $refList);
         } elseif ($bindReferralInfo['last_stage'] < StudentReferralStudentStatisticsModel::STAGE_TRIAL) {
             //修改学生最新的节点数据为体验卡
