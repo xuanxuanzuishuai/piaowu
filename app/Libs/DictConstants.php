@@ -331,7 +331,7 @@ class DictConstants {
     const WECHAT_APPID = [
         'type' => 'wechat_app_id',
         'keys' => [
-            '8_1', '8_8', '21_9','8_10', '8_12', '1_13', '8_11'
+            '8_1', '8_8', '21_9','8_10', '8_12', '1_13', '8_11','26_1'
         ]
     ];
     //不同应用的微信app_secret
@@ -415,7 +415,9 @@ class DictConstants {
     //红包祝福语设置
     const WE_CHAT_RED_PACK_CONFIG = [
         'type' => 'WE_CHAT_RED_PACK',
-        'keys' => ['NORMAL_PIC_WORD', 'COMMUNITY_PIC_WORD', 'REFERRER_PIC_WORD', 'REISSUE_PIC_WORD', 'POINTS_EXCHANGE_RED_PACK_SEND_NAME'],
+        'keys' => ['NORMAL_PIC_WORD', 'COMMUNITY_PIC_WORD', 'REFERRER_PIC_WORD', 'REISSUE_PIC_WORD', 'POINTS_EXCHANGE_RED_PACK_SEND_NAME',
+            'morning_clock_in_red_pack',
+        ],
     ];
 
     //消息推送规则

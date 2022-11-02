@@ -35,6 +35,8 @@ use App\Controllers\OrgWeb\Message;
 use App\Controllers\OrgWeb\Employee as OrgWebEmployee;
 use App\Controllers\OrgWeb\EmployeeActivity;
 use App\Controllers\OrgWeb\MonthActivity;
+use App\Controllers\OrgWeb\MorningClockActivity;
+use App\Controllers\OrgWeb\MorningTaskAwardActivityManage;
 use App\Controllers\OrgWeb\Opn;
 use App\Controllers\OrgWeb\Package;
 use App\Controllers\OrgWeb\PosterTemplateWord;
@@ -458,5 +460,13 @@ class OrgWebRouter extends RouterBase
         '/op_web/morning/push_message_detail'        => ['method' => ['get'], 'call' => Message::class . ':ruleDetail'],
         '/op_web/morning/push_message_update_status' => ['method' => ['post'], 'call' => Message::class . ':ruleUpdateStatus'],
         '/op_web/morning/push_message_update'        => ['method' => ['post'], 'call' => Message::class . ':ruleUpdate'],
+        // 清晨5日打卡 - 截图审核
+        '/op_web/morning/share_poster_list'     => ['method' => ['get'], 'call' => MorningClockActivity::class . ':getSharePosterList'],
+        '/op_web/morning/share_poster_approved' => ['method' => ['post'], 'call' => MorningClockActivity::class . ':sharePosterApproved'],
+        '/op_web/morning/share_poster_refused'  => ['method' => ['post'], 'call' => MorningClockActivity::class . ':sharePosterRefused'],
+        '/op_web/morning/drop-down'             => ['method' => ['get'], 'call' => MorningClockActivity::class . ':dropDown'],
+        // 清晨5日打卡 - 红包管理
+        '/op_web/morning/red_pack_list'          => ['method' => ['get'], 'call' => MorningTaskAwardActivityManage::class . ':redPackList'],
+        '/op_web/morning/red_pack_update_status' => ['method' => ['post'], 'call' => MorningTaskAwardActivityManage::class . ':redPackUpdateStatus'],
     ];
 }

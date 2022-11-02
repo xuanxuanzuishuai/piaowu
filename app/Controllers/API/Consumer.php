@@ -46,6 +46,8 @@ use App\Services\MessageService;
 use App\Services\MiniAppQrService;
 use App\Services\Morning\MorningLandingService;
 use App\Services\Morning\MorningWeChatHandlerService;
+use App\Services\Morning\MorningClockActivityService;
+use App\Services\Morning\MorningPushMessageService;
 use App\Services\PushMessageService;
 use App\Services\QrInfoService;
 use App\Services\Queue\Activity\LimitTimeAward\LimitTimeAwardConsumerService;
@@ -55,6 +57,7 @@ use App\Services\Queue\DouStoreTopic;
 use App\Services\Queue\DurationTopic;
 use App\Services\Queue\GrantAwardTopic;
 use App\Services\Queue\MessageReminder\MessageReminderConsumerService;
+use App\Services\Queue\MorningReferralTopic;
 use App\Services\Queue\PushMessageTopic;
 use App\Services\Queue\RealReferralTopic;
 use App\Services\Queue\SaveTicketTopic;
@@ -1437,6 +1440,36 @@ class Consumer extends ControllerBase
             call_user_func(array($consumerObj, $funName), $checkFormatParams);
         } else {
             SimpleLogger::error('unknown event type', ['params' => $checkFormatParams]);
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 清晨转介绍，消费者控制器入口
+     * topic:op_morning_referral
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public static function morning(Request $request, Response $response): Response
+    {
+        $checkFormatParams = self::commonParamsCheck($request, $response);
+        if (is_object($checkFormatParams)) {
+            return $checkFormatParams;
+        }
+        SimpleLogger::error('consumer morning params', ['params' => $checkFormatParams]);
+        switch ($checkFormatParams['event_type']){
+            case MorningReferralTopic::EVENT_WECHAT_PUSH_MSG_TO_STUDENT:
+                MorningPushMessageService::eventWechatPushMsgToStudent($checkFormatParams['msg_body']);
+                break;
+            case MorningReferralTopic::EVENT_WECHAT_PUSH_MSG_JOIN_STUDENT:
+                MorningPushMessageService::eventWechatPushMsgJoinStudent($checkFormatParams['msg_body']);
+                break;
+            case MorningReferralTopic::EVENT_CLOCK_ACTIVITY_SEND_RED_PACK:
+                MorningClockActivityService::sendClockActivityReadPack($checkFormatParams['msg_body']);
+                break;
+            default:
+                SimpleLogger::error('unknown event type', ['params' => $checkFormatParams]);
         }
         return HttpHelper::buildResponse($response, []);
     }

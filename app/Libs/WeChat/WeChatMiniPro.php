@@ -64,6 +64,8 @@ class WeChatMiniPro
     const API_TAGS_GETIDLIST      = '/cgi-bin/tags/getidlist';
     // 获取小程序码
     const GET_MINIAPP_CODE_IMAGE  = '/wxa/getwxacodeunlimit';
+    // 获取公众号关注列表
+    const GET_WECHAT_SUB_LIST = '/cgi-bin/user/get';
 
 
     public $nowWxApp; //当前的微信应用
@@ -1178,5 +1180,21 @@ class WeChatMiniPro
     public function getUnionidCacheKey()
     {
         return self::WX_UNIONID_KEY_PRIFIX . '_' . $this->busiId . '_' . $this->busiType;
+    }
+
+    /**
+     * 获取已经关注的openid列表
+     * @param string $nexOpenid
+     * @return array|bool
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function getSubscribeList($nexOpenid = '')
+    {
+        $api = $this->apiUrl(self::GET_WECHAT_SUB_LIST, false);
+        $requestParams = [
+            'access_token' => $this->getAccessToken(),
+            'next_openid' => $nexOpenid,
+        ];
+        return $this->requestJson($api, $requestParams);
     }
 }

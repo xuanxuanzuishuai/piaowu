@@ -22,11 +22,13 @@ use App\Models\Dss\DssWechatOpenIdListModel;
 use App\Models\EmployeeModel;
 use App\Models\Erp\ErpEventModel;
 use App\Models\Erp\ErpUserEventTaskAwardModel;
+use App\Models\OperationActivityModel;
 use App\Models\SharePosterModel;
 use App\Models\UserPointsExchangeOrderModel;
 use App\Models\UserPointsExchangeOrderWxModel;
 use App\Models\WeChatAwardCashDealModel;
 use App\Libs\WeChatPackage;
+use App\Models\WechatOpenidListModel;
 use App\Services\Queue\RedPackTopic;
 use App\Services\Queue\QueueService;
 
@@ -698,5 +700,96 @@ class CashGrantService
             $mchBill = implode("a",array_values($mchBill));
         }
         return self::getMchBillNo($mchBill,$hasRedPackRecord,$amount);
+    }
+
+    /**
+     * 发送微信红包
+     * @param $userOpenid
+     * @param $mchBillNo
+     * @param $awardAmount
+     * @param $keyCode
+     * @return array
+     */
+    public static function sendWeChatRedPack($userOpenid, $mchBillNo, $awardAmount, $keyCode)
+    {
+        if (empty($userOpenid)) {
+            //未绑定微信不发送
+            return [OperationActivityModel::SEND_AWARD_STATUS_GIVE_FAIL, WeChatAwardCashDealModel::NOT_BIND_WE_CHAT];
+        } else {
+            // 是否关注
+            $subInfo = WechatOpenidListModel::getSubList($userOpenid, Constants::QC_APP_ID);
+            if (empty($subInfo)) {
+                return [OperationActivityModel::SEND_AWARD_STATUS_GIVE_FAIL, WeChatAwardCashDealModel::NOT_SUBSCRIBE_WE_CHAT];
+            }
+        }
+        // 如果pre环境需要特定的user_id才可以接收
+        if (
+            ($_ENV['ENV_NAME'] == 'pre' && in_array($userOpenid, explode(',', RedisDB::getConn()->get('red_pack_white_open_id'))))
+            || $_ENV['ENV_NAME'] == 'prod'
+        ) {
+            $weChatPackage = new WeChatPackage(Constants::QC_APP_ID, Constants::QC_APP_BUSI_WX_ID);
+            list($actName, $sendName, $wishing) = self::getRedPackConfigWord($keyCode);
+            //请求微信发红包
+            $resultData = $weChatPackage->sendPackage($mchBillNo, $actName, $sendName, $userOpenid, $awardAmount, $wishing, 'redPack');
+            SimpleLogger::info('CashGrantService::sendWeChatRedPack wechat send red pack result data:', [$userOpenid, $resultData]);
+            $status = trim($resultData['result_code']) == WeChatAwardCashDealModel::RESULT_SUCCESS_CODE ? OperationActivityModel::SEND_AWARD_STATUS_GIVE_ING : OperationActivityModel::SEND_AWARD_STATUS_GIVE_FAIL;
+            $resultCode = trim($resultData['err_code']);
+        } else {
+            SimpleLogger::info('sendClockActivityReadPack now env not satisfy', [$userOpenid, $mchBillNo]);
+            $status = ErpUserEventTaskAwardModel::STATUS_GIVE_FAIL;
+            $resultCode = WeChatAwardCashDealModel::RESULT_FAIL_CODE;
+        }
+        return [$status, $resultCode];
+    }
+
+    /**
+     * 获取微信交易号
+     * @param $awardId
+     * @param $hasRedPackRecord
+     * @param $amount
+     * @return mixed|string
+     */
+    public static function genMchBillNo($awardId, $hasRedPackRecord, $amount)
+    {
+        return self::getMchBillNo($awardId, $hasRedPackRecord, $amount);
+    }
+
+    /**
+     * 查询待领取的红包在微信平台的发放结果
+     * @param $appId
+     * @param $busiType
+     * @param $mchBillNo
+     * @return array
+     */
+    public static function getCashDealStatus($appId, $busiType, $mchBillNo)
+    {
+        $weChatPackage = new WeChatPackage($appId, $busiType);
+        //调用微信
+        $resultData = $weChatPackage->getRedPackBillInfo($mchBillNo);
+        SimpleLogger::info("getCashDealStatus wx red pack query", ['mch_billno' => $mchBillNo, 'data' => $resultData]);
+        //处理微信返回结果 根据微信文档 需要根据微信结果两个字段标识判断 status / result_code
+        if ($resultData['result_code'] == WeChatAwardCashDealModel::RESULT_FAIL_CODE) {
+            // 请求失败
+            $status = ErpUserEventTaskAwardModel::STATUS_GIVE_FAIL;
+            $resultCode = $resultData['err_code'];
+        } elseif ($resultData['status'] == WeChatAwardCashDealModel::RECEIVED) {
+            //已领取
+            $status = ErpUserEventTaskAwardModel::STATUS_GIVE;
+            $resultCode = $resultData['status'];
+        } elseif (in_array($resultData['status'], [WeChatAwardCashDealModel::REFUND, WeChatAwardCashDealModel::RFUND_ING, WeChatAwardCashDealModel::FAILED])) {
+            //发放失败/退款中/已退款
+            $status = ErpUserEventTaskAwardModel::STATUS_GIVE_FAIL;
+            $resultCode = $resultData['status'];
+        } elseif (in_array($resultData['status'], [WeChatAwardCashDealModel::SENDING, WeChatAwardCashDealModel::SENT])) {
+            //发放中/已发放待领取
+            $status = ErpUserEventTaskAwardModel::STATUS_GIVE_ING;
+            $resultCode = $resultData['status'];
+        } else {
+            return [];
+        }
+        return [
+            'status'      => $status,
+            'result_code' => $resultCode,
+        ];
     }
 }

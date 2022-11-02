@@ -22,6 +22,7 @@ use App\Models\MessageRecordLogModel;
 use App\Models\MessageRecordModel;
 use App\Models\PosterModel;
 use App\Models\WeChatConfigModel;
+use App\Models\WechatOpenidListModel;
 use App\Services\MessageRecordService;
 use App\Services\MessageService;
 use App\Services\MiniAppQrService;
@@ -40,6 +41,7 @@ class MorningWeChatHandlerService
     {
         // 推送关注消息
         try {
+            WechatOpenidListModel::subscribe($data['FromUserName'], Constants::QC_APP_ID);
             (new PushMessageTopic)->pushRuleWx($data, PushMessageTopic::EVENT_WECHAT_MORNING_INTERACTION)->publish();
         } catch (Exception $e) {
             SimpleLogger::info('subscribe publish error', [$e->getMessage(), $data]);
@@ -62,6 +64,22 @@ class MorningWeChatHandlerService
 		}
 		return '';
 	}
+
+    /**
+     * 用户取消关注公众号
+     * @param $data
+     * @return string
+     */
+    public static function unsubscribe($data)
+    {
+        // 推送关注消息
+        try {
+            WechatOpenidListModel::unsubscribe($data['FromUserName'], Constants::QC_APP_ID);
+        } catch (Exception $e) {
+            SimpleLogger::info('unsubscribe error', [$e->getMessage(), $data]);
+        }
+        return '';
+    }
 
     /**
      * @param $data

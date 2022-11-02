@@ -67,6 +67,7 @@ class WxCallback extends ControllerBase
                         break;
                     case 'unsubscribe':
                         //取消关注公众号
+                        $actResult = MorningWeChatHandlerService::unsubscribe($data);
                         break;
                     default:
                         break;

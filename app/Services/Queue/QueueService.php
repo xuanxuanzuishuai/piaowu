@@ -1085,4 +1085,26 @@ class QueueService
         }
         return true;
     }
+
+    /**
+     * 清晨 - 投递消息
+     * @param $eventType
+     * @param $data
+     * @param int $deferTime
+     * @return bool
+     */
+    public static function morningPushMsg($eventType, $data, $deferTime = 0)
+    {
+        try {
+            if (!is_array($data) || empty($data)) {
+                return false;
+            }
+            $topicObj = new MorningReferralTopic();
+            $topicObj->nsqDataSet($data,$eventType)->publish($deferTime);
+        } catch (Exception $e) {
+            SimpleLogger::error($e->getMessage(), [$data]);
+            return false;
+        }
+        return true;
+    }
 }

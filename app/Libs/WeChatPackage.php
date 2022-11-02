@@ -25,7 +25,13 @@ class WeChatPackage
             $this->certPem = DictConstants::get(DictConstants::WECHAT_TRANSFER_CERT_PEM, $appId . '_' . $busiType);
             $this->keyPem = DictConstants::get(DictConstants::WECHAT_TRANSFER_KEY_PEM, $appId . '_' . $busiType);
             $this->signKey = DictConstants::get(DictConstants::WECHAT_TRANSFER_KEY, $appId . '_' . $busiType);
-        }else{
+        } elseif ($appId == Constants::QC_APP_ID && $busiType == Constants::QC_APP_BUSI_WX_ID) {
+            // 清晨公众号
+            $this->mchId = $_ENV['MORNING_WECHAT_MCHID'];
+            $this->certPem = $_ENV['MORNING_WECHAT_API_CERT_PEM'];
+            $this->keyPem = $_ENV['MORNING_WECHAT_API_KEY_PEM'];
+            $this->signKey = $_ENV['MORNING_WECHAT_API_BASE_KEY'];
+        } else{
             $this->mchId = DictConstants::get(DictConstants::WECHAT_MCHID, $appId . '_' . $busiType);
             $this->certPem = DictConstants::get(DictConstants::WECHAT_API_CERT_PEM, $appId . '_' . $busiType);
             $this->keyPem = DictConstants::get(DictConstants::WECHAT_API_KEY_PEM, $appId . '_' . $busiType);

@@ -214,4 +214,11 @@ class Constants
 
     // 请求微信错误码
     const WX_RESPONSE_ERRCODE = 45015;  // msg: response out of time limit or subscription is canceled
+
+    // 学生曲目(课程)解锁状态 1 待解锁 2 待学习 3 已学习 6 学习中
+    const STUDENT_LESSON_SCHEDULE_STATUS_LOCK     = 1;
+    const STUDENT_LESSON_SCHEDULE_STATUS_STUDY    = 2;
+    const STUDENT_LESSON_SCHEDULE_STATUS_DONE     = 3;
+    const STUDENT_LESSON_SCHEDULE_STATUS_LEARNING = 6;
+
 }

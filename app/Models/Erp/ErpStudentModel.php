@@ -195,4 +195,28 @@ from ' . self::$table . ' as es
 where es.mobile = ' . $mobile;
         return $db->queryAll($sql);
     }
+
+    /**
+     * 根据手机号获取用户信息
+     * @param $studentMobile
+     * @param $appId
+     * @return mixed
+     */
+    public static function getUserInfoByMobiles($studentMobile, $appId)
+    {
+        $db = self::dbRO();
+        return $db->get(self::$table,
+            [
+                "[><]" . ErpStudentAppModel::$table => ['id' => 'student_id']
+            ],
+            [
+                self::$table . '.id(student_id)',
+                self::$table . '.mobile',
+                self::$table . '.uuid',
+            ],
+            [
+                self::$table . '.mobile' => $studentMobile,
+                ErpStudentAppModel::$table . '.app_id' => $appId,
+            ]);
+    }
 }
