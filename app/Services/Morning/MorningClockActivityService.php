@@ -65,7 +65,12 @@ class MorningClockActivityService
             return $returnData;
         }
         // 检查班级信息
-        self::checkCollectionInfo($collInfo);
+        try {
+            self::checkCollectionInfo($collInfo);
+        } catch (RunTimeException $e) {
+            SimpleLogger::info("getCollectionActivityDetail_collection_info_error", [$studentUuid, $e->getMessage()]);
+            return $returnData;
+        }
         $returnData['is_join'] = true;
         list($awardNode, $clockInNode) = MorningDictConstants::get(MorningDictConstants::MORNING_FIVE_DAY_ACTIVITY, ['5day_award_node', '5day_clock_in_node']);
         $awardNode = json_decode($awardNode, true);
