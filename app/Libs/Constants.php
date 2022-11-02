@@ -74,6 +74,12 @@ class Constants
     const STATUS_FALSE = 0;
     const STATUS_TRUE = 1;
 
+	// 公共数据状态
+	const COMMON_STATUS_WAITING = 1;// 待启用
+	const COMMON_STATUS_ON      = 2;// 启用
+	const COMMON_STATUS_DISABLE = 3;// 已禁用
+	const COMMON_STATUS_DEL     = 4;// 已删除
+
     const UNIT_DAY = 'day';
     const UNIT_MONTH = 'month';
     const UNIT_YEAR = 'year';

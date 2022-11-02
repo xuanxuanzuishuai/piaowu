@@ -203,5 +203,4 @@ class DictModel extends Model
         self::delCache($type, self::$cacheKeyListPri);
         return $result;
     }
-
 }

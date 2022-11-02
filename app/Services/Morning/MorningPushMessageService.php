@@ -155,7 +155,7 @@ class MorningPushMessageService
         $thumb = $_ENV['ENV_NAME'] . '/morning/student/head/' . $fileName . '.jpg';
         if (!AliOSS::doesObjectExist($thumb)) {
             SimpleLogger::info("upload file start", []);
-            AliOSS::putObject($thumb, $headImageUrl);
+            AliOSS::putObject($thumb, $headImageUrl, Constants::SELF_APP_ID);
         }
         return $thumb;
     }

@@ -15,11 +15,15 @@ use App\Libs\Valid;
 use App\Services\IPService;
 use Slim\Http\Request;
 use Slim\Http\Response;
+use function AlibabaCloud\Client\env;
 
 class SignMiddleware extends MiddlewareBase
 {
     public function __invoke(Request $request, Response $response, $next)
     {
+    	if(env("ENV_NAME")==="dev"){
+			return $next($request, $response);
+		}
         $params = $request->getParams();
         $sign = $params['sign'] ?? '';
         $serviceName = $params['service_name'] ?? '';

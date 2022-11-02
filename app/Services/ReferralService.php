@@ -490,7 +490,7 @@ class ReferralService
         $thumb = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_REFERRAL . '/' . $fileName . '.jpg';
         if (!AliOSS::doesObjectExist($thumb)) {
             SimpleLogger::info("upload file start", []);
-            AliOSS::putObject($thumb, $headImageUrl);
+            AliOSS::putObject($thumb, $headImageUrl, Constants::SELF_APP_ID);
         }
 
         SimpleLogger::info("create qr start", []);

@@ -48,6 +48,7 @@ use App\Controllers\OrgWeb\RealWeekActivity;
 use App\Controllers\OrgWeb\ReferralRule;
 use App\Controllers\OrgWeb\RtActivity;
 use App\Controllers\OrgWeb\SharePoster;
+use App\Controllers\OrgWeb\SopManage\SopController;
 use App\Controllers\OrgWeb\SourceMaterial;
 use App\Controllers\OrgWeb\StudentAccount;
 use App\Controllers\OrgWeb\WeekActivity;
@@ -468,5 +469,15 @@ class OrgWebRouter extends RouterBase
         // 清晨5日打卡 - 红包管理
         '/op_web/morning/red_pack_list'          => ['method' => ['get'], 'call' => MorningTaskAwardActivityManage::class . ':redPackList'],
         '/op_web/morning/red_pack_update_status' => ['method' => ['post'], 'call' => MorningTaskAwardActivityManage::class . ':redPackUpdateStatus'],
-    ];
+
+		/**微信公众号sop推送消息管理**/
+		'/op_web/sop/selects'        => ['method' => ['get'], 'call' => SopController::class . ':selects'],
+		'/op_web/sop/wx_bind_mini'   => ['method' => ['get'], 'call' => SopController::class . ':wxBindMiniApp'],
+		'/op_web/sop/add'            => ['method' => ['post'], 'call' => SopController::class . ':add'],
+		'/op_web/sop/update'         => ['method' => ['post'], 'call' => SopController::class . ':update'],
+		'/op_web/sop/detail'         => ['method' => ['get'], 'call' => SopController::class . ':detail'],
+		'/op_web/sop/list'           => ['method' => ['get'], 'call' => SopController::class . ':list'],
+		'/op_web/sop/enable_disable' => ['method' => ['post'], 'call' => SopController::class . ':enableOrDisable'],
+		'/op_web/sop/delete'         => ['method' => ['post'], 'call' => SopController::class . ':delete'],
+	];
 }

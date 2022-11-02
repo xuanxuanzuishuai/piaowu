@@ -8,6 +8,7 @@
 
 namespace App\Libs;
 
+use App\Models\DictModel;
 use App\Models\Erp\ErpDictModel;
 use App\Models\OperationActivityModel;
 use App\Services\DictService;
@@ -765,6 +766,7 @@ class DictConstants {
             'erp_service',
             'crm_service',
             'dawn_service',
+            'ad_track_service',
         ],
     ];
 
@@ -916,7 +918,11 @@ class DictConstants {
     const ERP_ALI_OSS_CONFIG = [
         'type' => 'ALI_OSS_CONFIG',
         'keys' => [
-            'shop_cdn_domain'
+            'shop_cdn_domain',
+            'shop_bucket',
+            'endpoint',
+            'access_key_id',
+            'access_key_secret',
         ]
     ];
 
@@ -928,6 +934,9 @@ class DictConstants {
         'keys' => [
             'QINIU_DOMAIN_1',//七牛目录(ERP)
             'QINIU_FOLDER_1',//七牛Domain(ERP)
+            'QINIU_SECRET_KEY_1',//七牛SecretKey(ERP)
+            'QINIU_ACCESS_KEY_1',//七牛AccessKey(ERP)
+            'QINIU_BUCKET_1',//七牛Bucket(ERP)
             'student_default_thumb' //默认学生头像
         ]
     ];
@@ -1368,6 +1377,39 @@ class DictConstants {
             390949989783753012
         ]
     ];
+    //sop微信公众号配置
+	const SOP_WX_ACCOUNT_CONFIG = [
+		'type' => 'sop_wx_account_config',
+		'keys' => [
+			"gh_d181f3aecaa6",
+			"gh_ae17a798cae1",
+			"gh_8d9305daa664",
+			"gh_800fee75f796",
+			"gh_291b2e7a74be",
+			"gh_b706caae636f",
+		]
+	];
+	//sop规则执行周期类型
+	const SOP_EXEC_TYPE_CONFIG = [
+		'type' => 'sop_exec_type_config',
+		'keys' => [1, 2]
+	];
+	//sop规则触发类型
+	const SOP_TRIGGER_TYPE_CONFIG = [
+		'type' => 'sop_trigger_type_config',
+		'keys' => ["click_and_send", "subscribe"]
+	];
+	//sop消息类型
+	const SOP_MESSAGE_TYPE_CONFIG = [
+		'type' => 'sop_message_type_config',
+		'keys' => ['text', 'image', 'news', 'poster_base', 'mini_card', 'voice']
+	];
+	//sop添加微信配置
+	const SOP_ADD_WX_CHECK_CONFIG = [
+		'type' => 'sop_add_wx_check_config',
+		'keys' => [1, 2]
+	];
+
 
     // 清晨landing页配置
     const QC_LANDING_CONFIG = [
@@ -1512,4 +1554,28 @@ class DictConstants {
         }
         return $dictList;
     }
+
+	/**
+	 * 获取指定type类型下指定的key_code数据：返回数据格式为["code"=>1,"value"=>"11"]
+	 * @param string $type
+	 * @param array $keyCodes
+	 * @return array
+	 */
+	public static function getTypeKeyCodes(string $type, array $keyCodes): array
+	{
+		$data = DictModel::getList($type);
+		if (!empty($keyCodes)) {
+			foreach ($data as $dk => $dv) {
+				if (!in_array($dv["key_code"], $keyCodes)) {
+					unset($data[$dk]);
+				}
+			}
+		}
+		return array_map(function ($item) {
+			return [
+				'code'  => $item['key_code'],
+				'value' => $item['key_value']
+			];
+		}, $data);
+	}
 }

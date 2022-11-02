@@ -9,6 +9,7 @@
 
 namespace App\Libs;
 
+use App\Models\Erp\ErpDictModel;
 use DateTime;
 use OSS\Core\OssException;
 use OSS\OssClient;
@@ -45,6 +46,7 @@ class AliOSS
     const DIR_REAL_ACTIVITY_WEEK = 'real_activity_week';//真人业务线周周领奖活动截图上传目录
     const DIR_ACTIVITY_AWARD = 'activity_award';//活动奖品封面图上传目录
     const DIR_TMP_EXCEL = 'tmp_excel';//临时文本文件上传目录，比如excel，txt，此目录会定时删除
+	const DIR_ASSISTANT = 'assistant'; //助教的图片信息
 
     /**
      * 替换cdn域名 erp上传图片专用
@@ -373,21 +375,20 @@ class AliOSS
 
     /**
      * 上传内容保存为文件
-     * @param $objName
-     * @param $file
-     */
+	 * @param $objName
+	 * @param $file
+	 */
     public static function uploadFile($objName, $file)
     {
-        list($accessKeyId, $accessKeySecret, $bucket, $endpoint) = DictConstants::get(
-            DictConstants::ALI_OSS_CONFIG,
-            [
-                'access_key_id',
-                'access_key_secret',
-                'bucket',
-                'endpoint'
-            ]
-        );
-
+		list($accessKeyId, $accessKeySecret, $bucket, $endpoint) = DictConstants::get(
+			DictConstants::ALI_OSS_CONFIG,
+			[
+				'access_key_id',
+				'access_key_secret',
+				'bucket',
+				'endpoint'
+			]
+		);
         try {
             $ossClient = new OssClient($accessKeyId, $accessKeySecret, $endpoint);
             $ossClient->uploadFile($bucket,$objName, $file);
@@ -431,6 +432,7 @@ class AliOSS
             self::DIR_AGENT_PRE_STORAGE_BILL,
             self::DIR_REAL_ACTIVITY_WEEK,
             self::DIR_ACTIVITY_AWARD,
+            self::DIR_ASSISTANT,
         ];
         if (!in_array($dirType, $typeConstants)) {
             return null;
@@ -571,23 +573,33 @@ class AliOSS
         return $tmpSavePath;
     }
 
-    /**
-     * 上传内容保存为文件
-     * @param $objName
-     * @param $fileUrl
-     * @return bool
-     */
-    public static function putObject($objName, $fileUrl)
-    {
-        list($accessKeyId, $accessKeySecret, $bucket, $endpoint) = DictConstants::get(
-            DictConstants::ALI_OSS_CONFIG,
-            [
-                'access_key_id',
-                'access_key_secret',
-                'bucket',
-                'endpoint'
-            ]
-        );
+	/**
+	 * 上传内容保存为文件
+	 * @param $objName
+	 * @param $fileUrl
+	 * @param int $systemId		业务线ID
+	 * @return false|mixed
+	 */
+	public static function putObject($objName, $fileUrl, int $systemId)
+	{
+		if ($systemId ===  Constants::REAL_APP_ID) {
+			$dictData = array_column(ErpDictModel::getRecords(["type" => DictConstants::ERP_ALI_OSS_CONFIG["type"]], ['key_code', 'key_value']), "key_value", "key_code");
+			$accessKeyId = $dictData["access_key_id"];
+			$accessKeySecret = $dictData["access_key_secret"];
+			$bucket = $dictData["shop_bucket"];
+			$endpoint = $dictData["endpoint"];
+		} else {
+			list($accessKeyId, $accessKeySecret, $bucket, $endpoint) = DictConstants::get(
+				DictConstants::ALI_OSS_CONFIG,
+				[
+					'access_key_id',
+					'access_key_secret',
+					'bucket',
+					'endpoint'
+				]
+			);
+		}
+
 
         try {
             $ch = curl_init();
@@ -605,6 +617,6 @@ class AliOSS
             SimpleLogger::error($e->getMessage(), []);
             return false;
         }
-        return true;
+        return $objName;
     }
 }

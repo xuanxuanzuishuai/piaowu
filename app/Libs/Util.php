@@ -1658,4 +1658,27 @@ class Util
         }
         return $arr;
     }
+
+	/**
+	 * 保存远程图片到临时文件夹
+	 * @param string $imgOssUrl
+	 * @return string
+	 * @throws RunTimeException
+	 */
+	public static function saveOssImgFile(string $imgOssUrl): string
+	{
+		$imgData = file_get_contents($imgOssUrl);
+		if (empty($imgData)) {
+			throw new RunTimeException(['invalid_image_data']);
+		}
+		//保存临时文件
+		$extension=pathinfo($imgOssUrl,PATHINFO_EXTENSION);
+		$tmpSavePath = '/tmp/' . md5($imgOssUrl) . '.'.$extension;
+		$saveRes = file_put_contents($tmpSavePath, $imgData);
+		if (empty($saveRes)) {
+			throw new RunTimeException(['save_image_error']);
+		}
+		chmod($tmpSavePath, 0755);
+		return $tmpSavePath;
+	}
 }
