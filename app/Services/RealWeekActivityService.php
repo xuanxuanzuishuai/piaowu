@@ -484,6 +484,18 @@ class RealWeekActivityService
         $db->commit();
 
         $returnData['activity_id'] = $activityId;
+
+        // 如果活动是正在运行中, 并且修改了活动时间重新计算
+        if ($weekActivityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_ON &&
+            $weekActivityData['start_time'] <= $time && $time <= $weekActivityData['end_time'] &&
+            ($weekActivityInfo['start_time'] != $weekActivityData['start_time'] || $weekActivityInfo['end_time'] != $weekActivityData['end_time'])
+        ) {
+            (new WeekActivityTopic())->activityEnableStatusEdit([
+                'app_id'      => Constants::REAL_APP_ID,
+                'activity_id' => $activityId,
+            ])->publish();
+        }
+
         return $returnData;
     }
 

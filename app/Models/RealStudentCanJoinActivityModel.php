@@ -75,7 +75,7 @@ class RealStudentCanJoinActivityModel extends Model
             // 用户首次命中活动
             self::insertRecord($data);
         } else {
-            $hasHistory = self::getRecord([
+            $hasHistory = RealStudentCanJoinActivityHistoryModel::getRecord([
                 'student_uuid' => $studentUuid,
                 'activity_id' => $activityInfo['activity_id'],
                 'activity_type' => OperationActivityModel::SHARE_POSTER_ACTIVITY_TYPE_WEEK
