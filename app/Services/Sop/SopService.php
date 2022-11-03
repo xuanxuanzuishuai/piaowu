@@ -8,6 +8,7 @@ use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\QiNiu;
 use App\Libs\SimpleLogger;
+use App\Libs\Util;
 use App\Models\WxSopsDetailsModel;
 use App\Models\WxSopsModel;
 use App\Models\WxSopsStaticsModel;
@@ -81,7 +82,7 @@ class SopService
 		$formatSopParams["update_time"] = $time;
 		$formatSopParams["update_operator_uuid"] = $employeeUuid;
 		$formatSopParams["status"] = $sopData["status"];
-
+		unset($formatSopParams["name"]);
 		$formatDetailParams = self::checkAndFormatSopDetailParams($params["details"], $employeeUuid, $time);
 		$addRes = WxSopsModel::update($params["sop_id"], $formatSopParams, $formatDetailParams, $time, $employeeUuid);
 		if (empty($addRes)) {
@@ -99,14 +100,31 @@ class SopService
 	public static function detail(int $sopId): array
 	{
 		//规则数据
-		$sopData = WxSopsModel::getRecord(["id" => $sopId]);
+		$sopData = WxSopsModel::getRecord(["id" => $sopId], [
+			"wx_original_id",
+			"name",
+			"exec_type",
+			"exec_start_time",
+			"exec_end_time",
+			"status"
+		]);
 		if (empty($sopData) || !in_array($sopData["status"], [Constants::COMMON_STATUS_WAITING, Constants::COMMON_STATUS_ON])) {
 			throw new RunTimeException(["sop_invalid"]);
 		}
 		//规则详情数据
-		$sopDetailsData = WxSopsDetailsModel::getRecords(["sop_id" => $sopId, "status" => Constants::COMMON_STATUS_ON]);
+		$sopDetailsData = WxSopsDetailsModel::getRecords(["sop_id" => $sopId, "status" => Constants::COMMON_STATUS_ON], [
+			"id",
+			"sop_id",
+			"trigger_type",
+			"extra",
+			"defer_time",
+			"message_type",
+			"is_check_add_wx",
+			"contents",
+		]);
 		foreach ($sopDetailsData as &$dv) {
 			$dv["contents"] = json_decode($dv["contents"], true);
+			self::formatSopDetailsContents($dv["message_type"], $dv["contents"]);
 		}
 		return [
 			"sop_data"         => $sopData,
@@ -114,6 +132,11 @@ class SopService
 		];
 	}
 
+	/**
+	 * sop规则列表
+	 * @param array $searchParams
+	 * @return array
+	 */
 	public static function list(array $searchParams): array
 	{
 		$data = WxSopsModel::searchSop($searchParams);
@@ -134,7 +157,8 @@ class SopService
 			DictConstants::SOP_WX_ACCOUNT_CONFIG['type'],
 			DictConstants::SOP_EXEC_TYPE_CONFIG['type']
 		]);
-		$staticsData = WxSopsStaticsModel::getSopStaticsUserCount(array_column($data, "id"));
+		$todayTimes = Util::getStartEndTimestamp(time());
+		$staticsData = WxSopsStaticsModel::getSopStaticsUserCount(array_column($data, "id"), $todayTimes[0], $todayTimes[1]);
 		foreach ($data as &$val) {
 			$val["wx_original_id_zh"] = $dictData[DictConstants::SOP_WX_ACCOUNT_CONFIG["type"]][$val["wx_original_id"]]["value"];
 			if ($val["exec_type"] == WxSopsModel::EXEC_TYPE_EVERY_DAY) {
@@ -142,7 +166,7 @@ class SopService
 			} else {
 				$val["exec_type_zh"] = date("Y.m.d", $val["exec_start_time"]) . "-" . date("Y.m.d", $val["exec_end_time"]);
 			}
-			$val["success_user_count"] = (int)$staticsData[$val["id"]]["total_count"];
+			$val["today_success_user_count"] = isset($staticsData[$val["id"]]) ? (int)$staticsData[$val["id"]]["total_count"] : 0;
 			unset($val["exec_start_time"]);
 			unset($val["exec_end_time"]);
 			unset($val["wx_original_id"]);
@@ -205,9 +229,14 @@ class SopService
 			WxSopsDetailsModel::IS_CHECK_ADD_WX_NO,
 		];
 		$formatDetailParams = [];
-		foreach ($detailParams as $dv) {
+		foreach ($detailParams as &$dv) {
+			//触发动作类型校验
 			if (!isset($dv['trigger_type']) || !in_array($dv['trigger_type'], $validTriggerTypes)) {
 				throw new RunTimeException(['sop_detail_trigger_type_invalid']);
+			}
+			//推送时间单位转换和校验
+			if ($dv['trigger_type'] === WxSopsDetailsModel::TRIGGER_TYPE_USER_INTERACTION_ALL) {
+				$dv['defer_time'] = $dv['defer_time'] * 60;
 			}
 			if (!isset($dv['defer_time']) ||
 				($dv['defer_time'] < 0) ||
@@ -258,7 +287,7 @@ class SopService
 				if (!isset($typeParams["image"]) || empty($typeParams["image"])) {
 					return [];
 				}
-				return ["image" => $typeParams["image"], "image_oss" => AliOSS::replaceCdnDomainForDss($typeParams["image"])];
+				return ["image" => $typeParams["image"]];
 			case WxSopsDetailsModel::MESSAGE_TYPE_NEWS:
 				if (!isset($typeParams["title"]) || empty($typeParams["title"])) {
 					return [];
@@ -273,11 +302,10 @@ class SopService
 					return [];
 				}
 				return [
-					"title"     => $typeParams["title"],
-					"desc"      => $typeParams["desc"],
-					"href"      => $typeParams["href"],
-					"thumb"     => $typeParams["thumb"],
-					"thumb_oss" => AliOSS::replaceCdnDomainForDss($typeParams["thumb"])
+					"title" => $typeParams["title"],
+					"desc"  => $typeParams["desc"],
+					"href"  => $typeParams["href"],
+					"thumb" => $typeParams["thumb"],
 				];
 			case WxSopsDetailsModel::MESSAGE_TYPE_MINI_CARD:
 				if (!isset($typeParams["title"]) || empty($typeParams["title"])) {
@@ -297,7 +325,6 @@ class SopService
 					"app_id"    => $typeParams["app_id"],//小程序的appid，要求小程序的 appid 需要与公众号有关联关系
 					"page_path" => $typeParams["page_path"],//小程序的页面路径，跟 app.json 对齐，支持参数，比如pages/index/index?foo=bar
 					"thumb"     => $typeParams["thumb"],
-					"thumb_oss" => AliOSS::replaceCdnDomainForDss($typeParams["thumb"])
 				];
 			case WxSopsDetailsModel::MESSAGE_TYPE_POSTER_BASE:
 				if (!isset($typeParams["poster_base"]) || empty($typeParams["poster_base"])) {
@@ -310,7 +337,7 @@ class SopService
 				$shopBucketImgPath = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_ASSISTANT . '/' . md5($typeParams["poster_base"]) . '.' . $extension;
 				return [
 					"poster_base" => $typeParams["poster_base"],
-					"ali"         => AliOSS::replaceShopCdnDomain(AliOSS::putObject($shopBucketImgPath, $posterBaseImgOss, Constants::REAL_APP_ID)),
+					"ali"         => AliOSS::putObject($shopBucketImgPath, $posterBaseImgOss, Constants::REAL_APP_ID),
 					"qi_niu"      => (new QiNiu())->upload($posterBaseImgOss, false, QiNiu::QI_NIU_DIR_ASSISTANT),
 				];
 			case WxSopsDetailsModel::MESSAGE_TYPE_VOICE:
@@ -321,9 +348,8 @@ class SopService
 					return [];
 				}
 				return [
-					"title"     => $typeParams["title"],
-					"voice"     => $typeParams["voice"],
-					"voice_oss" => AliOSS::replaceCdnDomainForDss($typeParams["voice"])
+					"title" => $typeParams["title"],
+					"voice" => $typeParams["voice"],
 				];
 			default:
 				throw new RunTimeException(['sop_detail_message_type_invalid']);
@@ -382,12 +408,10 @@ class SopService
 	 */
 	public static function thirdServiceGetSops(string $wxOriginalId, string $triggerType, string $extra): array
 	{
+		$extra = "";//暂时没做到这么细致,占位使用：存储点击事件，消息互动等内容
 		//区分不同触发动作，组织不同搜索条件
-		if ($triggerType === WxSopsDetailsModel::TRIGGER_TYPE_USER_SUBSCRIBE) {
-			$triggerType = WxSopsDetailsModel::TRIGGER_TYPE_USER_SUBSCRIBE;
-		} else {
+		if ($triggerType != WxSopsDetailsModel::TRIGGER_TYPE_USER_SUBSCRIBE) {
 			$triggerType = WxSopsDetailsModel::TRIGGER_TYPE_USER_INTERACTION_ALL;
-			$extra = "";//暂时没做到这么细致,占位使用
 		}
 		$data = WxSopsModel::adGetSops($wxOriginalId, $triggerType, $extra);
 		if (empty($data)) {
@@ -400,8 +424,36 @@ class SopService
 				($v["exec_start_time"] > $nowTime || $v["exec_end_time"] < $nowTime)) {
 				unset($data[$k]);
 			}
+			$v["contents"] = json_decode($v["contents"], true);
+			self::formatSopDetailsContents($v["message_type"], $v["contents"]);
 		}
 		return $data;
+	}
+
+	/**
+	 * 格式化sop规则详情内容数据
+	 * @param string $messageType
+	 * @param array $contents
+	 */
+	private static function formatSopDetailsContents(string $messageType, array &$contents)
+	{
+		switch ($messageType) {
+			case WxSopsDetailsModel::MESSAGE_TYPE_IMAGE:
+				$contents["image_oss"] = AliOSS::replaceCdnDomainForDss($contents["image"]);
+				break;
+			case WxSopsDetailsModel::MESSAGE_TYPE_NEWS:
+			case WxSopsDetailsModel::MESSAGE_TYPE_MINI_CARD:
+				$contents["thumb_oss"] = AliOSS::replaceCdnDomainForDss($contents["thumb"]);
+				break;
+			case WxSopsDetailsModel::MESSAGE_TYPE_VOICE:
+				$contents["voice_oss"] = AliOSS::replaceCdnDomainForDss($contents["voice"]);
+				break;
+			case WxSopsDetailsModel::MESSAGE_TYPE_POSTER_BASE:
+				$contents["poster_base_oss"] = AliOSS::replaceCdnDomainForDss($contents["poster_base"]);
+				$contents["ali"] = AliOSS::replaceShopCdnDomain($contents["ali"]);
+				$contents["qi_niu"] = (new QiNiu())->formatUrl($contents["qi_niu"]);
+				break;
+		}
 	}
 
 	/**
