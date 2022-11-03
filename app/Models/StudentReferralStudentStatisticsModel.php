@@ -249,23 +249,26 @@ class StudentReferralStudentStatisticsModel extends Model
 
     /**
      * 批量获取转介绍人数
-     * @param $referee_ids
-     * @param $channel
+     * @param      $refereeIds
+     * @param null $activityId
      * @return array|null
      */
-    public static function getReferralCount($refereeIds, $activityId)
+    public static function getReferralCount($refereeIds, $activityId = null)
     {
-        $db = MysqlDB::getDB();
-        $table = self::$table;
-        $sql = " SELECT
-                    `referee_id`,
-                    count( 1 ) AS num 
-                FROM {$table}
-                WHERE
-                `activity_id` = {$activityId} 
-                AND `referee_id` IN ({$refereeIds})
-                GROUP BY `referee_id`
-        ";
+        $refTable = self::getTableNameWithDb();
+        $stuTable = DssStudentModel::getTableNameWithDb();
+        $db = self::dbRO();
+        if (is_array($refereeIds)) {
+            $refereeIds = implode(',', $refereeIds);
+        }
+        $sql = " SELECT ref.`referee_id`, stu.uuid, count( 1 ) AS num
+                FROM {$refTable} as ref
+                left join " . $stuTable . " as stu on stu.id=ref.referee_id
+                WHERE 1=1 ";
+        if (!is_null($activityId)) {
+            $sql .= " AND ref.`activity_id` = {$activityId} ";
+        }
+        $sql .= " AND ref.`referee_id` IN ({$refereeIds}) GROUP BY ref.`referee_id`";
         return $db->queryAll($sql);
     }
 
