@@ -78,11 +78,12 @@ class QiNiu
 	 * 上传图片
 	 * @param string $filePath
 	 * @param bool $isLocalResource 是否是本地资源 true是 false不是
+	 * @param bool $isReturnFullUrl 是否返回完整访问路径 true是 false不是
 	 * @param string $subDir
 	 * @return string
 	 * @throws Exceptions\RunTimeException
 	 */
-	public function upload(string $filePath, bool $isLocalResource, string $subDir): string
+	public function upload(string $filePath, bool $isLocalResource, string $subDir, bool $isReturnFullUrl = false): string
 	{
 		$url = '';
 		if ($isLocalResource === false) {
@@ -101,7 +102,11 @@ class QiNiu
 			$uploadMgr = new UploadManager();
 			list($res, $err) = $uploadMgr->putFile($uploadToken, $key, $filePath);
 			if ($err == null) {
-				$url = $this->formatUrl($res['key']);
+				if ($isReturnFullUrl === false) {
+					$url = $res['key'];
+				} else {
+					$url = $this->formatUrl($res['key']);
+				}
 			}
 		} catch (Exception $e) {
 			SimpleLogger::error("QiNiu_upload_file_error", ['msg' => $e->getMessage(), 'params' => [$filePath, $subDir]]);

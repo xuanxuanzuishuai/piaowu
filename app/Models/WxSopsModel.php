@@ -132,7 +132,7 @@ class WxSopsModel extends Model
 				self::$table . ".exec_type",
 				self::$table . ".exec_start_time",
 				self::$table . ".exec_end_time",
-				WxSopsDetailsModel::$table . ".id(sop_detail_id)",
+				WxSopsDetailsModel::$table . ".id(sop_details_id)",
 				WxSopsDetailsModel::$table . ".message_type",
 				WxSopsDetailsModel::$table . ".defer_time",
 				WxSopsDetailsModel::$table . ".contents",

@@ -13,20 +13,24 @@ class WxSopsStaticsModel extends Model
 	/**
 	 * 获取sop成功推送人数
 	 * @param array $sopIds
+	 * @param int $startCreateTime
+	 * @param int $endCreateTime
 	 * @return array
 	 */
-	public static function getSopStaticsUserCount(array $sopIds): array
+	public static function getSopStaticsUserCount(array $sopIds, int $startCreateTime, int $endCreateTime): array
 	{
 		$db = MysqlDB::getDB();
 		$data = $db->select(self::$table,
 			[
 				"sop_id",
-				"total_count"=>Medoo::raw("count(id)")
+				"total_count" => Medoo::raw("count(id)")
 			],
 			[
-				"sop_id"     => $sopIds,
-				"error_code" => "",
-				"GROUP"      => "sop_id",
+				"sop_id"          => $sopIds,
+				"create_time[>=]" => $startCreateTime,
+				"create_time[<=]" => $endCreateTime,
+				"error_code"      => "",
+				"GROUP"           => "sop_id",
 			]);
 		return empty($data) ? [] : array_column($data, null, "sop_id");
 	}
