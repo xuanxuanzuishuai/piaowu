@@ -68,6 +68,7 @@ class MorningDictConstants extends DictConstants
             '5day_water_poster_channel',
             '5day_award_node',
             '5day_clock_in_node',
+            '5day_collection_start_time',
         ]
     ];
 }

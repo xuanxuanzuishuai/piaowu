@@ -64,6 +64,13 @@ class MorningClockActivityService
             SimpleLogger::info("getCollectionActivityDetail_collection_is_empty", [$studentUuid]);
             return $returnData;
         }
+        // 检查班级信息
+        try {
+            self::checkCollectionInfo($collInfo);
+        } catch (RunTimeException $e) {
+            SimpleLogger::info("getCollectionActivityDetail_collection_info_error", [$studentUuid, $e->getMessage()]);
+            return $returnData;
+        }
         $returnData['is_join'] = true;
         list($awardNode, $clockInNode) = MorningDictConstants::get(MorningDictConstants::MORNING_FIVE_DAY_ACTIVITY, ['5day_award_node', '5day_clock_in_node']);
         $awardNode = json_decode($awardNode, true);
@@ -241,12 +248,29 @@ class MorningClockActivityService
         if ($unlockTimeUnix > time()) {
             throw new RunTimeException(['morning_clock_activity_day_unlock']);
         }
+        // 检查班级信息
+        self::checkCollectionInfo($collInfo);
         // 获取学生练习信息
         $lessonList = (new Morning())->getStudentLessonSchedule([$studentUuid])[$studentUuid] ?? [];
         list(, $dayLesson) = self::getLessonDoneStep($lessonList, $day);
         // 学生是否练琴
         if (empty($dayLesson) || $dayLesson['status'] != Constants::STUDENT_LESSON_SCHEDULE_STATUS_DONE) {
             throw new RunTimeException(['morning_clock_activity_no_play']);
+        }
+    }
+
+    /**
+     * 检查班级信息是否符合
+     * @param $collInfo
+     * @return void
+     * @throws RunTimeException
+     */
+    public static function checkCollectionInfo($collInfo)
+    {
+        $startTime = $collInfo['teaching_start_time'] ?? 0;
+        $settingStartTime = MorningDictConstants::get(MorningDictConstants::MORNING_FIVE_DAY_ACTIVITY, '5day_collection_start_time');
+        if ($startTime < $settingStartTime) {
+            throw new RunTimeException(['morning_clock_activity_collection_time_error']);
         }
     }
 
