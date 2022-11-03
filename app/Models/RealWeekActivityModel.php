@@ -185,7 +185,7 @@ class RealWeekActivityModel extends Model
     {
         $where = [
             'enable_status' => OperationActivityModel::ENABLE_STATUS_ON,
-            'ORDER' => ['start_time' => "DESC"],
+            'ORDER' => ['start_time' => "DESC", 'id' => 'DESC'],
             'start_time[<]' => !empty($time) ? $time : time(),    // 确保当前活动已经开始 - 过滤掉预先创建但未到开始时间的活动
         ];
         if (!is_null($limit)) {

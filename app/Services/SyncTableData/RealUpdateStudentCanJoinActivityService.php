@@ -83,7 +83,7 @@ class RealUpdateStudentCanJoinActivityService
             }
         }
         // 没有设定活动id 或者 禁用活动
-        if (empty($activityId) || (!empty($this->computeActivityInfo) && $this->computeActivityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_DISABLE)) {
+        if (empty($this->computeActivityId) || (!empty($this->computeActivityInfo) && $this->computeActivityInfo['enable_status'] == OperationActivityModel::ENABLE_STATUS_DISABLE)) {
             /** 读取所有活动 */
             $this->weekActivityList = RealWeekActivityModel::getStudentCanSignWeekActivity(null, $this->runTime, $fields);
         }
@@ -157,6 +157,8 @@ class RealUpdateStudentCanJoinActivityService
         else {
             $this->runAllStudentHitWeekActivity();
         }
+        // 同步历史记录中所有正在进行中的活动状态和时间
+        $this->runUpdateAllWeekActivityTimeAndStatus();
     }
 
     /**
@@ -442,6 +444,57 @@ class RealUpdateStudentCanJoinActivityService
         if ($verifyStatus == RealStudentCanJoinActivityModel::LAST_VERIFY_STATUS_QUALIFIED) {
             // 更新用户活动最后一次参与状态 - 通过
             RealStudentCanJoinActivityModel::updateLastVerifyStatusIsPass($studentUuid, $activityId, [], empty($lastUploadRecord));
+        }
+        return true;
+    }
+
+    /**
+     * 更新所有周周领奖活动时间和状态
+     * @return bool
+     */
+    public function runUpdateAllWeekActivityTimeAndStatus()
+    {
+        if ($this->computeActivityId) {
+            $activityIds = [$this->computeActivityId];
+        } else {
+            $historyList = RealStudentCanJoinActivityHistoryModel::getRecords([
+                'activity_status' => OperationActivityModel::ENABLE_STATUS_ON,
+            ], ['activity_id']);
+            $activityIds = array_column($historyList, 'activity_id');
+        }
+        if (empty($activityIds)) {
+            return true;
+        }
+        $activityList = RealWeekActivityModel::getRecords(['activity_id' => $activityIds], ['activity_id', 'start_time', 'end_time']);
+        foreach ($activityList as $item) {
+            // 更新当前命中活动记录表  活动时间
+            RealStudentCanJoinActivityModel::batchUpdateRecord(
+                [
+                    'week_activity_start_time' => $item['start_time'],
+                    'week_activity_end_time'   => $item['end_time'],
+                ],
+                [
+                    'week_activity_id' => $item['activity_id'],
+                ]
+            );
+            // 更新命中活动历史记录表  活动时间，活动状态
+            $status = OperationActivityModel::TIME_STATUS_PENDING;
+            if ($item['start_time'] <= $this->runTime && $this->runTime < $item['end_time']) {
+                $status = OperationActivityModel::TIME_STATUS_ONGOING;
+            } elseif ($this->runTime >= $item['end_time']) {
+                $status = OperationActivityModel::TIME_STATUS_FINISHED;
+            }
+            RealStudentCanJoinActivityHistoryModel::batchUpdateRecord(
+                [
+                    'activity_start_time' => $item['start_time'],
+                    'activity_end_time'   => $item['end_time'],
+                    'activity_status'     => $status,
+                ],
+                [
+                    'activity_id'   => $item['activity_id'],
+                    'activity_type' => OperationActivityModel::SHARE_POSTER_ACTIVITY_TYPE_WEEK,
+                ]
+            );
         }
         return true;
     }

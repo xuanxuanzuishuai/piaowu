@@ -56,10 +56,11 @@ class GeneralCrm extends ControllerBase
         if ($result['code'] != Valid::CODE_SUCCESS) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-
+        $activityInfo = RealWeekActivityModel::getRecord(['activity_id' => $params['activity_id']]);
         $awardRuleList = RealSharePosterPassAwardRuleModel::getRecords(['activity_id' => $params['activity_id']]);
         return HttpHelper::buildResponse($response, [
-            'list' => $awardRuleList
+            'list' => $awardRuleList,
+            'award_prize_type' => $activityInfo['award_prize_type'],
         ]);
     }
 
