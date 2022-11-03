@@ -32,6 +32,7 @@ class PushServices
     const PUSH_JUMP_TYPE_MUSICAL_NOTE_MALL = 5;         //跳转到音符商城
     const PUSH_JUMP_TYPE_PLAY_CALENDAR = 6;             //跳转到练琴日历
     const PUSH_JUMP_TYPE_COLLECTION_DETAIL = 7;         //跳转到套课详情页
+    const PUSH_JUMP_TYPE_UNIFIED = 8;                   //业务端自定义跳转路径
 
     //Excel最大记录数
     const MAX_EXCEL_RECORD = 20000;
@@ -70,6 +71,9 @@ class PushServices
                 break;
             case self::PUSH_JUMP_TYPE_COLLECTION_DETAIL:
                 TPNS::collectionDetailPush($params);
+                break;
+            case self::PUSH_JUMP_TYPE_UNIFIED:
+                TPNS::unifiedPush($params);
                 break;
         }
 

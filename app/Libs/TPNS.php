@@ -407,4 +407,23 @@ class TPNS
         ];
         return self::circlePush($androidList, $iosList, $insertData);
     }
+
+    /**
+     * 统一推送
+     * 不封装和区分路径信息
+     * @param $params
+     * @return bool
+     * @throws Exceptions\RunTimeException
+     */
+    public static function unifiedPush($params)
+    {
+        $url = $params['link_url'];
+        list($androidList, $iosList) = self::formatParams($params, $url);
+
+        $insertData = [
+            'jump_type' => PushServices::PUSH_JUMP_TYPE_UNIFIED,
+            'remark'    => $params['push_remark'] ?? '',
+        ];
+        return self::circlePush($androidList, $iosList, $insertData);
+    }
 }
