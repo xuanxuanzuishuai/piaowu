@@ -48,6 +48,7 @@ class RouterFactory
     const CLIENT_DAWN = 'dawn_crm'; // 清晨业务线客户端请求路由
     const CLIENT_MORNING = 'morning'; // 清晨转介绍请求路由
     const CLIENT_AD_TRACK = 'ad_track'; // 广告投放系统请求路由
+    const CLIENT_GENERAL = 'general_crm'; // 3S系统真人业务线客户端请求路由
 
 
     /**
@@ -77,6 +78,8 @@ class RouterFactory
         self::CLIENT_DAWN                   => DawnCrmRouter::class, // 客户端路由
         self::CLIENT_MORNING                => MorningRouter::class, // 客户端路由
         self::CLIENT_AD_TRACK               => AdTrackRouter::class, // 客户端路由
+        self::CLIENT_GENERAL                => GeneralCrmRouter::class, // 3s真人项目
+
     ];
 
     /**

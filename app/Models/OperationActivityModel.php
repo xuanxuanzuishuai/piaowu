@@ -9,12 +9,14 @@
 namespace App\Models;
 
 use App\Libs\Constants;
+use App\Libs\DictConstants;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\MysqlDB;
 use App\Models\Dss\DssStudentModel;
 use App\Models\Dss\DssUserWeiXinModel;
 use App\Models\Erp\ErpStudentModel;
 use App\Services\DictService;
+use App\Services\SharePosterService;
 
 class OperationActivityModel extends Model
 {
@@ -326,5 +328,47 @@ WHERE
                 return [];
         }
         return $where;
+    }
+
+
+    /**
+     * 格式化奖励发放类型
+     * @param $awardPrizeType
+     * @return array|mixed|null
+     */
+    public static function formatAwardPrizeType($awardPrizeType)
+    {
+        return DictConstants::get(DictConstants::AWARD_PRIZE_TYPE, $awardPrizeType);
+    }
+
+    /**
+     * 格式化截图审核状态
+     * @param $verifyStatus
+     * @return array|mixed|null
+     */
+    public static function formatVerifyStatus($verifyStatus)
+    {
+        return DictConstants::get(DictConstants::CHECK_STATUS, $verifyStatus);
+    }
+
+    /**
+     * 格式化活动状态
+     * @param $status
+     * @return array|mixed|null
+     */
+    public static function formatActivityStatus($status)
+    {
+        return DictConstants::get(DictConstants::ACTIVITY_TIME_STATUS, $status);
+    }
+
+    /**
+     * 格式化错误原因
+     * @param $verifyReason
+     * @return array
+     */
+    public static function formatVerifyReason($verifyReason)
+    {
+        $reasonDict = DictService::getTypeMap(Constants::DICT_TYPE_SHARE_POSTER_CHECK_REASON);
+        return SharePosterService::reasonToStr($verifyReason, $reasonDict);
     }
 }

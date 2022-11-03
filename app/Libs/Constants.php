@@ -227,4 +227,10 @@ class Constants
     const STUDENT_LESSON_SCHEDULE_STATUS_DONE     = 3;
     const STUDENT_LESSON_SCHEDULE_STATUS_LEARNING = 6;
 
+
+    // 用户参与活动完成进度 1未参与，2：参与未完成，3已完成 4资格终止
+    const STUDENT_WEEK_PROGRESS_NO_JOIN       = 1;
+    const STUDENT_WEEK_PROGRESS_JOINING       = 2;
+    const STUDENT_WEEK_PROGRESS_COMPLETE_JOIN = 3;
+    const STUDENT_WEEK_PROGRESS_STOP_JOIN     = 4;
 }

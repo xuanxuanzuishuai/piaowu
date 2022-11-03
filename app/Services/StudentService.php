@@ -513,18 +513,23 @@ class StudentService
      * 获取用户的UUID
      * @param $appId
      * @param $userId
+     * @param array $fields
      * @return array|mixed
      */
-    public static function getUuid($appId,$userId)
+    public static function getUuid($appId,$userId, $fields = [])
     {
+        if (empty($fields)) {
+            $fields = ['uuid','name','mobile','thumb'];
+        }
+        $hasThumb = in_array('thumb', $fields);
         if ($appId == Constants::REAL_APP_ID) {
             //注册真人用户信息
-            $studentInfo = ErpStudentModel::getRecord(['id' => $userId], ['uuid','name','mobile','thumb']);
-            $studentInfo['thumb'] = ErpUserService::getStudentThumbUrl([$studentInfo['thumb']])[0];
+            $studentInfo = ErpStudentModel::getRecord(['id' => $userId], $fields);
+            $hasThumb && $studentInfo['thumb'] = ErpUserService::getStudentThumbUrl([$studentInfo['thumb']])[0];
         } elseif ($appId == Constants::SMART_APP_ID) {
             //注册智能用户信息
-            $studentInfo = DssStudentModel::getRecord(['id' => $userId], ['uuid','name','mobile','thumb']);
-            $studentInfo['thumb'] = StudentService::getStudentThumb($studentInfo['thumb']);
+            $studentInfo = DssStudentModel::getRecord(['id' => $userId], $fields);
+            $hasThumb && $studentInfo['thumb'] = StudentService::getStudentThumb($studentInfo['thumb']);
         }
         return $studentInfo ?? [];
     }

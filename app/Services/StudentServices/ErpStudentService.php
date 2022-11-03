@@ -185,4 +185,22 @@ class ErpStudentService
         }
         return [$userIdentity];
     }
+
+    /**
+     * 计算学生付费时间
+     * @param $studentFirstPayTime
+     * @param $whiteInfo
+     * @return mixed
+     */
+    public static function computeFirstTime($studentFirstPayTime, $whiteInfo)
+    {
+        if ($studentFirstPayTime > 0 && $whiteInfo['first_pay_time'] > 0) {
+            $minFirstPayTime = min($studentFirstPayTime, $whiteInfo['first_pay_time']);
+        } elseif ($whiteInfo['first_pay_time'] > 0 && $studentFirstPayTime <= 0) {
+            $minFirstPayTime = $whiteInfo['first_pay_time'];
+        } else {
+            $minFirstPayTime = $studentFirstPayTime;
+        }
+        return $minFirstPayTime;
+    }
 }

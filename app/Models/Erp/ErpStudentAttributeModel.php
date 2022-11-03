@@ -24,4 +24,18 @@ class ErpStudentAttributeModel extends ErpModel
     const REAL_PERSON_LIFE_CYCLE_EXPIRED = 18;
     // 真人学员的生命周期-退费
     const REAL_PERSON_LIFE_CYCLE_REFUND = 19;
+
+    /**
+     * 获取学生生命周期属性是 体验已完成、年卡、年卡过期
+     * @return int[]
+     */
+    public static function getStudentAttrTrailFinishedAndNormal()
+    {
+        return [
+            self::REAL_PERSON_LIFE_CYCLE_TRIAL_FINISHED,
+            self::REAL_PERSON_LIFE_CYCLE_LEARNING,
+            self::REAL_PERSON_LIFE_CYCLE_WAIT_RENEW,
+            self::REAL_PERSON_LIFE_CYCLE_EXPIRED,
+        ];
+    }
 }

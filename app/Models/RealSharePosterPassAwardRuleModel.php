@@ -26,11 +26,11 @@ class RealSharePosterPassAwardRuleModel extends Model
         $realSharePosterTaskRuleData = [];
         foreach ($taskList as $_taskNum => $_item) {
             $info = [
-                'activity_id' => $activityId,
+                'activity_id'      => $activityId,
                 'success_pass_num' => $_taskNum + 1,
-                'award_amount' => $_item,
-                'award_type' => Constants::ERP_ACCOUNT_NAME_MAGIC,
-                'create_time' => $createTime,
+                'award_amount'     => $_item,
+                'award_type'       => Constants::ERP_ACCOUNT_NAME_MAGIC,
+                'create_time'      => $createTime,
             ];
             $realSharePosterTaskRuleData[] = $info;
         }
@@ -55,5 +55,21 @@ class RealSharePosterPassAwardRuleModel extends Model
             return false;
         }
         return self::batchInsertPassAwardRule($activityId, $taskList, $createTime);
+    }
+
+    /**
+     * 获取活动任务总数
+     * @param $activityIds
+     * @return array
+     */
+    public static function getActivityTaskCount($activityIds)
+    {
+        $sql = 'select activity_id,count(*) as total from ' . self::$table;
+        if (!empty($activityIds)) {
+            $sql .= ' where activity_id in(' . implode(',', $activityIds) . ')';
+        }
+        $sql .= ' group by activity_id';
+        $list = MysqlDB::getDB()->queryAll($sql);
+        return is_array($list) ? $list : [];
     }
 }

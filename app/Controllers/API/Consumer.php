@@ -73,6 +73,8 @@ use App\Services\RefereeAwardService;
 use App\Services\SendSmsService;
 use App\Services\StudentAccountAwardPointsLogService;
 use App\Services\StudentService;
+use App\Services\SyncTableData\RealUpdateStudentCanJoinActivityService;
+use App\Services\SyncTableData\SyncBinlogTableDataService;
 use App\Services\ThirdPartBillService;
 use App\Services\UserRefereeService;
 use App\Services\UserService;
@@ -1074,6 +1076,15 @@ class Consumer extends ControllerBase
             case WeekActivityTopic::EVENT_GET_WHITE_GRANT_STATUS:
                 WhiteGrantRecordService::getWeekRedPkgStatus($data);
                 break;
+            case WeekActivityTopic::EVENT_ACTIVITY_ENABLE_STATUS_EDIT:
+                // 活动启用或者禁用
+                $appId = $data['app_id'] ?? 0;
+                switch ($appId) {
+                    case Constants::REAL_APP_ID:
+                        (new RealUpdateStudentCanJoinActivityService(['activity_id' => $data['activity_id'] ?? 0]))->run();
+                        break;
+                }
+                break;
             default:
                 SimpleLogger::error('unknown event type', ['params' => $params]);
                 break;
@@ -1470,6 +1481,41 @@ class Consumer extends ControllerBase
                 break;
             default:
                 SimpleLogger::error('unknown event type', ['params' => $checkFormatParams]);
+        }
+        return HttpHelper::buildResponse($response, []);
+    }
+
+    /**
+     * 同步数据表信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public static function syncBinlogTableData(Request $request, Response $response): Response
+    {
+        $rules = [
+            [
+                'key' => 'event_type',
+                'type' => 'required',
+                'error_code' => 'event_type_is_required',
+            ],
+            [
+                'key' => 'msg_body',
+                'type' => 'required',
+                'error_code' => 'msg_body_is_required',
+            ],
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $funName = Util::underlineToHump($params['event_type']);
+        $consumerObj = new SyncBinlogTableDataService();
+        if (method_exists($consumerObj, $funName)) {
+            call_user_func(array($consumerObj, $funName), $params);
+        } else {
+            SimpleLogger::error('unknown event type', ['params' => $params]);
         }
         return HttpHelper::buildResponse($response, []);
     }

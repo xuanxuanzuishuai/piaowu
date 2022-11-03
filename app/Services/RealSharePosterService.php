@@ -25,10 +25,12 @@ use App\Models\OperationActivityModel;
 use App\Models\QrInfoOpCHModel;
 use App\Models\RealSharePosterAwardModel;
 use App\Models\RealSharePosterModel;
+use App\Models\RealStudentCanJoinActivityModel;
 use App\Models\RealUserAwardMagicStoneModel;
 use App\Models\RealWeekActivityModel;
 use App\Models\WeChatConfigModel;
 use App\Services\Queue\QueueService;
+use App\Services\SyncTableData\RealUpdateStudentCanJoinActivityService;
 
 class RealSharePosterService
 {
@@ -298,6 +300,14 @@ class RealSharePosterService
                     'verify_time'   => $now,
                 ]
             ]);
+
+            // 修改参与进度
+            $lastUploadRecord = RealSharePosterModel::getRecord([
+                'student_id' => $poster['student_id'],
+                'activity_id' => $poster['activity_id'],
+                'last_upload_time[>]' => $poster['last_upload_time'],
+            ]);
+            RealUpdateStudentCanJoinActivityService::updateLastVerifyStatus($poster['uuid'], $poster['activity_id'], RealSharePosterModel::VERIFY_STATUS_QUALIFIED, $lastUploadRecord);
         }
         //批量投递消费消费队列
         QueueService::addRealUserPosterAward($sendAwardQueueData);
@@ -368,6 +378,13 @@ class RealSharePosterService
                 ]
             ]);
         }
+        // 更新用户活动最后一次参与状态
+        $lastUploadRecord = RealSharePosterModel::getRecord([
+            'student_id' => $poster['student_id'],
+            'activity_id' => $poster['activity_id'],
+            'last_upload_time[>]' => $poster['last_upload_time'],
+        ]);
+        RealUpdateStudentCanJoinActivityService::updateLastVerifyStatus($poster['uuid'], $poster['activity_id'], $status, $lastUploadRecord);
         return $update > 0;
     }
 
