@@ -112,7 +112,11 @@ class SopService
 			throw new RunTimeException(["sop_invalid"]);
 		}
 		//规则详情数据
-		$sopDetailsData = WxSopsDetailsModel::getRecords(["sop_id" => $sopId, "status" => Constants::COMMON_STATUS_ON], [
+		$sopDetailsData = WxSopsDetailsModel::getRecords([
+			"sop_id" => $sopId,
+			"status" => Constants::COMMON_STATUS_ON,
+			"ORDER"  => ["id" => "ASC"]
+		], [
 			"id",
 			"sop_id",
 			"trigger_type",
@@ -123,8 +127,13 @@ class SopService
 			"contents",
 		]);
 		foreach ($sopDetailsData as &$dv) {
+			//内容
 			$dv["contents"] = json_decode($dv["contents"], true);
 			self::formatSopDetailsContents($dv["message_type"], $dv["contents"]);
+			//推送时间
+			$dv["hours"] = floor(($dv["defer_time"]) / 3600);
+			$dv["minutes"] = floor(($dv["defer_time"] - $dv["hours"] * 3600) / 60);
+			$dv["seconds"] = $dv["defer_time"] % 60;
 		}
 		return [
 			"sop_data"         => $sopData,
@@ -229,18 +238,17 @@ class SopService
 			WxSopsDetailsModel::IS_CHECK_ADD_WX_NO,
 		];
 		$formatDetailParams = [];
-		foreach ($detailParams as &$dv) {
+		foreach ($detailParams as $dv) {
 			//触发动作类型校验
 			if (!isset($dv['trigger_type']) || !in_array($dv['trigger_type'], $validTriggerTypes)) {
 				throw new RunTimeException(['sop_detail_trigger_type_invalid']);
 			}
 			//推送时间单位转换和校验
-			if ($dv['trigger_type'] === WxSopsDetailsModel::TRIGGER_TYPE_USER_INTERACTION_ALL) {
-				$dv['defer_time'] = $dv['defer_time'] * 60;
-			}
-			if (!isset($dv['defer_time']) ||
-				($dv['defer_time'] < 0) ||
-				($dv['defer_time'] > WxSopsDetailsModel::TRIGGER_TYPE_VALIDITY_AND_QUANTITY[$dv["trigger_type"]]["validity"])) {
+			$tmpHours = (int)($dv['hours'] ?? 0);
+			$tmpMinutes = (int)($dv['minutes'] ?? 0);
+			$tmpSeconds = (int)($dv['seconds'] ?? 0);
+			$tmpDeferTime = $tmpHours * 3600 + $tmpMinutes * 60 + $tmpSeconds;
+			if ($tmpDeferTime < 0 || $tmpDeferTime > WxSopsDetailsModel::TRIGGER_TYPE_VALIDITY_AND_QUANTITY[$dv["trigger_type"]]["validity"]) {
 				throw new RunTimeException(['sop_detail_defer_time_invalid']);
 			}
 			if (!isset($dv['is_check_add_wx']) || !in_array($dv['is_check_add_wx'], $validCheckAddWx)) {
@@ -253,7 +261,7 @@ class SopService
 			}
 			$formatDetailParams[] = [
 				"trigger_type"         => $dv['trigger_type'],
-				"defer_time"           => $dv['defer_time'],
+				"defer_time"           => $tmpDeferTime,
 				"message_type"         => $dv['message_type'],
 				"is_check_add_wx"      => $dv['is_check_add_wx'],
 				"status"               => Constants::COMMON_STATUS_ON,
@@ -408,10 +416,10 @@ class SopService
 	 */
 	public static function thirdServiceGetSops(string $wxOriginalId, string $triggerType, string $extra): array
 	{
-		$extra = "";//暂时没做到这么细致,占位使用：存储点击事件，消息互动等内容
 		//区分不同触发动作，组织不同搜索条件
 		if ($triggerType != WxSopsDetailsModel::TRIGGER_TYPE_USER_SUBSCRIBE) {
 			$triggerType = WxSopsDetailsModel::TRIGGER_TYPE_USER_INTERACTION_ALL;
+			$extra = "";//暂时没做到这么细致,占位使用：存储点击事件，消息互动等内容
 		}
 		$data = WxSopsModel::adGetSops($wxOriginalId, $triggerType, $extra);
 		if (empty($data)) {
