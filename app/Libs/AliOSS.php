@@ -17,54 +17,12 @@ use OSS\OssClient;
 class AliOSS
 {
     const DIR_IMG = 'img';
-    const DIR_TEACHER_NOTE = 'teacher_note';
-    const DIR_DYNAMIC_MIDI = 'dynamic_midi';
-    const DIR_AUDIO_COMMENT = 'audio_comment'; // 老师课堂点评语音
-    const DIR_HOMEWORK_AUDIO_COMMENT = 'homework_audio_comment'; // 课后作业点评语音
-    const DIR_APP_LOG = 'app_log'; // app日志
-    //音基小程序目录
-    const DIR_EXAM_IMG = 'exam_img'; // 音基小程序图片
-    const DIR_CONVERSE_AUDIO = 'converse_audio'; // 百度转换语音
-    const DIR_MADE_AUDIO = 'made_audio'; // 自制音频
-    //点评课
-    const DIR_REVIEW_COURSE_AUDIO = 'review_course_audio'; // 点评课语音
-
-    const PROCESS_STYLE_NOTE_THUMB = 'note_thumb'; // 老师笔记缩略图 image/auto-orient,1/resize,p_25/quality,q_70
     const DIR_REFERRAL = 'referral';//转介绍海报和二维码
-    const DIR_APP_BANNER = 'app_banner';//app banner图
-    const DIR_REFERRAL_ACTIVITY = 'referral_activity';//转介绍活动截图上传
-    const DIR_WX_AUTO_REPLAY = 'wx_auto_replay'; //微信自动回复
-    const DIR_CERTIFICATE = 'certificate';//学生证书
-    const DIR_MAKE_OPERA = 'make_opera';    //打谱申请曲谱图片上传
-    const DIR_OPN_SEARCH = 'omr'; // 曲谱搜索图源
-    const DIR_STUDENT_THUMB = 'thumb'; //头像
     const DIR_MESSAGE_EXCEL = 'message_excel'; // 推送消息EXCEL
     const DIR_MINIAPP_CODE = 'miniapp_code';   // 小程序码
     const DIR_EMPLOYEE_POSTER = 'employee_poster';   // 员工海报
-    const DIR_SIGN_IN_POSTER = 'sign_in_poster';//打卡截图上传
-    const DIR_AGENT_PRE_STORAGE_BILL = 'agent_pre_storage_bill';//代理商预存订单支付截图保存目录
-    const DIR_REAL_ACTIVITY_WEEK = 'real_activity_week';//真人业务线周周领奖活动截图上传目录
-    const DIR_ACTIVITY_AWARD = 'activity_award';//活动奖品封面图上传目录
     const DIR_TMP_EXCEL = 'tmp_excel';//临时文本文件上传目录，比如excel，txt，此目录会定时删除
 	const DIR_ASSISTANT = 'assistant'; //助教的图片信息
-
-    /**
-     * 替换cdn域名 erp上传图片专用
-     * @param $url
-     * @return string|string[]
-     */
-    public static function replaceShopCdnDomain($url)
-    {
-        $cdnDomain = DictConstants::getErpDict(DictConstants::ERP_ALI_OSS_CONFIG, 'shop_cdn_domain');
-        //外部传输已经处理过的url
-        if (Util::isUrl($url)) {
-            $reg = '/(http[s]):\/\/([^\/]+)/i';
-            $newUrl = preg_replace($reg, $cdnDomain, $url);
-        } else {
-            $newUrl = $cdnDomain . '/' . ($url);
-        }
-        return $newUrl ?? $url;
-    }
 
 
     private function gmt_iso8601($time) {
@@ -210,14 +168,6 @@ class AliOSS
             $authStr = urldecode(substr($path, 0, $pos)).substr($path, $pos, strlen($path) - $pos) . "\n" . $body;
         }
         SimpleLogger::info("ALIOSS AUTHSTR", [$authStr]);
-        // 验证签名
-//        $ok = openssl_verify($authStr, $authorization, $pubKey, OPENSSL_ALGO_MD5);
-//        if ($ok == 1){
-//            return true;
-//        }else{
-//            return false;
-//        }
-        // 默认不验证签名
         return true;
     }
 
@@ -410,29 +360,6 @@ class AliOSS
         }
         $typeConstants = [
             self::DIR_IMG,
-            self::DIR_TEACHER_NOTE,
-            self::DIR_DYNAMIC_MIDI,
-            self::DIR_AUDIO_COMMENT,
-            self::DIR_HOMEWORK_AUDIO_COMMENT,
-            self::DIR_APP_LOG,
-            self::DIR_CONVERSE_AUDIO,
-            self::DIR_MADE_AUDIO,
-            self::DIR_EXAM_IMG,
-            self::DIR_REVIEW_COURSE_AUDIO,
-            self::DIR_REFERRAL,
-            self::DIR_APP_BANNER,
-            self::DIR_REFERRAL_ACTIVITY,
-            self::DIR_WX_AUTO_REPLAY,
-            self::DIR_CERTIFICATE,
-            self::DIR_MAKE_OPERA,
-            self::DIR_OPN_SEARCH,
-            self::DIR_STUDENT_THUMB,
-            self::DIR_MESSAGE_EXCEL,
-            self::DIR_SIGN_IN_POSTER,
-            self::DIR_AGENT_PRE_STORAGE_BILL,
-            self::DIR_REAL_ACTIVITY_WEEK,
-            self::DIR_ACTIVITY_AWARD,
-            self::DIR_ASSISTANT,
         ];
         if (!in_array($dirType, $typeConstants)) {
             return null;

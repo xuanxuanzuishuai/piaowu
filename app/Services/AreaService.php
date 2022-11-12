@@ -11,20 +11,9 @@ namespace App\Services;
 use App\Models\AreaCityModel;
 use App\Models\AreaDistrictModel;
 use App\Models\AreaProvinceModel;
-use App\Models\CountryCodeModel;
-use App\Models\Dss\DssAreaModel;
 
 class AreaService
 {
-    /**
-     * 获取国家列表:中国排在首位
-     * @return array
-     */
-    public static function countryList()
-    {
-        return CountryCodeModel::getDataSpecifySort("country_code <> 86");
-    }
-
     /**
      * 获取省列表
      * @param $params

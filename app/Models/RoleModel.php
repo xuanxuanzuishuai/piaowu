@@ -14,17 +14,11 @@ use App\Libs\MysqlDB;
 class RoleModel extends Model
 {
     public static $table = "role";
-    public static $redisExpire = 0;
-    public static $redisDB;
-    public static $superAdmin = -1;//超级管理员roleid
 
-    //column org_type
-    const ORG_TYPE_INTERNAL = 0; //内部
-    const ORG_TYPE_DIRECT = 1; //直营
-    const ORG_TYPE_EXTERNAL = 2; //外部
-    //数据权限:1查看全部 2查看自己
-    const DATA_PERMISSION_ALL = 1;
-    const DATA_PERMISSION_SELF = 2;
+    const SUPER_ADMIN  = 1; //超级管理员
+    const REGION_MANAGE = 2; //大区经理
+    const BA_MANAGE = 3; //BA经理
+
 
     public static function getRoles()
     {

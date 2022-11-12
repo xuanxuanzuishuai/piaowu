@@ -39,12 +39,12 @@ class Employee extends ControllerBase
     {
         $rules = [
             [
-                'key' => 'name',
+                'key' => 'login_name',
                 'type' => 'required',
                 'error_code' => 'login_name_is_required'
             ],
             [
-                'key' => 'password',
+                'key' => 'login_pwd',
                 'type' => 'required',
                 'error_code' => 'password_is_required'
             ]
@@ -54,7 +54,7 @@ class Employee extends ControllerBase
         if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
-        $result = EmployeeService::login($params['name'], $params['password']);
+        $result = EmployeeService::login($params['login_name'], $params['login_pwd']);
         if (!empty($result['code'])) {
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
@@ -65,9 +65,27 @@ class Employee extends ControllerBase
             'code' => Valid::CODE_SUCCESS,
             'data' => [
                 'token' => $token,
-                'expires' => 0,
                 'user' => $userInfo,
-                'wsinfo' => []
+            ]
+        ], StatusCode::HTTP_OK);
+
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @param array $args
+     * @return Response
+     */
+    public function info(Request $request, Response $response, Array $args)
+    {
+        $employeeId = $this->getEmployeeId();
+        $info = EmployeeModel::getRecord(['id' => $employeeId], ['name']);
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'info' => $info
             ]
         ], StatusCode::HTTP_OK);
 

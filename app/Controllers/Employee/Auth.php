@@ -61,7 +61,6 @@ class Auth extends ControllerBase
                 'token' => $token,
                 'expires' => $expires,
                 'user' => $userInfo,
-                'wsinfo' => []
             ]
         ], StatusCode::HTTP_OK);
 

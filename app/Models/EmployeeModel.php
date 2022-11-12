@@ -15,7 +15,7 @@ use Medoo\Medoo;
 
 class EmployeeModel extends Model
 {
-    private static $cacheKeyTokenPri = "token_";
+    private static $cacheKeyTokenPri = "employee_token_";
     public static $table = "employee";
     public static $redisExpire = 3600 * 8;
     public static $redisDB;
@@ -25,7 +25,6 @@ class EmployeeModel extends Model
     const STATUS_NORMAL = 1;
     const STATUS_DEL = 0;
 
-    const SUPER_ADMIN_ROLE_ID = -1; //强制规定项目超级管理员 admin_role_id为 -1，不可改变
     //角色 9 财务
     const ROLE_FINANCE = 9;
 
@@ -52,8 +51,6 @@ class EmployeeModel extends Model
                 'status',
                 'login_name',
                 'pwd',
-                'is_leader',
-                'last_update_pwd_time',
             ]);
     }
 

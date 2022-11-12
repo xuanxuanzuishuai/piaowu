@@ -14,8 +14,6 @@ use App\Libs\Dict;
 use App\Libs\DictConstants;
 use App\Libs\DingDing;
 use App\Libs\Exceptions\RunTimeException;
-use App\Libs\JWTUtils;
-use App\Libs\SimpleLogger;
 use App\Libs\UserCenter;
 use App\Libs\Util;
 use App\Libs\Valid;
@@ -26,30 +24,6 @@ use App\Models\RoleModel;
 class EmployeeService
 {
 
-    const ONE_MONTH_TIMESTAMP = 2592000; // 一个月
-    const PWD_EXPIRE_DAYS = 30;
-
-    public static function checkUcToken($token){
-
-        // 用户中心验证Token及权限
-        list($appId, $appSecret) = DictConstants::get(DictConstants::USER_CENTER, ['app_id_op', 'app_secret_op']);
-        $uc = new UserCenter($appId, $appSecret);
-        $ucData = $uc->CheckToken($token);
-        if (empty($ucData['user'])){
-            return Valid::addErrors([], 'xyz_token', 'no_privilege');
-        }
-
-        SimpleLogger::info(__FILE__ . ':' . __LINE__, [$ucData]);
-        $userInfo = EmployeeModel::getByUuid($ucData['user']['uuid']);
-
-        $expires = $ucData['expires'] - time();
-        EmployeeModel::setEmployeeCache($userInfo, $token,  $expires);
-        // 更新用户上次登录时间
-        EmployeeModel::updateEmployee($userInfo['id'], ['last_login_time' => time()]);
-
-        return array($ucData['token'], $userInfo, $ucData['expires']);
-    }
-
     /**
      * @param $employeeName
      * @param $password
@@ -57,7 +31,6 @@ class EmployeeService
      */
     public static function login($employeeName, $password)
     {
-
         $employee = EmployeeModel::getEmployeeByLoginName($employeeName);
 
         if (empty($employee)) {
@@ -70,20 +43,7 @@ class EmployeeService
         }
         unset($employee['pwd']);
 
-        list($issuer, $audience, $expire, $signerKey, $tokenTypeUser) = DictService::getKeyValuesByArray(Constants::DICT_TYPE_SYSTEM_ENV,
-            [
-                Constants::DICT_KEY_JWT_ISSUER,
-                Constants::DICT_KEY_JWT_AUDIENCE,
-                Constants::DICT_KEY_JWT_EXPIRE,
-                Constants::DICT_KEY_JWT_SIGNER_KEY,
-                Constants::DICT_KEY_TOKEN_TYPE_USER
-            ]);
-        $jwtUtils = new JWTUtils($issuer, $audience, $expire, $signerKey);
-        $token = $jwtUtils->getToken($tokenTypeUser, $employee['id'], $employee['name']);
-
-        EmployeeModel::setEmployeeCache($employee, $token, $expire);
-        // 更新用户上次登录时间
-        EmployeeModel::updateEmployee($employee['id'], ['last_login_time' => time()]);
+        $token = EmployeeTokenService::generateToken($employee['id']);
 
         return array($token, $employee);
     }
@@ -282,48 +242,6 @@ class EmployeeService
     public static function getById($employeeId)
     {
         return EmployeeModel::getById($employeeId);
-    }
-
-    public static function getNameMap($employeeIds)
-    {
-        if (empty($employeeIds)) {
-            return [];
-        }
-        return EmployeeModel::getRecords(['id' => $employeeIds], ['id', 'name']);
-    }
-
-    /**
-     * 是否助教角色
-     * @param $employeeId
-     * @return bool
-     */
-    public static function isAssistantRole($employeeId)
-    {
-        if (empty($employeeId)) {
-            return false;
-        }
-        $assistantRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_ASSISTANT);
-        if ($assistantRoleId == $employeeId) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * 是否课管角色
-     * @param $employeeId
-     * @return bool
-     */
-    public static function isCourseManagerRole($employeeId)
-    {
-        if (empty($employeeId)) {
-            return false;
-        }
-        $assistantRoleId = DictService::getKeyValue(Constants::DICT_TYPE_ROLE_ID, Constants::DICT_KEY_CODE_COURSE_MANAGE_ROLE_ID_CODE);
-        if ($assistantRoleId == $employeeId) {
-            return true;
-        }
-        return false;
     }
 
     public static function externalInformation($params)
