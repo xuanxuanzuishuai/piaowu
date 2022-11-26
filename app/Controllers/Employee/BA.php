@@ -42,6 +42,28 @@ class BA extends ControllerBase
      * @param $args
      * @return Response
      */
+    public function exportBa(Request $request, Response $response, $args)
+    {
+        $params = $request->getParams();
+        $employeeId = $this->getEmployeeId();
+
+        $filePath =  BAService::exportData($employeeId, $params);
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => [
+                'file_path' => $filePath
+            ]
+        ], StatusCode::HTTP_OK);
+    }
+
+
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
     public function updateApply(Request $request, Response $response, $args)
     {
         $params = $request->getParams();

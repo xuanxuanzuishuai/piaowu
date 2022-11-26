@@ -10,6 +10,12 @@ class BAApplyModel extends Model
     const APPLY_PASS    = 2;
     const APPLY_REJECT  = 3;
 
+    const STATUS_MSG = [
+        self::APPLY_WAITING => '待审核',
+        self::APPLY_PASS => '审核通过',
+        self::APPLY_REJECT => '审核拒绝'
+    ];
+
 
     /**
      * 获取BA经理可看到的ba申请列表
@@ -25,7 +31,7 @@ class BAApplyModel extends Model
 
         $countInfo = MysqlDB::getDB()->queryAll($countSql);
 
-        $sql = 'select a.id, a.mobile, a.`name`, a.job_number, p.shop_number, p.shop_name, a.create_time,a.check_status 
+        $sql = 'select a.id, a.mobile, a.`name`, a.job_number, a.idcard, p.shop_number, p.shop_name, a.create_time,a.check_status
 from ba_apply a left join shop_belong_manage s on a.shop_id = s.shop_id left join shop_info p on a.id = p.id';
         $sql .= $where;
         $sql .= ' and s.employee_id = ' . $employeeId;
@@ -52,7 +58,7 @@ left join region_belong_manage m on m.region_id = r.region_id';
         $countInfo = MysqlDB::getDB()->queryAll($countSql);
 
 
-        $sql = 'select a.id, a.mobile, a.`name`, a.job_number, s.shop_number, s.shop_name, a.create_time,a.check_status,s.province_id, r.region_id, m.employee_id 
+        $sql = 'select a.id, a.mobile, a.`name`, a.job_number, a.idcard, s.shop_number, s.shop_name, a.create_time,a.check_status,s.province_id, r.region_id, m.employee_id
 from ba_apply a left join shop_info s on a.shop_id = s.id
 
 left join region_province_relation r on s.province_id = r.province_id
@@ -76,7 +82,7 @@ left join region_belong_manage m on m.region_id = r.region_id';
         $countSql = 'select count(*) count_num from ba_apply a left join shop_info s on a.shop_id = s.id';
         $countInfo = MysqlDB::getDB()->queryAll($countSql .= $where);
 
-        $sql = 'select a.id, a.mobile, a.`name`, a.job_number, s.shop_number, s.shop_name, a.create_time,a.check_status 
+        $sql = 'select a.id, a.mobile, a.`name`, a.job_number, a.idcard, s.shop_number, s.shop_name, a.create_time,a.check_status
 from ba_apply a left join shop_info s on a.shop_id = s.id';
 
         $sql .= $where;

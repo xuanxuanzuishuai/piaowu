@@ -36,6 +36,7 @@ class EmployeeRouter extends RouterBase
         '/employee/ba/update_apply' => ['method' => ['post'], 'call' => BA::class . ':updateApply'],
         '/employee/ba/get_ba_info' => ['method' => ['get'], 'call' => BA::class . ':getBaInfo'],
         '/employee/ba/get_pass_ba' => ['method' => ['get'], 'call' => BA::class . ':getPassBa'],
+        '/employee/ba/export_ba' => ['method' => ['get'], 'call' => BA::class . ':exportBa'],
 
 
         '/employee/receipt/add_receipt' => ['method' => ['post'], 'call' => Receipt::class . ':addReceipt'],
