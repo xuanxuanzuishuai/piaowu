@@ -123,6 +123,57 @@ class ReceiptApplyService
     }
 
     /**
+     * 导出订单列表
+     * @param $params
+     * @param $employeeId
+     * @return array
+     */
+    public static function exportData($params, $employeeId)
+    {
+        $employeeInfo = EmployeeModel::getRecord(['id' => $employeeId]);
+        $count = ReceiptApplyModel::getCount(['id[>=]' => 1]);
+
+        $list = [];
+        if ($employeeInfo['role_id'] == RoleModel::BA_MANAGE) {
+            list($list, $totalCount) =  ReceiptApplyModel::getBAManageReceiptList($employeeId, $params, 1, $count);
+        }
+
+        if ($employeeInfo['role_id'] == RoleModel::REGION_MANAGE) {
+            list($list, $totalCount) =  ReceiptApplyModel::getRegionManageReceiptList($employeeId, $params, 1, $count);
+        }
+
+        if ($employeeInfo['role_id'] == RoleModel::SUPER_ADMIN) {
+            list($list, $totalCount) = ReceiptApplyModel::getSuperReceiptList($params, 1, $count);
+        }
+
+        $title = [
+            '小票编号',
+            '所属BA',
+            '所属BA店铺',
+            '大区',
+            '区域',
+            '省份',
+            '城市',
+            '所属BA经理',
+            '大区经理',
+            '购买日期',
+            '小票店铺编号',
+            '小票店铺名称',
+        ];
+
+
+        var_dump ($list);
+        die();
+
+
+
+
+
+
+        return [self::buildReturnInfo($list), $totalCount];
+    }
+
+    /**
      * 得到订单列表
      * @param $params
      * @param $employeeId
@@ -148,6 +199,7 @@ class ReceiptApplyService
         }
         return [self::buildReturnInfo($list), $totalCount];
     }
+
 
     /**
      * 格式化返回信息

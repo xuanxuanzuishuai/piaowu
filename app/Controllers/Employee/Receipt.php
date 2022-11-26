@@ -110,16 +110,15 @@ class Receipt extends ControllerBase
         $params = $request->getParams();
         try {
             $employeeId = $this->getEmployeeId();
-            list($page, $count) = Util::formatPageCount($params);
-            list($applyList, $totalCount) = ReceiptApplyService::getReceiptList($params, $employeeId, $page, $count);
+             $filePath =  ReceiptApplyService::exportData($params, $employeeId);
         } catch (RuntimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'receipt_list' => $applyList,
-            'total_count' => $totalCount
+            'file_path' => $filePath
+
         ], StatusCode::HTTP_OK);
     }
 
