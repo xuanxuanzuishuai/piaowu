@@ -9,6 +9,7 @@
 namespace App\Routers;
 
 use App\Controllers\Employee\Employee;
+use App\Controllers\Employee\Goods;
 use App\Controllers\Employee\Privilege;
 use App\Controllers\Employee\Receipt;
 use App\Middleware\EmployeeAuthCheckMiddleWare;
@@ -25,6 +26,12 @@ class EmployeeRouter extends RouterBase
         '/employee/employee/list' => ['method' => ['get'], 'call' => Employee::class . ':list'],
         '/employee/employee/info' => ['method' => ['get'], 'call' => Employee::class . ':info'],
         '/employee/privilege/employee_menu' => ['method' => ['get'], 'call' => Privilege::class . ':employeeMenu'],
+
+        '/employee/employee/employee_list' => ['method' => ['get'], 'call' => Employee::class . ':list'],
+        '/employee/employee/add_employee' => ['method' => ['post'], 'call' => Employee::class . ':add'],
+        '/employee/employee/update_pwd' => ['method' => ['post'], 'call' => Employee::class . ':updatePwd'],
+
+
         '/employee/ba/get_ba' => ['method' => ['get'], 'call' => BA::class . ':baList'],
         '/employee/ba/update_apply' => ['method' => ['post'], 'call' => BA::class . ':updateApply'],
         '/employee/ba/get_ba_info' => ['method' => ['get'], 'call' => BA::class . ':getBaInfo'],
@@ -40,5 +47,8 @@ class EmployeeRouter extends RouterBase
 
         '/employee/shop/shop_list' => ['method' => ['get'], 'call' => Shop::class . ':shopList'],
         '/employee/shop/add_shop' => ['method' => ['post'], 'call' => Shop::class . ':addShop'],
+
+        '/employee/goods/goods_list' => ['method' => ['get'], 'call' => Goods::class . ':list'],
+        '/employee/goods/add_goods' => ['method' => ['post'], 'call' => Goods::class . ':addGoods'],
     ];
 }

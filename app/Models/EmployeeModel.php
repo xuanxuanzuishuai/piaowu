@@ -15,22 +15,17 @@ use Medoo\Medoo;
 
 class EmployeeModel extends Model
 {
-    private static $cacheKeyTokenPri = "employee_token_";
     public static $table = "employee";
-    public static $redisExpire = 3600 * 8;
-    public static $redisDB;
-    public static $initPwd = "xiaoyezi123";
+
 
 
     const STATUS_NORMAL = 1;
-    const STATUS_DEL = 0;
+    const STATUS_DEL = 2;
 
-    //角色 9 财务
-    const ROLE_FINANCE = 9;
-
-    const SYSTEM_EMPLOYEE_ID = 10000;
-    const SYSTEM_EMPLOYEE_NAME = '系统';
-
+    const STATUS_MSG = [
+        self::STATUS_NORMAL => '正常',
+        self::STATUS_DEL => '失效'
+    ];
 
 
     /**
@@ -54,53 +49,6 @@ class EmployeeModel extends Model
             ]);
     }
 
-    /**
-     * @param $employee
-     * @param $token
-     * @param $expires
-     * @return bool
-     */
-    public static function setEmployeeCache($employee, $token, $expires)
-    {
-        $redis = RedisDB::getConn(self::$redisDB);
-        $cacheKey = self::createCacheKey($token, self::$cacheKeyTokenPri);
-        $redis->setex($cacheKey, $expires, $employee['id']);
-        return true;
-    }
-
-    /**
-     * 操作延长过期时间
-     * @param $token
-     * @return bool
-     */
-    public static function refreshEmployeeCache($token)
-    {
-        $redis = RedisDB::getConn(self::$redisDB);
-        $cacheKey = self::createCacheKey($token, self::$cacheKeyTokenPri);
-        $redis->expire($cacheKey, self::$redisExpire);
-        return true;
-    }
-
-    /**
-     * @param $token
-     * @return string
-     */
-    public static function getEmployeeToken($token)
-    {
-        $redis = RedisDB::getConn(self::$redisDB);
-        $cacheKey = self::createCacheKey($token, self::$cacheKeyTokenPri);
-        return $redis->get($cacheKey);
-    }
-
-    /**
-     * @param $token
-     * @return int
-     */
-    public static function delEmployeeToken($token)
-    {
-        $redis = RedisDB::getConn(self::$redisDB);
-        return $redis->del(self::createCacheKey($token, self::$cacheKeyTokenPri));
-    }
 
     /**
      * 获取所有员工
@@ -119,7 +67,6 @@ class EmployeeModel extends Model
 
         $users = $db->select(self::$table, [
             '[>]' . RoleModel::$table => ['role_id' => 'id'],
-            '[>]' . DeptModel::$table => ['dept_id' => 'id'],
         ], [
             self::$table . '.id',
             self::$table . '.name',
@@ -127,14 +74,7 @@ class EmployeeModel extends Model
             self::$table . '.mobile',
             self::$table . '.login_name',
             self::$table . '.status',
-            self::$table . '.dept_id',
-            self::$table . '.is_leader',
-            self::$table . '.last_login_time',
-            self::$table . '.org_id',
-            self::$table . '.wx_nick',
-            self::$table . '.email',
             RoleModel::$table . '.name(role_name)',
-            DeptModel::$table . '.name(dept_name)',
         ], $where);
 
         return $users ?: [];
@@ -220,23 +160,6 @@ class EmployeeModel extends Model
             );
     }
 
-    /**
-     * 查询离密码过期剩五天的用户
-     * @param $notExpireRole
-     * @return array
-     */
-    public static function selectEmployeePwdExpire($notExpireRole)
-    {
-        return self::getRecords([
-            'role_id[!]' => $notExpireRole,
-            'status' => self::STATUS_NORMAL,
-            'last_update_pwd_time[<=]' => strtotime(date("Y-m-d") . "-25 day"),
-            'last_update_pwd_time[>]' => strtotime(date("Y-m-d") . "-30 day")
-        ],[
-            'id(employee_id)',
-            'expire_days' => Medoo::raw("floor((last_update_pwd_time + " . EmployeeService::ONE_MONTH_TIMESTAMP . " - unix_timestamp()) / 86400)")
-        ]);
-    }
 
     /**
      * 获取员工详细信息
@@ -271,32 +194,6 @@ class EmployeeModel extends Model
         return $user;
     }
 
-    /**
-     * 根据UUID获取用户信息
-     * @param $uuid
-     * @return mixed
-     */
-    public static function getByUuid($uuid)
-    {
-        $user = MysqlDB::getDB()->get(self::$table, [
-            self::$table . '.id',
-            self::$table . '.name',
-            self::$table . '.role_id',
-            self::$table . '.status',
-            self::$table . '.login_name',
-            self::$table . '.pwd',
-            self::$table . '.is_leader',
-            self::$table . '.last_update_pwd_time',
-            self::$table . '.org_id',
-            self::$table . '.email',
-        ], [
-            'AND' => [
-                self::$table . '.uuid' => $uuid,
-                self::$table . '.status' => self::STATUS_NORMAL
-            ]
-        ]);
-        return $user;
-    }
 
     public static function selectByRole($orgId, $roleId, $page, $count)
     {
@@ -321,39 +218,5 @@ class EmployeeModel extends Model
         $total = $db->count(self::$table, $where);
 
         return [$records, $total];
-    }
-
-    /**
-     * 获取课管下的学生数量
-     * @param $courseManageId
-     * @return array
-     */
-    public static function getCourseManageStudentCount($courseManageId)
-    {
-        $db = MysqlDB::getDB();
-        $sql = "SELECT
-                    e.id,
-                    e.name,
-                    e.leads_max_nums,
-                    count( s.id ) AS student_nums
-                FROM
-                    employee AS e
-                    LEFT JOIN student AS s ON e.id = s.course_manage_id
-                WHERE
-                    e.id IN ( ".$courseManageId." )
-                AND e.status = " . self::STATUS_NORMAL . "
-                GROUP BY
-                    e.id";
-        return $db->queryAll($sql);
-    }
-
-    /**
-     * 根据id获取uuid
-     * @param $userId
-     * @return mixed
-     */
-    public static function getUuidById($userId)
-    {
-        return MysqlDB::getDB()->get(self::$table, 'uuid', ['id' => (string)$userId]);
     }
 }

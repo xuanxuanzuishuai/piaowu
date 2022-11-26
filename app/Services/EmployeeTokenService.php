@@ -103,4 +103,15 @@ class EmployeeTokenService
         $key = self::getTokenKey($token);
         RedisDB::getConn()->del([$key]);
     }
+
+    public static function expireUserToken($employeeId)
+    {
+        $tokeKey = self::getUserTokenKey($employeeId);
+
+        $redis = RedisDB::getConn();
+        $employeeTokenKey = self::getTokenKey($redis->get($tokeKey));
+
+        $redis->del([$tokeKey, $employeeTokenKey]);
+
+    }
 }

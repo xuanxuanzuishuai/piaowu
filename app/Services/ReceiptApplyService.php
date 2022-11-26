@@ -7,6 +7,7 @@ use App\Libs\Util;
 use App\Models\BAApplyModel;
 use App\Models\BAListModel;
 use App\Models\EmployeeModel;
+use App\Models\GoodsModel;
 use App\Models\ReceiptApplyGoodsModel;
 use App\Models\ReceiptApplyModel;
 use App\Models\RoleModel;
@@ -22,6 +23,17 @@ class ReceiptApplyService
      */
     public static function backendUploadApply($params, $employeeId)
     {
+        $newArr = [];
+        foreach($params['goods_info'] as $v) {
+            if (!empty($newArr[$v['id']])) {
+                $startNum = $newArr[$v['id']];
+                $newArr[$v['id']] = $startNum + $v['num'];
+            } else {
+                $newArr[$v['id']] = $v['num'];
+            }
+        }
+
+
         $receiptNumber = $params['receipt_number'];
         $where = [
             'receipt_number' => $receiptNumber,
@@ -69,12 +81,40 @@ class ReceiptApplyService
         ];
 
         if (!empty($params['receipt_id'])) {
+            $receiptId = $params['receipt_id'];
             ReceiptApplyModel::updateRecord($params['receipt_id'], $data);
         } else {
-            ReceiptApplyModel::insertRecord(
+            $receiptId = ReceiptApplyModel::insertRecord(
                 $data
             );
         }
+
+
+        ReceiptApplyGoodsModel::batchUpdateRecord(['status' => ReceiptApplyGoodsModel::STATUS_REFUND], ['receipt_apply_id' => $receiptId]);
+
+
+        foreach($newArr as $k => $v) {
+            $goodsInfo = GoodsModel::getRecord(['id' => $k]);
+
+            $record = ReceiptApplyGoodsModel::getRecord(['receipt_apply_id' => $receiptId, 'goods_id' => $k]);
+
+            if (empty($record)) {
+                ReceiptApplyGoodsModel::insertRecord([
+                    'goods_id' => $goodsInfo['id'],
+                    'goods_number' => $goodsInfo['goods_number'],
+                    'goods_name' => $goodsInfo['goods_name'],
+                    'create_time' => time(),
+                    'num' => $v,
+                    'receipt_apply_id' => $receiptId,
+                    'status' => ReceiptApplyGoodsModel::STATUS_NORMAL
+                ]);
+            } else {
+                ReceiptApplyGoodsModel::batchUpdateRecord(['num' => $v, 'status' => ReceiptApplyGoodsModel::STATUS_NORMAL], ['receipt_apply_id' => $receiptId, 'goods_id' => $k]);
+            }
+
+        }
+
+
     }
 
     /**
