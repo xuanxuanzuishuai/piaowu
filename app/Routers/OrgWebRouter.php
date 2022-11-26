@@ -1,7 +1,7 @@
 <?php
 namespace App\Routers;
 
-use App\Controllers\API\OSS;
+use App\Controllers\Api\OSS;
 
 class OrgWebRouter extends RouterBase
 {
