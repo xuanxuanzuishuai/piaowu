@@ -159,8 +159,29 @@ class ReceiptApplyService
             '购买日期',
             '小票店铺编号',
             '小票店铺名称',
+            '参考奖励',
+            '实发奖励',
+            '订单状态',
+            '系统审核建议',
+            '商品名称',
+            '商品编码',
+            '数量',
+            '市场价',
+            '是否退款',
+            '最后更新时间'
         ];
 
+        $dataResult = [];
+        foreach($list as $v) {
+            $dataResult[] = [
+                'receipt_number' => $v['receipt_number'],
+                'ba_name' => $v['ba_name'],
+                'shop_name' => $v['shop_name'],
+                'region_name' => $v['region_name']
+
+
+            ];
+        }
 
         var_dump ($list);
         die();

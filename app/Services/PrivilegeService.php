@@ -11,6 +11,7 @@ namespace App\Services;
 
 use App\Libs\Dict;
 use App\Libs\Util;
+use App\Models\EmployeeModel;
 use App\Models\PrivilegeModel;
 
 class PrivilegeService
@@ -75,7 +76,7 @@ class PrivilegeService
     public static function getEmployeeMenuService($employeeId)
     {
         $privilegeIds = [];
-        $employee = EmployeeService::getById($employeeId);
+        $employee = EmployeeModel::getRecord(['id' => $employeeId]);
 
         $role = RoleService::getById($employee['role_id']);
         if (!empty($role['group_ids'])) {
