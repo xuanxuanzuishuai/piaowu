@@ -42,6 +42,14 @@ class GoodsService
             throw new RunTimeException(['not_found_employee']);
         }
 
+        if ($params['market_price'] != floatval($params['market_price'])) {
+            throw new RuntimeException(["market_price_not_correct"]);
+        }
+
+        if ($params['market_price'] * 100 != intval($params['market_price'] * 100)) {
+            throw new RunTimeException(['only_fen']);
+        }
+
         $where = [
             'goods_number' => $params['goods_number']
         ];
@@ -64,7 +72,8 @@ class GoodsService
                     'goods_name' => $params['goods_name'],
                     'goods_number' => $params['goods_number'],
                     'update_time' => time(),
-                    'employee_id' => $employeeId
+                    'employee_id' => $employeeId,
+                    'market_price' => $params['market_price'] * 100
                 ]);
         } else {
             GoodsModel::insertRecord(
@@ -73,7 +82,8 @@ class GoodsService
                     'goods_number' => $params['goods_number'],
                     'create_time' => time(),
                     'update_time' => time(),
-                    'employee_id' => $employeeId
+                    'employee_id' => $employeeId,
+                    'market_price' => $params['market_price'] * 100
                 ]
             );
         }

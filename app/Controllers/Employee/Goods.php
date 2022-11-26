@@ -57,6 +57,11 @@ class Goods extends ControllerBase
                 'key' => 'goods_number',
                 'type' => 'required',
                 'error_code' => 'goods_number_is_required'
+            ],
+            [
+                'key' => 'market_price',
+                'type' => 'required',
+                'error_code' => 'market_price_is_required'
             ]
         ];
         $params = $request->getParams();
