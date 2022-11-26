@@ -34,7 +34,7 @@ class Goods extends ControllerBase
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
-            'shop_list' => $list,
+            'goods_list' => $list,
             'total_count' => $totalCount
         ], StatusCode::HTTP_OK);
     }
