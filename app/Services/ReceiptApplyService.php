@@ -25,11 +25,11 @@ class ReceiptApplyService
     {
         $newArr = [];
         foreach($params['goods_info'] as $v) {
-            if (!empty($newArr[$v['id']])) {
+            if (!empty($newArr[$v['id'] . '_' . $v['is_refund']])) {
                 $startNum = $newArr[$v['id']];
-                $newArr[$v['id']] = $startNum + $v['num'];
+                $newArr[$v['id'] . '_' . $v['is_refund']] = $startNum + $v['num'];
             } else {
-                $newArr[$v['id']] = $v['num'];
+                $newArr[$v['id'] . '_' . $v['is_refund']] = $v['num'];
             }
         }
 
@@ -90,13 +90,18 @@ class ReceiptApplyService
         }
 
 
-        ReceiptApplyGoodsModel::batchUpdateRecord(['status' => ReceiptApplyGoodsModel::STATUS_REFUND], ['receipt_apply_id' => $receiptId]);
+        ReceiptApplyGoodsModel::batchUpdateRecord(['status' => ReceiptApplyGoodsModel::STATUS_DEL], ['receipt_apply_id' => $receiptId]);
 
 
         foreach($newArr as $k => $v) {
-            $goodsInfo = GoodsModel::getRecord(['id' => $k]);
+            $arr = explode('_', $k);
+            $goodsId = $arr[0];
+            $status = $arr[1];
 
-            $record = ReceiptApplyGoodsModel::getRecord(['receipt_apply_id' => $receiptId, 'goods_id' => $k]);
+
+            $goodsInfo = GoodsModel::getRecord(['id' => $goodsId]);
+
+            $record = ReceiptApplyGoodsModel::getRecord(['receipt_apply_id' => $receiptId, 'goods_id' => $k, 'status' => $status]);
 
             if (empty($record)) {
                 ReceiptApplyGoodsModel::insertRecord([
@@ -106,10 +111,10 @@ class ReceiptApplyService
                     'create_time' => time(),
                     'num' => $v,
                     'receipt_apply_id' => $receiptId,
-                    'status' => ReceiptApplyGoodsModel::STATUS_NORMAL
+                    'status' => $status
                 ]);
             } else {
-                ReceiptApplyGoodsModel::batchUpdateRecord(['num' => $v, 'status' => ReceiptApplyGoodsModel::STATUS_NORMAL], ['receipt_apply_id' => $receiptId, 'goods_id' => $k]);
+                throw new RunTimeException(['please_try']);
             }
 
         }
@@ -191,7 +196,7 @@ class ReceiptApplyService
         $receiptInfo['ba_number'] = $baInfo['job_number'];
 
         //关联的商品信息
-        $relateGoods = ReceiptApplyGoodsModel::getRecords(['receipt_apply_id' => $receiptInfo['id']]);
+        $relateGoods = ReceiptApplyGoodsModel::getRecords(['receipt_apply_id' => $receiptInfo['id'], 'status[!]' => ReceiptApplyGoodsModel::STATUS_DEL]);
         foreach ($relateGoods as $k => $v) {
             $v['status_msg'] = ReceiptApplyGoodsModel::STATUS_MSG[$v['status']];
             $relateGoods[$k] = $v;
