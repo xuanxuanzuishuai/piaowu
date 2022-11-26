@@ -84,6 +84,24 @@ class Receipt extends ControllerBase
     public function receiptList(Request $request, Response $response, $args)
     {
         $params = $request->getParams();
+        $rules = [
+            [
+                'key'        => 'receipt_from',
+                'type'       => 'required',
+                'error_code' => 'receipt_from_is_required'
+            ],
+            [
+                'key'        => 'receipt_from',
+                'type'       => 'in',
+                'value'      => [1,2],
+                'error_code' => 'receipt_range_is_error'
+            ]
+        ];
+
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
         try {
             $employeeId = $this->getEmployeeId();
             list($page, $count) = Util::formatPageCount($params);
@@ -108,6 +126,24 @@ class Receipt extends ControllerBase
     public function exportData(Request $request, Response $response, $args)
     {
         $params = $request->getParams();
+        $rules = [
+            [
+                'key'        => 'receipt_from',
+                'type'       => 'required',
+                'error_code' => 'receipt_from_is_required'
+            ],
+            [
+                'key'        => 'receipt_from',
+                'type'       => 'in',
+                'value'      => [1,2],
+                'error_code' => 'receipt_range_is_error'
+            ]
+        ];
+
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
         try {
             $employeeId = $this->getEmployeeId();
              $filePath =  ReceiptApplyService::exportData($params, $employeeId);

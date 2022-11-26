@@ -20,6 +20,11 @@ class ReceiptApplyModel extends Model
         self::CHECK_REJECT => '审核驳回'
     ];
 
+    const RECEIPT_FROM = [
+        1 => '门店单',
+        2 => '云单'
+    ];
+
 
     const ENTER_BACKEND = 1; //后台录入
 
@@ -77,16 +82,18 @@ on m.shop_id = s.id';
         $countSql .= ' and m.employee_id = ' . $employeeId;
         $countInfo = MysqlDB::getDB()->queryAll($countSql);
 
-        $sql = 'select a.id, a.receipt_number, l.name, a.buy_time,s.shop_number,s.shop_name,a.create_time,a.reference_money, a.actual_money,a.check_status,a.system_check_note,a.ba_name,ar.name region_name from receipt_apply a left join ba_list l on a.ba_id = l.id
+        $sql = 'select a.id, a.receipt_number, l.name, a.buy_time,s.shop_number,s.shop_name,a.create_time,a.reference_money, a.actual_money,a.check_status,a.system_check_note,a.ba_name,ar.name region_name,apv.province_name,ac.city_name,e.name region_manage,be.name ba_manage,rg.goods_name,rg.goods_number,rg.num,,rg.status,a.update_time last_update_time from receipt_apply a left join ba_list l on a.ba_id = l.id
 
 left join shop_info s on a.shop_id = s.id left join shop_belong_manage m 
 
 on m.shop_id = s.id left join region_province_relation r on s.province_id = r.province_id left join area_region ar on ar.id = r.region_id
 
-left join area_province apv on apv.id = s.province_id left join area_city ac on ac.id = s.city_id ';
+left join area_province apv on apv.id = s.province_id left join area_city ac on ac.id = s.city_id left join region_belong_manage m on m.region_id = r.region_id
+
+left join employee e on m.employee_id = e.id left join employee be on be.id = m.employee_id left join receipt_apply_goods rg on rg.receipt_apply_id = a.id';
         $sql .= $where;
 
-        $sql .= ' and m.employee_id = ' . $employeeId . ' order by a.id desc limit ' . ($page - 1) * $count . ',' . $count;
+        $sql .= ' and m.employee_id = ' . $employeeId . ' and rg.status in (1,2) order by a.id desc limit ' . ($page - 1) * $count . ',' . $count;
         return [MysqlDB::getDB()->queryAll($sql), $countInfo[0]['count_num']];
     }
 
@@ -111,13 +118,15 @@ left join region_belong_manage m on m.region_id = r.region_id';
         $countSql .= ' and m.employee_id = ' . $employeeId;
         $countInfo = MysqlDB::getDB()->queryAll($countSql);
 
-        $sql = 'select a.id, a.receipt_number, l.name, a.buy_time,s.shop_number,s.shop_name,a.create_time,a.reference_money, a.actual_money,a.check_status,a.system_check_note,a.ba_name,ar.name region_name  from receipt_apply a left join ba_list l on a.ba_id = l.id
+        $sql = 'select a.id, a.receipt_number, l.name, a.buy_time,s.shop_number,s.shop_name,a.create_time,a.reference_money, a.actual_money,a.check_status,a.system_check_note,a.ba_name,ar.name region_name,apv.province_name,ac.city_name,e.name region_manage,be.name ba_manage,rg.goods_name,rg.goods_number,rg.num, rg.status,a.update_time last_update_time  from receipt_apply a left join ba_list l on a.ba_id = l.id
 
 left join shop_info s on a.shop_id = s.id left join region_province_relation r on s.province_id = r.province_id left join area_region ar on ar.id = r.region_id
 
-left join region_belong_manage m on m.region_id = r.region_id';
+left join region_belong_manage m on m.region_id = r.region_id left join area_province apv on apv.id = s.province_id left join area_city ac on ac.id = s.city_id left join employee e on m.employee_id = e.id left join shop_belong_manage sbm
+
+on sbm.shop_id = s.id left join employee be on be.id = sbm.employee_id left join receipt_apply_goods rg on rg.receipt_apply_id = a.id';
         $sql .= $where;
-        $sql .= ' and m.employee_id = ' . $employeeId . ' order by a.id desc limit ' . ($page - 1) * $count . ',' . $count;
+        $sql .= ' and m.employee_id = ' . $employeeId . ' and rg.status in (1,2) order by a.id desc limit ' . ($page - 1) * $count . ',' . $count;
         return [MysqlDB::getDB()->queryAll($sql), $countInfo[0]['count_num']];
     }
 
@@ -137,11 +146,14 @@ left join shop_info s on a.shop_id = s.id';
         $countSql .= $where;
         $countInfo = MysqlDB::getDB()->queryAll($countSql);
 
-        $sql = 'select a.id, a.receipt_number, l.name, a.buy_time,s.shop_number,s.shop_name,a.create_time,a.reference_money, a.actual_money,a.check_status,a.system_check_note,a.ba_name,ar.name region_name  from receipt_apply a left join ba_list l on a.ba_id = l.id
+        $sql = 'select a.id, a.receipt_number, l.name, a.buy_time,s.shop_number,s.shop_name,a.create_time,a.reference_money, a.actual_money,a.check_status,a.system_check_note,a.ba_name,ar.name region_name,apv.province_name,ac.city_name,e.name region_manage,be.name ba_manage,rg.goods_name,rg.goods_number,rg.num, rg.status,a.update_time last_update_time  from receipt_apply a left join ba_list l on a.ba_id = l.id
 
-left join shop_info s on a.shop_id = s.id left join region_province_relation r on s.province_id = r.province_id left join area_region ar on ar.id = r.region_id';
+left join shop_info s on a.shop_id = s.id left join region_province_relation r on s.province_id = r.province_id left join area_region ar on ar.id = r.region_id left join area_province apv on apv.id = s.province_id left join area_city ac on ac.id = s.city_id
+left join region_belong_manage m on m.region_id = r.region_id left join employee e on m.employee_id = e.id left join shop_belong_manage sbm
+
+on sbm.shop_id = s.id left join employee be on be.id = sbm.employee_id left join receipt_apply_goods rg on rg.receipt_apply_id = a.id';
         $sql .= $where;
-        $sql .= ' order by a.id desc limit '  . ($page - 1) * $count . ',' . $count;
+        $sql .= ' and rg.status in (1,2) order by a.id desc limit '  . ($page - 1) * $count . ',' . $count;
         return [MysqlDB::getDB()->queryAll($sql), $countInfo[0]['count_num']];
     }
 }

@@ -2,6 +2,7 @@
 namespace App\Services;
 
 use App\Libs\AliOSS;
+use App\Libs\Excel\ExcelImportFormat;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
 use App\Models\BAApplyModel;
@@ -68,7 +69,7 @@ class ReceiptApplyService
             'ba_id' => $baId,
             'buy_time' => strtotime($params['buy_time']),
             'shop_id' => $shopId,
-            'create_time' => time(),
+            'update_time' => time(),
             'reference_money' => 0,
             'check_status' => ReceiptApplyModel::CHECK_WAITING,
             'pic_url' => $params['pic_url'],
@@ -84,6 +85,7 @@ class ReceiptApplyService
             $receiptId = $params['receipt_id'];
             ReceiptApplyModel::updateRecord($params['receipt_id'], $data);
         } else {
+            $data['create_time'] = time();
             $receiptId = ReceiptApplyModel::insertRecord(
                 $data
             );
@@ -111,7 +113,7 @@ class ReceiptApplyService
                     'create_time' => time(),
                     'num' => $v,
                     'receipt_apply_id' => $receiptId,
-                    'status' => $status
+                    'status' => $status,
                 ]);
             } else {
                 throw new RunTimeException(['please_try']);
@@ -146,6 +148,7 @@ class ReceiptApplyService
             list($list, $totalCount) = ReceiptApplyModel::getSuperReceiptList($params, 1, $count);
         }
 
+
         $title = [
             '小票编号',
             '所属BA',
@@ -177,21 +180,39 @@ class ReceiptApplyService
                 'receipt_number' => $v['receipt_number'],
                 'ba_name' => $v['ba_name'],
                 'shop_name' => $v['shop_name'],
-                'region_name' => $v['region_name']
-
+                'region_name' => $v['region_name'],
+                'district_name' => '',
+                'province_name' => $v['province_name'],
+                'city_name' => $v['city_name'],
+                'ba_manage' => $v['ba_manage'],
+                'region_manage' => $v['region_manage'],
+                'buy_time' => date('Y-m-d H:i:s', $v['buy_time']),
+                'receipt_shop_number' => '',
+                'receipt_shop_name' => '',
+                'reference_money' => $v['reference_money'],
+                'actual_money' => $v['actual_money'],
+                'check_status_msg' => ReceiptApplyModel::CHECK_STATUS_MSG[$v['check_status']],
+                'system_check_note' => $v['system_check_note'],
+                'goods_name' => $v['goods_name'],
+                'goods_number' => $v['goods_number'],
+                'num' => $v['num'],
+                'market_price' => '',
+                'is_refund' => ReceiptApplyGoodsModel::STATUS_MSG[$v['status']],
+                'last_update_time' => date('Y-m-d H:i:s', $v['last_update_time'])
 
             ];
         }
+        $fileName =  '(' . date("Y-m-d H:i:s") . '_'.mt_rand(1, 100) . ')订单列表-' . ReceiptApplyModel::RECEIPT_FROM[$params['receipt_from']] . '.xlsx';
+        $tmpFileSavePath = ExcelImportFormat::createExcelTable($dataResult, $title,
+            ExcelImportFormat::OUTPUT_TYPE_SAVE_FILE);
+        $ossPath = $_ENV['ENV_NAME'] . '/' . AliOSS::DIR_TMP_EXCEL . '/' . $fileName;
+        AliOSS::uploadFile($ossPath, $tmpFileSavePath);
+        unlink($tmpFileSavePath);
 
-        var_dump ($list);
-        die();
+        $ossPath = AliOSS::signUrls($ossPath, "", "", "", true);
 
+        return $ossPath;
 
-
-
-
-
-        return [self::buildReturnInfo($list), $totalCount];
     }
 
     /**
