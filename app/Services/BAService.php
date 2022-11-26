@@ -63,7 +63,6 @@ class BAService
                         'mobile' => $value['mobile'],
                         'name' => $value['name'],
                         'job_number' => $value['job_number'],
-                        'shop_number' => $value['shop_number'],
                         'create_time' => $value['create_time'],
                         'shop_id' => $value['shop_id']
                     ]

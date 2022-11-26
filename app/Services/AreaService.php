@@ -91,27 +91,4 @@ class AreaService
         }
         return AreaDistrictModel::getRecords($where, ['id', 'district_adcode(district_code)', 'district_name']);
     }
-
-    /**
-     * 根据 parent_code 获取区域信息
-     * @param $parent_code
-     * @return mixed
-     */
-    public static function getAreaByParentCode($parent_code)
-    {
-        //判断传入的值是否为空，如果为空，则取顶级区域
-        $parent_code = empty($parent_code) ? '000000' : $parent_code;
-
-        return DssAreaModel::getRecordsByParentCode($parent_code);
-    }
-
-    /**
-     * 根据code获取信息
-     * @param $code
-     * @return array
-     */
-    public static function getByCode($code)
-    {
-        return DssAreaModel::getRecordByCode($code);
-    }
 }

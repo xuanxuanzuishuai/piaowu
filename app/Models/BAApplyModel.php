@@ -41,7 +41,7 @@ from ba_apply a left join shop_belong_manage s on a.shop_id = s.shop_id left joi
     public static function getRegionManageApplyList($employeeId, $params, $page, $count)
     {
         $where = self::buildWhere($params);
-        $countSql = 'select count(*) count_num from ba_apply a left join shop_info s on s.shop_number = a.shop_number
+        $countSql = 'select count(*) count_num from ba_apply a left join shop_info s on shop_info s on a.shop_id = s.id
 
 left join region_province_relation r on s.province_id = r.province_id
  
@@ -53,7 +53,7 @@ left join region_belong_manage m on m.region_id = r.region_id';
 
 
         $sql = 'select a.id, a.mobile, a.`name`, a.job_number, s.shop_number, s.shop_name, a.create_time,a.check_status,s.province_id, r.region_id, m.employee_id 
-from ba_apply a left join shop_info s on s.shop_number = a.shop_number
+from ba_apply a left join shop_info s on shop_info s on a.shop_id = s.id
 
 left join region_province_relation r on s.province_id = r.province_id
  
@@ -73,11 +73,11 @@ left join region_belong_manage m on m.region_id = r.region_id';
     public static function getSuperApplyList($params, $page, $count)
     {
         $where = self::buildWhere($params);
-        $countSql = 'select count(*) count_num from ba_apply a left join shop_info s on s.shop_number = a.shop_number';
+        $countSql = 'select count(*) count_num from ba_apply a left join shop_info s on a.shop_id = s.id';
         $countInfo = MysqlDB::getDB()->queryAll($countSql .= $where);
 
         $sql = 'select a.id, a.mobile, a.`name`, a.job_number, s.shop_number, s.shop_name, a.create_time,a.check_status 
-from ba_apply a left join shop_info s on s.shop_number = a.shop_number';
+from ba_apply a left join shop_info s on a.shop_id = s.id';
 
         $sql .= $where;
         $sql .= ' order by a.id desc limit ' . ($page - 1) * $count . ',' . $count;

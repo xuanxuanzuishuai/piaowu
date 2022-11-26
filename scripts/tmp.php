@@ -30,22 +30,6 @@ require_once PROJECT_ROOT . '/vendor/autoload.php';
 $dotenv = new Dotenv(PROJECT_ROOT, '.env');
 $dotenv->load();
 $dotenv->overload();
-$str = '四川,重庆,云南,贵州,广东,湖北,湖南,广西,海南,新疆,陕西,甘肃,宁夏,青海,西藏';
-$arr = explode(',', $str);
-foreach ($arr as $k => $v) {
-
-    $info = AreaProvinceModel::getRecord(['province_name[~]' => $v]);
-    if (empty($info)) {
-        echo $v ;
-        die();
-    }
-
-
-    RegionProvinceRelationModel::insertRecord([
-        'region_id' => 2,
-        'province_id' => $info['id']
-    ]);
-
-}
+echo md5('123');
 
 

@@ -4,7 +4,6 @@ namespace App\Controllers\Employee;
 
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
-use App\Services\EmployeeService;
 use App\Services\PrivilegeService;
 use Slim\Http\Request;
 use Slim\Http\Response;

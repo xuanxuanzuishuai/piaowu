@@ -60,6 +60,13 @@ class ShopService
             throw new RunTimeException(['shop_number_has_exist']);
         }
 
+        $manageEmployeeInfo = EmployeeModel::getRecord(['id' => $params['belong_manage_id']]);
+        if (empty($manageEmployeeInfo)) {
+            throw new RunTimeException(['not_found_manage_employee']);
+        }
+
+
+
         $data = [
             'province_id' => $params['province_id'],
             'city_id' => $params['city_id'],
@@ -81,7 +88,7 @@ class ShopService
 
         if (!empty($params['belong_manage_id'])) {
 
-            $info = ShopBelongManageModel::getRecords(['shop_id' => $shopInfo['id']]);
+            $info = ShopBelongManageModel::getRecords(['shop_id' => $shopInfo['id'], 'employee_id' => $params['belong_manage_id']]);
 
             if (empty($info)) {
                 ShopBelongManageModel::insertRecord(
@@ -92,17 +99,17 @@ class ShopService
                         'create_time' => time()
                     ]
                 );
-            } else {
-                ShopBelongManageModel::batchUpdateRecord(
+            }
+            ShopBelongManageModel::batchUpdateRecord(
                     [
                         'status' => 2,
                         'update_time' => time()
                     ],
                     [
-                        'shop_id' => $shopInfo['id']
+                        'shop_id' => $shopInfo['id'],
+                        'employee_id[!]' => $params['belong_manage_id']
                     ]
                 );
-            }
         }
     }
 

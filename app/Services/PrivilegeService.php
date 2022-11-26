@@ -76,6 +76,7 @@ class PrivilegeService
     {
         $privilegeIds = [];
         $employee = EmployeeService::getById($employeeId);
+
         $role = RoleService::getById($employee['role_id']);
         if (!empty($role['group_ids'])) {
             $groupIds = explode(",", $role['group_ids']);

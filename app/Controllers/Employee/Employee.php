@@ -59,7 +59,10 @@ class Employee extends ControllerBase
             return $response->withJson($result, StatusCode::HTTP_OK);
         }
 
+
         list($token, $userInfo) = $result;
+
+        setcookie("token", $token, time()+3600, '/');
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,

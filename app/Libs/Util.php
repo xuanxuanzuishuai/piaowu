@@ -373,8 +373,7 @@ class Util
         }
         //格式化count 分页数量
         if (empty($params['count']) || !is_numeric($params['count']) || (int)$params['count'] < 1) {
-            $defaultCount = DictService::getKeyValue(Constants::DICT_TYPE_SYSTEM_ENV, Constants::DEFAULT_PAGE_LIMIT);
-            $count = $defaultCount ?: 20;
+            $count = 20;
         } else {
             $count = (int)$params['count'];
         }
