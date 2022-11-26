@@ -60,6 +60,11 @@ class Shop extends ControllerBase
                 'error_code' => 'city_id_is_required'
             ],
             [
+                'key' => 'district_id',
+                'type' => 'required',
+                'error_code' => 'district_id_is_required'
+            ],
+            [
                 'key' => 'shop_name',
                 'type' => 'required',
                 'error_code' => 'shop_name_is_required'

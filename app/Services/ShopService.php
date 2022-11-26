@@ -46,6 +46,13 @@ class ShopService
             throw new RunTimeException(['not_found_employee']);
         }
 
+        if (!empty($params['shop_id'])) {
+            $shopInfo = ShopInfoModel::getRecord(['id' => $params['shop_id']]);
+            if (empty($shopInfo)) {
+                throw new RunTimeException(['shop_not_exist']);
+            }
+        }
+
         $where = [
             'shop_number' => $params['shop_number']
         ];
@@ -70,9 +77,11 @@ class ShopService
         $data = [
             'province_id' => $params['province_id'],
             'city_id' => $params['city_id'],
+            'district_id' => $params['district_id'],
             'shop_number' => $params['shop_number'],
             'shop_name' => Util::filterEmoji($params['shop_name']),
-            'detail_address' => $params['detail_address']
+            'detail_address' => $params['detail_address'],
+            'update_time' => time()
         ];
 
         if (empty($params['shop_id'])) {
@@ -80,7 +89,6 @@ class ShopService
             $data['create_time'] = time();
             ShopInfoModel::insertRecord($data);
         } else {
-            $data['update_time'] = time();
             ShopInfoModel::updateRecord($params['shop_id'], $data);
         }
 
