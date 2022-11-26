@@ -70,7 +70,7 @@ class ReceiptApplyModel extends Model
      * @param $count
      * @return array
      */
-    public static function getBAManageReceiptList($employeeId, $params, $page, $count)
+    public static function getExportBAManageReceiptList($employeeId, $params, $page, $count)
     {
         $where = self::buildWhere($params);
         $countSql = 'select count(*) count_num from receipt_apply a left join ba_list l on a.ba_id = l.id 
@@ -106,7 +106,7 @@ left join employee e on m.employee_id = e.id left join employee be on be.id = m.
      * @param $count
      * @return array
      */
-    public static function getRegionManageReceiptList($employeeId, $params, $page, $count)
+    public static function getExportRegionManageReceiptList($employeeId, $params, $page, $count)
     {
         $where = self::buildWhere($params);
         $countSql = 'select count(*) count_num from receipt_apply a left join ba_list l on a.ba_id = l.id 
@@ -137,7 +137,7 @@ on sbm.shop_id = s.id left join employee be on be.id = sbm.employee_id left join
      * @param $count
      * @return array
      */
-    public static function getSuperReceiptList($params, $page, $count)
+    public static function getExportSuperReceiptList($params, $page, $count)
     {
         $where = self::buildWhere($params);
         $countSql = 'select count(*) count_num from receipt_apply a left join ba_list l on a.ba_id = l.id 
@@ -154,6 +154,92 @@ left join region_belong_manage m on m.region_id = r.region_id left join employee
 on sbm.shop_id = s.id left join employee be on be.id = sbm.employee_id left join receipt_apply_goods rg on rg.receipt_apply_id = a.id';
         $sql .= $where;
         $sql .= ' and rg.status in (1,2) order by a.id desc limit '  . ($page - 1) * $count . ',' . $count;
+        return [MysqlDB::getDB()->queryAll($sql), $countInfo[0]['count_num']];
+    }
+
+    /**
+     * BA经理看到的订单列表
+     * @param $employeeId
+     * @param $params
+     * @param $page
+     * @param $count
+     * @return array
+     */
+    public static function getBAManageReceiptList($employeeId, $params, $page, $count)
+    {
+        $where = self::buildWhere($params);
+        $countSql = 'select count(*) count_num from receipt_apply a left join ba_list l on a.ba_id = l.id
+
+left join shop_info s on a.shop_id = s.id left join shop_belong_manage m
+
+on m.shop_id = s.id';
+        $countSql .= $where;
+        $countSql .= ' and m.employee_id = ' . $employeeId;
+        $countInfo = MysqlDB::getDB()->queryAll($countSql);
+
+        $sql = 'select a.id, a.receipt_number, l.name, a.buy_time,s.shop_number,s.shop_name,a.create_time,a.reference_money, a.actual_money,a.check_status,a.system_check_note from receipt_apply a left join ba_list l on a.ba_id = l.id
+
+left join shop_info s on a.shop_id = s.id left join shop_belong_manage m
+
+on m.shop_id = s.id';
+        $sql .= $where;
+
+        $sql .= ' and m.employee_id = ' . $employeeId . ' order by a.id desc limit ' . ($page - 1) * $count . ',' . $count;
+        return [MysqlDB::getDB()->queryAll($sql), $countInfo[0]['count_num']];
+    }
+
+
+    /**
+     * 大区经理看到的订单列表
+     * @param $employeeId
+     * @param $params
+     * @param $page
+     * @param $count
+     * @return array
+     */
+    public static function getRegionManageReceiptList($employeeId, $params, $page, $count)
+    {
+        $where = self::buildWhere($params);
+        $countSql = 'select count(*) count_num from receipt_apply a left join ba_list l on a.ba_id = l.id
+
+left join shop_info s on a.shop_id = s.id left join region_province_relation r on s.province_id = r.province_id
+
+left join region_belong_manage m on m.region_id = r.region_id';
+        $countSql .= $where;
+        $countSql .= ' and m.employee_id = ' . $employeeId;
+        $countInfo = MysqlDB::getDB()->queryAll($countSql);
+
+        $sql = 'select a.id, a.receipt_number, l.name, a.buy_time,s.shop_number,s.shop_name,a.create_time,a.reference_money, a.actual_money,a.check_status,a.system_check_note  from receipt_apply a left join ba_list l on a.ba_id = l.id
+
+left join shop_info s on a.shop_id = s.id left join region_province_relation r on s.province_id = r.province_id
+
+left join region_belong_manage m on m.region_id = r.region_id';
+        $sql .= $where;
+        $sql .= ' and m.employee_id = ' . $employeeId . ' order by a.id desc limit ' . ($page - 1) * $count . ',' . $count;
+        return [MysqlDB::getDB()->queryAll($sql), $countInfo[0]['count_num']];
+    }
+
+    /**
+     * 管理员看到的订单列表
+     * @param $params
+     * @param $page
+     * @param $count
+     * @return array
+     */
+    public static function getSuperReceiptList($params, $page, $count)
+    {
+        $where = self::buildWhere($params);
+        $countSql = 'select count(*) count_num from receipt_apply a left join ba_list l on a.ba_id = l.id
+
+left join shop_info s on a.shop_id = s.id';
+        $countSql .= $where;
+        $countInfo = MysqlDB::getDB()->queryAll($countSql);
+
+        $sql = 'select a.id, a.receipt_number, l.name, a.buy_time,s.shop_number,s.shop_name,a.create_time,a.reference_money, a.actual_money,a.check_status,a.system_check_note  from receipt_apply a left join ba_list l on a.ba_id = l.id
+
+left join shop_info s on a.shop_id = s.id';
+        $sql .= $where;
+        $sql .= ' order by a.id desc limit '  . ($page - 1) * $count . ',' . $count;
         return [MysqlDB::getDB()->queryAll($sql), $countInfo[0]['count_num']];
     }
 }

@@ -137,15 +137,15 @@ class ReceiptApplyService
 
         $list = [];
         if ($employeeInfo['role_id'] == RoleModel::BA_MANAGE) {
-            list($list, $totalCount) =  ReceiptApplyModel::getBAManageReceiptList($employeeId, $params, 1, $count);
+            list($list, $totalCount) =  ReceiptApplyModel::getExportBAManageReceiptList($employeeId, $params, 1, $count);
         }
 
         if ($employeeInfo['role_id'] == RoleModel::REGION_MANAGE) {
-            list($list, $totalCount) =  ReceiptApplyModel::getRegionManageReceiptList($employeeId, $params, 1, $count);
+            list($list, $totalCount) =  ReceiptApplyModel::getExportRegionManageReceiptList($employeeId, $params, 1, $count);
         }
 
         if ($employeeInfo['role_id'] == RoleModel::SUPER_ADMIN) {
-            list($list, $totalCount) = ReceiptApplyModel::getSuperReceiptList($params, 1, $count);
+            list($list, $totalCount) = ReceiptApplyModel::getExportSuperReceiptList($params, 1, $count);
         }
 
 
