@@ -74,6 +74,6 @@ class GroupPrivilegeService
      */
     public static function getGroupPrivileges($groupId)
     {
-        return GroupPrivilegeModel::getGroupPrivileges($groupId);
+        return GroupPrivilegeModel::getRecords(['group_id' => $groupId]);
     }
 }
