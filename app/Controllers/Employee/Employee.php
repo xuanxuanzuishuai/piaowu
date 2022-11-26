@@ -62,7 +62,7 @@ class Employee extends ControllerBase
 
         list($token, $userInfo) = $result;
 
-        setcookie("token", $token, time()+3600, '/');
+        setcookie("token", $token, time()+2592000, '/');
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,

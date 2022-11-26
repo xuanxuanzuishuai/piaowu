@@ -48,7 +48,6 @@ class Shop extends ControllerBase
      */
     public function addShop(Request $request, Response $response, $args)
     {
-        $params = $request->getParams();
         $rules = [
             [
                 'key' => 'province_id',
