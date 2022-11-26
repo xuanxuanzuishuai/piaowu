@@ -43,6 +43,7 @@ class EmployeeRouter extends RouterBase
         '/employee/receipt/receipt_list' => ['method' => ['get'], 'call' => Receipt::class . ':receiptList'],
         '/employee/receipt/receipt_info' => ['method' => ['get'], 'call' => Receipt::class . ':receiptInfo'],
         '/employee/receipt/update_receipt' => ['method' => ['get'], 'call' => Receipt::class . ':updateReceipt'],
+        '/employee/receipt/export_data' => ['method' => ['get'], 'call' => Receipt::class . ':exportData'],
 
 
 

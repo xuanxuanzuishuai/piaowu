@@ -105,6 +105,30 @@ class Receipt extends ControllerBase
      * @param $args
      * @return Response
      */
+    public function exportData(Request $request, Response $response, $args)
+    {
+        $params = $request->getParams();
+        try {
+            $employeeId = $this->getEmployeeId();
+            list($page, $count) = Util::formatPageCount($params);
+            list($applyList, $totalCount) = ReceiptApplyService::getReceiptList($params, $employeeId, $page, $count);
+        } catch (RuntimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'receipt_list' => $applyList,
+            'total_count' => $totalCount
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
     public function receiptInfo(Request $request, Response $response, $args)
     {
         $params = $request->getParams();
