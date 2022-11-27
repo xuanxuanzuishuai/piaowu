@@ -162,7 +162,6 @@ class Wx extends ControllerBase
         try {
             $baInfo = $this->ci['ba_info'];
 
-
             $info = BAService::getBaApplyInfo($baInfo);
         } catch (RuntimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

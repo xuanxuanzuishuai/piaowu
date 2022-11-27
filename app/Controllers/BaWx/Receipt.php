@@ -43,7 +43,7 @@ class Receipt extends ControllerBase
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }
 
-        return HttpHelper::buildResponse($response, ['token' => $token]);
+        return HttpHelper::buildResponse($response, []);
 
 
     }
