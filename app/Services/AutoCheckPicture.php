@@ -128,6 +128,7 @@ class AutoCheckPicture
 
                     if (empty($goods)) {
                         $remark[] = '未找到此商品信息-' . $v;
+                        continue;
                     }
 
                     $goodsInfo[] = [
