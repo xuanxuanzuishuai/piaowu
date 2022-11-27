@@ -1,14 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: mncu
- * Date: 2019/4/19
- * Time: 17:17
- */
-
 namespace App\Middleware;
 
-use App\Libs\Constants;
 use App\Libs\SimpleLogger;
 use App\Libs\WeChat\WeChatMiniPro;
 use Slim\Http\Request;
@@ -22,46 +14,22 @@ use Slim\Http\Response;
  */
 class WeChatOpenIdCheckMiddleware extends MiddlewareBase
 {
-    // 在此数组中的url，如果带了code就检查，没有也不会报错
-    public static $ignoreCheckCodeUrlList = [
-        "/teacher_wx/teacher/register",
-        "/student_wx/student/register",
-        "/classroom_teacher_wx/teacher/register",
-    ];
-
     public function __invoke(Request $request, Response $response, $next)
     {
         SimpleLogger::info('--WeChatOpenIdCheckMiddleware--', []);
-        $appId = $request->getParams()['app_id'] ?? NULL;
-        if (empty($appId)) {
-            return $response->withJson(Valid::addAppErrors([], 'need_app_id'), StatusCode::HTTP_OK);
-        }
-        $this->container["app_id"] = $appId;
-        //当前系统对应的应用busi_type
-        $arr = [
-            Constants::SMART_APP_ID => Constants::SMART_WX_SERVICE
-        ];
-        $busiType = $arr[$appId] ?? Constants::SMART_WX_SERVICE;
-        $this->container['busi_type'] = $busiType;
+
         $tokenHeader = $request->getHeader('token');
         $token = $tokenHeader[0] ?? null;
         $this->container["token"] = $token;
 
-        $currentUrl = $request->getUri()->getPath();
-        $arr = [
-            '/student_wx' => Constants::USER_TYPE_STUDENT
-        ];
-        $userType = $arr[$this->getURLPrefix($currentUrl)] ?? '';
-        if (empty($userType)) {
-            return $response->withJson(Valid::addAppErrors([], 'request_error'), StatusCode::HTTP_OK);
-        }
-        $this->container['user_type'] = $userType;
-        //在使用前端的code获取用户的openid的信息时，需要判断出 当前用户类型 哪条业务线 哪个微信应用
-        $checkResult = $this::checkNeedWeChatCode($request, $appId, $userType, $busiType);
+
+        $checkResult = $this::checkNeedWeChatCode($request);
+
         // 是否要跳转到微信端获取用户code
         $needWeChatCode = $checkResult["needWeChatCode"];
         $openId = $checkResult["openId"] ?? '';
-        SimpleLogger::info("checkWeChatCode", ["open_id" => $openId, "need" => $needWeChatCode, "user_type" => $userType]);
+
+        SimpleLogger::info("checkWeChatCode", ["open_id" => $openId, "need" => $needWeChatCode]);
 
         // 本地环境方便调试
         if ($_ENV['DEBUG_WEIXIN_SKIP_MIDDLEWARE'] == "1" and !empty($request->getParam("test_open_id"))) {
@@ -70,22 +38,25 @@ class WeChatOpenIdCheckMiddleware extends MiddlewareBase
         }
 
         $this->container['open_id'] = $openId;
+
         // 需要获取微信code
-        if ($needWeChatCode and !in_array($currentUrl, self::$ignoreCheckCodeUrlList)) {
+        if ($needWeChatCode) {
             SimpleLogger::info('need weixin code:', []);
             return $response->withJson(Valid::addAppErrors([], 'need_code'), StatusCode::HTTP_OK);
         }
+
         $response = $next($request, $response);
         return $response;
     }
     
-    public function checkNeedWeChatCode(Request $request, $app_id, $user_type, $busiType) {
+    public function checkNeedWeChatCode(Request $request) {
         $openId = null;
         $needWeChatCode = false;
         $code = $request->getParam('wx_code');
         // 已经获取微信的用户code，通过微信API获取openid
         if (!empty($code)) {
-            $data = WeChatMiniPro::factory($app_id, $busiType)->getWeixnUserOpenIDAndAccessTokenByCode($code);
+            $data = WeChatMiniPro::factory()->getWeixnUserOpenIDAndAccessTokenByCode($code);
+
             SimpleLogger::info("getWeixnUserOpenIDAndAccessTokenByCode", ["data" => $data]);
             if (!empty($data['openid'])) {
                     $openId = $data['openid'];

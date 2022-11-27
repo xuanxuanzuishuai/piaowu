@@ -39,6 +39,21 @@ class DictConstants {
         ]
     ];
 
+    //不同应用的微信app_id
+    const WECHAT_APPID = [
+        'type' => 'wechat_app_id',
+        'keys' => [
+            '1_1'
+        ]
+    ];
+    //不同应用的微信app_secret
+    const WECHAT_APP_SECRET = [
+        'type' => 'wechat_app_secret',
+        'keys' => [
+            '1_1'
+        ]
+    ];
+
     /**
      * 单个获取op系统dict配置数据
      * @param $type

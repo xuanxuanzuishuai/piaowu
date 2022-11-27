@@ -1,31 +1,22 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: newtype0092
- * Date: 2019/5/16
- * Time: 3:49 PM
- */
-
 namespace App\Routers;
-
-
-
-use App\Controllers\Privilege\Privilege;
 
 class RouterFactory
 {
-    const CLIENT_ORG_WEB = 'org_web'; // 机构后台
+    const CLIENT_ORG_WEB = 'org_web'; // 后台
     const CLIENT_EMPLOYEE = 'employee'; //后台
     const CLIENT_COMMON  = 'common'; //公共方法
+    const CLIENT_WX = 'ba_wx'; //微信
 
 
     /**
      * client_type 对应的 Router class
      */
     const ROUTER_CLASSES = [
-        self::CLIENT_ORG_WEB                => OrgWebRouter::class, // 机构后台
+        self::CLIENT_ORG_WEB                => OrgWebRouter::class, // 后台
         self::CLIENT_EMPLOYEE               => EmployeeRouter::class, //后台调用
-        self::CLIENT_COMMON                 => CommonRouter::class
+        self::CLIENT_COMMON                 => CommonRouter::class,
+        self::CLIENT_WX                     => BaWxRouter::class
     ];
 
     /**

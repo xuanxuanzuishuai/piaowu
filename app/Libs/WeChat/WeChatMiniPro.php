@@ -79,7 +79,7 @@ class WeChatMiniPro
     private $currentRequestAccessToken = [];  // 本次请求产生的token
 
 
-    public static function factory($appId, $busiType)
+    public static function factory($appId = 1, $busiType = 1)
     {
         $wxAppKey = self::getWxAppKey($appId, $busiType);
         return (new self($wxAppKey))->setBusies($appId, $busiType);
