@@ -74,7 +74,10 @@ left join region_belong_manage m on m.region_id = r.region_id';
 
     /**
      * 获取超级管理员看到的ba申请表
-     * @param $employeeId
+     * @param $params
+     * @param $page
+     * @param $count
+     * @return array
      */
     public static function getSuperApplyList($params, $page, $count)
     {
@@ -110,5 +113,26 @@ from ba_apply a left join shop_info s on a.shop_id = s.id';
         }
 
         return $where;
+    }
+
+
+    /**
+     * ba申请的信息
+     * @param $baId
+     * @return array
+     */
+    public static function getBaInfo($baId)
+    {
+        $sql = 'select a.name, a.mobile, a.idcard, a.job_number, a.shop_id, s.shop_number, s.shop_name,s.province_id, ap.province_name,
+s.city_id, ac.city_name, s.district_id, ad.district_name,a.check_status
+ from ba_apply a
+left join shop_info s on a.shop_id = s.id
+left join area_province ap on s.province_id = ap.id
+left join area_city ac on s.city_id = ac.id
+left join area_district ad on s.district_id = ad.id
+
+where a.id = ' . $baId;
+
+        return MysqlDB::getDB()->queryAll($sql)[0];
     }
 }

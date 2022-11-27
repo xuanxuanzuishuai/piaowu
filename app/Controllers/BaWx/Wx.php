@@ -150,4 +150,27 @@ class Wx extends ControllerBase
         return HttpHelper::buildResponse($response, ['token' => $token]);
     }
 
+    /**
+     * 申请信息
+     * @param Request $request
+     * @param Response $response
+     * @return Response|static
+     */
+    public function applyInfo(Request $request, Response $response)
+    {
+
+        try {
+            $baInfo = $this->ci['ba_info'];
+
+
+            $info = BAService::getBaApplyInfo($baInfo);
+        } catch (RuntimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'info' => $info
+        ], StatusCode::HTTP_OK);
+    }
 }

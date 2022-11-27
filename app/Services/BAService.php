@@ -248,4 +248,15 @@ class BAService
         return BAApplyModel::getRecord(['open_id' => $openId]);
 
     }
+
+
+    /**
+     * 申请的BA信息
+     * @param $baInfo
+     * @return array
+     */
+    public static function getBaApplyInfo($baInfo)
+    {
+        return BAApplyModel::getBaInfo($baInfo['ba_id']);
+    }
 }

@@ -33,7 +33,7 @@ class WeChatAuthCheckMiddleware extends MiddlewareBase
             return $response->withJson(Valid::addAppErrors([], 'token_expired'), StatusCode::HTTP_OK);
         }
 
-        $this->container['user_info'] = $userInfo;
+        $this->container['ba_info'] = $userInfo;
         $this->container["open_id"] = $userInfo["open_id"];
         $response = $next($request, $response);
         return $response;
