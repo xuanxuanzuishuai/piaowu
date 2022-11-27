@@ -8,8 +8,10 @@ use App\Libs\Excel\ExcelImportFormat;
 use App\Libs\Exceptions\RunTimeException;
 use App\Models\BAApplyModel;
 use App\Models\BAListModel;
+use App\Models\BaWeixinModel;
 use App\Models\EmployeeModel;
 use App\Models\RoleModel;
+use App\Models\ShopInfoModel;
 
 class BAService
 {
@@ -173,5 +175,77 @@ class BAService
             list($list, $totalCount) = BAListModel::getSuperApplyList($page, $count);
         }
         return [$list, $totalCount];
+    }
+
+
+    /**
+     * 新增/编辑申请
+     * @param $openId
+     * @param $params
+     * @return mixed
+     * @throws RunTimeException
+     */
+    public static function addApply($openId, $params)
+    {
+
+        $shopInfo = ShopInfoModel::getRecord(['id' => $params['shop_id']]);
+        if (empty($shopInfo)) {
+            throw new RunTimeException(['shop_is_not_exist']);
+        }
+
+
+        $res = BAApplyModel::getRecords(['OR' => ['mobile' => $params['mobile'], 'job_number' => $params['job_number']]]);
+
+
+        if (!empty($res)) {
+
+            if (in_array(BAApplyModel::APPLY_PASS, array_column($res, 'check_status'))) {
+                throw new RunTimeException(['one_mobile_only_one']);
+            }
+        }
+
+        $info = BAApplyModel::getCount(['OR' => ['mobile' => $params['mobile'], 'job_number' => $params['job_number']], 'open_id' => $openId]);
+
+
+        if ($info > 1) {
+            throw new RunTimeException(['not_muti_wx_submit']);
+        }
+
+
+        $data = [
+            'mobile' => $params['mobile'],
+            'name' => $params['name'],
+            'shop_id' => $params['shop_id'],
+            'job_number'=> $params['job_number'],
+            'update_time' => time(),
+            'idcard' => $params['idcard'],
+            'open_id' => $openId,
+            'check_status' => BAApplyModel::APPLY_WAITING
+        ];
+
+        if (empty($res)) {
+            $data['create_time'] = time();
+            BAApplyModel::insertRecord($data);
+        } else {
+            BAApplyModel::updateRecord($res[0]['id'], $data);
+        }
+
+        $applyInfo = BAApplyModel::getRecord(['OR' => ['mobile' => $params['mobile'], 'job_number' => $params['job_number']]]);
+
+
+        BaWeixinModel::batchUpdateRecord(['status' => BaWeixinModel::STATUS_DEL, 'update_time' => time()], ['ba_id' => $applyInfo['id']]);
+
+        BaWeixinModel::insertRecord(
+            [
+                'ba_id' => $applyInfo['id'],
+                'open_id' => $openId,
+                'status' => BaWeixinModel::STATUS_NORMAL,
+                'create_time' => time(),
+                'update_time' => time()
+            ]
+        );
+
+        return BAApplyModel::getRecord(['open_id' => $openId]);
+
     }
 }
