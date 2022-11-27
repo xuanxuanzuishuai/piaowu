@@ -30,6 +30,7 @@ class ReceiptApplyModel extends Model
 
 
     const ENTER_BACKEND = 1; //后台录入
+    const ENTER_BA = 2; //BA上传
 
     private static function buildWhere($params)
     {

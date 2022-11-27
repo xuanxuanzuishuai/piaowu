@@ -125,6 +125,7 @@ class ReceiptApplyService
 
     }
 
+
     /**
      * 导出订单列表
      * @param $params
@@ -332,8 +333,88 @@ class ReceiptApplyService
 
     public static function uploadApply($params, $baId)
     {
+        $baInfo = BAListModel::getRecord(['id' => $baId]);
+        if (empty($baInfo)) {
+            throw new RunTimeException(['ba_is_not_exist']);
+        }
+
         $picUrl = AliOSS::signUrls($params['pic_url']);
 
-        $receiptInfo = AutoCheckPicture::dealReceiptInfo($picUrl);
+        list($receiptFrom, $receiptNumber, $buyTime, $goodsInfo, $remark) = AutoCheckPicture::dealReceiptInfo($picUrl);
+
+        $newArr = [];
+        foreach($goodsInfo as $v) {
+            if (!empty($newArr[$v['id'] . '_' . $v['status']])) {
+                $startNum = $newArr[$v['id']];
+                $newArr[$v['id'] . '_' . $v['status']] = $startNum + $v['num'];
+            } else {
+                $newArr[$v['id'] . '_' . $v['status']] = $v['num'];
+            }
+        }
+
+
+        $where = [
+            'receipt_number' => $receiptNumber,
+        ];
+
+        $res = ReceiptApplyModel::getRecord($where);
+
+        if (!empty($res)) {
+            $remark .= '此' . $receiptNumber . '已在系统存在, 订单状态是' . ReceiptApplyModel::CHECK_STATUS_MSG[$res['check_status']] . PHP_EOL;
+        }
+
+
+        $shopInfo = ShopInfoModel::getRecord(['id' => $baInfo['shop_id']]);
+
+        $data = [
+            'receipt_number' => $receiptNumber,
+            'ba_id' => $baId,
+            'buy_time' => strtotime($buyTime),
+            'shop_id' => $shopInfo['id'],
+            'update_time' => time(),
+            'reference_money' => 0,
+            'check_status' => ReceiptApplyModel::CHECK_WAITING,
+            'pic_url' => $params['pic_url'],
+            'ba_name' => $baInfo['name'],
+            'shop_number' => $shopInfo['shop_number'],
+            'shop_name' => $shopInfo['shop_name'],
+            'add_type' => ReceiptApplyModel::ENTER_BA,
+            'receipt_from' => $receiptFrom,
+            'system_check_note' => $remark
+        ];
+        $data['create_time'] = time();
+        $receiptId = ReceiptApplyModel::insertRecord(
+            $data
+        );
+
+        //处理销售单关联的商品
+        ReceiptApplyGoodsModel::batchUpdateRecord(['status' => ReceiptApplyGoodsModel::STATUS_DEL], ['receipt_apply_id' => $receiptId]);
+
+
+        foreach($newArr as $k => $v) {
+            $arr = explode('_', $k);
+            $goodsId = $arr[0];
+            $status = $arr[1];
+
+
+            $goodsInfo = GoodsModel::getRecord(['id' => $goodsId]);
+
+            $record = ReceiptApplyGoodsModel::getRecord(['receipt_apply_id' => $receiptId, 'goods_id' => $k, 'status' => $status]);
+
+            if (empty($record)) {
+                ReceiptApplyGoodsModel::insertRecord([
+                    'goods_id' => $goodsInfo['id'],
+                    'goods_number' => $goodsInfo['goods_number'],
+                    'goods_name' => $goodsInfo['goods_name'],
+                    'create_time' => time(),
+                    'num' => $v,
+                    'receipt_apply_id' => $receiptId,
+                    'status' => $status,
+                ]);
+            } else {
+                throw new RunTimeException(['please_try']);
+            }
+
+        }
     }
 }
