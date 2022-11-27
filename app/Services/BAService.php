@@ -125,6 +125,7 @@ class BAService
             if (empty($res)) {
                 BAListModel::insertRecord(
                     [
+                        'id' => $value['id'],
                         'mobile' => $value['mobile'],
                         'name' => $value['name'],
                         'job_number' => $value['job_number'],
