@@ -2,6 +2,7 @@
 namespace App\Services;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
+use App\Models\GoodsModel;
 use App\Models\ReceiptApplyModel;
 
 class AutoCheckPicture
@@ -43,28 +44,65 @@ class AutoCheckPicture
 
 
         $receiptNumber = '';
+        $buyTime = '';
+        $goodsInfo = [];
 
-        foreach($content['ret'] as $k => $value) {
-
-            //判断
-
-
-
-            echo $k . '_'  .$value['word'] . PHP_EOL;
-        }
+        $notFoundGoods = [];
 
 
+        //云单比较固定，先确定什么单子进行不同得计算
         foreach($wordArr as $k => $value) {
-
             if (Util::sensitiveWordFilter(['编号'], $value)) {
 
                 if (Util::sensitiveWordFilter(['复制'], $wordArr[$k+2])) {
-
                     $receiptNumber = '00' . $wordArr[$k+1];
-
                     $receiptFrom = ReceiptApplyModel::CLOUD_RECEIPT;
+                    break;
 
                 }
+            }
+        }
+
+
+        if ($receiptFrom == ReceiptApplyModel::CLOUD_RECEIPT) {
+
+            foreach($wordArr as $k => $value) {
+
+                if (Util::sensitiveWordFilter(['下单', '日期'], $value)) {
+                    $buyTime = $wordArr[$k+1];
+                    if (strtotime($buyTime) == false) {
+                        $newBuyTime = str_replace('：', ':', $buyTime);
+                        $buyTime = substr($newBuyTime, 0, 10) . ' ' . substr($newBuyTime, 10);
+
+                    }
+
+                }
+
+
+                if (Util::sensitiveWordFilter(['￥'], $value)) {
+                    $goodsName = $wordArr[$k-1];
+
+                    $goods = GoodsModel::getRecord(['goods_name[~]' => $goodsName]);
+
+                    if (empty($goods)) {
+                        $notFoundGoods[] = $goodsName;
+                    }
+
+
+                    $num =
+                }
+
+
+
+
+
+
+
+
+
+
+
+
             }
 
 
@@ -72,22 +110,10 @@ class AutoCheckPicture
 
 
 
-
-
         }
-die();
 
 
-
-
-        foreach($content['ret'] as $k => $value) {
-
-            //判断
-
-
-
-            echo $k . '_'  .$value['word'] . PHP_EOL;
-        }
+        die();
 
     }
 }
