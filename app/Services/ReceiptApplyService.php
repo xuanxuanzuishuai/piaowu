@@ -339,6 +339,7 @@ class ReceiptApplyService
      */
     public static function uploadApply($params, $baId)
     {
+        //校验BA手动输入的单号
         $res = ReceiptApplyModel::getRecord(['receipt_number' => $params['receipt_number']]);
         if (!empty($res)) {
             throw new RunTimeException(['receipt_number_has_exist']);
@@ -353,6 +354,8 @@ class ReceiptApplyService
 
         $picUrl = AliOSS::signUrls($params['pic_url']);
 
+
+        //图片识别结果，仅供系统审核建议,对于关联的商品信息不能确定时，要提供建议
         list($receiptFrom, $receiptNumber, $buyTime, $goodsInfo, $remark) = AutoCheckPicture::dealReceiptInfo($picUrl);
 
         $newArr = [];
@@ -373,15 +376,24 @@ class ReceiptApplyService
         $res = ReceiptApplyModel::getRecord($where);
 
         if (!empty($res)) {
-            $remark .= '图片识别的单号' . $receiptNumber . '已在系统存在, 订单状态是' . ReceiptApplyModel::CHECK_STATUS_MSG[$res['check_status']] . PHP_EOL;
+            $remark[] = '图片识别的单号' . $receiptNumber . '已在系统存在, 订单状态是' . ReceiptApplyModel::CHECK_STATUS_MSG[$res['check_status']];
         }
 
         if ($receiptNumber != $params['receipt_number']) {
-            $remark .= '图片识别票据单号和用户输入单号不一致，图片识别单号为' . $receiptNumber . PHP_EOL;
+            $remark[] = '图片识别票据单号和用户输入单号不一致，图片识别单号为' . $receiptNumber;
         }
 
 
         $shopInfo = ShopInfoModel::getRecord(['id' => $baInfo['shop_id']]);
+
+        $note = '';
+        if (!empty($remark)) {
+            foreach($remark as $k => $v) {
+                $note .= $k + 1 . ' ' . $v . PHP_EOL;
+            }
+        }
+
+
 
         $data = [
             'receipt_number' => $params['receipt_number'],
@@ -397,7 +409,7 @@ class ReceiptApplyService
             'shop_name' => $shopInfo['shop_name'],
             'add_type' => ReceiptApplyModel::ENTER_BA,
             'receipt_from' => $receiptFrom,
-            'system_check_note' => $remark
+            'system_check_note' => $note
         ];
         $data['create_time'] = time();
         $receiptId = ReceiptApplyModel::insertRecord(

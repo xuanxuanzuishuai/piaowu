@@ -57,7 +57,7 @@ class AutoCheckPicture
 
         $fenge = $count;
 
-        $remark = '';
+        $remark = [];
 
 
         //云单比较固定，先确定什么单子进行不同得计算
@@ -119,7 +119,7 @@ class AutoCheckPicture
             if (!empty($initGoods)) {
 
                 if (count($initGoods) != count($nums)) {
-                    $remark .= '识别出来的商品个数和数量个数不匹配' . PHP_EOL;
+                    $remark[] = '识别出来的商品个数和数量个数不匹配';
                 }
 
 
@@ -127,7 +127,7 @@ class AutoCheckPicture
                     $goods = GoodsModel::getRecord(['goods_name[~]' => $v]);
 
                     if (empty($goods)) {
-                        $remark .= '未找到此商品信息-' . $v;
+                        $remark[] = '未找到此商品信息-' . $v;
                     }
 
                     $goodsInfo[] = [
