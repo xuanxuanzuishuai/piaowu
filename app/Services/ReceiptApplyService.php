@@ -26,11 +26,11 @@ class ReceiptApplyService
     {
         $newArr = [];
         foreach($params['goods_info'] as $v) {
-            if (!empty($newArr[$v['id'] . '_' . $v['is_refund']])) {
+            if (!empty($newArr[$v['id'] . '_' . $v['status']])) {
                 $startNum = $newArr[$v['id']];
-                $newArr[$v['id'] . '_' . $v['is_refund']] = $startNum + $v['num'];
+                $newArr[$v['id'] . '_' . $v['status']] = $startNum + $v['num'];
             } else {
-                $newArr[$v['id'] . '_' . $v['is_refund']] = $v['num'];
+                $newArr[$v['id'] . '_' . $v['status']] = $v['num'];
             }
         }
 
@@ -92,6 +92,7 @@ class ReceiptApplyService
         }
 
 
+        //处理销售单关联的商品
         ReceiptApplyGoodsModel::batchUpdateRecord(['status' => ReceiptApplyGoodsModel::STATUS_DEL], ['receipt_apply_id' => $receiptId]);
 
 
