@@ -20,9 +20,12 @@ class ReceiptApplyModel extends Model
         self::CHECK_REJECT => '审核驳回'
     ];
 
+    const SHOP_RECEIPT = 1; //门店订单
+    const CLOUD_RECEIPT = 2; //云店
+
     const RECEIPT_FROM = [
-        1 => '门店单',
-        2 => '云单'
+        self::SHOP_RECEIPT => '门店单',
+        self::CLOUD_RECEIPT => '云单'
     ];
 
 

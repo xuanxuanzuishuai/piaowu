@@ -3,6 +3,7 @@
 namespace App\Controllers\BaWx;
 use App\Controllers\ControllerBase;
 use App\Libs\Valid;
+use App\Services\ReceiptApplyService;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use App\Libs\HttpHelper;
@@ -35,7 +36,8 @@ class Receipt extends ControllerBase
         }
 
         try {
-
+            $baInfo = $this->ci['ba_info'];
+            ReceiptApplyService::uploadApply($params, $baInfo['ba_id']);
 
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

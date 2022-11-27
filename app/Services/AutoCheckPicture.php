@@ -1,10 +1,12 @@
 <?php
 namespace App\Services;
 use App\Libs\HttpHelper;
+use App\Libs\Util;
+use App\Models\ReceiptApplyModel;
 
 class AutoCheckPicture
 {
-    public static function getOcrContent($imagePath)
+    private static function getOcrContent($imagePath)
     {
         //调用ocr-识别图片
         $host    = "https://tysbgpu.market.alicloudapi.com";
@@ -27,5 +29,65 @@ class AutoCheckPicture
         ];
         $url     = $host . $path;
         return HttpHelper::requestJson($url, $bodys, 'POST', $headers);
+    }
+
+    public static function dealReceiptInfo($imagePath)
+    {
+        $content = self::getOcrContent($imagePath);
+
+        $receiptFrom = ReceiptApplyModel::SHOP_RECEIPT;
+
+        $wordArr = array_column($content['ret'], 'word');
+
+        $count = count($wordArr);
+
+
+        $receiptNumber = '';
+
+        foreach($content['ret'] as $k => $value) {
+
+            //判断
+
+
+
+            echo $k . '_'  .$value['word'] . PHP_EOL;
+        }
+
+
+        foreach($wordArr as $k => $value) {
+
+            if (Util::sensitiveWordFilter(['编号'], $value)) {
+
+                if (Util::sensitiveWordFilter(['复制'], $wordArr[$k+2])) {
+
+                    $receiptNumber = '00' . $wordArr[$k+1];
+
+                    $receiptFrom = ReceiptApplyModel::CLOUD_RECEIPT;
+
+                }
+            }
+
+
+
+
+
+
+
+
+        }
+die();
+
+
+
+
+        foreach($content['ret'] as $k => $value) {
+
+            //判断
+
+
+
+            echo $k . '_'  .$value['word'] . PHP_EOL;
+        }
+
     }
 }

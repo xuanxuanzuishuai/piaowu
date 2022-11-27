@@ -328,4 +328,12 @@ class ReceiptApplyService
         //发红包的逻辑
 
     }
+
+
+    public static function uploadApply($params, $baId)
+    {
+        $picUrl = AliOSS::signUrls($params['pic_url']);
+
+        $receiptInfo = AutoCheckPicture::dealReceiptInfo($picUrl);
+    }
 }
