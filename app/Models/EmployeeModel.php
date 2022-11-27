@@ -170,24 +170,13 @@ class EmployeeModel extends Model
     {
         $user = MysqlDB::getDB()->get(self::$table, [
             '[>]' . RoleModel::$table => ['role_id' => 'id'],
-            '[>]' . DeptModel::$table => ['dept_id' => 'id']
         ], [
             self::$table . '.id',
-            self::$table . '.uuid',
             self::$table . '.name',
             self::$table . '.role_id',
             self::$table . '.mobile',
             self::$table . '.login_name',
             self::$table . '.status',
-            self::$table . '.dept_id',
-            self::$table . '.is_leader',
-            self::$table . '.last_login_time',
-            self::$table . '.org_id',
-            self::$table . '.wx_nick',
-            self::$table . '.wx_thumb',
-            self::$table . '.wx_qr',
-            self::$table . '.email',
-            DeptModel::$table . '.name(dept_name)',
             RoleModel::$table . '.name(role_name)',
         ], [self::$table . '.id' => $id]);
 
