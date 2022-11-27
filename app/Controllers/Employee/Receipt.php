@@ -56,6 +56,11 @@ class Receipt extends ControllerBase
                 'type'       => 'in',
                 'value'      => [1,2],
                 'error_code' => 'receipt_from_is_error'
+            ],
+            [
+                'key'        => 'goods_info',
+                'type'       => 'required',
+                'error_code' => 'goods_info_is_required'
             ]
         ];
 
