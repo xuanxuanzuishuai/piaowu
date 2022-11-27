@@ -331,8 +331,21 @@ class ReceiptApplyService
     }
 
 
+    /**
+     * BA在微信端上传图片
+     * @param $params
+     * @param $baId
+     * @throws RunTimeException
+     */
     public static function uploadApply($params, $baId)
     {
+        $res = ReceiptApplyModel::getRecord(['receipt_number' => $params['receipt_number']]);
+        if (!empty($res)) {
+            throw new RunTimeException(['receipt_number_has_exist']);
+        }
+
+
+
         $baInfo = BAListModel::getRecord(['id' => $baId]);
         if (empty($baInfo)) {
             throw new RunTimeException(['ba_is_not_exist']);
@@ -360,7 +373,11 @@ class ReceiptApplyService
         $res = ReceiptApplyModel::getRecord($where);
 
         if (!empty($res)) {
-            $remark .= '此' . $receiptNumber . '已在系统存在, 订单状态是' . ReceiptApplyModel::CHECK_STATUS_MSG[$res['check_status']] . PHP_EOL;
+            $remark .= '图片识别此' . $receiptNumber . '已在系统存在, 订单状态是' . ReceiptApplyModel::CHECK_STATUS_MSG[$res['check_status']] . PHP_EOL;
+        }
+
+        if ($receiptNumber != $params['receipt_number']) {
+            $remark .= '图片识别票据单号和用户输入单号不一致' . PHP_EOL;
         }
 
 
