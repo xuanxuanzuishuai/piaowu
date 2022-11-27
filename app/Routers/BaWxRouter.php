@@ -17,5 +17,8 @@ class BaWxRouter extends RouterBase
         '/student_wx/common/js_config' => ['method' => ['get'], 'call'=>'\App\Controllers\StudentWX\Common:getJsConfig', 'middles' => []],
         '/ba_wx/wx/login'    => ['method'=>['get'],'call'=>  Wx::class. ':login', 'middles' => [WeChatOpenIdCheckMiddleware::class]],
 
+        '/ba_wx/wx/shop_list'    => ['method'=>['get'],'call'=>  Wx::class. ':shopList', 'middles' => []],
+        '/ba_wx/wx/apply'    => ['method'=>['post'],'call'=>  Wx::class. ':apply', 'middles' => []],
+
     ];
 }

@@ -26,9 +26,8 @@ class Shop extends ControllerBase
     {
         $params = $request->getParams();
         try {
-            $employeeId = $this->getEmployeeId();
             list($page, $count) = Util::formatPageCount($params);
-            list($list, $totalCount) = ShopService::getShopList($params, $employeeId, $page, $count);
+            list($list, $totalCount) = ShopService::getShopList($params, $page, $count);
         } catch (RuntimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
         }

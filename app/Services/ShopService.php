@@ -15,18 +15,13 @@ class ShopService
     /**
      * 获取门店列表
      * @param $params
-     * @param $employeeId
      * @param $page
      * @param $count
      * @return array
      * @throws RunTimeException
      */
-    public static function getShopList($params, $employeeId, $page, $count)
+    public static function getShopList($params, $page, $count)
     {
-        $employeeInfo = EmployeeModel::getRecord(['id' => $employeeId]);
-        if (empty($employeeInfo)) {
-            throw new RunTimeException(['not_found_employee']);
-        }
 
         list($list, $totalCount) = ShopInfoModel::getShopInfo($params, $page, $count);
 
