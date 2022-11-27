@@ -289,6 +289,7 @@ class ReceiptApplyService
         $baInfo = BAListModel::getRecord(['id' => $receiptInfo['ba_id']]);
         $receiptInfo['ba_name'] = $baInfo['name'];
         $receiptInfo['ba_number'] = $baInfo['job_number'];
+        $receiptInfo['buy_time'] = date('Y-m-d H:i:s', $receiptInfo['buy_time']);
 
         //关联的商品信息
         $relateGoods = ReceiptApplyGoodsModel::getRecords(['receipt_apply_id' => $receiptInfo['id'], 'status[!]' => ReceiptApplyGoodsModel::STATUS_DEL]);
