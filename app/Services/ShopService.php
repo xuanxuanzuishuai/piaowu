@@ -34,6 +34,17 @@ class ShopService
     }
 
     /**
+     * 获取门店详情
+     */
+    public static function getShopDetail($shopId)
+    {
+
+         $shopDetail =  ShopInfoModel::getShopDetail($shopId);
+
+        return $shopDetail;
+    }
+
+    /**
      * 新增编辑门店
      * @param $params
      * @param $employeeId

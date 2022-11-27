@@ -46,6 +46,39 @@ class Shop extends ControllerBase
      * @param $args
      * @return Response
      */
+    public function shopDetail(Request $request, Response $response, $args)
+    {
+        $rules = [
+            [
+                'key' => 'shop_id',
+                'type' => 'required',
+                'error_code' => 'shop_id_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::validate($params, $rules);
+        if ($result['code'] == Valid::CODE_PARAMS_ERROR) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        try {
+
+            $shopDetail = ShopService::getShopDetail($params['shop_id']);
+        } catch (RuntimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'shop_detail' => $shopDetail
+        ], StatusCode::HTTP_OK);
+    }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
     public function addShop(Request $request, Response $response, $args)
     {
         $rules = [

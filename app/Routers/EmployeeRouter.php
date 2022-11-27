@@ -49,6 +49,7 @@ class EmployeeRouter extends RouterBase
 
         '/employee/shop/shop_list' => ['method' => ['get'], 'call' => Shop::class . ':shopList'],
         '/employee/shop/add_shop' => ['method' => ['post'], 'call' => Shop::class . ':addShop'],
+        '/employee/shop/shop_detail' => ['method' => ['get'], 'call' => Shop::class . ':shopDetail'],
 
         '/employee/goods/goods_list' => ['method' => ['get'], 'call' => Goods::class . ':list'],
         '/employee/goods/add_goods' => ['method' => ['post'], 'call' => Goods::class . ':addGoods'],
