@@ -373,18 +373,18 @@ class ReceiptApplyService
         $res = ReceiptApplyModel::getRecord($where);
 
         if (!empty($res)) {
-            $remark .= '图片识别此' . $receiptNumber . '已在系统存在, 订单状态是' . ReceiptApplyModel::CHECK_STATUS_MSG[$res['check_status']] . PHP_EOL;
+            $remark .= '图片识别的单号' . $receiptNumber . '已在系统存在, 订单状态是' . ReceiptApplyModel::CHECK_STATUS_MSG[$res['check_status']] . PHP_EOL;
         }
 
         if ($receiptNumber != $params['receipt_number']) {
-            $remark .= '图片识别票据单号和用户输入单号不一致' . PHP_EOL;
+            $remark .= '图片识别票据单号和用户输入单号不一致，图片识别单号为' . $receiptNumber . PHP_EOL;
         }
 
 
         $shopInfo = ShopInfoModel::getRecord(['id' => $baInfo['shop_id']]);
 
         $data = [
-            'receipt_number' => $receiptNumber,
+            'receipt_number' => $params['receipt_number'],
             'ba_id' => $baId,
             'buy_time' => strtotime($buyTime),
             'shop_id' => $shopInfo['id'],
