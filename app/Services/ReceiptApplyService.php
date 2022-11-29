@@ -5,7 +5,6 @@ use App\Libs\AliOSS;
 use App\Libs\Excel\ExcelImportFormat;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
-use App\Models\BAApplyModel;
 use App\Models\BAListModel;
 use App\Models\EmployeeModel;
 use App\Models\GoodsModel;

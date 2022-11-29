@@ -5,6 +5,7 @@ use App\Libs\Util;
 use App\Models\GoodsModel;
 use App\Models\ReceiptApplyGoodsModel;
 use App\Models\ReceiptApplyModel;
+use App\Libs\Exceptions\RunTimeException;
 
 class AutoCheckPicture
 {
@@ -37,12 +38,13 @@ class AutoCheckPicture
      * 图片识别
      * @param $imagePath
      * @return array
+     * @throws RunTimeException
      */
     public static function dealReceiptInfo($imagePath)
     {
         $content = self::getOcrContent($imagePath);
 
-        $receiptFrom = ReceiptApplyModel::SHOP_RECEIPT;
+        $receiptFrom = 0; //初始认为啥都不是
 
         $wordArr = array_column($content['ret'], 'word');
 
@@ -61,8 +63,11 @@ class AutoCheckPicture
 
 
         //云单比较固定，先确定什么单子进行不同得计算
+        //如果即确定不了云单又确定不了小票，驳回重新上传
         foreach($wordArr as $k => $value) {
             $value = Util::trimAllSpace($value);
+
+            //确定云单
             if (Util::sensitiveWordFilter(['编号'], $value)) {
 
                 if (Util::sensitiveWordFilter(['复制'], $wordArr[$k+2])) {
@@ -72,6 +77,17 @@ class AutoCheckPicture
 
                 }
             }
+
+            //确定小票
+            if (Util::sensitiveWordFilter(['收银员'], $value)) {
+                $receiptFrom = ReceiptApplyModel::SHOP_RECEIPT;
+            }
+        }
+
+
+        //仍旧啥也不是
+        if ($receiptFrom == 0) {
+            throw new RunTimeException(['can_not_know_pic']);
         }
 
 
