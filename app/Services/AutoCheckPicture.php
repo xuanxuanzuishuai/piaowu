@@ -48,16 +48,10 @@ class AutoCheckPicture
 
         $wordArr = array_column($content['ret'], 'word');
 
-        $count = count($wordArr);
-
 
         $receiptNumber = '';
         $buyTime = '';
         $goodsInfo = [];
-        $initGoods = [];
-        $nums = [];
-
-        $fenge = $count;
 
         $remark = [];
 
@@ -93,72 +87,113 @@ class AutoCheckPicture
 
         if ($receiptFrom == ReceiptApplyModel::CLOUD_RECEIPT) {
 
-            //处理云单
-            foreach($wordArr as $k => $value) {
-                $value = Util::trimAllSpace($value);
+          list($receiptNumber, $buyTime, $goodsInfo, $remark) = self::dealCloudReceiptPic($wordArr);
 
-                if (Util::sensitiveWordFilter(['下单', '日期'], $value)) {
-                    $buyTime = $wordArr[$k+1];
-                    if (strtotime($buyTime) == false) {
-                        $newBuyTime = str_replace('：', ':', $buyTime);
-                        $buyTime = substr($newBuyTime, 0, 10) . ' ' . substr($newBuyTime, 10);
-
-                    }
-
-                }
-
-                if (Util::sensitiveWordFilter(['价格'], $value)) {
-                    $fenge = $k;
-
-                }
+        }
 
 
-                if (Util::sensitiveWordFilter(['￥'], $value)) {
 
-                    if ($k < $fenge) {
-                        $goodsName = $wordArr[$k-1];
 
-                        $initGoods[] = $goodsName;
-                    }
 
-                }
+        return [$receiptFrom, $receiptNumber, $buyTime, $goodsInfo, $remark];
 
-                if (Util::sensitiveWordFilter(['X'], $value)) {
-                    $num = str_replace('X', NULL, $value);
-                    $nums[] = $num;
+    }
+
+
+    /**
+     * 处理云单的逻辑
+     * @param $wordArr
+     * @return array
+     */
+    private static function dealCloudReceiptPic($wordArr)
+    {
+        $receiptNumber = '';
+        $buyTime = '';
+        $goodsInfo = [];
+
+        $remark = [];
+        $initGoods = [];
+        $nums = [];
+        //先定义为最大的给个默认值
+        $fenge = count($wordArr);
+
+        //处理云单
+        foreach($wordArr as $k => $value) {
+            $value = Util::trimAllSpace($value);
+
+            //确定购买日期
+            if (Util::sensitiveWordFilter(['下单', '日期'], $value)) {
+                $buyTime = $wordArr[$k+1];
+                if (strtotime($buyTime) == false) {
+                    $newBuyTime = str_replace('：', ':', $buyTime);
+                    $buyTime = substr($newBuyTime, 0, 10) . ' ' . substr($newBuyTime, 10);
 
                 }
 
             }
 
 
-            if (!empty($initGoods)) {
+            //根据云单小票的特征，以价格作为关键字，分割商品明细和总价
+            if (Util::sensitiveWordFilter(['价格'], $value)) {
+                $fenge = $k;
 
-                if (count($initGoods) != count($nums)) {
-                    $remark[] = '识别出来的商品个数和数量个数不匹配';
+            }
+
+            //确定有多少个购买商品名称
+            if (Util::sensitiveWordFilter(['￥'], $value)) {
+
+                if ($k < $fenge) {
+                    $goodsName = $wordArr[$k-1];
+
+                    $initGoods[] = $goodsName;
                 }
 
+            }
 
-                foreach ($initGoods as $key => $v) {
-                    $goods = GoodsModel::getRecord(['goods_name[~]' => $v]);
+            //确定有多少购买数量
+            if (Util::sensitiveWordFilter(['X'], $value)) {
+                $num = str_replace('X', NULL, $value);
+                $nums[] = $num;
 
-                    if (empty($goods)) {
-                        $remark[] = '未找到此商品信息-' . $v;
-                        continue;
-                    }
+            }
 
-                    $goodsInfo[] = [
-                        'id' => $goods['id'],
-                        'num' => $nums[$key],
-                        'status' => ReceiptApplyGoodsModel::STATUS_NORMAL
-                    ];
 
+            //确定云单的小票编号，为了保持格式统一
+            if (Util::sensitiveWordFilter(['编号'], $value)) {
+
+                if (Util::sensitiveWordFilter(['复制'], $wordArr[$k+2])) {
+                    $receiptNumber = '00' . $wordArr[$k+1];
                 }
             }
 
         }
 
-        return [$receiptFrom, $receiptNumber, $buyTime, $goodsInfo, $remark];
 
+        //商品名称和购买数量做匹配，确定每个商品对应的购买数量
+        if (!empty($initGoods)) {
+
+            if (count($initGoods) != count($nums)) {
+                $remark[] = '识别出来的商品个数和数量个数不匹配';
+            }
+
+
+            foreach ($initGoods as $key => $v) {
+                $goods = GoodsModel::getRecord(['goods_name[~]' => $v]);
+
+                if (empty($goods)) {
+                    $remark[] = '未找到此商品信息-' . $v;
+                    continue;
+                }
+
+                $goodsInfo[] = [
+                    'id' => $goods['id'],
+                    'num' => $nums[$key],
+                    'status' => ReceiptApplyGoodsModel::STATUS_NORMAL
+                ];
+
+            }
+        }
+
+        return [$receiptNumber, $buyTime, $goodsInfo, $remark];
     }
 }
