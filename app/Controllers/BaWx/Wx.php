@@ -136,7 +136,13 @@ class Wx extends ControllerBase
             if (empty($res)) {
                 throw new RunTimeException(['mobile_format_not_right']);
             }
-            
+
+            $idCardRes = Util::idNumberCheck($params['idcard']);
+            if (empty($idCardRes)) {
+                throw new RunTimeException(['id_card_format_not_right']);
+            }
+
+
 
             $data = WeChatMiniPro::factory()->getWeixnUserOpenIDAndAccessTokenByCode($params['wx_code']);
 
