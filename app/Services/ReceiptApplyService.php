@@ -6,6 +6,7 @@ use App\Libs\Excel\ExcelImportFormat;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
 use App\Models\BAListModel;
+use App\Models\BaWeixinModel;
 use App\Models\EmployeeModel;
 use App\Models\GoodsModel;
 use App\Models\ReceiptApplyGoodsModel;
@@ -334,10 +335,27 @@ class ReceiptApplyService
      * BA在微信端上传图片
      * @param $params
      * @param $baId
+     * @param $openId
      * @throws RunTimeException
      */
-    public static function uploadApply($params, $baId)
+    public static function uploadApply($params, $baId, $openId)
     {
+        //目前微信不可以换绑，以首次绑定的微信为准
+        $wxBoundInfo = BaWeixinModel::getOpenBoundInfo($openId);
+
+        if (!empty($wxBoundInfo)) {
+            if ($wxBoundInfo['ba_id'] != $baId) {
+                throw new RunTimeException(['open_id_and_ba_id_not_relation']);
+            }
+        }
+
+
+
+
+
+
+
+
         //校验BA手动输入的单号
         $res = ReceiptApplyModel::getRecord(['receipt_number' => $params['receipt_number']]);
         if (!empty($res)) {
@@ -356,6 +374,9 @@ class ReceiptApplyService
 
         //图片识别结果，仅供系统审核建议,对于关联的商品信息不能确定时，要提供建议
         list($receiptFrom, $receiptNumber, $buyTime, $goodsInfo, $remark) = AutoCheckPicture::dealReceiptInfo($picUrl);
+
+        var_dump ($receiptNumber, $buyTime, $goodsInfo, $remark);
+        die();
 
         $newArr = [];
         foreach($goodsInfo as $v) {

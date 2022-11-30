@@ -194,22 +194,25 @@ class BAService
         }
 
 
-        $res = BAApplyModel::getRecords(['OR' => ['mobile' => $params['mobile'], 'job_number' => $params['job_number']]]);
+        $where = [
+            'OR' => [
+                'mobile' => $params['mobile'],
+                'job_number' => $params['job_number']
+            ],
+            'open_id[!]' => $openId
+        ];
+
+        $openidExistApply = BAApplyModel::getRecord($where);
 
 
-        if (!empty($res)) {
+        //手机号，工号，open_id需要是一比一的对应关系，任何一个和其他人冲突，都不允许
 
-            if (in_array(BAApplyModel::APPLY_PASS, array_column($res, 'check_status'))) {
-                throw new RunTimeException(['one_mobile_only_one']);
-            }
+        if (!empty($openidExistApply)) {
+            throw new RunTimeException(['mobile_job_number_open_id_not_allow_repeat']);
         }
 
-        $info = BAApplyModel::getCount(['OR' => ['mobile' => $params['mobile'], 'job_number' => $params['job_number']], 'open_id' => $openId]);
-
-
-        if ($info > 1) {
-            throw new RunTimeException(['not_muti_wx_submit']);
-        }
+        //当前open_id是否有信息
+        $res = BAApplyModel::getRecord(['open_id' => $openId]);
 
 
         $data = [
@@ -227,23 +230,8 @@ class BAService
             $data['create_time'] = time();
             BAApplyModel::insertRecord($data);
         } else {
-            BAApplyModel::updateRecord($res[0]['id'], $data);
+            BAApplyModel::updateRecord($res['id'], $data);
         }
-
-        $applyInfo = BAApplyModel::getRecord(['OR' => ['mobile' => $params['mobile'], 'job_number' => $params['job_number']]]);
-
-
-        BaWeixinModel::batchUpdateRecord(['status' => BaWeixinModel::STATUS_DEL, 'update_time' => time()], ['ba_id' => $applyInfo['id']]);
-
-        BaWeixinModel::insertRecord(
-            [
-                'ba_id' => $applyInfo['id'],
-                'open_id' => $openId,
-                'status' => BaWeixinModel::STATUS_NORMAL,
-                'create_time' => time(),
-                'update_time' => time()
-            ]
-        );
 
         return BAApplyModel::getRecord(['open_id' => $openId]);
 
