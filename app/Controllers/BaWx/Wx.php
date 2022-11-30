@@ -131,6 +131,13 @@ class Wx extends ControllerBase
 
         try {
 
+            $res = Util::validPhoneNumber($params['mobile'], 86);
+
+            if (empty($res)) {
+                throw new RunTimeException(['mobile_format_not_right']);
+            }
+            
+
             $data = WeChatMiniPro::factory()->getWeixnUserOpenIDAndAccessTokenByCode($params['wx_code']);
 
             if (empty($data) || empty($data['openid'])) {
