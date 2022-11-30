@@ -463,4 +463,74 @@ class ReceiptApplyService
 
         }
     }
+
+    /**
+     * BA看到的票据申请列表
+     * @param $baId
+     * @param $page
+     * @param $count
+     * @param $params
+     * @return array
+     */
+    public static function getBAReceiptList($baId, $page, $count, $params)
+    {
+        $where = [];
+        if (!empty($params['check_status'])) {
+            $where['check_status'] = $params['check_status'];
+        }
+
+        $where['ba_id'] = $baId;
+
+
+        $totalCount = ReceiptApplyModel::getCount($where);
+
+
+        $where['LIMIT'] = [($page-1) * $count, $count];
+        $where['ORDER'] = ['id' => 'DESC'];
+        $list = ReceiptApplyModel::getRecords($where);
+
+
+        $info = [];
+        if (!empty($list)) {
+            foreach($list as $v) {
+                $info[] = [
+                    'receipt_id' => $v['id'],
+                    'pic_url' => AliOSS::signUrls($v['pic_url']),
+                    'receipt_number' => $v['receipt_number'],
+                    'create_time' => $v['create_time'],
+                    'check_status' => $v['check_status'],
+                    'check_status_msg' => ReceiptApplyModel::CHECK_STATUS_MSG[$v['check_status']],
+                    'employee_remark' => $v['employee_remark']
+
+                ];
+            }
+        }
+        return [$totalCount, $info];
+    }
+
+
+    /**
+     * 获取BA的某个票据申请详情
+     * @param $receiptId
+     * @param $baId
+     * @return array
+     * @throws RunTimeException
+     */
+    public static function getBaReceiptInfo($receiptId, $baId)
+    {
+        $receiptInfo = ReceiptApplyModel::getRecord(['id' => $receiptId, 'ba_id' => $baId]);
+        if (empty($receiptInfo)) {
+            throw new RunTimeException(['receipt_info_not_exist']);
+        }
+
+        return [
+            'receipt_id' => $receiptInfo['id'],
+            'pic_url' => AliOSS::signUrls($receiptInfo['pic_url']),
+            'receipt_number' => $receiptInfo['receipt_number'],
+            'create_time' => $receiptInfo['create_time'],
+            'check_status' => $receiptInfo['check_status'],
+            'check_status_msg' => ReceiptApplyModel::CHECK_STATUS_MSG[$receiptInfo['check_status']],
+            'employee_remark' => $receiptInfo['employee_remark']
+        ];
+    }
 }
