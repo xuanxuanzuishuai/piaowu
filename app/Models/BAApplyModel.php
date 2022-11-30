@@ -123,8 +123,8 @@ from ba_apply a left join shop_info s on a.shop_id = s.id';
      */
     public static function getBaInfo($baId)
     {
-        $sql = 'select a.name, a.mobile, a.idcard, a.job_number, a.shop_id, s.shop_number, s.shop_name,s.province_id, ap.province_name,
-s.city_id, ac.city_name, s.district_id, ad.district_name,a.check_status
+        $sql = 'select a.id,a.name, a.mobile, a.idcard, a.job_number, a.shop_id, s.shop_number, s.shop_name,s.province_id, ap.province_name,
+s.city_id, ac.city_name, s.district_id, ad.district_name,a.check_status,a.check_remark
  from ba_apply a
 left join shop_info s on a.shop_id = s.id
 left join area_province ap on s.province_id = ap.id

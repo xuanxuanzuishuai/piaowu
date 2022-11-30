@@ -245,6 +245,12 @@ class BAService
      */
     public static function getBaApplyInfo($baInfo)
     {
-        return BAApplyModel::getBaInfo($baInfo['ba_id']);
+        $res = BAApplyModel::getBaInfo($baInfo['ba_id']);
+
+        if (!empty($res)) {
+            $res['check_status_msg'] = BAApplyModel::STATUS_MSG[$res['check_status']];
+        }
+
+        return $res;
     }
 }
