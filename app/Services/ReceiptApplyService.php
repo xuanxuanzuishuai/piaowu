@@ -5,6 +5,7 @@ use App\Libs\AliOSS;
 use App\Libs\Excel\ExcelImportFormat;
 use App\Libs\Exceptions\RunTimeException;
 use App\Libs\Util;
+use App\Models\BAApplyModel;
 use App\Models\BAListModel;
 use App\Models\BaWeixinModel;
 use App\Models\EmployeeModel;
@@ -332,30 +333,19 @@ class ReceiptApplyService
 
 
     /**
-     * BA在微信端上传图片
+     * BA上传票据申请
      * @param $params
      * @param $baId
-     * @param $openId
      * @throws RunTimeException
      */
-    public static function uploadApply($params, $baId, $openId)
+    public static function uploadApply($params, $baId)
     {
-        //目前微信不可以换绑，以首次绑定的微信为准
-        $wxBoundInfo = BaWeixinModel::getOpenBoundInfo($openId);
 
-        if (!empty($wxBoundInfo)) {
-            if ($wxBoundInfo['ba_id'] != $baId) {
-                throw new RunTimeException(['open_id_and_ba_id_not_relation']);
-            }
+        if (strlen($params['receipt_number']) != 24) {
+            throw new RunTimeException(['receipt_number_must_24_len']);
         }
 
-
-
-
-
-
-
-
+        //一个单号仅可有一条申请记录，如有多个，请让他联系管理员
         //校验BA手动输入的单号
         $res = ReceiptApplyModel::getRecord(['receipt_number' => $params['receipt_number']]);
         if (!empty($res)) {
@@ -363,23 +353,27 @@ class ReceiptApplyService
         }
 
 
-
-        $baInfo = BAListModel::getRecord(['id' => $baId]);
+        //校验BA的状态
+        $baInfo = BAApplyModel::getRecord(['id' => $baId]);
         if (empty($baInfo)) {
             throw new RunTimeException(['ba_is_not_exist']);
         }
 
+        if ($baInfo['check_status'] != BAApplyModel::APPLY_PASS) {
+            throw new RunTimeException(['check_status_not_pass']);
+        }
+
+        //图片识别，作为后台的参考结果
         $picUrl = AliOSS::signUrls($params['pic_url']);
 
 
         //图片识别结果，仅供系统审核建议,对于关联的商品信息不能确定时，要提供建议
-        list($receiptFrom, $receiptNumber, $buyTime, $goodsInfo, $remark) = AutoCheckPicture::dealReceiptInfo($picUrl);
+        list($referReceiptFrom, $referReceiptNumber, $referBuyTime, $referGoodsInfo, $referRemark) = AutoCheckPicture::dealReceiptInfo($picUrl);
 
-        var_dump ($receiptNumber, $buyTime, $goodsInfo, $remark);
-        die();
 
+        //图片识别拿到可识别的商品信息
         $newArr = [];
-        foreach($goodsInfo as $v) {
+        foreach($referGoodsInfo as $v) {
             if (!empty($newArr[$v['id'] . '_' . $v['status']])) {
                 $startNum = $newArr[$v['id']];
                 $newArr[$v['id'] . '_' . $v['status']] = $startNum + $v['num'];
@@ -389,18 +383,21 @@ class ReceiptApplyService
         }
 
 
+
+        //小票编号必须唯一
         $where = [
-            'receipt_number' => $receiptNumber,
+            'receipt_number' => $referReceiptNumber,
         ];
 
         $res = ReceiptApplyModel::getRecord($where);
 
         if (!empty($res)) {
-            $remark[] = '图片识别的单号' . $receiptNumber . '已在系统存在, 订单状态是' . ReceiptApplyModel::CHECK_STATUS_MSG[$res['check_status']];
+            $remark[] = '图片识别的单号' . $referReceiptNumber . '已在系统存在, 订单状态是' . ReceiptApplyModel::CHECK_STATUS_MSG[$res['check_status']];
         }
 
-        if ($receiptNumber != $params['receipt_number']) {
-            $remark[] = '图片识别票据单号和用户输入单号不一致，图片识别单号为' . $receiptNumber;
+
+        if ($referReceiptNumber != $params['receipt_number']) {
+            $remark[] = '图片识别票据单号和用户输入单号不一致，图片识别单号为' . $referReceiptNumber;
         }
 
 
@@ -414,11 +411,11 @@ class ReceiptApplyService
         }
 
 
-
+        //小票入库
         $data = [
             'receipt_number' => $params['receipt_number'],
             'ba_id' => $baId,
-            'buy_time' => strtotime($buyTime),
+            'buy_time' => empty($referBuyTime) ? date('Y-m-d H:i:s') : strtotime($referBuyTime),
             'shop_id' => $shopInfo['id'],
             'update_time' => time(),
             'reference_money' => 0,
@@ -428,7 +425,7 @@ class ReceiptApplyService
             'shop_number' => $shopInfo['shop_number'],
             'shop_name' => $shopInfo['shop_name'],
             'add_type' => ReceiptApplyModel::ENTER_BA,
-            'receipt_from' => $receiptFrom,
+            'receipt_from' => $referReceiptFrom,
             'system_check_note' => $note
         ];
         $data['create_time'] = time();

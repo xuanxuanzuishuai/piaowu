@@ -37,9 +37,8 @@ class Receipt extends ControllerBase
 
         try {
             $baInfo = $this->ci['ba_info'];
-            $openId = $this->ci['open_id'];
 
-            ReceiptApplyService::uploadApply($params, $baInfo['ba_id'], $openId);
+            ReceiptApplyService::uploadApply($params, $baInfo['ba_id']);
 
         } catch (RunTimeException $e) {
             return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());

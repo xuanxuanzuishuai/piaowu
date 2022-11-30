@@ -91,7 +91,7 @@ class AutoCheckPicture
 
         }
 
-
+        $receiptNumber = self::buildReceiptNumber($receiptNumber, $buyTime);
 
 
 
@@ -162,12 +162,11 @@ class AutoCheckPicture
             if (Util::sensitiveWordFilter(['编号'], $value)) {
 
                 if (Util::sensitiveWordFilter(['复制'], $wordArr[$k+2])) {
-                    $receiptNumber = '00' . $wordArr[$k+1];
+                    $receiptNumber =  $wordArr[$k+1];
                 }
             }
 
         }
-
 
         //商品名称和购买数量做匹配，确定每个商品对应的购买数量
         if (!empty($initGoods)) {
@@ -195,5 +194,25 @@ class AutoCheckPicture
         }
 
         return [$receiptNumber, $buyTime, $goodsInfo, $remark];
+    }
+
+    /**
+     * 小票编号必须等于24位
+     * @param $receiptNumber
+     * @param $buyTime
+     * @return string
+     */
+    private static function buildReceiptNumber($receiptNumber, $buyTime)
+    {
+        $strlen = strlen($receiptNumber);
+
+        if ($strlen == 16) {
+            if (!empty($buyTime)) {
+                return $receiptNumber . date('Ymd', strtotime($buyTime));
+            } else {
+                return $receiptNumber . date('Ymd');
+            }
+        }
+
     }
 }
