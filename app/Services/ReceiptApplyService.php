@@ -345,12 +345,31 @@ class ReceiptApplyService
             throw new RunTimeException(['receipt_number_must_24_len']);
         }
 
+        //如果是编辑，校验是否有关联关系
+        if (!empty($params['receipt_id'])) {
+            $relate = ReceiptApplyModel::getRecord(['id' => $params['receipt_id'], 'ba_id' => $baId]);
+            if (empty($relate)) {
+                throw new RunTimeException(['receipt_not_relate_ba']);
+            }
+
+        }
+
+
         //一个单号仅可有一条申请记录，如有多个，请让他联系管理员
         //校验BA手动输入的单号
         $res = ReceiptApplyModel::getRecord(['receipt_number' => $params['receipt_number']]);
-        if (!empty($res)) {
-            throw new RunTimeException(['receipt_number_has_exist']);
+
+        //编辑的时候如果票据撞单，也需要拒绝入库
+        if (empty($params['receipt_id'])) {
+            if (!empty($res)) {
+                throw new RunTimeException(['receipt_number_has_exist']);
+            }
+        } else {
+            if (!empty($res) && $params['receipt_id'] != $res['id']) {
+                throw new RunTimeException(['receipt_number_has_exist']);
+            }
         }
+
 
 
         //校验BA的状态
@@ -369,6 +388,7 @@ class ReceiptApplyService
 
         //图片识别结果，仅供系统审核建议,对于关联的商品信息不能确定时，要提供建议
         list($referReceiptFrom, $referReceiptNumber, $referBuyTime, $referGoodsInfo, $referRemark) = AutoCheckPicture::dealReceiptInfo($picUrl);
+        $remark = $referRemark;
 
 
         //图片识别拿到可识别的商品信息
@@ -391,7 +411,7 @@ class ReceiptApplyService
 
         $res = ReceiptApplyModel::getRecord($where);
 
-        if (!empty($res)) {
+        if (!empty($res) && $res['ba_id'] != $baId) {
             $remark[] = '图片识别的单号' . $referReceiptNumber . '已在系统存在, 订单状态是' . ReceiptApplyModel::CHECK_STATUS_MSG[$res['check_status']];
         }
 
@@ -428,10 +448,18 @@ class ReceiptApplyService
             'receipt_from' => $referReceiptFrom,
             'system_check_note' => $note
         ];
-        $data['create_time'] = time();
-        $receiptId = ReceiptApplyModel::insertRecord(
-            $data
-        );
+
+        if (empty($params['receipt_id'])) {
+            $data['create_time'] = time();
+            $receiptId = ReceiptApplyModel::insertRecord(
+                $data
+            );
+        } else {
+            ReceiptApplyModel::updateRecord($params['receipt_id'], $data);
+            $receiptId = $params['receipt_id'];
+        }
+
+
 
         //处理销售单关联的商品
         ReceiptApplyGoodsModel::batchUpdateRecord(['status' => ReceiptApplyGoodsModel::STATUS_DEL], ['receipt_apply_id' => $receiptId]);
@@ -458,7 +486,7 @@ class ReceiptApplyService
                     'status' => $status,
                 ]);
             } else {
-                throw new RunTimeException(['please_try']);
+                throw new RunTimeException(['please_retry']);
             }
 
         }
