@@ -28,10 +28,13 @@ class ReceiptApplyService
      */
     public static function backendUploadApply($params, $employeeId)
     {
+        //票据单号需要保持统一
         if (strlen($params['receipt_number']) != 24) {
             throw new RunTimeException(['receipt_number_must_24_len']);
         }
 
+
+        //处理过的不可走反向流程
         if (!empty($params['receipt_id'])) {
 
             $applyInfo = ReceiptApplyModel::getRecord(['id' => $params['receipt_id']]);
@@ -46,25 +49,10 @@ class ReceiptApplyService
             }
         }
 
-
-
-        $newArr = [];
-        foreach($params['goods_info'] as $v) {
-            if (!empty($newArr[$v['id'] . '_' . $v['status']])) {
-                $startNum = $newArr[$v['id']];
-                $newArr[$v['id'] . '_' . $v['status']] = $startNum + $v['num'];
-            } else {
-                $newArr[$v['id'] . '_' . $v['status']] = $v['num'];
-            }
-        }
-
-
+        //票据编号不可重复
         $receiptNumber = $params['receipt_number'];
         $where = [
-            'receipt_number' => $receiptNumber,
-            'check_status' => [ReceiptApplyModel::CHECK_PASS,
-                ReceiptApplyModel::CHECK_WAITING
-            ]
+            'receipt_number' => $receiptNumber
         ];
         if (!empty($params['receipt_id'])) {
             $where['id[!]'] = $params['receipt_id'];
@@ -73,6 +61,17 @@ class ReceiptApplyService
         $res = ReceiptApplyModel::getRecord($where);
         if (!empty($res)) {
             throw new RunTimeException(['receipt_number_has_exist']);
+        }
+
+        //对票据关联的商品格式化处理
+        $newArr = [];
+        foreach($params['goods_info'] as $v) {
+            if (!empty($newArr[$v['id'] . '_' . $v['status']])) {
+                $startNum = $newArr[$v['id']];
+                $newArr[$v['id'] . '_' . $v['status']] = $startNum + $v['num'];
+            } else {
+                $newArr[$v['id'] . '_' . $v['status']] = $v['num'];
+            }
         }
 
         $baId = $params['ba_id'];
@@ -105,6 +104,7 @@ class ReceiptApplyService
             'receipt_from' => $params['receipt_from']
         ];
 
+        //更新或者编辑票据
         if (!empty($params['receipt_id'])) {
             $receiptId = $params['receipt_id'];
             ReceiptApplyModel::updateRecord($params['receipt_id'], $data);
