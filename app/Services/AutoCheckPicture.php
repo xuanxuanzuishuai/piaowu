@@ -14,7 +14,7 @@ class AutoCheckPicture
         //调用ocr-识别图片
         $host    = "https://tysbgpu.market.alicloudapi.com";
         $path    = "/api/predict/ocr_general";
-        $appcode = "af272f9db1a14eecb3d5c0fb1153051e";
+        $appcode = $_ENV['ALI_OSS_PIC_APP_CODE'];
         //根据API的要求，定义相对应的Content-Type
         $headers = [
             'Authorization' => 'APPCODE ' . $appcode,

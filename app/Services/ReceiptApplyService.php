@@ -314,7 +314,7 @@ class ReceiptApplyService
      * @param $employeeId
      * @throws RunTimeException
      */
-    public static function updateReceiptInfo($receiptIds, $checkStatus,$employeeId)
+    public static function updateReceiptInfo($receiptIds, $checkStatus, $employeeId)
     {
         $info = ReceiptApplyModel::getRecords(['id' => explode(',', $receiptIds), 'check_status[!]' => ReceiptApplyModel::CHECK_WAITING]);
         if (!empty($info)) {

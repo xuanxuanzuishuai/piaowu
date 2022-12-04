@@ -27,18 +27,6 @@ class DictConstants {
         ]
     ];
 
-    // JWT的config
-    const JWT_CONFIG = [
-        'type' => 'jwt_config',
-        'keys' => [
-            'JWT_AUDIENCE',
-            'JWT_EXPIRE',
-            'JWT_ISSUER',
-            'JWT_SIGNER_KEY',
-            'TOKEN_TYPE_USER'
-        ]
-    ];
-
     //不同应用的微信app_id
     const WECHAT_APPID = [
         'type' => 'wechat_app_id',
