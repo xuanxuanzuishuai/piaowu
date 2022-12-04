@@ -85,10 +85,16 @@ class AutoCheckPicture
         }
 
 
+        //云单的识别
         if ($receiptFrom == ReceiptApplyModel::CLOUD_RECEIPT) {
 
           list($picOriginalReceiptNumber, $buyTime, $goodsInfo, $remark) = self::dealCloudReceiptPic($wordArr);
 
+        }
+
+        //普通小票的识别
+        if ($receiptFrom == ReceiptApplyModel::SHOP_RECEIPT) {
+            list($picOriginalReceiptNumber, $buyTime, $goodsInfo, $remark) = self::dealShopReceiptPic($wordArr);
         }
 
 
@@ -97,6 +103,27 @@ class AutoCheckPicture
         return [$receiptFrom, $picOriginalReceiptNumber, $buyTime, $goodsInfo, $remark];
 
     }
+
+    //处理门店票据
+    public static function dealShopReceiptPic($wordArr)
+    {
+
+        $receiptNumberStartIndex = count($wordArr);
+
+        $receiptNumeberEndIndex = count($wordArr);
+
+        foreach ($wordArr as $k => $value) {
+            if (Util::sensitiveWordFilter(['编号'], $value)) {
+                $receiptNumberStartIndex = $k + 1;
+            }
+
+            if (Util::sensitiveWordFilter(['热线'], $value)) {
+                $receiptNumberStartIndex = $k + 1;
+            }
+
+        }
+    }
+
 
 
     /**
