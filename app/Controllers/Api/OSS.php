@@ -21,6 +21,8 @@ class OSS extends ControllerBase
 
         $dir = $request->getParam('type');
 
+        (empty($dir)) && $dir = 'ticket';
+
         $alioss = new AliOSS();
         $ret = $alioss->getSignature($ossConfig['access_key_id'],
             $ossConfig['access_key_secret'],
