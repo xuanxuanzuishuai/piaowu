@@ -128,7 +128,7 @@ class ReceiptApplyService
 
             $goodsInfo = GoodsModel::getRecord(['id' => $goodsId]);
 
-            $record = ReceiptApplyGoodsModel::getRecord(['receipt_apply_id' => $receiptId, 'goods_id' => $k, 'status' => $status]);
+            $record = ReceiptApplyGoodsModel::getRecord(['receipt_apply_id' => $receiptId, 'goods_id' => $goodsId, 'status' => $status]);
 
             if (empty($record)) {
                 ReceiptApplyGoodsModel::insertRecord([
@@ -502,7 +502,7 @@ class ReceiptApplyService
      */
     public static function uploadApply($params, $baId)
     {
-
+        //票据单号需要保持统一
         if (strlen($params['receipt_number']) != 24) {
             throw new RunTimeException(['receipt_number_must_24_len']);
         }
@@ -549,7 +549,7 @@ class ReceiptApplyService
 
 
         //图片识别结果，仅供系统审核建议,对于关联的商品信息不能确定时，要提供建议
-        list($referReceiptFrom, $referReceiptNumber, $referBuyTime, $referGoodsInfo, $referRemark) = AutoCheckPicture::dealReceiptInfo($picUrl);
+        list($referReceiptFrom, $picOriginalReceiptNumber, $referBuyTime, $referGoodsInfo, $referRemark) = AutoCheckPicture::dealReceiptInfo($picUrl);
         $remark = $referRemark;
 
 
@@ -568,18 +568,18 @@ class ReceiptApplyService
 
         //小票编号必须唯一
         $where = [
-            'receipt_number' => $referReceiptNumber,
+            'pic_receipt_number' => $picOriginalReceiptNumber,
         ];
 
         $res = ReceiptApplyModel::getRecord($where);
 
         if (!empty($res) && $res['ba_id'] != $baId) {
-            $remark[] = '图片识别的单号' . $referReceiptNumber . '已在系统存在, 订单状态是' . ReceiptApplyModel::CHECK_STATUS_MSG[$res['check_status']];
+            $remark[] = '图片识别的单号' . $picOriginalReceiptNumber . '已在系统存在, 票据状态是' . ReceiptApplyModel::CHECK_STATUS_MSG[$res['check_status']] . ' 票据id ' . $res['id'] ;
         }
 
 
-        if ($referReceiptNumber != $params['receipt_number']) {
-            $remark[] = '图片识别票据单号和用户输入单号不一致，图片识别单号为' . $referReceiptNumber;
+        if (empty(strpos($params['receipt_number'], $picOriginalReceiptNumber))) {
+            $remark[] = '图片识别票据单号和用户输入单号无关联关系，图片识别单号为' . $picOriginalReceiptNumber;
         }
 
 
@@ -608,7 +608,8 @@ class ReceiptApplyService
             'shop_name' => $shopInfo['shop_name'],
             'add_type' => ReceiptApplyModel::ENTER_BA,
             'receipt_from' => $referReceiptFrom,
-            'system_check_note' => $note
+            'system_check_note' => $note,
+            'pic_receipt_number' => $picOriginalReceiptNumber
         ];
 
         if (empty($params['receipt_id'])) {
@@ -635,7 +636,7 @@ class ReceiptApplyService
 
             $goodsInfo = GoodsModel::getRecord(['id' => $goodsId]);
 
-            $record = ReceiptApplyGoodsModel::getRecord(['receipt_apply_id' => $receiptId, 'goods_id' => $k, 'status' => $status]);
+            $record = ReceiptApplyGoodsModel::getRecord(['receipt_apply_id' => $receiptId, 'goods_id' => $goodsId, 'status' => $status]);
 
             if (empty($record)) {
                 ReceiptApplyGoodsModel::insertRecord([

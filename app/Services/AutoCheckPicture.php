@@ -48,8 +48,8 @@ class AutoCheckPicture
 
         $wordArr = array_column($content['ret'], 'word');
 
+        $picOriginalReceiptNumber = '';
 
-        $receiptNumber = '';
         $buyTime = '';
         $goodsInfo = [];
 
@@ -65,7 +65,7 @@ class AutoCheckPicture
             if (Util::sensitiveWordFilter(['编号'], $value)) {
 
                 if (Util::sensitiveWordFilter(['复制'], $wordArr[$k+2])) {
-                    $receiptNumber = '00' . $wordArr[$k+1];
+                    $picOriginalReceiptNumber = $wordArr[$k+1];
                     $receiptFrom = ReceiptApplyModel::CLOUD_RECEIPT;
                     break;
 
@@ -87,15 +87,14 @@ class AutoCheckPicture
 
         if ($receiptFrom == ReceiptApplyModel::CLOUD_RECEIPT) {
 
-          list($receiptNumber, $buyTime, $goodsInfo, $remark) = self::dealCloudReceiptPic($wordArr);
+          list($picOriginalReceiptNumber, $buyTime, $goodsInfo, $remark) = self::dealCloudReceiptPic($wordArr);
 
         }
 
-        $receiptNumber = self::buildReceiptNumber($receiptNumber, $buyTime);
 
 
 
-        return [$receiptFrom, $receiptNumber, $buyTime, $goodsInfo, $remark];
+        return [$receiptFrom, $picOriginalReceiptNumber, $buyTime, $goodsInfo, $remark];
 
     }
 
@@ -107,7 +106,7 @@ class AutoCheckPicture
      */
     private static function dealCloudReceiptPic($wordArr)
     {
-        $receiptNumber = '';
+        $picOriginalReceiptNumber = '';
         $buyTime = '';
         $goodsInfo = [];
 
@@ -162,7 +161,7 @@ class AutoCheckPicture
             if (Util::sensitiveWordFilter(['编号'], $value)) {
 
                 if (Util::sensitiveWordFilter(['复制'], $wordArr[$k+2])) {
-                    $receiptNumber =  $wordArr[$k+1];
+                    $picOriginalReceiptNumber =  $wordArr[$k+1];
                 }
             }
 
@@ -193,26 +192,6 @@ class AutoCheckPicture
             }
         }
 
-        return [$receiptNumber, $buyTime, $goodsInfo, $remark];
-    }
-
-    /**
-     * 小票编号必须等于24位
-     * @param $receiptNumber
-     * @param $buyTime
-     * @return string
-     */
-    private static function buildReceiptNumber($receiptNumber, $buyTime)
-    {
-        $strlen = strlen($receiptNumber);
-
-        if ($strlen == 16) {
-            if (!empty($buyTime)) {
-                return $receiptNumber . date('Ymd', strtotime($buyTime));
-            } else {
-                return $receiptNumber . date('Ymd');
-            }
-        }
-
+        return [$picOriginalReceiptNumber, $buyTime, $goodsInfo, $remark];
     }
 }
