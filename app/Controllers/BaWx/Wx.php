@@ -45,7 +45,7 @@ class Wx extends ControllerBase
 
         return HttpHelper::buildResponse($response, [
             'token' => $token,
-            'ba_id' => $boundInfo['ba_id']
+            'ba_id' => $boundInfo['id']
         ]);
     }
 
