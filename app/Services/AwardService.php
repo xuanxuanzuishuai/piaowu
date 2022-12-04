@@ -23,7 +23,7 @@ class AwardService
 
 
         if (!empty($list)) {
-            foreach($list as $v) {
+            foreach($list as &$v) {
 
                 $v['status_msg'] = WechatAwardCashDealModel::STATUS_MSG[$v['status']];
                 $v['result_code_msg'] = WechatAwardCashDealModel::getWeChatResultCodeMsg($v['result_code']);
