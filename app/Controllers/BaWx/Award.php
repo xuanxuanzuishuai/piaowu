@@ -11,7 +11,7 @@ use App\Libs\Exceptions\RunTimeException;
 use Slim\Http\StatusCode;
 use App\Libs\Valid;
 
-class AWARD extends ControllerBase
+class Award extends ControllerBase
 {
     public function awardList(Request $request, Response $response)
     {

@@ -6,7 +6,7 @@ namespace App\Routers;
 use App\Middleware\WeChatAuthCheckMiddleware;
 use App\Middleware\WeChatOpenIdCheckMiddleware;
 use App\Controllers\BaWx\Wx;
-use App\Controllers\BaWx\AWARD;
+use App\Controllers\BaWx\Award;
 use App\Controllers\BaWx\Receipt;
 class BaWxRouter extends RouterBase
 {
