@@ -66,12 +66,33 @@ class ReceiptApplyService
 
         //对票据关联的商品格式化处理
         $newArr = [];
+
+        $verifyGoods = [];
+
         foreach($params['goods_info'] as $v) {
             if (!empty($newArr[$v['id'] . '_' . $v['status']])) {
                 $startNum = $newArr[$v['id'] . '_' . $v['status']];
                 $newArr[$v['id'] . '_' . $v['status']] = $startNum + $v['num'];
             } else {
                 $newArr[$v['id'] . '_' . $v['status']] = $v['num'];
+            }
+
+
+            $symbol = $v['status'] == ReceiptApplyGoodsModel::STATUS_NORMAL ? NULL : '-';
+
+            if (empty($verifyGoods[$v['id']])) {
+                $verifyGoods[$v['id']] = $v['num'];
+            } else {
+
+                $verifyGoods[$v['id']] += intval($symbol . $v['num']);
+            }
+
+        }
+
+        //不可出现退款比购买更多的情况
+        foreach ($verifyGoods as $goodId => $n) {
+            if ($n < 0) {
+                throw new RunTimeException(['not_allow_refund_over_purchase']);
             }
         }
 
