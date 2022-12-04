@@ -514,6 +514,11 @@ class ReceiptApplyService
                 throw new RunTimeException(['receipt_not_relate_ba']);
             }
 
+            //处理过的不可走反向流程
+            if (in_array($relate['check_status'], [ReceiptApplyModel::CHECK_PASS, ReceiptApplyModel::CHECK_CANCEL])) {
+                throw new RunTimeException(['pass_or_cancel_not_operate']);
+            }
+
         }
 
 
