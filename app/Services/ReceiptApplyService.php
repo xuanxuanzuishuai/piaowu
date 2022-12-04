@@ -68,7 +68,7 @@ class ReceiptApplyService
         $newArr = [];
         foreach($params['goods_info'] as $v) {
             if (!empty($newArr[$v['id'] . '_' . $v['status']])) {
-                $startNum = $newArr[$v['id']];
+                $startNum = $newArr[$v['id'] . '_' . $v['status']];
                 $newArr[$v['id'] . '_' . $v['status']] = $startNum + $v['num'];
             } else {
                 $newArr[$v['id'] . '_' . $v['status']] = $v['num'];
@@ -124,6 +124,8 @@ class ReceiptApplyService
         //处理销售单关联的商品
         ReceiptApplyGoodsModel::batchUpdateRecord(['status' => ReceiptApplyGoodsModel::STATUS_DEL], ['receipt_apply_id' => $receiptId]);
 
+        //参考金额
+        $referenceMoney = 0;
 
         foreach($newArr as $k => $v) {
             $arr = explode('_', $k);
@@ -135,6 +137,9 @@ class ReceiptApplyService
 
             $record = ReceiptApplyGoodsModel::getRecord(['receipt_apply_id' => $receiptId, 'goods_id' => $goodsId, 'status' => $status]);
 
+            $symbol = $status == ReceiptApplyGoodsModel::STATUS_NORMAL ? NULL : '-';
+            $money =  intval($symbol . $goodsInfo['return_amount'] * $v);
+
             if (empty($record)) {
                 ReceiptApplyGoodsModel::insertRecord([
                     'goods_id' => $goodsInfo['id'],
@@ -144,12 +149,17 @@ class ReceiptApplyService
                     'num' => $v,
                     'receipt_apply_id' => $receiptId,
                     'status' => $status,
+                    'reference_money' => $money
                 ]);
             } else {
                 throw new RunTimeException(['please_try']);
             }
 
+            $referenceMoney += $money;
+
         }
+
+        ReceiptApplyModel::updateRecord($receiptId, ['reference_money' => $referenceMoney]);
 
 
     }
@@ -583,7 +593,7 @@ class ReceiptApplyService
         $newArr = [];
         foreach($referGoodsInfo as $v) {
             if (!empty($newArr[$v['id'] . '_' . $v['status']])) {
-                $startNum = $newArr[$v['id']];
+                $startNum = $newArr[$v['id'] . '_' . $v['status']];
                 $newArr[$v['id'] . '_' . $v['status']] = $startNum + $v['num'];
             } else {
                 $newArr[$v['id'] . '_' . $v['status']] = $v['num'];
