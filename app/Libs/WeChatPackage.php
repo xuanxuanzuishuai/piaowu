@@ -9,20 +9,10 @@ class WeChatPackage
 {
     private $client;
     protected $values = array();
-    private $mchId;
-    private $appId;
-    private $certPem;
-    private $keyPem;
-    private $signKey;
+    public $signKey;
 
-    function __construct($appId = 1, $busiType = 1)
+    function __construct()
     {
-        $this->mchId = $_ENV['WECHAT_MCHID'];
-        $this->certPem = $_ENV['API_CERT_PEM'];
-        $this->keyPem = $_ENV['API_KEY_PEM'];
-        $this->signKey = $_ENV['API_BASE_KEY'];
-
-        $this->appId = DictConstants::get(DictConstants::WECHAT_APPID, $appId . '_' . $busiType);
         $this->client = new Client();
     }
 
@@ -45,7 +35,7 @@ class WeChatPackage
      * @param $xmlData
      * @return string|string[]
      */
-    public static function _getSign($xmlData, $signKey)
+    public static function _getSign($xmlData)
     {
         $res = @simplexml_load_string($xmlData, NULL, LIBXML_NOCDATA);
         $res = json_decode(json_encode($res), true);
@@ -58,7 +48,7 @@ class WeChatPackage
             }
         }
 
-        $stringSignTemp = "{$stringA}key=" . $signKey;
+        $stringSignTemp = "{$stringA}key=" . $_ENV['API_SIGH_KEY'];
         $sign = md5($stringSignTemp);
 
         $xmlData = str_replace("{sign}", $sign, $xmlData);
@@ -77,17 +67,22 @@ class WeChatPackage
 
     public function get_mch_id()
     {
-        return $this->mchId;
+        return $_ENV['WECHAT_MCHID'];
     }
 
     public function get_wxappid()
     {
-        return $this->appId;
+        return $_ENV['WECHAT_APPID'];
+    }
+
+    public function set_nick_name($nick_name)
+    {
+        $this->values['nick_name'] = $nick_name;
     }
 
     public function get_nick_name()
     {
-        return $this->values['nick_name'] ?? '';
+        return $this->values['nick_name'];
     }
 
     public function set_send_name($sendName)
@@ -118,6 +113,36 @@ class WeChatPackage
     public function get_total_amount()
     {
         return $this->values['total_amount'];
+    }
+
+    public function set_amt_type($amt_type)
+    {
+        $this->values['amt_type'] = $amt_type;
+    }
+
+    public function get_amt_type()
+    {
+        return $this->values['amt_type'];
+    }
+
+    public function set_amt_list($amt_list)
+    {
+        $this->values['amt_list'] = $amt_list;
+    }
+
+    public function get_amt_list()
+    {
+        return $this->values['amt_list'];
+    }
+
+    public function set_watermark_imgurl($watermark_imgurl)
+    {
+        $this->values['watermark_imgurl'] = $watermark_imgurl;
+    }
+
+    public function set_banner_imgurl($banner_imgurl)
+    {
+        $this->values['banner_imgurl'] = $banner_imgurl;
     }
 
     public function set_min_value($min_value)
@@ -244,6 +269,89 @@ class WeChatPackage
 
     }
 
+    public function get_mch_appid()
+    {
+        return $_ENV['WECHAT_APPID'];
+
+    }
+
+    public function get_mchid()
+    {
+        return $_ENV['WECHAT_APPID'];
+
+    }
+
+    public function set_partner_trade_no($partner_trade_no)
+    {
+        $this->values['partner_trade_no'] = $partner_trade_no;
+    }
+
+    public function get_partner_trade_no()
+    {
+        return $this->values['partner_trade_no'];
+    }
+
+    public function set_openid($openid)
+    {
+        $this->values['openid'] = $openid;
+    }
+
+    public function get_openid()
+    {
+        return $this->values['openid'];
+    }
+
+    public function set_check_name($check_name)
+    {
+        $this->values['check_name'] = $check_name;
+    }
+
+    public function get_check_name()
+    {
+        return $this->values['check_name'];
+    }
+
+    public function set_re_user_name($re_user_name)
+    {
+        $this->values['re_user_name'] = $re_user_name;
+    }
+
+    public function get_re_user_name()
+    {
+        return $this->values['re_user_name'];
+    }
+
+    public function set_amount($amount)
+    {
+        $this->values['amount'] = $amount;
+    }
+
+    public function get_amount()
+    {
+        return $this->values['amount'];
+    }
+
+    public function set_desc($desc)
+    {
+        $this->values['desc'] = $desc;
+    }
+
+    public function get_desc()
+    {
+        return $this->values['desc'];
+    }
+
+    public function set_spbill_create_ip($spbill_create_ip)
+    {
+        $this->values['spbill_create_ip'] = $spbill_create_ip;
+    }
+
+    public function get_spbill_create_ip()
+    {
+        return $this->values['spbill_create_ip'];
+    }
+
+
     /**
      * 发送红包的xml数据 包
      * @param WeChatPackage $inputObj
@@ -275,9 +383,71 @@ class WeChatPackage
                 <nonce_str>{$inputObj->get_nonce_str()}</nonce_str>
             </xml>
 eof;
-
-        $newXmlData = self:: _getSign($xml, $this->signKey);
+        $newXmlData = self:: _getSign($xml);
         $data['api_url'] = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendredpack';
+        $data['xml_data'] = $newXmlData;
+        return $data;
+    }
+
+    /**
+     * 发送裂变红包的xml数据 包
+     * @param WeChatPackage $inputObj 传入数据
+     * @return mixed 带签名的完整 xml 数据 add param => amt_type, amt_list, watermark_imgurl, banner_imgurl
+     */
+    public function getSendGroupRedPackXml($inputObj)
+    {
+        $xml = <<<eof
+            <xml>
+                <sign>{sign}</sign>
+                <mch_billno>{$inputObj->get_mch_billno()}</mch_billno>
+                <mch_id>{$inputObj->get_mch_id()}</mch_id>
+                <wxappid>{$inputObj->get_wxappid()}</wxappid>
+                <send_name>{$inputObj->get_send_name()}</send_name>
+                <re_openid>{$inputObj->get_re_openid()}</re_openid>
+                <total_amount>{$inputObj->get_total_amount()}</total_amount>
+                <amt_type>{$inputObj->get_amt_type()}</amt_type>
+                <amt_list>{$inputObj->get_amt_list()}</amt_list>
+                <total_num>{$inputObj->get_total_num()}</total_num>
+                <wishing>{$inputObj->get_wishing()}</wishing>
+                <act_name>{$inputObj->get_act_name()}</act_name>
+                <remark>{$inputObj->get_remark()}</remark>
+                <logo_imgurl>{$inputObj->get_logo_imgurl()}</logo_imgurl>
+                <share_content>{$inputObj->get_share_content()}</share_content>
+                <share_url>{$inputObj->get_share_url()}</share_url>
+                <nonce_str>{$inputObj->get_nonce_str()}</nonce_str>
+            </xml>
+eof;
+
+        $newXmlData = self:: _getSign($xml);
+        $data['api_url'] = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendgroupredpack';
+        $data['xml_data'] = $newXmlData;
+        return $data;
+    }
+
+    /**
+     * 企业付款 xml 数据包
+     * @param WeChatPackage $inputObj 传入数据
+     * @return mixed 带签名的完整 xml 数据
+     */
+    public function getSendTransfersXml($inputObj)
+    {
+        $xml = <<<eof
+            <xml>
+                <mch_appid>{$inputObj->get_mch_appid()}</mch_appid>
+                <mchid>{$inputObj->get_mchid()}</mchid>
+                <nonce_str>{$inputObj->get_nonce_str()}</nonce_str>
+                <partner_trade_no>{$inputObj->get_partner_trade_no()}</partner_trade_no>
+                <openid>{$inputObj->get_openid()}</openid>
+                <check_name>{$inputObj->get_check_name()}</check_name>
+                <re_user_name>{$inputObj->get_re_user_name()}</re_user_name>
+                <amount>{$inputObj->get_amount()}</amount>
+                <desc>{$inputObj->get_desc()}!</desc>
+                <spbill_create_ip>{$inputObj->get_spbill_create_ip()}</spbill_create_ip>
+                <sign>{sign}</sign>
+            </xml>
+eof;
+        $newXmlData = self:: _getSign($xml);
+        $data['api_url'] = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/promotion/transfers';
         $data['xml_data'] = $newXmlData;
         return $data;
     }
@@ -294,7 +464,7 @@ eof;
                 <nonce_str>{$inputObj->get_nonce_str()}</nonce_str>
             </xml>
 eof;
-        $newXmlData = self:: _getSign($xml, $this->signKey);
+        $newXmlData = self:: _getSign($xml);
         $data['api_url'] = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/gethbinfo';
         $data['xml_data'] = $newXmlData;
         return $data;
@@ -316,9 +486,6 @@ eof;
         $getNewData = "";
         switch ($sendType) {
             case 'redPack':
-
-                $this->frequency();//检测发送红包频率
-
                 $this->set_mch_billno($mchBillNo);                //唯一订单号
                 $this->set_send_name($sendName);  // 红包发送者名称  商户名称
                 $this->set_act_name($actName);  // 活动名称 猜灯谜抢红包活动
@@ -337,11 +504,46 @@ eof;
                 $this->set_nonce_str(self::getNonceStr()); // 随机字符串
                 $getNewData = $this->getSendRedpackXml($this);
                 break;
+            case 'groupRedPack': //裂变红包
+                $this->set_mch_billno($mchBillNo);                //唯一订单号
+                $this->set_nick_name($actName);                        // 提供方名称     小农民科技
+                $this->set_send_name($sendName);
+                // 红包发送者名称  商户名称
+                $this->set_re_openid($openid);                            // 用户在wxappid下的openid
+                $this->set_total_amount($amount);  // 付款金额，单位分
+                $this->set_total_num($sendNum);               // 红包发放总人数
+                $this->set_wishing($wishing);       // 红包祝福语 感谢您参加猜灯谜活动，祝您元宵节快乐！
+                $this->set_client_ip($this->getServerIp()); //调用接口的机器Ip地址
+                $this->set_act_name($actName);  // 活动名称 猜灯谜抢红包活动
+                $this->set_remark($wishing);             // 备注信息 猜越多得越多，快来抢！
+                $this->set_logo_imgurl('');                 // 商户logo的url
+                $this->set_share_content('');             // 分享文案
+                $this->set_share_url('');                 // 分享链接
+                $this->set_share_imgurl('');                 // 分享的图片url
+                $this->set_nonce_str(self::getNonceStr()); // 随机字符串
+                $this->set_amt_type('ALL_RAND');                 // 红包金额设置方式ALL_RAND—全部随机,商户指定总金额和红包发放总人数，由微信支付随机计算出各红包金额
+                $this->set_amt_list(''); //各红包具体金额，自定义金额时必须设置，单位分
+                $this->set_watermark_imgurl(''); //背景水印图片url
+                $this->set_banner_imgurl(''); //红包详情页面的banner图片url
+                $getNewData = $this->getSendGroupRedPackXml($this);
+                break;
+            case "transfer":
+                $this->set_nonce_str(self::getNonceStr());        // 随机字符串
+                $this->set_partner_trade_no($mchBillNo);                    // 商户订单号，需保持唯一性
+                $this->set_openid($openid);                                // 用户在wxappid下的openid
+                $this->set_check_name('NO_CHECK');                            // 是否校验真实姓名
+                $this->set_re_user_name('');                                // 真实姓名
+                $this->set_amount($amount);                                    // 企业付款金额，单位为分
+                $this->set_desc($wishing);                                    // 企业付款操作说明信息。必填
+                $this->set_spbill_create_ip($this->getServerIp());  // 调用接口的机器Ip地址
+                $getNewData = $this->getSendTransfersXml($this);
+                break;
             default:
                 break;
         }
 
         // 得到签名和其它设置的 xml 数据
+
         try {
             $data =  $this->curl_post_ssl($getNewData['api_url'], $getNewData['xml_data']);
             $obj = simplexml_load_string($data,"SimpleXMLElement", LIBXML_NOCDATA);
@@ -352,27 +554,11 @@ eof;
         }
     }
 
-
-    /**
-     * @param int $max
-     * 发送微信红包频率每秒最大不能超过 max=30
-     */
-    public function frequency($max = 30){
-        $cacheKey = $this->mchId . time();
-        $rdb = RedisDB::getConn();
-        $val = $rdb->incr($cacheKey);
-        $rdb->expire($cacheKey,3);
-        if($val > $max){
-            sleep(1);
-        }
-    }
-
     public function getRedPackBillInfo($mchBillNo)
     {
         $this->set_mch_billno($mchBillNo);                //唯一订单号
         $this->set_nonce_str(self::getNonceStr()); // 随机字符串
         $getNewData = $this->getRedBackBillInfo($this);
-        SimpleLogger::info("WeChatPackage::getRedPackBillInfo", ['req_data' => $getNewData]);
         $data =  $this->curl_post_ssl($getNewData['api_url'], $getNewData['xml_data']);
         $obj = simplexml_load_string($data,"SimpleXMLElement", LIBXML_NOCDATA);
         return json_decode(json_encode($obj),true);
@@ -391,8 +577,8 @@ eof;
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 
         //cert 与 key 分别属于两个.pem文件
-        curl_setopt($ch, CURLOPT_SSLCERT, $this->certPem);
-        curl_setopt($ch, CURLOPT_SSLKEY, $this->keyPem);
+        curl_setopt($ch, CURLOPT_SSLCERT, $_ENV['API_CERT_PEM']);
+        curl_setopt($ch, CURLOPT_SSLKEY, $_ENV['API_KEY_PEM']);
 
         if (count($aHeader) >= 1) {
             curl_setopt($ch, CURLOPT_HTTPHEADER, $aHeader);
@@ -402,7 +588,6 @@ eof;
         curl_setopt($ch, CURLOPT_POSTFIELDS, $vars);
         $data = curl_exec($ch);
         curl_close($ch);
-        SimpleLogger::info('envErr', [$data]);
         return $data;
     }
 
