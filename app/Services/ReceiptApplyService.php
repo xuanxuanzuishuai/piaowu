@@ -333,7 +333,7 @@ class ReceiptApplyService
         $needDealReceiptInfo = ReceiptApplyModel::getRecords(['id' => explode(',', $receiptIds), 'check_status' => ReceiptApplyModel::CHECK_WAITING]);
 
 
-       // ReceiptApplyModel::batchUpdateRecord($data, ['id' => explode(',', $receiptIds)]);
+        ReceiptApplyModel::batchUpdateRecord($data, ['id' => explode(',', $receiptIds)]);
         //发红包的逻辑
 
         self::dealReceiptGoodsGiveAward($needDealReceiptInfo);
