@@ -40,7 +40,7 @@ class Wx extends ControllerBase
             return $response->withJson(Valid::addAppErrors([], 'need_bound'), StatusCode::HTTP_OK);
         }
 
-        $token = WechatTokenService::generateToken($boundInfo['ba_id'],$openId);
+        $token = WechatTokenService::generateToken($boundInfo['id'],$openId);
 
 
         return HttpHelper::buildResponse($response, [
