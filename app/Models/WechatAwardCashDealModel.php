@@ -35,7 +35,7 @@ class WechatAwardCashDealModel extends Model
      */
     public static function getAwardList($baId, $page, $count)
     {
-        $sql = 'select c.id cash_id,c.ba_id, c.award_amount, c.`status`, c.result_code, c.mch_billno from wechat_award_cash_deal c
+        $sql = 'select c.id cash_id,c.ba_id, c.award_amount, c.`status`, c.result_code, c.mch_billno,c.create_time from wechat_award_cash_deal c
 
 where c.ba_id = ' . $baId . ' order by c.id desc limit ' . ($page-1)*$count . ',' . $count;
 
