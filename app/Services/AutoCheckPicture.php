@@ -107,10 +107,24 @@ class AutoCheckPicture
     //处理门店票据
     public static function dealShopReceiptPic($wordArr)
     {
+        $picOriginalReceiptNumber = '';
 
-        $receiptNumberStartIndex = count($wordArr);
+        $totalCount = count($wordArr);
 
-        $receiptNumeberEndIndex = count($wordArr);
+        $receiptNumberStartIndex = $totalCount;
+
+        $receiptNumberEndIndex = $totalCount;
+
+        $hasEnvironment = false;
+
+        $buyTime = '';
+
+        $initGoods = [];
+
+        $goodsInfo = [];
+
+        $remark = [];
+
 
         foreach ($wordArr as $k => $value) {
             if (Util::sensitiveWordFilter(['编号'], $value)) {
@@ -118,10 +132,47 @@ class AutoCheckPicture
             }
 
             if (Util::sensitiveWordFilter(['热线'], $value)) {
-                $receiptNumberStartIndex = $k + 1;
+                $receiptNumberEndIndex = $k - 1;
+            }
+
+            if (Util::sensitiveWordFilter(['环境'], $value)) {
+                $hasEnvironment = true;
+            }
+
+
+
+        }
+
+
+        //没有保护环境这句话
+        if (empty($hasEnvironment)) {
+
+            //小票原始单号
+            $i = $receiptNumberStartIndex;
+            while(true) {
+
+                if ($i > $receiptNumberEndIndex) {
+                    break;
+                }
+
+                $picOriginalReceiptNumber .= $wordArr[$i];
+
+                $i++;
+            }
+
+            //购买时间
+            $buyTime = $wordArr[$totalCount - 1];
+            if (strtotime($buyTime) == false) {
+                $newBuyTime = str_replace('：', ':', $buyTime);
+                $buyTime = substr($newBuyTime, 0, 10) . ' ' . substr($newBuyTime, 10);
+
             }
 
         }
+
+        $remark[] = '暂时无法识别此票据信息';
+        return [$picOriginalReceiptNumber, $buyTime, $goodsInfo, $remark];
+
     }
 
 
