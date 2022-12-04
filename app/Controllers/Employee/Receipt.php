@@ -7,6 +7,7 @@ use App\Libs\Exceptions\RunTimeException;
 use App\Libs\HttpHelper;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Libs\WeChatPackage;
 use App\Services\ReceiptApplyService;
 use Slim\Http\Request;
 use Slim\Http\Response;

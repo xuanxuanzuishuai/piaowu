@@ -351,79 +351,6 @@ class WeChatPackage
         return $this->values['spbill_create_ip'];
     }
 
-
-    /**
-     * 发送红包的xml数据 包
-     * @param WeChatPackage $inputObj
-     * @return mixed 带签名的完整 xml 数据
-     */
-    public function getSendRedPackXml($inputObj)
-    {
-        $xml = <<<eof
-            <xml>
-                <sign>{sign}</sign>
-                <mch_billno>{$inputObj->get_mch_billno()}</mch_billno>
-                <mch_id>{$inputObj->get_mch_id()}</mch_id>
-                <wxappid>{$inputObj->get_wxappid()}</wxappid>
-                <nick_name>{$inputObj->get_nick_name()}</nick_name>
-                <send_name>{$inputObj->get_send_name()}</send_name>
-                <re_openid>{$inputObj->get_re_openid()}</re_openid>
-                <total_amount>{$inputObj->get_total_amount()}</total_amount>
-                <min_value>{$inputObj->get_min_value()}</min_value>
-                <max_value>{$inputObj->get_max_value()}</max_value>
-                <total_num>{$inputObj->get_total_num()}</total_num>
-                <wishing>{$inputObj->get_wishing()}</wishing>
-                <client_ip>{$inputObj->get_client_ip()}</client_ip>
-                <act_name>{$inputObj->get_act_name()}</act_name>
-                <remark>{$inputObj->get_remark()}</remark>
-                <logo_imgurl>{$inputObj->get_logo_imgurl()}</logo_imgurl>
-                <share_content>{$inputObj->get_share_content()}</share_content>
-                <share_url>{$inputObj->get_share_url()}</share_url>
-                <share_imgurl>{$inputObj->get_share_imgurl()}</share_imgurl>
-                <nonce_str>{$inputObj->get_nonce_str()}</nonce_str>
-            </xml>
-eof;
-        $newXmlData = self:: _getSign($xml);
-        $data['api_url'] = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendredpack';
-        $data['xml_data'] = $newXmlData;
-        return $data;
-    }
-
-    /**
-     * 发送裂变红包的xml数据 包
-     * @param WeChatPackage $inputObj 传入数据
-     * @return mixed 带签名的完整 xml 数据 add param => amt_type, amt_list, watermark_imgurl, banner_imgurl
-     */
-    public function getSendGroupRedPackXml($inputObj)
-    {
-        $xml = <<<eof
-            <xml>
-                <sign>{sign}</sign>
-                <mch_billno>{$inputObj->get_mch_billno()}</mch_billno>
-                <mch_id>{$inputObj->get_mch_id()}</mch_id>
-                <wxappid>{$inputObj->get_wxappid()}</wxappid>
-                <send_name>{$inputObj->get_send_name()}</send_name>
-                <re_openid>{$inputObj->get_re_openid()}</re_openid>
-                <total_amount>{$inputObj->get_total_amount()}</total_amount>
-                <amt_type>{$inputObj->get_amt_type()}</amt_type>
-                <amt_list>{$inputObj->get_amt_list()}</amt_list>
-                <total_num>{$inputObj->get_total_num()}</total_num>
-                <wishing>{$inputObj->get_wishing()}</wishing>
-                <act_name>{$inputObj->get_act_name()}</act_name>
-                <remark>{$inputObj->get_remark()}</remark>
-                <logo_imgurl>{$inputObj->get_logo_imgurl()}</logo_imgurl>
-                <share_content>{$inputObj->get_share_content()}</share_content>
-                <share_url>{$inputObj->get_share_url()}</share_url>
-                <nonce_str>{$inputObj->get_nonce_str()}</nonce_str>
-            </xml>
-eof;
-
-        $newXmlData = self:: _getSign($xml);
-        $data['api_url'] = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/sendgroupredpack';
-        $data['xml_data'] = $newXmlData;
-        return $data;
-    }
-
     /**
      * 企业付款 xml 数据包
      * @param WeChatPackage $inputObj 传入数据
@@ -452,81 +379,18 @@ eof;
         return $data;
     }
 
-    public function getRedBackBillInfo($inputObj)
-    {
-        $xml = <<<eof
-            <xml>
-                <sign>{sign}</sign>
-                <mch_billno>{$inputObj->get_mch_billno()}</mch_billno>
-                <mch_id>{$inputObj->get_mch_id()}</mch_id>
-                <appid>{$inputObj->get_wxappid()}</appid>
-                <bill_type>MCHT</bill_type>
-                <nonce_str>{$inputObj->get_nonce_str()}</nonce_str>
-            </xml>
-eof;
-        $newXmlData = self:: _getSign($xml);
-        $data['api_url'] = 'https://api.mch.weixin.qq.com/mmpaymkttransfers/gethbinfo';
-        $data['xml_data'] = $newXmlData;
-        return $data;
-    }
-
     /**
      * @param $mchBillNo
-     * @param $actName
-     * @param $sendName
      * @param $openid
      * @param $amount
      * @param $wishing
      * @param $sendType
-     * @param int $sendNum
      * @return array|mixed
      */
-    public function sendPackage($mchBillNo, $actName, $sendName, $openid, $amount, $wishing, $sendType, $sendNum = 1)
+    public function sendPackage($mchBillNo, $openid, $amount, $wishing, $sendType)
     {
         $getNewData = "";
         switch ($sendType) {
-            case 'redPack':
-                $this->set_mch_billno($mchBillNo);                //唯一订单号
-                $this->set_send_name($sendName);  // 红包发送者名称  商户名称
-                $this->set_act_name($actName);  // 活动名称 猜灯谜抢红包活动
-                $this->set_re_openid($openid);                            // 用户在wxappid下的openid
-                $this->set_total_amount($amount);  // 付款金额，单位分
-                $this->set_min_value($amount);     // 最小红包金额，单位分
-                $this->set_max_value($amount);     // 最大红包金额，单位分（ 最小金额等于最大金额： min_value=max_value =total_amount）
-                $this->set_total_num($sendNum);               // 红包发放总人数
-                $this->set_wishing($wishing);       // 红包祝福语 感谢您参加猜灯谜活动，祝您元宵节快乐！
-                $this->set_client_ip($this->getServerIp()); //调用接口的机器Ip地址
-                $this->set_remark($wishing);             // 备注信息 猜越多得越多，快来抢！
-                $this->set_logo_imgurl('');                 // 商户logo的url
-                $this->set_share_content('');             // 分享文案
-                $this->set_share_url('');                 // 分享链接
-                $this->set_share_imgurl('');                 // 分享的图片url
-                $this->set_nonce_str(self::getNonceStr()); // 随机字符串
-                $getNewData = $this->getSendRedpackXml($this);
-                break;
-            case 'groupRedPack': //裂变红包
-                $this->set_mch_billno($mchBillNo);                //唯一订单号
-                $this->set_nick_name($actName);                        // 提供方名称     小农民科技
-                $this->set_send_name($sendName);
-                // 红包发送者名称  商户名称
-                $this->set_re_openid($openid);                            // 用户在wxappid下的openid
-                $this->set_total_amount($amount);  // 付款金额，单位分
-                $this->set_total_num($sendNum);               // 红包发放总人数
-                $this->set_wishing($wishing);       // 红包祝福语 感谢您参加猜灯谜活动，祝您元宵节快乐！
-                $this->set_client_ip($this->getServerIp()); //调用接口的机器Ip地址
-                $this->set_act_name($actName);  // 活动名称 猜灯谜抢红包活动
-                $this->set_remark($wishing);             // 备注信息 猜越多得越多，快来抢！
-                $this->set_logo_imgurl('');                 // 商户logo的url
-                $this->set_share_content('');             // 分享文案
-                $this->set_share_url('');                 // 分享链接
-                $this->set_share_imgurl('');                 // 分享的图片url
-                $this->set_nonce_str(self::getNonceStr()); // 随机字符串
-                $this->set_amt_type('ALL_RAND');                 // 红包金额设置方式ALL_RAND—全部随机,商户指定总金额和红包发放总人数，由微信支付随机计算出各红包金额
-                $this->set_amt_list(''); //各红包具体金额，自定义金额时必须设置，单位分
-                $this->set_watermark_imgurl(''); //背景水印图片url
-                $this->set_banner_imgurl(''); //红包详情页面的banner图片url
-                $getNewData = $this->getSendGroupRedPackXml($this);
-                break;
             case "transfer":
                 $this->set_nonce_str(self::getNonceStr());        // 随机字符串
                 $this->set_partner_trade_no($mchBillNo);                    // 商户订单号，需保持唯一性
@@ -552,16 +416,6 @@ eof;
             SimpleLogger::error("wechat package erors", [$e->getMessage()]);
             return [];
         }
-    }
-
-    public function getRedPackBillInfo($mchBillNo)
-    {
-        $this->set_mch_billno($mchBillNo);                //唯一订单号
-        $this->set_nonce_str(self::getNonceStr()); // 随机字符串
-        $getNewData = $this->getRedBackBillInfo($this);
-        $data =  $this->curl_post_ssl($getNewData['api_url'], $getNewData['xml_data']);
-        $obj = simplexml_load_string($data,"SimpleXMLElement", LIBXML_NOCDATA);
-        return json_decode(json_encode($obj),true);
     }
 
     public function curl_post_ssl($url, $vars, $second = 30, $aHeader = array())

@@ -462,8 +462,8 @@ class ReceiptApplyService
                     $weChatPackage = new WeChatPackage();
                     $openId = $baInfo['open_id'];
                     //请求微信发红包
-                    $resultData = $weChatPackage->sendPackage($mchBillNo, '红包发放', '奖励发放', $openId, $amount, '奖励发放', 'redPack');
-                    SimpleLogger::info('we chat return info ' . $id, $resultData);
+                    $resultData = $weChatPackage->sendPackage($mchBillNo, $openId, 1, '奖励发放', 'transfer');
+                    SimpleLogger::info('weacht package result ' . $id, $resultData);
 
                     $status = trim($resultData['result_code']) == WeChatAwardCashDealModel::RESULT_SUCCESS_CODE ? WechatAwardCashDealModel::WAIT_RECEIVE : WechatAwardCashDealModel::GIVE_FALSE;
                     $resultCode = trim($resultData['err_code']);
