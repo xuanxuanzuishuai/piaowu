@@ -28,6 +28,26 @@ class ReceiptApplyService
      */
     public static function backendUploadApply($params, $employeeId)
     {
+        if (strlen($params['receipt_number']) != 24) {
+            throw new RunTimeException(['receipt_number_must_24_len']);
+        }
+
+        if (!empty($params['receipt_id'])) {
+
+            $applyInfo = ReceiptApplyModel::getRecord(['id' => $params['receipt_id']]);
+
+            if (empty($applyInfo)) {
+                throw new RunTimeException(['edit_receipt_not_exist']);
+            }
+
+            //通过和作废的不可再次编辑
+            if (in_array($applyInfo['check_status'], [ReceiptApplyModel::CHECK_PASS, ReceiptApplyModel::CHECK_CANCEL])) {
+                throw new RunTimeException(['pass_or_cancel_not_operate']);
+            }
+        }
+
+
+
         $newArr = [];
         foreach($params['goods_info'] as $v) {
             if (!empty($newArr[$v['id'] . '_' . $v['status']])) {
