@@ -22,7 +22,7 @@ class WechatAwardCashDealModel extends Model
         self::WAIT_GIVE => '待发放',
         self::WAIT_RECEIVE => '待领取',
         self::GIVE_SUCCESS => '领取成功',
-        self::GIVE_FALSE => '未领取,等待明日系统重试'
+        self::GIVE_FALSE => '发放失败,等待明日系统重试'
     ];
 
 
