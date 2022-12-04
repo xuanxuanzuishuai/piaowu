@@ -131,47 +131,6 @@ class AliOSS
     }
 
     /**
-     * 阿里OSS上传回调处理
-     * 注意： 如果要使用HTTP_AUTHORIZATION头，你需要先在apache或者nginx中设置rewrite
-     *
-     * @param $authorizationBase64  $_SERVER['HTTP_AUTHORIZATION']
-     * @param $pubKeyUrlBase64      $_SERVER['HTTP_X_OSS_PUB_KEY_URL']
-     * @param $requestUrl           $_SERVER['REQUEST_URI']
-     * @return bool
-     */
-    public function uploadCallback($authorizationBase64, $pubKeyUrlBase64, $requestUrl){
-        if ($authorizationBase64 == '' || $pubKeyUrlBase64 == ''){
-            return false;
-        }
-        // 获取OSS的签名
-        $authorization = base64_decode($authorizationBase64);
-        // 获取公钥
-        $pubKeyUrl = base64_decode($pubKeyUrlBase64);
-        SimpleLogger::info("ALIOSS CALLBACK", [$authorization, $pubKeyUrl]);
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $pubKeyUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-        $pubKey = curl_exec($ch);
-        if ($pubKey == ""){
-            return false;
-        }
-
-        // 获取回调body
-        $body = file_get_contents('php://input');
-        // 拼接待签名字符串
-        $path = $requestUrl;
-        $pos = strpos($path, '?');
-        if ($pos === false){
-            $authStr = urldecode($path . "\n" . $body);
-        } else {
-            $authStr = urldecode(substr($path, 0, $pos)).substr($path, $pos, strlen($path) - $pos) . "\n" . $body;
-        }
-        SimpleLogger::info("ALIOSS AUTHSTR", [$authStr]);
-        return true;
-    }
-
-    /**
      * @param string $urlNeedSign
      * @param string $columnName
      * @param string $newColumn
