@@ -19,6 +19,43 @@ use Slim\Http\StatusCode;
 class Wx extends ControllerBase
 {
 
+    /** js_sdk config
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getJsConfig(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'url',
+                'type' => 'required',
+                'error_code' => 'url_is_required'
+            ]
+        ];
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+        $t = time();
+        $noncestr = Util::token();
+        $wechat = WeChatMiniPro::factory();
+        $signature = $wechat->getJSSignature($noncestr, $t, $params["url"]);
+        $app_info = $wechat->getWeChatAppIdSecretFromDict();
+
+        $wxJSConfig = [
+            'appId'     => $app_info["app_id"],
+            'timestamp' => $t,
+            'nonceStr'  => $noncestr,
+            'signature' => $signature
+        ];
+        return $response->withJson([
+            'code' => Valid::CODE_SUCCESS,
+            'data' => $wxJSConfig,
+        ], StatusCode::HTTP_OK);
+    }
+
     public function login(Request $request, Response $response)
     {
         $old_token = $this->ci["token"];
