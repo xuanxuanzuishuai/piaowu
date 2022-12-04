@@ -110,14 +110,14 @@ class ReceiptApplyService
             $receiptId = $params['receipt_id'];
             ReceiptApplyModel::updateRecord($params['receipt_id'], $data);
 
-            ReceiptLogInfoModel::addLog($params['receipt_id'], '编辑票据，编辑方式: 后台编辑');
+            ReceiptLogInfoModel::addLog($params['receipt_id'], '编辑票据，编辑方式: 后台编辑' . ' 后台人员: ' . EmployeeModel::getEmployeeById($employeeId)['name']);
         } else {
             $data['create_time'] = time();
             $receiptId = ReceiptApplyModel::insertRecord(
                 $data
             );
 
-            ReceiptLogInfoModel::addLog($receiptId, '提交票据，提交方式: 后台创建');
+            ReceiptLogInfoModel::addLog($receiptId, '提交票据，提交方式: 后台创建' . ' 后台人员: ' . EmployeeModel::getEmployeeById($employeeId)['name']);
         }
 
 
@@ -344,7 +344,7 @@ class ReceiptApplyService
         $relateArr = ReceiptLogInfoModel::getRecords(['receipt_id' => $receiptInfo['id'], 'ORDER' => ['id' => 'DESC']]);
         $logArr = [];
         foreach ($relateArr as $info) {
-            $logArr[] = $info['log_info'] . ' 时间: ' . date('Y-m-d H:i:s');
+            $logArr[] = $info['log_info'] . ' 时间: ' . date('Y-m-d H:i:s', $info['create_time']);
         }
 
         $receiptInfo['log_list'] = $logArr;
@@ -380,7 +380,7 @@ class ReceiptApplyService
         ReceiptApplyModel::batchUpdateRecord($data, ['id' => $arr]);
 
         foreach ($arr as $receiptId) {
-            ReceiptLogInfoModel::addLog($receiptId, ReceiptApplyModel::CHECK_STATUS_MSG[$checkStatus] . ' 后台人员: ' . $employeeId);
+            ReceiptLogInfoModel::addLog($receiptId, ReceiptApplyModel::CHECK_STATUS_MSG[$checkStatus] . ' 后台人员: ' . EmployeeModel::getEmployeeById($employeeId)['name']);
         }
 
         //发红包的逻辑
