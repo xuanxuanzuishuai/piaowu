@@ -20,6 +20,7 @@ class AwardService
         $totalCount = WechatAwardCashDealModel::getCount(['ba_id' => $baId]);
 
         $list = WechatAwardCashDealModel::getAwardList($baId, $page, $count);
+
         $res = [];
 
         if (!empty($list)) {

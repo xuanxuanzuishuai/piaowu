@@ -35,7 +35,7 @@ left join cash_award_relate_receipt r on c.id = r.cash_award_id
 left join receipt_apply a on r.receipt_id = a.id
 
 
-where c.ba_id = ' . $baId . ' order by c.id desc limit ' . ($page-1)*$count . ', ' . $count;
+where c.ba_id = ' . $baId . ' order by c.id desc';
 
        return  MysqlDB::getDB()->queryAll($sql);
     }
