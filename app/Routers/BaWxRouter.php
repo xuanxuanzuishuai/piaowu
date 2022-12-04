@@ -15,7 +15,7 @@ class BaWxRouter extends RouterBase
     protected $uriConfig = [
 
         /** 公共 */
-        '/ba_wx/wx/js_config' => ['method' => ['get'], 'call'=> Wx::class. ':getJsConfig', 'middles' => []],
+        '/ba_wx/wx/config_js' => ['method' => ['get'], 'call'=> Wx::class. ':getJsConfig', 'middles' => []],
         '/ba_wx/wx/login'    => ['method'=>['get'],'call'=>  Wx::class. ':login', 'middles' => [WeChatOpenIdCheckMiddleware::class]],
 
         '/ba_wx/wx/shop_list'    => ['method'=>['get'],'call'=>  Wx::class. ':shopList', 'middles' => []],
