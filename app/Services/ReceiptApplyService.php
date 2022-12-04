@@ -14,6 +14,7 @@ use App\Models\EmployeeModel;
 use App\Models\GoodsModel;
 use App\Models\ReceiptApplyGoodsModel;
 use App\Models\ReceiptApplyModel;
+use App\Models\ReceiptLogInfoModel;
 use App\Models\RoleModel;
 use App\Models\ShopInfoModel;
 use App\Models\WechatAwardCashDealModel;
@@ -108,11 +109,15 @@ class ReceiptApplyService
         if (!empty($params['receipt_id'])) {
             $receiptId = $params['receipt_id'];
             ReceiptApplyModel::updateRecord($params['receipt_id'], $data);
+
+            ReceiptLogInfoModel::addLog($params['receipt_id'], '编辑票据，编辑方式: 后台编辑');
         } else {
             $data['create_time'] = time();
             $receiptId = ReceiptApplyModel::insertRecord(
                 $data
             );
+
+            ReceiptLogInfoModel::addLog($receiptId, '提交票据，提交方式: 后台创建');
         }
 
 
@@ -324,7 +329,14 @@ class ReceiptApplyService
         }
 
         $receiptInfo['goods'] = $relateGoods;
-        $receiptInfo['log_list'] = ['1111', '222'];
+
+        $relateArr = ReceiptLogInfoModel::getRecord(['receipt_id' => $receiptInfo['id']]);
+        $logArr = [];
+        foreach ($relateArr as $info) {
+            $logArr[] = $info['log_info'] . ' 时间: ' . date('Y-m-d H:i:s');
+        }
+
+        $receiptInfo['log_list'] = $logArr;
         return self::getOneReturnInfo($receiptInfo);
     }
 
@@ -353,12 +365,19 @@ class ReceiptApplyService
         //需要处理的票据单
         $needDealReceiptInfo = ReceiptApplyModel::getRecords(['id' => explode(',', $receiptIds), 'check_status' => ReceiptApplyModel::CHECK_WAITING]);
 
+        $arr = explode(',', $receiptIds;
+        ReceiptApplyModel::batchUpdateRecord($data, ['id' => $arr]);
 
-        ReceiptApplyModel::batchUpdateRecord($data, ['id' => explode(',', $receiptIds)]);
+        foreach ($arr as $receiptId) {
+            ReceiptLogInfoModel::addLog($receiptId, ReceiptApplyModel::CHECK_STATUS_MSG[$checkStatus] . ' 后台人员: ' . $employeeId);
+        }
+
+
+
         //发红包的逻辑
-
-        self::dealReceiptGoodsGiveAward($needDealReceiptInfo);
-
+        if ($checkStatus == ReceiptApplyModel::CHECK_PASS) {
+            self::dealReceiptGoodsGiveAward($needDealReceiptInfo);
+        }
     }
 
     /**
@@ -623,9 +642,11 @@ class ReceiptApplyService
             $receiptId = ReceiptApplyModel::insertRecord(
                 $data
             );
+            ReceiptLogInfoModel::addLog($params['receipt_id'], '编辑票据，编辑方式: BAb编辑');
         } else {
             ReceiptApplyModel::updateRecord($params['receipt_id'], $data);
             $receiptId = $params['receipt_id'];
+            ReceiptLogInfoModel::addLog($receiptId, '提交票据，提交方式: BA创建');
         }
 
 
