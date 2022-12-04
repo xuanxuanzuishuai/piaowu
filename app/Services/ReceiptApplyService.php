@@ -4,16 +4,19 @@ namespace App\Services;
 use App\Libs\AliOSS;
 use App\Libs\Excel\ExcelImportFormat;
 use App\Libs\Exceptions\RunTimeException;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
+use App\Libs\WeChatPackage;
 use App\Models\BAApplyModel;
 use App\Models\BAListModel;
-use App\Models\BaWeixinModel;
+use App\Models\CashAwardRelateReceiptModel;
 use App\Models\EmployeeModel;
 use App\Models\GoodsModel;
 use App\Models\ReceiptApplyGoodsModel;
 use App\Models\ReceiptApplyModel;
 use App\Models\RoleModel;
 use App\Models\ShopInfoModel;
+use App\Models\WechatAwardCashDealModel;
 
 class ReceiptApplyService
 {
@@ -326,9 +329,148 @@ class ReceiptApplyService
             $data['pass_time'] = time();
         }
 
-        ReceiptApplyModel::batchUpdateRecord($data, ['id' => explode(',', $receiptIds)]);
+        //需要处理的票据单
+        $needDealReceiptInfo = ReceiptApplyModel::getRecords(['id' => explode(',', $receiptIds), 'check_status' => ReceiptApplyModel::CHECK_WAITING]);
+
+
+       // ReceiptApplyModel::batchUpdateRecord($data, ['id' => explode(',', $receiptIds)]);
         //发红包的逻辑
 
+        self::dealReceiptGoodsGiveAward($needDealReceiptInfo);
+
+    }
+
+    /**
+     * 处理票据背后的商品红包发放
+     * @param $needDealReceiptInfo
+     */
+    private static function dealReceiptGoodsGiveAward($needDealReceiptInfo)
+    {
+        $awardInfo = [];
+        $awardRelateReceipt = [];
+        if (!empty($needDealReceiptInfo)) {
+            foreach ($needDealReceiptInfo as $receiptInfo) {
+
+                $relateGoods = ReceiptApplyGoodsModel::getRecords(['receipt_apply_id' => $receiptInfo['id'], 'status[!]' => ReceiptApplyGoodsModel::STATUS_DEL]);
+
+                //去掉已退款后的有效计算数量
+                $awardValidGoods = [];
+
+
+                if (!empty($relateGoods)) {
+                    foreach ($relateGoods as $v) {
+                        if ($v['status'] == ReceiptApplyGoodsModel::STATUS_NORMAL) {
+
+                            if (empty($awardValidGoods[$v['goods_id']])) {
+                                $awardValidGoods[$v['goods_id']] = $v['num'];
+                            } else {
+                                $awardValidGoods[$v['goods_id']] = $awardValidGoods[$v['goods_id']] + $v['num'];
+                            }
+                        }
+
+                        if ($v['status'] == ReceiptApplyGoodsModel::STATUS_REFUND) {
+                            if (empty($awardValidGoods[$v['goods_id']])) {
+                                $awardValidGoods[$v['goods_id']] = -$v['num'];
+                            } else {
+                                $awardValidGoods[$v['goods_id']] = $awardValidGoods[$v['goods_id']] - $v['num'];
+                            }
+                        }
+
+
+                    }
+                }
+
+                $awardInfo[$receiptInfo['ba_id']][] = $awardValidGoods;
+                $awardRelateReceipt[$receiptInfo['ba_id']][] = $receiptInfo['id'];
+
+            }
+
+            $returnMoneyInfo = [];
+
+            //计算每个BA此次审核可获得的奖励
+            foreach($awardInfo as $baId => $award) {
+                $awardMoney = 0;
+
+                foreach ($award as $validGoods) {
+
+                    foreach($validGoods as $goodsId =>  $goodsNum) {
+
+                        $returnMoney = 0;
+                        if (!empty($goodsNum)) {
+
+                            //匹配当前商品对应的奖励
+                            $goodInfo = GoodsModel::getRecord(['id' => $goodsId], ['return_amount']);
+
+                            $returnMoney = $goodInfo['return_amount'] * $goodsNum;
+                        }
+
+                        $awardMoney += $returnMoney;
+
+                    }
+                }
+
+                $returnMoneyInfo[$baId] = $awardMoney;
+            }
+
+
+
+            //奖励入库
+            if (!empty($returnMoneyInfo)) {
+                foreach ($returnMoneyInfo as $baId => $relateAward) {
+
+                    $baInfo = BAApplyModel::getRecord(['id' => $baId], ['open_id']);
+
+                    $mchBillNo = $_ENV['ENV_NAME'] . $baId . $relateAward . date('YmdHis');
+
+                    $id = WechatAwardCashDealModel::insertRecord(
+                        [
+                            'ba_id' => $baId,
+                            'mch_billno' => $mchBillNo,
+                            'award_amount' => $relateAward,
+                            'status' => WechatAwardCashDealModel::WAIT_GIVE,
+                            'open_id' => $baInfo['open_id'],
+                            'create_time' => time(),
+                            'update_time' => time()
+                      ]
+                    );
+
+                    //相关的票据
+                    $relateReceipt = $receiptArr = $awardRelateReceipt[$baId];
+
+                    if (!empty($relateReceipt)) {
+
+                        foreach ($relateReceipt as $receiptId) {
+                            CashAwardRelateReceiptModel::insertRecord(
+                                [
+                                    'cash_award_id' => $id,
+                                    'receipt_id' => $receiptId,
+                                    'create_time' => time()
+                                ]
+                            );
+
+
+                        }
+                    }
+
+
+                    //请求微信发红包
+                    $weChatPackage = new WeChatPackage();
+                    $openId = $baInfo['open_id'];
+                    //请求微信发红包
+                    $resultData = $weChatPackage->sendPackage($mchBillNo, '红包发放', '奖励发放', $openId, $relateAward, '奖励发放', 'redPack');
+                    SimpleLogger::info('we chat return info ' . $id, $resultData);
+
+                    $status = trim($resultData['result_code']) == WeChatAwardCashDealModel::RESULT_SUCCESS_CODE ? WechatAwardCashDealModel::WAIT_RECEIVE : WechatAwardCashDealModel::GIVE_FALSE;
+                    $resultCode = trim($resultData['err_code']);
+
+                    WechatAwardCashDealModel::updateRecord($id, [
+                        'status' => $status,
+                        'result_code' => $resultCode
+                    ]);
+
+                }
+            }
+        }
     }
 
 
