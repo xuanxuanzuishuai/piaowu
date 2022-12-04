@@ -331,7 +331,7 @@ class ReceiptApplyService
         $receiptInfo['goods'] = $relateGoods;
 
 
-        $relateArr = ReceiptLogInfoModel::getRecords(['receipt_id' => $receiptInfo['id']]);
+        $relateArr = ReceiptLogInfoModel::getRecords(['receipt_id' => $receiptInfo['id'], 'ORDER' => ['id' => 'DESC']]);
         $logArr = [];
         foreach ($relateArr as $info) {
             $logArr[] = $info['log_info'] . ' 时间: ' . date('Y-m-d H:i:s');
