@@ -324,7 +324,7 @@ class ReceiptApplyService
         }
 
         $receiptInfo['goods'] = $relateGoods;
-        $receiptInfo['system_check_note'] = ['21212212'];
+        $receiptInfo['log_list'] = ['1111', '222'];
         return self::getOneReturnInfo($receiptInfo);
     }
 
