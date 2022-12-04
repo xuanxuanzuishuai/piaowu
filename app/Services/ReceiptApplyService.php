@@ -630,7 +630,7 @@ class ReceiptApplyService
             $receiptId = ReceiptApplyModel::insertRecord(
                 $data
             );
-            ReceiptLogInfoModel::addLog($params['receipt_id'], '编辑票据，编辑方式: BAb编辑');
+            ReceiptLogInfoModel::addLog($receiptId, '编辑票据，编辑方式: BA编辑');
         } else {
             ReceiptApplyModel::updateRecord($params['receipt_id'], $data);
             $receiptId = $params['receipt_id'];
