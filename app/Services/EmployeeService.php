@@ -90,8 +90,14 @@ class EmployeeService
             throw new RuntimeException(['not_found_employee']);
         }
 
+        //仅管理员和大区经理可以处理账号
         if (!in_array($employeeInfo['role_id'], [RoleModel::SUPER_ADMIN, RoleModel::REGION_MANAGE])) {
             throw new RuntimeException(['only_admin_region_manage']);
+        }
+
+        //不可处理更高角色账号
+        if ($params['role_id'] > $employeeInfo['role_id']) {
+            throw new RuntimeException(['not_allow_deal_more_role_account']);
         }
 
         $where = [
@@ -152,9 +158,9 @@ class EmployeeService
             throw new RuntimeException(['not_found_employee']);
         }
 
-        if ($employeeInfo['id'] != $params['employee_id'] && $employeeInfo['role_id'] != RoleModel::SUPER_ADMIN) {
-            throw new RuntimeException(['only_admin_change_other']);
 
+        if ($employeeInfo['id'] != $params['employee_id']) {
+            throw new RuntimeException(['only_self_change_other']);
         }
 
         EmployeeModel::updateRecord($params['employee_id'], [
