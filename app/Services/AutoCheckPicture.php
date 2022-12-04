@@ -170,7 +170,7 @@ class AutoCheckPicture
 
         }
 
-        $remark[] = '暂时无法识别此票据信息';
+        $remark[] = '暂时无法识别此票据商品信息';
         return [$picOriginalReceiptNumber, $buyTime, $goodsInfo, $remark];
 
     }
