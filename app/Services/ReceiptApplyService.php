@@ -330,6 +330,7 @@ class ReceiptApplyService
 
         $receiptInfo['goods'] = $relateGoods;
 
+
         $relateArr = ReceiptLogInfoModel::getRecord(['receipt_id' => $receiptInfo['id']]);
         $logArr = [];
         foreach ($relateArr as $info) {
@@ -365,7 +366,7 @@ class ReceiptApplyService
         //需要处理的票据单
         $needDealReceiptInfo = ReceiptApplyModel::getRecords(['id' => explode(',', $receiptIds), 'check_status' => ReceiptApplyModel::CHECK_WAITING]);
 
-        $arr = explode(',', $receiptIds;
+        $arr = explode(',', $receiptIds);
         ReceiptApplyModel::batchUpdateRecord($data, ['id' => $arr]);
 
         foreach ($arr as $receiptId) {
