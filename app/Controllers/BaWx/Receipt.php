@@ -20,7 +20,7 @@ class Receipt extends ControllerBase
             [
                 'key' => 'pic_url',
                 'type' => 'required',
-                'error_code' => 'mobile_is_required'
+                'error_code' => 'pic_url_is_required'
             ],
             [
                 'key' => 'receipt_number',
