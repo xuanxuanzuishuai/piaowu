@@ -26,18 +26,34 @@ class WechatAwardCashDealModel extends Model
     ];
 
 
+    /**
+     * 红包列表
+     * @param $baId
+     * @param $page
+     * @param $count
+     * @return array|null
+     */
     public static function getAwardList($baId, $page, $count)
     {
-        $sql = 'select c.ba_id, c.award_amount, c.`status`, c.result_code, a.receipt_number, c.mch_billno from wechat_award_cash_deal c
+        $sql = 'select c.id cash_id,c.ba_id, c.award_amount, c.`status`, c.result_code, c.mch_billno from wechat_award_cash_deal c
 
-left join cash_award_relate_receipt r on c.id = r.cash_award_id
-
-left join receipt_apply a on r.receipt_id = a.id
-
-
-where c.ba_id = ' . $baId . ' order by c.id desc';
+where c.ba_id = ' . $baId . ' order by c.id desc limit ' . ($page-1)*$count . ',' . $count;
 
        return  MysqlDB::getDB()->queryAll($sql);
+    }
+
+    /**
+     * 红包对应的票据申请
+     * @param $cashId
+     * @return array|null
+     */
+    public static function getAwardRelateReceipt($cashId)
+    {
+        $sql = 'select a.receipt_number from cash_award_relate_receipt r left join receipt_apply a
+
+on r.receipt_id = a.id where r.cash_award_id = ' . $cashId;
+
+        return  MysqlDB::getDB()->queryAll($sql);
     }
 
     //发送红包成功与否的标识

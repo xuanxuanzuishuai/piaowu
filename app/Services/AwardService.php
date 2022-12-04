@@ -21,24 +21,17 @@ class AwardService
 
         $list = WechatAwardCashDealModel::getAwardList($baId, $page, $count);
 
-        $res = [];
 
         if (!empty($list)) {
             foreach($list as $v) {
-                if (empty($res[$v['mch_billno']])) {
-                    $res[$v['mch_billno']] = [
-                        'ba_id' => $v['ba_id'],
-                        'award_amount' => $v['award_amount'],
-                        'status' => $v['status'],
-                        'status_msg' => WechatAwardCashDealModel::STATUS_MSG[$v['status']],
-                        'result_code' => $v['result_code'],
-                        'result_code_msg' => WechatAwardCashDealModel::getWeChatResultCodeMsg($v['result_code'])
-                    ];
-                }
-                $res[$v['mch_billno']]['receipt_number_arr'][] = $v['receipt_number'];
+
+                $v['status_msg'] = WechatAwardCashDealModel::STATUS_MSG[$v['status']];
+                $v['result_code_msg'] = WechatAwardCashDealModel::getWeChatResultCodeMsg($v['result_code']);
+
+                $v['receipt_number_arr'] = array_column(WechatAwardCashDealModel::getAwardRelateReceipt($v['cash_id']), 'receipt_number');
             }
         }
 
-        return [$totalCount, $res];
+        return [$totalCount, $list];
     }
 }
