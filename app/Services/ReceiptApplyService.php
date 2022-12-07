@@ -30,8 +30,8 @@ class ReceiptApplyService
     public static function backendUploadApply($params, $employeeId)
     {
         //票据单号需要保持统一
-        if (strlen($params['receipt_number']) != 24) {
-            throw new RunTimeException(['receipt_number_must_24_len']);
+        if (strlen($params['receipt_number']) < 16 || strlen($params['receipt_number']) > 24) {
+            throw new RunTimeException(['receipt_number_len_not_pass']);
         }
 
 
@@ -511,8 +511,8 @@ class ReceiptApplyService
     public static function uploadApply($params, $baId)
     {
         //票据单号需要保持统一
-        if (strlen($params['receipt_number']) != 24) {
-            throw new RunTimeException(['receipt_number_must_24_len']);
+        if (strlen($params['receipt_number']) < 16 || strlen($params['receipt_number']) > 24) {
+            throw new RunTimeException(['receipt_number_len_not_pass']);
         }
 
         //如果是编辑，校验是否有关联关系
