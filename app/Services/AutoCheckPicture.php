@@ -1,6 +1,8 @@
 <?php
 namespace App\Services;
+use App\Libs\AliOSS;
 use App\Libs\HttpHelper;
+use App\Libs\RedisDB;
 use App\Libs\Util;
 use App\Models\GoodsModel;
 use App\Models\ReceiptApplyGoodsModel;
@@ -9,6 +11,9 @@ use App\Libs\Exceptions\RunTimeException;
 
 class AutoCheckPicture
 {
+
+    const PIC_KEY = 'auto_pic_result_';
+
     private static function getOcrContent($imagePath)
     {
         //调用ocr-识别图片
@@ -42,7 +47,21 @@ class AutoCheckPicture
      */
     public static function dealReceiptInfo($imagePath)
     {
+        //一次上传需要先得到图片识别部分信息，然后再次提交，避免浪费资源，做个缓存
+        $redis = RedisDB::getConn();
+        $initPath = $imagePath;
+        $existInfo = $redis->get(self::PIC_KEY . $initPath);
+        if (!empty($existInfo)) {
+            return json_decode($existInfo, true);
+        }
+
+        $imagePath = AliOSS::signUrls($imagePath);
         $content = self::getOcrContent($imagePath);
+
+        //图片url出错
+        if (empty($content)) {
+            throw new RunTimeException(['can_path_error']);
+        }
 
         $receiptFrom = 0; //初始认为啥都不是
 
@@ -97,10 +116,15 @@ class AutoCheckPicture
             list($picOriginalReceiptNumber, $buyTime, $goodsInfo, $remark) = self::dealShopReceiptPic($wordArr);
         }
 
+        $arr = [$receiptFrom, $picOriginalReceiptNumber, $buyTime, $goodsInfo, $remark];
 
+        //缓存识别结果
+        if (!empty($arr)) {
+            $str = json_encode($arr);
+            $redis->setex(self::PIC_KEY . $initPath, 300, $str);
+        }
 
-
-        return [$receiptFrom, $picOriginalReceiptNumber, $buyTime, $goodsInfo, $remark];
+        return $arr;
 
     }
 

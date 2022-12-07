@@ -22,6 +22,7 @@ class BaWxRouter extends RouterBase
         '/ba_wx/wx/apply'    => ['method'=>['post'],'call'=>  Wx::class. ':apply', 'middles' => []],
         '/ba_wx/wx/apply_info'    => ['method'=>['get'],'call'=>  Wx::class. ':applyInfo'],
         '/ba_wx/wx/add_receipt'    => ['method'=>['post'],'call'=>  Receipt::class . ':addReceipt'],
+        '/ba_wx/wx/pic_info' => ['method'=>['get'], 'call' => Receipt::class . ':getPicInfo'],
 
         '/ba_wx/wx/receipt_list'    => ['method'=>['get'],'call'=>  Receipt::class . ':receiptList'],
 

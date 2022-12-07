@@ -12,12 +12,14 @@ namespace App\Libs;
 class SentryClient
 {
     /**
-     * Sentry 上报异常
-     * @param \Exception $exception
-     * @param $data
+     * 上报日常
+     * @param $exception
+     * @param array $data
+     * @return bool
      */
     public static function captureException($exception, $data = [])
     {
+        return true;
         $extra = [
             'extra' => [
                 'stack_trace' => $exception->getTrace()

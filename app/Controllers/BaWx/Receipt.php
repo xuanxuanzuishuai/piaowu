@@ -2,8 +2,11 @@
 
 namespace App\Controllers\BaWx;
 use App\Controllers\ControllerBase;
+use App\Libs\AliOSS;
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\ReceiptApplyModel;
+use App\Services\AutoCheckPicture;
 use App\Services\ReceiptApplyService;
 use Slim\Http\Request;
 use Slim\Http\Response;
@@ -46,6 +49,37 @@ class Receipt extends ControllerBase
         }
 
         return HttpHelper::buildResponse($response, []);
+    }
+
+    public function getPicInfo(Request $request, Response $response)
+    {
+        $rules = [
+            [
+                'key' => 'pic_url',
+                'type' => 'required',
+                'error_code' => 'pic_url_is_required'
+            ]
+        ];
+
+        $params = $request->getParams();
+        $result = Valid::appValidate($params, $rules);
+        if ($result['code'] != Valid::CODE_SUCCESS) {
+            return $response->withJson($result, StatusCode::HTTP_OK);
+        }
+
+        try {
+            //图片识别结果，仅供系统审核建议,对于关联的商品信息不能确定时，要提供建议
+            list($referReceiptFrom, $picOriginalReceiptNumber) = AutoCheckPicture::dealReceiptInfo($params['pic_url']);
+
+        } catch (RunTimeException $e) {
+            return HttpHelper::buildErrorResponse($response, $e->getAppErrorData());
+        }
+
+        return HttpHelper::buildResponse($response, [
+            'receipt_from' => $referReceiptFrom,
+            'receipt_from_msg' => ReceiptApplyModel::RECEIPT_FROM[$referReceiptFrom],
+            'receipt_number' => $picOriginalReceiptNumber
+        ]);
     }
 
     public function receiptList(Request $request, Response $response)
