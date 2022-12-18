@@ -74,12 +74,13 @@ class Employee extends ControllerBase
             $employeeId = $params['employee_id'];
         }
 
-        $info = EmployeeModel::getEmployeeById($employeeId);
+        list($info, $relateRegion) = EmployeeService::getEmployeeInfo($employeeId);
 
         return $response->withJson([
             'code' => Valid::CODE_SUCCESS,
             'data' => [
-                'info' => $info
+                'info' => $info,
+                'relate_region' => $relateRegion
             ]
         ], StatusCode::HTTP_OK);
 

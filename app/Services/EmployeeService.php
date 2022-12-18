@@ -6,6 +6,7 @@ use App\Libs\Util;
 use App\Libs\Valid;
 use App\Models\EmployeeModel;
 use App\Libs\Exceptions\RunTimeException;
+use App\Models\RegionBelongManageModel;
 use App\Models\RoleModel;
 
 class EmployeeService
@@ -173,5 +174,23 @@ class EmployeeService
         EmployeeTokenService::expireUserToken($params['employee_id']);
 
     }
+
+    /**
+     * 员工详情
+     * @param $employeeId
+     * @return array
+     */
+    public static function getEmployeeInfo($employeeId)
+    {
+        $info = EmployeeModel::getEmployeeById($employeeId);
+
+        $relateRegion = [];
+
+        if ($info['role_id'] == RoleModel::REGION_MANAGE) {
+            $relateRegion = RegionBelongManageModel::getEmployeeRelateRegion($employeeId);
+        }
+        return [$info, $relateRegion];
+    }
+
 
 }
