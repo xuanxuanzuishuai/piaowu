@@ -57,5 +57,6 @@ class EmployeeRouter extends RouterBase
 
 
         '/employee/region/region_list' => ['method' => ['get'], 'call' => Region::class . ':regionList'],
+        '/employee/region/region_relate_province' => ['method' => ['get'], 'call' => Region::class . ':regionRelateProvince'],
     ];
 }
