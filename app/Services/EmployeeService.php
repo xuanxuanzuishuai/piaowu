@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Libs\Util;
 use App\Libs\Valid;
+use App\Models\AreaRegionModel;
 use App\Models\EmployeeModel;
 use App\Libs\Exceptions\RunTimeException;
 use App\Models\RegionBelongManageModel;
@@ -97,7 +98,7 @@ class EmployeeService
         }
 
         //不可处理更高角色账号
-        if ($params['role_id'] > $employeeInfo['role_id']) {
+        if ($params['role_id'] < $employeeInfo['role_id']) {
             throw new RuntimeException(['not_allow_deal_more_role_account']);
         }
 
@@ -120,9 +121,12 @@ class EmployeeService
             throw new RuntimeException(['pwd_is_required']);
         }
 
-
+        //如果role_id不是大区经理，且关联大区不为空，不可以关联
+        if ($params['role_id'] != RoleModel::REGION_MANAGE && !empty($params['relate_region'])) {
+            throw new RuntimeException(['only_region_manage_relate_region']);
+        }
         if (empty($params['employee_id'])) {
-            EmployeeModel::insertRecord(
+           $updateEmployeeId = EmployeeModel::insertRecord(
                 [
                     'name' => $params['name'],
                     'role_id' => $params['role_id'],
@@ -136,6 +140,7 @@ class EmployeeService
                 ]
             );
         } else {
+            $updateEmployeeId = $params['employee_id'];
             EmployeeModel::updateRecord($params['employee_id'],
                 [
                     'name' => $params['name'],
@@ -148,6 +153,28 @@ class EmployeeService
                 ]);
         }
 
+        //后台人员关联大区
+        if (!empty($params['relate_region'])) {
+            RegionBelongManageModel::batchUpdateRecord(['status' => RegionBelongManageModel::STATUS_ENABLE, 'update_time' => time()], ['employee_id' => $updateEmployeeId]);
+            foreach ($params['relate_region'] as $regionId) {
+                //校验是否存在
+                $res = AreaRegionModel::getRecord(['id' => $regionId]);
+                if (empty($res)) {
+                    throw new RuntimeException(['region_id_not_exist']);
+                }
+                RegionBelongManageModel::insertRecord(
+                    [
+                        'region_id' => $regionId,
+                        'employee_id' => $updateEmployeeId,
+                        'status' => RegionBelongManageModel::STATUS_NORMAL,
+                        'create_time' => time(),
+                        'update_time' => time()
+                    ]
+                );
+            }
+        }
+
+        //踢出登录
         EmployeeTokenService::expireUserToken($params['employee_id']);
 
     }

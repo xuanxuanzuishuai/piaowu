@@ -12,6 +12,7 @@ use App\Controllers\Employee\Employee;
 use App\Controllers\Employee\Goods;
 use App\Controllers\Employee\Privilege;
 use App\Controllers\Employee\Receipt;
+use App\Controllers\Employee\Region;
 use App\Middleware\EmployeeAuthCheckMiddleWare;
 use App\Controllers\Employee\BA;
 use App\Controllers\Employee\Shop;
@@ -53,5 +54,8 @@ class EmployeeRouter extends RouterBase
 
         '/employee/goods/goods_list' => ['method' => ['get'], 'call' => Goods::class . ':list'],
         '/employee/goods/add_goods' => ['method' => ['post'], 'call' => Goods::class . ':addGoods'],
+
+
+        '/employee/region/region_list' => ['method' => ['get'], 'call' => Region::class . ':regionList'],
     ];
 }
