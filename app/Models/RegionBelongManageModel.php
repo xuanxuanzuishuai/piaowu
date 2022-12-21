@@ -17,7 +17,7 @@ class RegionBelongManageModel extends Model
      */
     public static function getEmployeeRelateRegion($employeeId)
     {
-        $sql = 'select r.id region_id, r.`name`, rm.employee_id 
+        $sql = 'select r.id, r.`name`, rm.employee_id 
 from region_belong_manage rm inner join area_region r
 
 on rm.region_id = r.id where employee_id = ' . $employeeId . ' and rm.status =' . self::STATUS_NORMAL ;
