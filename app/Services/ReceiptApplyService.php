@@ -511,6 +511,10 @@ class ReceiptApplyService
     public static function uploadApply($params, $baId)
     {
         //票据单号需要保持统一
+        if (Util::isChineseText($params['receipt_number'])) {
+            throw new RunTimeException(['not_allow_chinese_word']);
+        }
+
         if (strlen($params['receipt_number']) < 16 || strlen($params['receipt_number']) > 24) {
             throw new RunTimeException(['receipt_number_len_not_pass']);
         }

@@ -78,7 +78,7 @@ class Receipt extends ControllerBase
         return HttpHelper::buildResponse($response, [
             'receipt_from' => $referReceiptFrom,
             'receipt_from_msg' => ReceiptApplyModel::RECEIPT_FROM[$referReceiptFrom],
-            'receipt_number' => $picOriginalReceiptNumber
+            'receipt_number' => $picOriginalReceiptNumber ?: '未成功识别，请手动输入'
         ]);
     }
 
