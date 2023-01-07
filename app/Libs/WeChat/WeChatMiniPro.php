@@ -361,4 +361,19 @@ class WeChatMiniPro
             'secret' => $this->secret,
         ];
     }
+
+    /**
+     * 创建菜单
+     * @param $data
+     * @return false|mixed|string
+     * @throws \App\Libs\Exceptions\RunTimeException
+     */
+    public function createMenu($data)
+    {
+        $api = $this->apiUrl(self::API_CREATE_MENU);
+        if (!is_array($data)) {
+            $data = json_decode($data, true);
+        }
+        return $this->requestJson($api, $data, 'POST');
+    }
 }
