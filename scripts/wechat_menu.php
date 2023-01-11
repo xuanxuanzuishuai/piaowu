@@ -20,7 +20,7 @@ $menuList = [
         [
             "type" => "view",
             "name" => "票据上传",
-            "url"  => "http://ticket-wx.xyzops.com",
+            "url"  => "https://ticket.ju-hemei.com/wx",
         ],
     ],
 ];
