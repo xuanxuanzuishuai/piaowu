@@ -1,6 +1,6 @@
 /vendor/
 /logs/*
 /.idea/*
-.env
+.env*
 apiclient_cert.pem
 apiclient_key.pem
