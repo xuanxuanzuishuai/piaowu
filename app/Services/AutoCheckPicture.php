@@ -1,8 +1,11 @@
 <?php
+
 namespace App\Services;
+
 use App\Libs\AliOSS;
 use App\Libs\HttpHelper;
 use App\Libs\RedisDB;
+use App\Libs\SimpleLogger;
 use App\Libs\Util;
 use App\Models\GoodsModel;
 use App\Models\ReceiptApplyGoodsModel;
@@ -17,25 +20,25 @@ class AutoCheckPicture
     private static function getOcrContent($imagePath)
     {
         //调用ocr-识别图片
-        $host    = "https://tysbgpu.market.alicloudapi.com";
-        $path    = "/api/predict/ocr_general";
+        $host = "https://tysbgpu.market.alicloudapi.com";
+        $path = "/api/predict/ocr_general";
         $appcode = $_ENV['ALI_OSS_PIC_APP_CODE'];
         //根据API的要求，定义相对应的Content-Type
         $headers = [
             'Authorization' => 'APPCODE ' . $appcode,
-            'Content-Type'  => 'application/json; charset=UTF-8'
+            'Content-Type' => 'application/json; charset=UTF-8'
         ];
-        $bodys   = [
-            'image'     => $imagePath,
+        $bodys = [
+            'image' => $imagePath,
             'configure' => [
-                'min_size'                     => 1, #图片中文字的最小高度，单位像素
-                'output_prob'                  => true,#是否输出文字框的概率
-                'output_keypoints'             => false, #是否输出文字框角点
-                'skip_detection'               => false,#是否跳过文字检测步骤直接进行文字识别
+                'min_size' => 3, #图片中文字的最小高度，单位像素
+                'output_prob' => true,#是否输出文字框的概率
+                'output_keypoints' => false, #是否输出文字框角点
+                'skip_detection' => false,#是否跳过文字检测步骤直接进行文字识别
                 'without_predicting_direction' => true#是否关闭文字行方向预测
             ]
         ];
-        $url     = $host . $path;
+        $url = $host . $path;
         return HttpHelper::requestJson($url, $bodys, 'POST', $headers);
     }
 
@@ -49,22 +52,20 @@ class AutoCheckPicture
     {
         //一次上传需要先得到图片识别部分信息，然后再次提交，避免浪费资源，做个缓存
         $redis = RedisDB::getConn();
-        $initPath = $imagePath;
-        $existInfo = $redis->get(self::PIC_KEY . $initPath);
-        if (!empty($existInfo)) {
-            return json_decode($existInfo, true);
+        $initPath = md5($imagePath);
+        $info = $redis->get(self::PIC_KEY . $initPath);
+        if (!empty($info)) {
+            return json_decode($info, true);
+        } else {
+            $imagePath = AliOSS::signUrls($imagePath);
+            $content = self::getOcrContent($imagePath);
         }
-
-        $imagePath = AliOSS::signUrls($imagePath);
-        $content = self::getOcrContent($imagePath);
-
         //图片url出错
         if (empty($content)) {
             throw new RunTimeException(['can_path_error']);
         }
 
         $receiptFrom = 0; //初始认为啥都不是
-
         $wordArr = array_column($content['ret'], 'word');
 
         $picOriginalReceiptNumber = '';
@@ -77,14 +78,13 @@ class AutoCheckPicture
 
         //云单比较固定，先确定什么单子进行不同得计算
         //如果即确定不了云单又确定不了小票，驳回重新上传
-        foreach($wordArr as $k => $value) {
+        foreach ($wordArr as $k => $value) {
             $value = Util::trimAllSpace($value);
 
             //确定云单
             if (Util::sensitiveWordFilter(['编号'], $value)) {
-
-                if (Util::sensitiveWordFilter(['复制'], $wordArr[$k+2])) {
-                    $picOriginalReceiptNumber = $wordArr[$k+1];
+                if (Util::sensitiveWordFilter(['复制'], $wordArr[$k + 2])) {
+                    $picOriginalReceiptNumber = $wordArr[$k + 1];
                     $receiptFrom = ReceiptApplyModel::CLOUD_RECEIPT;
                     break;
 
@@ -106,9 +106,7 @@ class AutoCheckPicture
 
         //云单的识别
         if ($receiptFrom == ReceiptApplyModel::CLOUD_RECEIPT) {
-
-          list($picOriginalReceiptNumber, $buyTime, $goodsInfo, $remark) = self::dealCloudReceiptPic($wordArr);
-
+            list($picOriginalReceiptNumber, $buyTime, $goodsInfo, $remark) = self::dealCloudReceiptPic($wordArr);
         }
 
         //普通小票的识别
@@ -116,7 +114,7 @@ class AutoCheckPicture
             list($picOriginalReceiptNumber, $buyTime, $goodsInfo, $remark) = self::dealShopReceiptPic($wordArr);
         }
 
-        $arr = [$receiptFrom, $picOriginalReceiptNumber, $buyTime, $goodsInfo, $remark];
+        $arr = [$receiptFrom, $picOriginalReceiptNumber, $buyTime, $goodsInfo, $remark,$content];
 
         //缓存识别结果
         if (!empty($arr)) {
@@ -131,7 +129,7 @@ class AutoCheckPicture
     //处理门店票据
     public static function dealShopReceiptPic($wordArr)
     {
-        $picOriginalReceiptNumber = '';
+        $picOriginalReceiptNumber = [];
 
         $totalCount = count($wordArr);
 
@@ -151,7 +149,10 @@ class AutoCheckPicture
 
 
         foreach ($wordArr as $k => $value) {
-            if (Util::sensitiveWordFilter(['编号'], $value)) {
+            if (Util::sensitiveWordFilter(['收银员'], $value)) {
+                $receiptNumberStartIndex = $k + 1;
+            }
+            if (Util::sensitiveWordFilter(['小票编号'], $value)) {
                 $receiptNumberStartIndex = $k + 1;
             }
 
@@ -162,43 +163,48 @@ class AutoCheckPicture
             if (Util::sensitiveWordFilter(['环境'], $value)) {
                 $hasEnvironment = true;
             }
-
+            preg_match_all('/.*(20[0-9][0-9]\-[0-1][0-9]\-[0-1][0-9]).*/', $value, $match);
+            if (!empty($match[1])) {
+                $buyTime = $match[1][0];
+            }
 
 
         }
+        if ($hasEnvironment === true) {
+            $receiptNumberEndIndex = $receiptNumberEndIndex - 1;
+        }
 
+        //小票原始单号
+        $i = $receiptNumberStartIndex;
+        while (true) {
+            if ($i > $receiptNumberEndIndex) {
+                break;
+            }
 
-        //没有保护环境这句话
-        if (empty($hasEnvironment)) {
+            $picOriginalReceiptNumber[] = $wordArr[$i];
+            $i++;
+        }
 
-            //小票原始单号
-            $i = $receiptNumberStartIndex;
-            while(true) {
-
-                if ($i > $receiptNumberEndIndex) {
-                    break;
+        if (!empty($picOriginalReceiptNumber)) {
+            foreach ($picOriginalReceiptNumber as $key => $value) {
+                preg_match_all('/.*(20[0-9][0-9]\-[0-1][0-9]\-[0-1][0-9]).*/', $value, $match);
+                if (!empty($match[1])) {
+                    $picOriginalReceiptNumber[$key] = "_" . $match[1][0];
                 }
-
-                $picOriginalReceiptNumber .= $wordArr[$i];
-
-                $i++;
             }
-
-            //购买时间
-            $buyTime = $wordArr[$totalCount - 1];
-            if (strtotime($buyTime) == false) {
-                $newBuyTime = str_replace('：', ':', $buyTime);
-                $buyTime = substr($newBuyTime, 0, 10) . ' ' . substr($newBuyTime, 10);
-
-            }
-
+            $picOriginalReceiptNumber = implode("", $picOriginalReceiptNumber);
+        } else {
+            $picOriginalReceiptNumber = '';
+        }
+        preg_match_all('/.*(20[0-9][0-9]\-[0-1][0-9]\-[0-1][0-9]).*/', $picOriginalReceiptNumber, $matches);
+        if (empty($matches[1]) && !empty($buyTime)) {
+            $picOriginalReceiptNumber .= "_" . $buyTime;
         }
 
         $remark[] = '暂时无法识别此票据商品信息';
         return [$picOriginalReceiptNumber, $buyTime, $goodsInfo, $remark];
 
     }
-
 
 
     /**
@@ -219,12 +225,12 @@ class AutoCheckPicture
         $fenge = count($wordArr);
 
         //处理云单
-        foreach($wordArr as $k => $value) {
+        foreach ($wordArr as $k => $value) {
             $value = Util::trimAllSpace($value);
 
             //确定购买日期
             if (Util::sensitiveWordFilter(['下单', '日期'], $value)) {
-                $buyTime = $wordArr[$k+1];
+                $buyTime = $wordArr[$k + 1];
                 if (strtotime($buyTime) == false) {
                     $newBuyTime = str_replace('：', ':', $buyTime);
                     $buyTime = substr($newBuyTime, 0, 10) . ' ' . substr($newBuyTime, 10);
@@ -244,7 +250,7 @@ class AutoCheckPicture
             if (Util::sensitiveWordFilter(['￥'], $value)) {
 
                 if ($k < $fenge) {
-                    $goodsName = $wordArr[$k-1];
+                    $goodsName = $wordArr[$k - 1];
 
                     $initGoods[] = $goodsName;
                 }
@@ -262,8 +268,8 @@ class AutoCheckPicture
             //确定云单的小票编号，为了保持格式统一
             if (Util::sensitiveWordFilter(['编号'], $value)) {
 
-                if (Util::sensitiveWordFilter(['复制'], $wordArr[$k+2])) {
-                    $picOriginalReceiptNumber =  $wordArr[$k+1];
+                if (Util::sensitiveWordFilter(['复制'], $wordArr[$k + 2])) {
+                    $picOriginalReceiptNumber = $wordArr[$k + 1];
                 }
             }
 
@@ -288,12 +294,17 @@ class AutoCheckPicture
                 $goodsInfo[] = [
                     'id' => $goods['id'],
                     'num' => $nums[$key],
+                    'name' => $goods['goods_name'],
                     'status' => ReceiptApplyGoodsModel::STATUS_NORMAL
                 ];
 
             }
         }
-
+        preg_match_all('/.*(20[0-9][0-9]\-[0-1][0-9]\-[0-1][0-9]).*/', $buyTime, $match);
+        if (!empty($match[1])) {
+            $buyTime = $match[1][0];
+            $picOriginalReceiptNumber .= "_".$buyTime;
+        }
         return [$picOriginalReceiptNumber, $buyTime, $goodsInfo, $remark];
     }
 }
